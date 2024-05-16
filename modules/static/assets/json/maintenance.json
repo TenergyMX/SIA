@@ -1,0 +1,26 @@
+{
+    "success": true,
+    "data": {
+        "preventivo": [
+            "CAMBIO DE ACEITE DEL MOTOR",
+            "CAMBIO FILTRO ACEITE",
+            "CAMBIO FILTRO DE AIRE",
+            "CAMBIO FILTRO DE GASOLINA",
+            "CAMBIO DE BUJÍAS",
+            "REVISIÓN: FRENOS",
+            "LAVADO: CARROCERIA"
+        ],
+        "correctivo": [
+            "REVISIÓN BANDAS Y POLEAS",
+            "SUSPENSION, LUCES",
+            "FALLA EN CODIGOS",
+            "LAVADO DE MOTOR",
+            "LIMPIEZA DE CUERPO DE ACELERACION",
+            "LIMPIEZA SENSOR MAF",
+            "REVISAR FUGAS A MOTOR",
+            "REVISION DE FUGAS DE TRANSMISION",
+            "REVISION DE SOPORTE DE MOTOR Y TRANSMISION",
+            "CARGA DE ALTERNADOR Y BATERIA"
+        ]
+    }
+}

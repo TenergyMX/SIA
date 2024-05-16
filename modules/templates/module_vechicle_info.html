@@ -1,0 +1,468 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="">    
+    <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+        <h1 class="page-title fw-semibold fs-18 mb-0">
+            Vehículo
+        </h1>
+        <div class="ms-md-1 ms-0"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 col-xxl-3">
+            {% include "card/vehicle_info.html" %}
+        </div>
+        <div class="col-md-8 col-xxl-9">
+            <div class="row">
+                <div class="col-12">
+                    <!-- x -->
+                    <div class="card custom-card">
+                        <div class="card-body p-0">
+                            <!-- nav tab -->
+                            <div class="p-2 border-bottom border-block-end-dashed">
+                                <ul class="nav nav-tabs mb-0 tab-style-6 justify-content-start">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="v-load" data-bs-toggle="tab" data-bs-target="#v-load-pane" type="button" role="tab" aria-controls="v-load-pane" aria-selected="true">
+                                            Cargando tabs...
+                                        </button>
+                                    </li>
+                                    {% if permiso.5.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-tenencia" data-bs-toggle="tab" data-bs-target="#v-tenencia-pane" type="button" role="tab" aria-controls="v-tenencia-pane" aria-selected="true">
+                                            Tenencia
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.6.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-refrendo" data-bs-toggle="tab" data-bs-target="#v-refrendo-pane" type="button" role="tab" aria-controls="v-refrendo-pane" aria-selected="false">
+                                            Refrendo
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.7.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-verificacion" data-bs-toggle="tab" data-bs-target="#v-verificacion-pane" type="button" role="tab" aria-controls="v-verificacion-pane" aria-selected="false">
+                                            Verificación
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.8.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-responsiva" data-bs-toggle="tab" data-bs-target="#v-responsiva-pane" type="button" role="tab" aria-controls="v-responsiva-pane" aria-selected="false">
+                                            Responsiva
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.9.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-insurance" data-bs-toggle="tab" data-bs-target="#v-insurance-pane" type="button" role="tab" aria-controls="v-insurance-pane" aria-selected="false">
+                                            Seguro
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.10.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-audit" data-bs-toggle="tab" data-bs-target="#v-audit-pane" type="button" role="tab" aria-controls="v-audit-pane" aria-selected="false">
+                                            Auditoria
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.11.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-maintenance" data-bs-toggle="tab" data-bs-target="#v-maintenance-pane" type="button" role="tab" aria-controls="v-maintenance-pane" aria-selected="false">
+                                            Mantenimiento
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            <!-- contenido tab -->
+                            <div class="p-3">
+                                <div class="tab-content">
+                                    <div class="tab-pane fade p-0 border-0 active show" id="v-load-pane" role="tabpanel" aria-labelledby="v-load" tabindex="0">
+                                        <div class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-tenencia-pane" role="tabpanel" aria-labelledby="v-tenencia" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.5.create %}
+                                            <button type="button" class="btn btn-primary" data-vehicle-tenencia="add-item"
+                                                title="Agregar usuario">
+                                                <i class="fa-solid fa-plus me-1"></i>
+                                                Agregar
+                                            </button>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-primary" data-vehicle-tenencia="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_tenencia">
+                                                <thead>
+                                                    <tr>
+                                                        <th>1</th>
+                                                        <th>2</th>
+                                                        <th>3</th>
+                                                        <th>4</th>
+                                                        <th>5</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-refrendo-pane" role="tabpanel" aria-labelledby="refrendo-tab" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.6.create %}
+                                            <button type="button" class="btn btn-primary" data-vehicle-refrendo="add-item"
+                                                title="Agregar usuario">
+                                                <i class="fa-solid fa-plus me-1"></i>
+                                                Agregar
+                                            </button>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-primary" data-vehicle-refrendo="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table="refrendo">
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table w-100" id="table_refrendo">
+                                                <thead></thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-verificacion-pane" role="tabpanel" aria-labelledby="verificacion-tab" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.7.create %}
+                                            <button type="button" class="btn btn-primary" data-vehicle-verificacion="add-item"
+                                                title="Agregar usuario">
+                                                <i class="fa-solid fa-plus me-1"></i>
+                                                Agregar
+                                            </button>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-primary" data-vehicle-verificacion="refresh-table"
+                                                title="Refrescar tabla"
+                                            >
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table w-100" id="table_verificacion">
+                                                <thead></thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-responsiva-pane" role="tabpanel" aria-labelledby="responsiva-tab" tabindex="0">
+                                        <div class="info">
+                                            <div class="mb-3">
+                                                {% if permiso.8.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-responsiva="add-item"
+                                                    title="Agregar usuario">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Registrar salida
+                                                </button>
+                                                {% endif %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-responsiva="refresh-table"
+                                                    title="Refrescar tabla" data-refresh-table="table_responsiva">
+                                                    <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                    Refrescar tabla
+                                                </button>
+                                            </div>
+                                            <div class="table-responsive">
+                                                <table class="table w-100" id="table_responsiva">
+                                                    <thead></thead>
+                                                    <tbody></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="info-details" style="display: none;">
+                                            <!-- 1 -->
+                                            <div class="mb-3">
+                                                <button type="button" class="btn btn-info" onclick="hideShow('#v-responsiva-pane .info-details', '#v-responsiva-pane .info');">
+                                                    <i class="fa-solid fa-arrow-left me-1"></i>
+                                                    Regresar
+                                                </button>
+                                            </div>
+                                            <!-- 2 -->
+                                            {% include "card/responsive_info.html" %}
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-insurance-pane" role="tabpanel" aria-labelledby="insurance-tab" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.9.create %}
+                                            <button type="button" class="btn btn-primary" data-vehicle-insurance="add-item"
+                                                title="Agregar Seguro">
+                                                <i class="fa-solid fa-plus me-1"></i>
+                                                Agregar
+                                            </button>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-primary" data-vehicle-insurance="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table="table_insurance">
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_insurance">
+                                                <thead></thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-audit-pane" role="tabpanel" aria-labelledby="audit-tab" tabindex="0">
+                                        <div class="info">
+                                            <div class="mb-3">
+                                                {% if permiso.10.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-audit="add-item"
+                                                    title="Agregar Seguro">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                                {% endif %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-audit="refresh-table"
+                                                    title="Refrescar tabla">
+                                                    <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                    Refrescar tabla
+                                                </button>
+                                            </div>
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered w-100" id="table_audit">
+                                                    <thead></thead>
+                                                    <tbody></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="info-details" style="display: none;">
+                                            <div class="mb-3">
+                                                <button type="button" class="btn btn-info btn-sm" data-vehicle-audit="show-info">
+                                                    <i class="fa-solid fa-arrow-left me-1"></i>
+                                                    Regresar
+                                                </button>
+                                            </div>
+                                            {% include "card/audit_info.html" %}
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-maintenance-pane" role="tabpanel" aria-labelledby="maintenance-tab" tabindex="0">
+                                        <div class="info">
+                                            <div class="mb-3">
+                                                {% if permiso.11.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-maintenance="add-item"
+                                                    title="Agregar Seguro">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                                {% endif %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-maintenance="refresh-table"
+                                                    title="Refrescar tabla">
+                                                    <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                    Refrescar tabla
+                                                </button>
+                                            </div>
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered w-100" id="table_maintenance">
+                                                    <thead></thead>
+                                                    <tbody></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="info-details" style="display: none;">
+                                            <div class="mb-3">
+                                                <button type="button" class="btn btn-info btn-sm" data-vehicle-maintenance="show-info">
+                                                    <i class="fa-solid fa-arrow-left me-1"></i>
+                                                    Regresar
+                                                </button>
+                                            </div>
+                                            {% include "card/maintenance_info.html" %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- x -->
+                </div>
+                <div class="col-sm-4">
+                    <div class="card custom-card">
+                        <div class="card-body"></div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="card custom-card">
+                        <div class="card-body"></div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="card custom-card">
+                        <div class="card-body"></div>
+                    </div>
+                </div>
+            </div>        
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+    {% include "modal/mdl_crud_tenencia.html" %}
+    {% include "modal/mdl_crud_refrendo.html" %}
+    {% include "modal/mdl_crud_verificacion.html" %}
+    {% include "modal/mdl_crud_responsiva.html" %}
+    {% include "modal/mdl_crud_insurance.html" %}
+    {% include "modal/mdl_crud_audit.html" %}
+    {% include "modal/mdl_crud_maintenance.html" %}
+{% endblock %}
+
+{% block offcanvas %}
+    {% include "offcanvas/oc_crud_vechicles_info.html" %}
+{% endblock %}
+
+{% block head %}
+<style>
+    .info-card {
+        border: 1px solid var(--default-border) !important;
+    }
+    .select2-container {
+        z-index: 1055;
+    }
+</style>
+<script>
+    const vehicle_id = "{{ vehicle.id }}"
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+<script src="{% static 'assets/js/users.js' %}"></script>
+<script src="{% static 'assets/js/providers.js' %}"></script>
+<script src="{% static 'assets/js/module_vehicles_info.js' %}"></script>
+<script src="{% static 'assets/js/canvasDrawing.js' %}"></script>
+<script>
+    const vehiculo = new Vehicles({
+        infoCard: {
+            vehicle: { id: vehicle_id }
+        },
+        list: {
+            id: '[name="vehicle_id"], [name="vehiculo_id"]'
+        },
+    });
+
+    const responsables = new Users({
+        list: { id: '.modal select[name="responsible_id"]' },
+    });
+</script>
+
+{% if permiso.5.read %}
+<!-- ! Tenencia -->
+<script src="{% static 'assets/js/module_vehicles_tenencia.js' %}"></script>
+<script>
+    const tenencia = new VehiclesTenencia({
+        table: { id: "#table_tenencia" },
+        vehicle: vehiculo
+    });
+</script>
+{% endif %}
+
+{% if permiso.6.read %}
+<!-- ! Refrendo -->
+<script src="{% static 'assets/js/module_vehicles_refrendo.js' %}"></script>
+<script>
+    const refrendo = new VehiclesRefrendo({
+        table: {id:'#table_refrendo'},
+        vehicle: vehiculo
+    });
+</script>
+{% endif %}
+
+{% if permiso.7.read %}
+<!-- ! Verificacion -->
+<script src="{% static 'assets/js/module_vehicles_verificacion.js' %}"></script>
+<script>
+    const verificaciones = new VehiclesVerificacion({
+        table: { id: '#table_verificacion' },
+        vehicle: vehiculo
+    });
+</script>
+{% endif %}
+
+{% if permiso.8.read %}
+<!-- ! Responsivas -->
+<script src="{% static 'assets/js/module_vehicles_responsiva.js' %}"></script>
+<script>
+    var canvas_signature = new CanvasDrawing("canvas-signature");
+    const responsivas = new VehiclesResponsiva({
+        table: {},
+        vehicle: vehiculo
+    });
+</script>
+{% endif %}
+
+{% if permiso.9.read %}
+<!-- ! Seguros -->
+<script src="{% static 'assets/js/module_vehicles_insurance.js' %}"></script>
+<script>
+    const seguros = new VehiclesInsurance({
+        table: { id: "#table_insurance" },
+        vehicle: vehiculo
+    });
+</script>
+{% endif %}
+
+{% if permiso.10.read %}
+<!-- ! Auditorias -->
+<script src="{% static 'assets/js/module_vehicles_audit.js' %}"></script>
+<script>    
+    const auditorias = new VehiclesAudit({
+        table: { id: '#table_audit' },
+        vehicle: vehiculo,
+    });
+</script>
+{% endif %}
+
+{% if permiso.11.read %}
+<!-- ! Mantenimiento -->
+<script src="{% static 'assets/js/module_vehicles_maintenance.js' %}"></script>
+<script>    
+    const mantenimiento = new VehiclesMaintenance({
+        table: {
+            id: '#table_maintenance',
+            vehicle: {
+                id: vehicle_id,
+                name: "Auto"
+            }
+        },
+        vehicle: vehiculo,
+    });
+</script>
+{% endif %}
+
+<script>
+    const provider = new Providers({
+        list: {
+            id: "select[name='provider_id']"
+        }
+    })
+</script>
+<script>
+    $(document).ready(function() {
+        var $tabs = $("ul.nav-tabs li");
+        $tabs.show();
+        $("#v-load").closest("li").remove();
+        $("#v-load-pane").remove();
+        
+        $tabs = $("ul.nav-tabs li");
+        $tabs.first().find('button').tab('show');
+    });
+</script>
+{% endblock %}

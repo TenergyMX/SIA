@@ -1,0 +1,99 @@
+{% extends 'ynex/base.html' %}
+
+{% block content %}
+{% load static %}
+<div class="">
+    <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+        <h1 class="page-title fw-semibold fs-18 mb-0">
+            Vehículos
+        </h1>
+        <div class="ms-md-1 ms-0"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card custom-card">
+                <div class="card-body d-sm-flex align-items-center justify-content-between">
+                    <div class="fs-15 mb-3 mb-sm-0 text-center text-md-start">
+                        Total
+                        <span class="badge bg-success vehicle-info-recordsTotal">3</span>
+                        de vehiculos
+                    </div>
+                    <div class="text-center text-sm-end">
+                        {% if access.create %}
+                        <button type="button" class="btn btn-primary" data-vehicle-info="add-item"
+                            title="Agregar usuario">
+                            <i class="fa-solid fa-plus me-1"></i>
+                            Agregar
+                        </button>
+                        {% endif %}
+                        <button type="button" class="btn btn-primary" data-vehicle-info="refresh-table"
+                            title="Actualizar registros">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i>
+                            Refrescar datos
+                        </button>
+                    </div>
+                    <div class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="container-table">
+        <div class="card custom-card">
+            <div class="card-body">
+                <div class="w-100">
+                    <table class="table table-bordered w-100" id="table_vehicles_info">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-box" style="display: none;">
+        <div class="row">
+            <div class="col-sm-6 col-xxl-3">
+                <div class="card">
+                    <div class="card-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% load static %}
+
+{% block modals %} {% endblock %}
+
+{% block offcanvas %}
+{% include "offcanvas/oc_crud_vechicles_info.html" %}
+{% endblock %}
+
+{% block head %}
+<link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
+<link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css" rel="stylesheet">
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js"></script>
+<script src="https://unpkg.com/filepond-plugin-image-exif-orientation/dist/filepond-plugin-image-exif-orientation.js"></script>
+<script src="https://unpkg.com/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.js"></script>
+<script src="https://unpkg.com/filepond-plugin-image-edit/dist/filepond-plugin-image-edit.js"></script>
+<script src="https://unpkg.com/filepond/dist/filepond.js"></script>
+<!-- x -->
+<script src="{% static 'assets/js/users.js' %}"></script>
+<script src="{% static 'assets/js/module_vehicles_info.js' %}"></script>
+<script>
+    const responsables = new Users({
+        list: {
+            id: 'select[name="responsible_id"], select[name="owner_id"]'
+        }
+    });
+    const vehiculos = new Vehicles({
+        table: { id: '#table_vehicles_info' }
+    });
+</script>
+{% endblock %}

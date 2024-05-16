@@ -1,0 +1,76 @@
+<div class="modal fade" id="mdl_users" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form name="form-users" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar usuario</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 d-none">
+                        {% csrf_token %}
+                        <input type="text" name="user_id" class="form-control">
+                    </div>
+                    {% if role.id == 1 %}
+                    <div class="col-12">
+                        <select name="company_id" class="form-control"></select>
+                    </div>
+                    {% endif %}
+                    <div class="col-md col-lg-4">
+                        <select name="role" class="form-control">
+                            <option value="" disabled selected>
+                                Rol
+                            </option>
+                            {% if role.id == 1 %}
+                            <option value="1">
+                                Super usuario
+                            </option>
+                            {% endif %}
+                            <option value="2">
+                                Administrador
+                            </option>
+                            <option value="3">
+                                Encargado
+                            </option>
+                            <option value="4">
+                                Usuario
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md col-lg-4">
+                        <input type="text" name="username" class="form-control" placeholder="Username" />
+                    </div>
+                    <div class="col-md col-lg-4">
+                        <div class="input-group input-group-password">
+                            <input type="password" name="password" class="form-control" placeholder="password">
+                            <button type="button" name="sh-password" class="btn btn-primary" type="button"
+                                data-user="sh-password">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <input type="email" name="email" class="form-control" placeholder="Email" />
+                    </div>
+                    <div class="col-md">
+                        <input type="text" name="name" class="form-control" placeholder="Nombre" />
+                    </div>
+                    <div class="col-md">
+                        <input type="text" name="last_name" class="form-control" placeholder="Apellido" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="addUser" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="updateUser" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Actualizar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>

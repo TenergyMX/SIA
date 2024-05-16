@@ -1,0 +1,82 @@
+<form action="" class="" id="form_maintenance_info">
+    {% csrf_token %}
+    <input type="hidden" name="id">
+    <input type="hidden" name="vehicle_id">
+    <input type="hidden" name="vehicle__name">
+    <!-- ! card -->
+    <div class="card custom-card info-card" id="card_maintenance_info">
+        <div class="card-body">
+            <div class="row g-1 mb-3">
+                <div class="col-12">
+                    <span class="fw-bolder">Vehículo: </span>
+                    <span class="placeholder col-10 col-md-2" data-key-value="vehicle__name"></span>
+                </div>
+                <div class="col-12">
+                    <span class="fw-bolder">Manteniento: </span>
+                    <span class="placeholder col-10 col-md-2" data-key-value="type"></span>
+                </div>
+                <div class="col-12">
+                    <span class="fw-bolder">Fecha: </span>
+                    <span class="placeholder col-10 col-md-4" data-key-value="date"></span>
+                </div>
+                <div class="col-sm-6">
+                    <span class="fw-bolder">Kilometraje: </span>
+                    <span class="placeholder col-10 col-md-4" data-key-value="mileage"></span>
+                </div>
+                <div class="col-sm-6">
+                    <span class="fw-bolder">Tiempo: </span>
+                    <span class="placeholder col-10 col-md-4" data-key-value="time"></span>
+                </div>
+                <div class="col-12 comprobante">
+                    <span class="fw-bolder me-2">Comprobante: </span>
+                    <input type="file" name="comprobante" class="form-control form-control-sm d-inline-block" style="width: auto;">
+                    <a href="#" class="btn btn-sm btn-info" download="" style="display: none;">
+                        <i class="fa-solid fa-download me-1"></i>
+                        Comporbante
+                    </a>
+                </div>
+            </div>
+            <ol class="list-group list-group-numbered placeholder-glow mb-3">
+                <li class="list-group-item">
+                    <span class="placeholder col-10 col-md-6"></span>
+                </li>
+                <li class="list-group-item">
+                    <span class="placeholder col-10 col-md-4"></span>
+                </li>
+                <li class="list-group-item">
+                    <span class="placeholder col-10 col-md-5"></span>
+                </li>
+            </ol>
+            <div class="text-end d-none">
+                <button type="button" class="btn btn-success-light">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    agregar item
+                </button>
+            </div>
+            <div class="row g-1">
+                <div class="col-sm-6">
+                    <span class="fw-bolder">Proveedor: </span>
+                    <span class="placeholder col-10 col-md-4" data-key-value="provider__name"></span>
+                </div>
+                <div class="col-sm-6">
+                    <span class="fw-bolder">Costo: </span>
+                    <span class="placeholder col-10 col-md-4" data-key-value="cost"></span>
+                </div>
+                <div class="col-sm-12">
+                    <span class="fw-bolder d-block">Notas generales: </span>
+                    <span class="placeholder col-10 col-md-4" data-key-value="general_notes"></span>
+                </div>
+            </div>
+            <div class="text-center mt-4 form-btn">
+                <button type="reset" class="btn btn-secondary-light">
+                    <i class="fa-solid fa-rotate-right me-1"></i>
+                    Restablecer
+                </button>
+                <button type="submit" class="btn btn-primary-light">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</form>

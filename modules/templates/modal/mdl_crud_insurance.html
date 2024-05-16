@@ -1,0 +1,72 @@
+<div class="modal fade" id="mdl_crud_insurance" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down">
+        <form name="form-vrt" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 d-none">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="0">
+                    </div>
+                    <div class="col-12 col-md-12 col-lg">
+                        <label for="">Vehiculo</label>
+                        <select name="vehicle_id" class="form-control"></select>
+                        <input type="text" name="vehicle__name" class="form-control" style="display: none;">
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="">Responsable</label>
+                        <select name="responsible_id" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="">Numero de polisa</label>
+                        <input type="text" name="policy_number" class="form-control" placeholder="Numero de polisa" required>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="">Aseguradora</label>
+                        <input type="text" name="insurance_company" class="form-control" placeholder="Empresa aseguradora" required>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="">Costo</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="cost" class="form-control" placeholder="1500" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="">Vigencia</label>
+                        <div class="input-group">
+                            <input type="number" name="validity" class="form-control" min="1" max="36" placeholder="6">
+                            <span class="input-group-text">Mes(es)</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <label for="">Fecha de inicio</label>
+                        <input type="date" name="start_date" class="form-control">
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <label for="">Fecha de fin</label>
+                        <input type="date" name="end_date" class="form-control">
+                    </div>
+                    <div class="col-md-12">
+                        <label for="">Comprobante de pago</label>
+                        <input type="file" name="doc" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Actualizar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

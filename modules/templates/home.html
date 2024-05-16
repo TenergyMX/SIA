@@ -1,0 +1,709 @@
+{% load static %}
+<!DOCTYPE html>
+<html
+    lang="en"
+    dir="ltr"
+    data-nav-layout="horizontal"
+    data-nav-style="menu-click"
+    data-menu-position="fixed"
+    data-theme-mode="light"
+    data-toggled="close"
+>
+<head>
+    {% include "ynex/utils/head.html" %}
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel/slick/slick.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel/slick/slick-theme.css"/>
+    <title>Inicio</title>
+</head>
+<body class="landing-body">
+    <div class="landing-page-wrapper">
+        <header class="app-header">
+            <div class="main-header-container container-fluid">
+                <div class="header-content-left">
+                    <div class="header-element">
+                        <div class="horizontal-logo">
+                            <a href="/" class="header-logo">
+                                <img src="{% static 'assets/images/brand-logos/toggle-logo.png' %}" alt="logo" class="toggle-logo">
+                                <img src="{% static 'assets/images/brand-logos/toggle-dark.png' %}" alt="logo" class="toggle-dark">
+                            </a>
+                        </div>
+                    </div>
+                    <div class="header-element">
+                        <a
+                            href="javascript:void(0);"
+                            aria-label="Hide Sidebar"
+                            class="sidemenu-toggle header-link animated-arrow hor-toggle horizontal-navtoggle"
+                            data-bs-toggle="sidebar"
+                        >
+                            <span></span>
+                        </a>
+                    </div>
+                </div>
+                <div class="header-content-center"></div>
+                <div class="header-content-right">
+                    <div class="header-element align-items-center"></div>
+                </div>
+            </div>
+        </header>
+
+        <aside class="app-sidebar sticky" id="sidebar">
+            <div class="container-xl">
+                <div class="main-sidebar">
+                    <nav class="main-menu-container nav nav-pills sub-open">
+                        <div class="landing-logo-container">
+                            <div class="horizontal-logo">
+                                <a href="/" class="header-logo">
+                                    <img src="{% static 'assets/images/brand-logos/desktop-logo.png' %}" alt="logo" class="desktop-logo">
+                                    <img src="{% static 'assets/images/brand-logos/desktop-white.png' %}" alt="logo" class="desktop-white">
+                                </a>
+                            </div>
+                        </div>
+                        <div class="slide-left d-none" id="slide-left"></div>
+                        <ul class="main-menu">
+                            <li class="slide">
+                                <a class="side-menu__item" href="#home">
+                                    <span class="side-menu__label">Inicio</span>
+                                </a>
+                            </li>
+                            <li class="slide">
+                                <a class="side-menu__item" href="#pricing">
+                                    <span class="side-menu__label">Planes</span>
+                                </a>
+                            </li>
+                            <li class="slide">
+                                <a class="side-menu__item" href="#contact">
+                                    <span class="side-menu__label">Contacto</span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="slide-right d-none" id="slide-right"></div>
+                        <div class="d-lg-flex d-none">
+                            <div class="btn-list d-lg-flex d-none mt-lg-2 mt-xl-0 mt-0">
+                                <a href="#" class="btn btn-wave btn-primary">
+                                    Login
+                                </a>
+                                <button
+                                    class="btn btn-wave btn-icon btn-light switcher-icon"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#switcher-canvas"
+                                >
+                                    <i class="fa-solid fa-gear fa-spin"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </aside>
+
+        <div class="main-content landing-main px-0">
+            <div class="landing-banner landing-banner-1" id="home">
+                <section class="section">
+                    <div class="container main-banner-container pb-lg-0">
+                        <div class="row">
+                            <div class="col-xxl-7 col-xl-7 col-lg-7 col-md-8">
+                                <div class="py-lg-5">
+                                    <div class="mb-3">
+                                        <h5 class="fw-semibold text-fixed-white op-9">SISTEMA DE INFRAESTRUCTURA Y ACTIVOS</h5>
+                                    </div>
+                                    <p class="landing-banner-heading mb-3">
+                                        SISTEMA DE INFRAESTRUCTURA Y ACTIVOS
+                                    </p>
+                                    <div class="fs-16 mb-5 text-fixed-white op-7">
+                                        ynex - Now you can use this admin template to design stunning dashboards that will wow your target viewers or users to no end.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xxl-5 col-xl-5 col-lg-5 col-md-4">
+                                <div class="text-end landing-main-image landing-heading-img">
+                                    <img src="/static/assets/images/media/landing/1.png" alt="" class="img-fluid">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <!-- Modulos -->
+            <section class="section" id="">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <p class="fs-12 fw-semibold text-success mb-1">
+                                <span class="landing-section-heading">MODULOS</span>
+                            </p>
+                            <h3 class="fw-semibold mb-2">
+                                Modulos SIA - Tenergy
+                            </h3>
+                            <p class="text-muted fs-15 mb-5 fw-normal">
+                                We are proud to have top class clients and customers,which motivates us to work more on projects.
+                            </p>
+                        </div>
+                        
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div
+                                class="card custom-card module-card wow fadeInUp reveal revealleft active"
+                                data-wow-delay="0.1s"
+                            >
+                                <div class="card-body">
+                                    <div class="counter-body-2">
+                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
+                                            <a href="/module/vehicle/" class="counter-icon hexagon">
+                                                <i class="fa-solid fa-car-side text-white"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="text-left counter-body">
+                                        <h4 class="fw-bold">Equipo de Computo</h4>
+                                        <p class="mb-0">The Spruha admin code is maintained very cleanly and
+                                            well-structured with proper
+                                            comments.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div
+                                class="card custom-card module-card wow fadeInUp reveal revealleft active"
+                                data-wow-delay="0.1s"
+                            >
+                                <div class="card-body">
+                                    <div class="counter-body-2">
+                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
+                                            <a href="/module/vehicle/" class="counter-icon hexagon">
+                                                <i class="fa-sharp fa-solid fa-list-tree text-white"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="text-left counter-body">
+                                        <h4 class="fw-bold">Infraestructura</h4>
+                                        <p class="mb-0">The Spruha admin code is maintained very cleanly and
+                                            well-structured with proper
+                                            comments.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div
+                                class="card custom-card module-card wow fadeInUp reveal revealleft active"
+                                data-wow-delay="0.1s"
+                            >
+                                <div class="card-body">
+                                    <div class="counter-body-2">
+                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
+                                            <a href="/module/vehicle/" class="counter-icon hexagon">
+                                                <i class="fa-solid fa-car-side text-white"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="text-left counter-body">
+                                        <h4 class="fw-bold">Vehículos</h4>
+                                        <p class="mb-0">The Spruha admin code is maintained very cleanly and
+                                            well-structured with proper
+                                            comments.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div
+                                class="card custom-card module-card wow fadeInUp reveal revealleft active"
+                                data-wow-delay="0.1s"
+                            >
+                                <div class="card-body">
+                                    <div class="counter-body-2">
+                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
+                                            <a href="/module/vehicle/" class="counter-icon hexagon">
+                                                <i class="fa-solid fa-computer text-white"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="text-left counter-body">
+                                        <h4 class="fw-bold">Equipo y Herramientas</h4>
+                                        <p class="mb-0">The Spruha admin code is maintained very cleanly and
+                                            well-structured with proper
+                                            comments.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- anuncio -->
+            <section class="section bg-banner-2 text-fixed-white py-0">
+                <div class="container">
+                    <div class="row align-items-center justify-content-center">
+                        <div class="col-md-5 col-xl-4 text-center mt-4 d-lg-block d-none">
+                            <img src="{% static 'assets/images/media/jobs-landing/8.png' %}" alt="image" width="350" class="">
+                        </div>
+                        <div class="col-md-7 col-xl-8">
+                            <div class="my-4">
+                                <h2 class="fw-semibold mb-3 text-fixed-white">
+                                    ¡Optimiza la gestión de tus activos!
+                                </h2>
+                                <p class="mb-4 fs-15 op-8 fw-normal">
+                                    Gestiona de manera eficiente tus vehículos, equipos de cómputo y otros activos con nuestro sistema de gestión. Controla el mantenimiento, seguimiento y ubicación de cada activo de manera fácil y segura. ¡Descubre cómo nuestro sistema puede simplificar tu trabajo hoy mismo!
+                                </p>
+                                <a href="#contact" class="btn btn-light btn-lg">
+                                    Contactar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Mision -->
+            <section class="section" id="">
+                <div class="container text-center">
+                    <p class="fs-12 fw-semibold text-success mb-1">
+                        <span class="landing-section-heading">
+                            Nuestra mision
+                        </span>
+                    </p>
+                    <h3 class="fw-semibold mb-2">Mision</h3>
+                    <div class="row justify-content-center">
+                        <div class="col-xl-7">
+                            <p class="text-muted fs-15 mb-3 fw-normal">
+                                En nuestra plataforma, nos dedicamos a facilitar la administración integral de tus vehículos, equipos de cómputo y otros activos valiosos.
+                                Nuestra misión es proporcionarte una herramienta poderosa y fácil de usar para que puedas
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row justify-content-between align-items-center mx-0">
+                        <div class="col-xxl-5 col-xl-5 col-lg-5 customize-image text-center">
+                            <div class="text-lg-end">
+                                <img src="{% static 'assets/images/media/landing/3.png' %}" alt="" class="img-fluid">
+                            </div>
+                        </div>
+                        <div class="col-xxl-6 col-xl-6 col-lg-6 pt-5 pb-0 px-lg-2 px-5 text-start">
+                            <h5 class="text-lg-start fw-semibold mb-0">Presentamos</h5>
+                            <p></p>
+                            <div class="row">
+                                <div class="col-12 col-md-12">
+                                    <div class="d-flex">
+                                        <span>
+                                            <i class="fa-sharp fa-solid fa-badge-check text-primary fs-18"></i>
+                                        </span>
+                                        <div class="ms-2">
+                                            <h6 class="fw-semibold mb-0">
+                                                Controlar el Mantenimiento
+                                            </h6>
+                                            <p class=" text-muted">
+                                                Mantén tus activos en las mejores condiciones con alertas y registros de mantenimiento.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex">
+                                        <span>
+                                            <i class="fa-sharp fa-solid fa-badge-check text-primary fs-18"></i>
+                                        </span>
+                                        <div class="ms-2">
+                                            <h6 class="fw-semibold mb-0">
+                                                Seguimiento y Localización
+                                            </h6>
+                                            <p class=" text-muted">
+                                                Monitorea la ubicación de cada activo en tiempo real para una mejor gestión y seguridad.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex">
+                                        <span>
+                                            <i class="fa-sharp fa-solid fa-badge-check text-primary fs-18"></i>
+                                        </span>
+                                        <div class="ms-2">
+                                            <h6 class="fw-semibold mb-0">
+                                                Gestión Centralizada
+                                            </h6>
+                                            <p class=" text-muted">
+                                                Accede a toda la información de tus activos desde una plataforma centralizada y segura, simplificando tus tareas diaria
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Planes -->
+            <div class="section section-bg" id="pricing">
+                <div class="container text-center">
+                    <p class="fs-12 fw-semibold text-success mb-1">
+                        <span class="landing-section-heading">PLANES</span>
+                    </p>
+                    <h3 class="fw-semibold mb-2">
+                        ENCUENTRE EL
+                        <span class="text-primary">PLAN PERFECTO</span>
+                        PARA SU NEGOCIO.
+                    </h3>
+                    <div class="mt-5"></div>
+                    <div class="row d-flex align-items-center justify-content-center text-start">
+                        <div class="col-md-8 col-lg-4 col-xl-4">
+                            <div class="card p-3 pricing-card reveal revealrotate active">
+                                <div class="card-header d-block text-justified pt-2">
+                                    <p class="fs-18 fw-semibold mb-1">Basico</p>
+                                    <p class="text-justify fw-semibold mb-1">
+                                        <span class="fs-30 me-2">$</span>
+                                        <span class="fs-30 me-1">399</span>
+                                        <span class="fs-25">
+                                            <span class="op-0-5 text-muted text-20">/</span>
+                                            Año
+                                        </span>
+                                    </p>
+                                    <p class="fs-13 mb-1">
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                                        Iure quos debitis aliquam .
+                                    </p>
+                                </div>
+                                <div class="card-body py-2">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Control de permisos de usuario
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Gestión de activos
+                                        </li>
+                                        <li class="list-group-item text-muted">
+                                            <i class="fa-regular fa-circle-xmark fs-16 text-primary me-2"></i>
+                                            Recuperar contraseña (email)
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8 col-lg-4 col-xl-4">
+                            <div class="card p-3 pricing-card reveal revealrotate active">
+                                <div class="card-header d-block text-justified pt-2">
+                                    <p class="fs-18 fw-semibold mb-1">Avanzado</p>
+                                    <p class="text-justify fw-semibold mb-1">
+                                        <span class="fs-30 me-2">$</span>
+                                        <span class="fs-30 me-1">999</span>
+                                        <span class="fs-25">
+                                            <span class="op-0-5 text-muted text-20">/</span>
+                                            Año
+                                        </span>
+                                    </p>
+                                    <p class="fs-13 mb-1">
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                                        Iure quos debitis aliquam .
+                                    </p>
+                                </div>
+                                <div class="card-body py-2">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Control de permisos de usuario
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Gestión de activos
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Recuperar contraseña (email)
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Notificaciones por correo
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8 col-lg-4 col-xl-4">
+                            <div class="card p-3 pricing-card reveal revealrotate active pricing-offer overflow-hidden">
+                                <span class="pricing-offer-details shadow">
+                                    <span class="fw-semibold">10%</span>
+                                    <span class="fs-10 op-8 ms-1">Off</span>
+                                </span>
+                                <div class="card-header d-block text-justified pt-2">
+                                    <p class="fs-18 fw-semibold mb-1">Premium</p>
+                                    <p class="text-justify fw-semibold mb-1">
+                                        <span class="fs-30 me-2">$</span>
+                                        <span class="fs-30 me-1">1,299</span>
+                                        <span class="fs-25">
+                                            <span class="op-0-5 text-muted text-20">/</span>
+                                            Año
+                                        </span>
+                                    </p>
+                                    <p class="fs-13 mb-1">
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                                        Iure quos debitis aliquam .
+                                    </p>
+                                </div>
+                                <div class="card-body py-2">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Control de permisos de usuario
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Gestión de activos
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Recuperar contraseña (email)
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
+                                            Notificaciones por correo
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Preguntas -->
+            <section class="section">
+                <div class="container text-center">
+                    <h3 class="fw-semibold mb-2">Preguntas frecuentes</h3>
+                    <div class="row justify-content-center">
+                        <div class="col-xl-7">
+                            <p class="text-muted fs-15 mb-5 fw-normal">
+                                Hemos compartido algunas de las preguntas más frecuentes para ayudarle.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row gy-2">
+                        <div class="col-lg-6">
+                            <div class="accordion accordion-customicon1 accordion-primary accordions-items-seperate">
+                                <div class="accordion-item">
+                                    <h2
+                                        class="accordion-header"
+                                        id="headingcustomicon1One"
+                                    >
+                                        <button
+                                            class="accordion-button"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#collapsecustomicon1One"
+                                            aria-expanded="true"
+                                            aria-controls="collapsecustomicon1One"
+                                        >
+                                            Where can I subscribe to your newsletter?
+                                        </button>
+                                    </h2>
+                                    <div
+                                        id="collapsecustomicon1One"
+                                        class="accordion-collapse collapse show"
+                                        aria-labelledby="headingcustomicon1One"
+                                        data-bs-parent="#accordionFAQ1"
+                                    >
+                                        <div class="accordion-body">
+                                            <strong>This is the first item's accordion body.</strong>
+                                            It is shown by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2
+                                        class="accordion-header"
+                                        id="headingcustomicon1Two"
+                                    >
+                                        <button
+                                            class="accordion-button collapsed"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#collapsecustomicon1Two"
+                                            aria-expanded="false"
+                                            aria-controls="collapsecustomicon1Two"
+                                        >
+                                            Where can in edit my address?
+                                        </button>
+                                    </h2>
+                                    <div
+                                        id="collapsecustomicon1Two"
+                                        class="accordion-collapse collapse"
+                                        aria-labelledby="headingcustomicon1Two"
+                                        data-bs-parent="#accordionFAQ1"
+                                    >
+                                        <div class="accordion-body">
+                                            <strong>This is the first item's accordion body.</strong>
+                                            It is shown by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <img
+                                src="https://png.pngtree.com/png-clipart/20230821/original/pngtree-faq-or-frequently-asked-questions-for-website-picture-image_8148166.png"
+                                alt="image" class="img-fluid">
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Testimonios -->
+            <section class="section bg-banner">
+                <div class="container text-center">
+                    <p class="fs-12 fw-semibold text-success mb-1">
+                        <span class="landing-section-heading">TESTIMONIOS</span>
+                    </p>
+                    <h3 class="fw-semibold mb-2 text-fixed-white">
+                        Nunca dejamos de alcanzar las expectativas.
+                    </h3>
+                    <div class="row justify-content-center">
+                        <div class="col-xl-7">
+                            <p class="text-white fs-15 mb-5 fw-normal">
+                                Algunas de las reseñas que dieron nuestros clientes nos motivan a trabajar en proyectos futuros.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="testimonial-carousel">
+                        <div class="swiper-slide">
+                            <div class="row">
+                                <div class="col-xl-8 col-md-12 d-block mx-auto">
+                                    <div class="testimonia">
+                                        <p class="text-white-80">
+                                            <i class="fa-solid fa-quote-left fs-20"></i>
+                                            ¡Estoy impresionado por la increíble estructura y diseño de esta página web! La navegación es suave y eficiente, y la disposición de los elementos es intuitiva. Además, la optimización para dispositivos móviles es excelente, lo que hace que la experiencia del usuario sea perfecta en cualquier pantalla. ¡Un gran trabajo por parte del equipo de diseño!
+                                        </p>
+                                        <div class="testimonia-data">
+                                            <h3 class="text-white">Juan Perez</h3>
+                                            <span class="post">Gerente General</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="row">
+                                <div class="col-xl-8 col-md-12 d-block mx-auto">
+                                    <div class="testimonia">
+                                        <p class="text-white-80">
+                                            <i class="fa-solid fa-quote-left fs-20"></i>
+                                            Me encanta cómo esta página web está diseñada y organizada. La disposición de la información es clara y concisa, lo que hace que sea fácil encontrar lo que necesito. Además, la velocidad de carga es impresionante, lo que demuestra una excelente optimización. Sin duda, una de las mejores experiencias de usuario que he tenido en línea.
+                                        </p>
+                                        <div class="testimonia-data">
+                                            <h3 class="text-white">María Rodríguez</h3>
+                                            <span class="post">Desarrolladora Web</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="row">
+                                <div class="col-xl-8 col-md-12 d-block mx-auto">
+                                    <div class="testimonia">
+                                        <p class="text-white-80">
+                                            <i class="fa-solid fa-quote-left fs-20"></i>
+                                            La estructura de esta página web es impecable. Me impresiona cómo cada sección está cuidadosamente diseñada para proporcionar una experiencia de usuario fluida y agradable. Además, el diseño visual es atractivo y moderno, lo que añade un toque de elegancia al sitio. Definitivamente, un ejemplo de cómo debería ser una página web bien diseñada y optimizada
+                                        </p>
+                                        <div class="testimonia-data">
+                                            <h3 class="text-white">Carlos García</h3>
+                                            <span class="post">Diseñador UX/UI</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Contacto -->
+            <section class="section" id="contact">
+                <div class="container text-center">
+                    <p class="fs-12 fw-semibold text-success mb-1">
+                        <span class="landing-section-heading">CONTACTO</span>
+                    </p>
+                    <h3 class="fw-semibold mb-2">Have any questions ? We would love to hear from you.</h3>
+                    <div class="row justify-content-center"></div>
+                    <div class="row text-start">
+                        <div class="col-xxl-6 col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                            <div class="card custom-card border shadow-none">
+                                <div class="card-body">
+                                    - MAPA -
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xxl-6 col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                            <div class="card custom-card  overflow-hidden section-bg border overflow-hidden shadow-none">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label for="contact-address-name" class="form-label ">
+                                                    Nombre completo:
+                                                </label>
+                                                <input type="text" class="form-control " id="contact-address-name" placeholder="Nombre completo">
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label for="contact-address-name" class="form-label ">Email :</label>
+                                                <input type="email" class="form-control" id="" placeholder="Correo">
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="button" class="btn btn-primary">
+                                                Enviar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- x -->
+            <section class="section landing-footer text-fixed-white">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-4 col-sm-6 col-12 mb-md-0 mb-3">
+                            <div class="px-4">
+                                <p class="fw-semibold mb-3">
+                                    <a href="index.html">
+                                        <img src="{% static 'assets/images/brand-logos/desktop-dark.png' %}" alt="">
+                                    </a>
+                                </p>
+                                <p class="mb-0 op-6 fw-normal">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Autem ea esse ad</p>
+                            </div>
+                        </div>
+                        <div class=""></div>
+                        <div class=""></div>
+                    </div>
+                </div>
+            </section>
+            <!-- x -->
+            <div class="text-center landing-main-footer py-3">
+                <div class="text-muted fs-15">
+                    Copyright ©
+                    <span id="year">2024</span>
+                </div>
+            </div>
+            <!-- x -->
+        </div>
+    </div>
+
+    <div class="scrollToTop" style="display: flex;">
+        <span class="arrow">
+            <i class="fa-solid fa-arrow-up fs-20"></i>
+        </span>
+    </div>
+
+    <div id="responsive-overlay"></div>
+
+    <!-- scripts -->
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel/slick/slick.min.js"></script>
+    <script src="{% static 'assets/js/defaultmenu.js' %}"></script>
+    <script src="{% static 'assets/js/sticky.js' %}"></script>
+    <script src="{% static 'assets/js/landing.js' %}"></script>
+</body>
+</html>

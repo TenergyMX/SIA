@@ -1,0 +1,137 @@
+<div class="modal fade" id="mdl_crud_responsiva" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down">
+        <form name="form-vrt" class="modal-content" enctype="multipart/form-data">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 d-none">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="">Vehiculo</label>
+                        <select name="vehicle_id" class="form-select" data-placeholder="Vehiculo">
+                            <option value=""></option>
+                        </select>
+                        <input type="text" name="vehicle__name" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="">Responsable:</label>
+                        <select name="responsible_id" class="form-control">
+                            <option value="" selected>---</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 inicial salida">
+                        <label for="">Kilometraje Inicial:</label>
+                        <div class="input-group">
+                            <input type="number" name="initial_mileage" class="form-control" placeholder="Kilometraje inicial">
+                            <span class="input-group-text">km</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 inicial salida">
+                        <label for="">Nivel inicial de gasolina:</label>
+                        <div class="input-group">
+                            <input type="number" name="initial_fuel" class="form-control" placeholder="Nivel de gasolina">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 inicial salida">
+                        <label for="">Salida:</label>
+                        <input type="datetime-local" name="start_date" class="form-control">
+                    </div>
+
+                    <div class="col-md-4 entrada final">
+                        <label for="">Kilometraje Final:</label>
+                        <div class="input-group">
+                            <input type="number" name="final_mileage" class="form-control" placeholder="Kilometraje Final">
+                            <span class="input-group-text">km</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 entrada final">
+                        <label for="">Nivel finall de gasolina:</label>
+                        <div class="input-group">
+                            <input type="number" name="final_fuel" class="form-control" placeholder="Nivel final de gasolina">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 entrada final">
+                        <label for="">Entrada:</label>
+                        <input type="datetime-local" name="end_date" class="form-control">
+                    </div>
+                    <div class="col-md-6 inicial salida">
+                        <label for="">Imagen 1:</label>
+                        <input type="file" name="image_path_exit_1" class="form-control">
+                    </div>
+                    <div class="col-md-6 inicial">
+                        <label for="">Imagen 2:</label>
+                        <input type="file" name="image_path_exit_2" class="form-control">
+                    </div>
+                    <div class="col-md-6 final">
+                        <label for="">Imagen 1:</label>
+                        <input type="file" name="image_path_exit_1" class="form-control">
+                    </div>
+                    <div class="col-md-6 final">
+                        <label for="">Imagen 2:</label>
+                        <input type="file" name="image_path_exit_2" class="form-control">
+                    </div>
+                    <div class="col-12 inicial">
+                        <div class="row g-3">
+                            <div class="col-md col-lg">
+                                <div class="mb-3 inicial">
+                                    <label for="">Motivo:</label>
+                                    <input type="text" name="trip_purpose" class="form-control" placeholder="Motivo u razón del viaje">
+                                </div>
+                                <div class="inicial">
+                                    <label for="">Destino:</label>
+                                    <input type="text" name="destination" class="form-control" placeholder="Lugar u destino del viaje">
+                                </div>
+                            </div>
+                            <div class="col-md col-lg text-center inicial">
+                                <label for="" class="d-block text-start">
+                                    Firma del responsable:
+                                </label>
+                                <canvas
+                                    id="canvas-signature"
+                                    width="350"
+                                    height="180"
+                                    class=""
+                                    style="
+                                        border: 2px dotted #cccccc;
+                                        border-radius: 5px;
+                                        cursor: crosshair;
+                                    "
+                                ></canvas>
+                                <div class="row justify-content-center g-2">
+                                    <div class="col-5 col-lg-3">
+                                        <button type="button" id="canvas-signature-btn-clear" name="clear" class="btn btn-danger btn-sm w-100" title="Limpiar todo">
+                                            <i class="fa-solid fa-broom-wide"></i>
+                                        </button>
+                                    </div>
+                                    <div class="col-5 col-lg-3">
+                                        <button type="button" id="canvas-signature-btn-undo" name="undo" class="btn btn-primary btn-sm w-100" title="Regresar">
+                                            <i class="fa-solid fa-rotate-left"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Actualizar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

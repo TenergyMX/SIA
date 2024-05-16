@@ -1,0 +1,139 @@
+<header class="app-header">
+    <!-- Start::main-header-container -->
+    <div class="main-header-container container-fluid">
+        <div class="header-content-left">
+            <div class="header-element"></div>
+            <div class="header-element">
+                <a
+                    href="javascript:void(0);"
+                    aria-label="Hide Sidebar"
+                    class="sidemenu-toggle header-link animated-arrow hor-toggle horizontal-navtoggle"
+                    data-bs-toggle="sidebar"
+                >
+                    <span></span>
+                </a>
+            </div>
+        </div>
+        <div class="header-content-center"></div>
+        <div class="header-content-right">
+            <!-- x -->
+            <div class="header-element country-selector"></div>
+            <!-- x -->
+            <div class="header-element header-theme-mode">
+                <a href="javascript:void(0);" class="header-link layout-setting" aria-label="Tema de la pagina">
+                    <span class="light-layout" onclick="theme('dark');">
+                        <!-- Start::header-link-icon -->
+                        <i class="fa-regular fa-moon header-link-icon"></i>
+                        <!-- End::header-link-icon -->
+                    </span>
+                    <span class="dark-layout" onclick="theme('light');">
+                        <!-- Start::header-link-icon -->
+                        <i class="fa-regular fa-brightness header-link-icon"></i>
+                        <!-- End::header-link-icon -->
+                    </span>
+                </a>
+            </div>
+            <!-- x -->
+            <div class="header-element notifications-dropdown">
+                <a
+                    href="javascript:void(0);"
+                    class="header-link dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside"
+                    id="messageDropdown"
+                    aria-expanded="false"
+                    aria-label="expand"
+                >
+                    <i class="fa-regular fa-bell header-link-icon"></i>
+                    <span
+                        class="badge bg-secondary rounded-pill header-icon-badge pulse pulse-secondary"
+                        id="notification-icon-badge"
+                    >
+                        0
+                    </span>
+                </a>
+                <div class="main-header-dropdown dropdown-menu dropdown-menu-end">
+                    <div class="p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <p class="mb-0 fs-17 fw-semibold">Notificaciones</p>
+                            <span class="badge bg-secondary-transparent" id="notifiation-data">0</span>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <ul class="list-unstyled mb-0" id="header-notification-scroll" data-simplebar="init"></ul>
+                    <div class="p-5 empty-item1">
+                        <div class="text-center">
+                            <span class="avatar avatar-xl avatar-rounded bg-secondary-transparent">
+                                <i class="fa-solid fa-bell-slash fs-2"></i>
+                            </span>
+                            <h6 class="fw-semibold mt-3">Sin notificaciones</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- x -->
+            <div class="header-element header-fullscreen">
+                <a onclick="openFullscreen();" href="javascript:void(0);" class="header-link text-decoration-none" aria-label="fullscreen">
+                    <i class="fa-regular fa-expand full-screen-open header-link-icon"></i>
+                    <i class="fa-regular fa-compress full-screen-close header-link-icon d-none"></i>
+                </a>
+            </div>
+            <!-- x -->
+            <div class="header-element">
+                <a
+                    href="javascript:void(0);"
+                    class="header-link dropdown-toggle"
+                    id="mainHeaderProfile"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside"
+                    aria-expanded="false"
+                    aria-label="Profile"
+                >
+                    <div class="d-flex align-items-center">
+                        <div class="me-sm-2 me-0">
+                            <img src="https://cdn-icons-png.freepik.com/512/552/552721.png" alt="img" width="32" height="32" class="rounded-circle">
+                        </div>
+                        <div class="d-sm-block d-none">
+                            <p class="fw-semibold mb-0 lh-1">
+                                {{ user.username|default:"Usuario" }}
+                            </p>
+                            <span class="d-block small text-muted lh-1">
+                                {{ role.name|default:"Visita" }}
+                            </span>
+                        </div>
+                    </div> 
+                </a>
+                <ul
+                    class="main-header-dropdown dropdown-menu pt-0 overflow-hidden header-profile-dropdown dropdown-menu-end"
+                    aria-labelledby="mainHeaderProfile"
+                >
+                    <li>
+                        <a class="dropdown-item d-flex" href="/user/profile/">
+                            <i class="fa-solid fa-user fs-18 me-2 op-7"></i>
+                            Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex" href="/user/logout/">
+                            <i class="fa-solid fa-right-from-bracket fs-18 me-2 op-7"></i>
+                            Log out
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <!-- x -->
+            <div class="header-element d-none">
+                <a
+                    href="javascript:void(0);"
+                    class="header-link switcher-icon"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#switcher-canvas"
+                >
+                    <i class="fa-solid fa-gear header-link-icon fa-spin"></i>
+                </a>
+            </div>
+            <!-- End -->
+        </div>
+    </div>
+    <!-- End::main-header-container -->
+</header>

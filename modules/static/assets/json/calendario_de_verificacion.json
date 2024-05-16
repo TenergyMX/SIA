@@ -1,0 +1,285 @@
+{
+    "success": true,
+    "data": {
+        "0": {
+            "engomado": "Blue",
+            "engomado_ES": "Azul",
+            "s1": [
+                {
+                    "month_code": 5,
+                    "month_name": "May",
+                    "month_name_ES": "Mayo"
+                },
+                {
+                    "month_code": 6,
+                    "month_name": "June",
+                    "month_name_ES": "Junio"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 11,
+                    "month_name": "November",
+                    "month_name_ES": "Noviembre"
+                },
+                {
+                    "month_code": 12,
+                    "month_name": "December",
+                    "month_name_ES": "Diciembre"
+                }
+            ]
+        },
+        "1": {
+            "engomado": "Green",
+            "engomado_ES": "Verde",
+            "s1": [
+                {
+                    "month_code": 4,
+                    "month_name": "April",
+                    "month_name_ES": "abril"
+                },
+                {
+                    "month_code": 5,
+                    "month_name": "May",
+                    "month_name_ES": "Mayo"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 10,
+                    "month_name": "October",
+                    "month_name_ES": "Octubre"
+                },
+                {
+                    "month_code": 11,
+                    "month_name": "November",
+                    "month_name_ES": "Noviembre"
+                }
+            ]
+        },
+        "2": {
+            "engomado": "Green",
+            "engomado_ES": "Verde",
+            "s1": [
+                {
+                    "month_code": 4,
+                    "month_name": "April",
+                    "month_name_ES": "abril"
+                },
+                {
+                    "month_code": 5,
+                    "month_name": "May",
+                    "month_name_ES": "Mayo"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 10,
+                    "month_name": "October",
+                    "month_name_ES": "Octubre"
+                },
+                {
+                    "month_code": 11,
+                    "month_name": "November",
+                    "month_name_ES": "Noviembre"
+                }
+            ]
+        },
+        "3": {
+            "engomado": "Red",
+            "engomado_ES": "Rojo",
+            "s1": [
+                {
+                    "month_code": 3,
+                    "month_name": "March",
+                    "month_name_ES": "Marzo"
+                },
+                {
+                    "month_code": 4,
+                    "month_name": "April",
+                    "month_name_ES": "Abril"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 9,
+                    "month_name": "September",
+                    "month_name_ES": "Septiembre"
+                },
+                {
+                    "month_code": 10,
+                    "month_name": "October",
+                    "month_name_ES": "Octubre"
+                }
+            ]
+        },
+        "4": {
+            "engomado": "Red",
+            "engomado_ES": "Rojo",
+            "s1": [
+                {
+                    "month_code": 3,
+                    "month_name": "March",
+                    "month_name_ES": "Marzo"
+                },
+                {
+                    "month_code": 4,
+                    "month_name": "April",
+                    "month_name_ES": "Abril"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 9,
+                    "month_name": "September",
+                    "month_name_ES": "Septiembre"
+                },
+                {
+                    "month_code": 10,
+                    "month_name": "October",
+                    "month_name_ES": "Octubre"
+                }
+            ]
+        },
+        "5": {
+            "engomado": "Yellow",
+            "engomado_ES": "Amarillo",
+            "s1": [
+                {
+                    "month_code": 1,
+                    "month_name": "January",
+                    "month_name_ES": "Enero"
+                },
+                {
+                    "month_code": 2,
+                    "month_name": "February",
+                    "month_name_ES": "Febrero"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 7,
+                    "month_name": "July",
+                    "month_name_ES": "Julio"
+                },
+                {
+                    "month_code": 8,
+                    "month_name": "August",
+                    "month_name_ES": "Agosto"
+                }
+            ]
+        },
+        "6": {
+            "engomado": "Yellow",
+            "engomado_ES": "Amarillo",
+            "s1": [
+                {
+                    "month_code": 1,
+                    "month_name": "January",
+                    "month_name_ES": "Enero"
+                },
+                {
+                    "month_code": 2,
+                    "month_name": "February",
+                    "month_name_ES": "Febrero"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 7,
+                    "month_name": "July",
+                    "month_name_ES": "Julio"
+                },
+                {
+                    "month_code": 8,
+                    "month_name": "August",
+                    "month_name_ES": "Agosto"
+                }
+            ]
+        },
+        "7": {
+            "engomado": "Pink",
+            "engomado_ES": "Rosa",
+            "s1": [
+                {
+                    "month_code": 2,
+                    "month_name": "February",
+                    "month_name_ES": "Febrero"
+                },
+                {
+                    "month_code": 3,
+                    "month_name": "March",
+                    "month_name_ES": "Marzo"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 8,
+                    "month_name": "August",
+                    "month_name_ES": "Agosto"
+                },
+                {
+                    "month_code": 9,
+                    "month_name": "September",
+                    "month_name_ES": "Septiembre"
+                }
+            ]
+        },
+        "8": {
+            "engomado": "Pink",
+            "engomado_ES": "Rosa",
+            "s1": [
+                {
+                    "month_code": 2,
+                    "month_name": "February",
+                    "month_name_ES": "Febrero"
+                },
+                {
+                    "month_code": 3,
+                    "month_name": "March",
+                    "month_name_ES": "Marzo"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 8,
+                    "month_name": "August",
+                    "month_name_ES": "Agosto"
+                },
+                {
+                    "month_code": 9,
+                    "month_name": "September",
+                    "month_name_ES": "Septiembre"
+                }
+            ]
+        },
+        "9": {
+            "engomado": "Blue",
+            "engomado_ES": "Azul",
+            "s1": [
+                {
+                    "month_code": 5,
+                    "month_name": "May",
+                    "month_name_ES": "Mayo"
+                },
+                {
+                    "month_code": 6,
+                    "month_name": "June",
+                    "month_name_ES": "Junio"
+                }
+            ],
+            "s2": [
+                {
+                    "month_code": 11,
+                    "month_name": "November",
+                    "month_name_ES": "Noviembre"
+                },
+                {
+                    "month_code": 12,
+                    "month_name": "December",
+                    "month_name_ES": "Diciembre"
+                }
+            ]
+        }
+    }
+}

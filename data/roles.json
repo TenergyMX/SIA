@@ -1,0 +1,34 @@
+[
+    {
+        "model": "users.role",
+        "pk": 1,
+        "fields": {
+            "name": "Super Usuario",
+            "level": 1
+        }
+    },
+    {
+        "model": "users.role",
+        "pk": 2,
+        "fields": {
+            "name": "Administrador",
+            "level": 2
+        }
+    },
+    {
+        "model": "users.role",
+        "pk": 3,
+        "fields": {
+            "name": "Encargado",
+            "level": 3
+        }
+    },
+    {
+        "model": "users.role",
+        "pk": 4,
+        "fields": {
+            "name": "Usuario",
+            "level": 4
+        }
+    }
+]

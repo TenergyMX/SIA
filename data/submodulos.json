@@ -1,0 +1,167 @@
+[
+    {
+        "model": "users.submodule",
+        "pk": 1,
+        "fields": {
+            "is_active": true,
+            "short_name": "Empresas",
+            "name": "Empresas",
+            "description": null,
+            "module": 1,
+            "icon": "<i class=\"fa-solid fa-users-gear side-menu__icon\"></i>",
+            "link": "/companys/",
+            "created_at": "2024-04-08T22:21:06.351Z",
+            "superUserExclusive": true
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 2,
+        "fields": {
+            "is_active": true,
+            "short_name": "Usuarios",
+            "name": "Usuarios",
+            "description": "---",
+            "module": 1,
+            "icon": "<i class=\"fa-solid fa-users-gear side-menu__icon\"></i>",
+            "link": "/users/",
+            "created_at": "2024-04-09T20:50:42.691Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 3,
+        "fields": {
+            "is_active": true,
+            "short_name": "Proveedor",
+            "name": "Proveedores",
+            "description": "Buscar...",
+            "module": 1,
+            "icon": null,
+            "link": "/providers/",
+            "created_at": "2024-04-11T02:26:14.570Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 4,
+        "fields": {
+            "is_active": true,
+            "short_name": "Info",
+            "name": "Informacion",
+            "description": "---",
+            "module": 2,
+            "icon": "<i class=\"fa-solid fa-circle-info side-menu__icon\"></i>",
+            "link": "/module/vehicle/",
+            "created_at": "2024-05-07T16:16:49.500Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 5,
+        "fields": {
+            "is_active": true,
+            "short_name": "Tenencia",
+            "name": "Tenencia",
+            "description": null,
+            "module": 2,
+            "icon": "<i class=\"fa-solid fa-id-card-clip side-menu__icon\"></i>",
+            "link": "/module/vehicle/tenencia/",
+            "created_at": "2024-05-07T19:42:05.441Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 6,
+        "fields": {
+            "is_active": true,
+            "short_name": "Refrendo",
+            "name": "Refrendo",
+            "description": null,
+            "module": 2,
+            "icon": "<i class=\"fa-solid fa-id-card-clip side-menu__icon\"></i>",
+            "link": "/module/vehicle/refrendo/",
+            "created_at": "2024-05-07T19:42:29.547Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 7,
+        "fields": {
+            "is_active": true,
+            "short_name": "Verificacion",
+            "name": "Verificacion",
+            "description": null,
+            "module": 2,
+            "icon": "<i class=\"fa-solid fa-car-bus side-menu__icon\"></i>",
+            "link": "/module/vehicle/verificacion/",
+            "created_at": "2024-05-07T19:42:57.634Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 8,
+        "fields": {
+            "is_active": true,
+            "short_name": "Responsiva",
+            "name": "Responsiva",
+            "description": null,
+            "module": 2,
+            "icon": "<i class=\"fa-solid fa-car side-menu__icon\"></i>",
+            "link": "/module/vehicle/responsiva/",
+            "created_at": "2024-05-07T19:43:44.700Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 9,
+        "fields": {
+            "is_active": true,
+            "short_name": "Seguro",
+            "name": "Seguro",
+            "description": null,
+            "module": 2,
+            "icon": "<i class=\"fa-solid fa-car-burst side-menu__icon\"></i>",
+            "link": "/module/vehicle/insurance/",
+            "created_at": "2024-05-07T19:44:08.857Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 10,
+        "fields": {
+            "is_active": true,
+            "short_name": "Auditoria",
+            "name": "Auditoria",
+            "description": null,
+            "module": 2,
+            "icon": "<i class=\"fa-solid fa-audio-description side-menu__icon\"></i>",
+            "link": "/module/vehicle/audit/",
+            "created_at": "2024-05-07T19:44:32.934Z",
+            "superUserExclusive": false
+        }
+    },
+    {
+        "model": "users.submodule",
+        "pk": 11,
+        "fields": {
+            "is_active": true,
+            "short_name": "Mantenimiento",
+            "name": "Mantenimiento",
+            "description": null,
+            "module": 2,
+            "icon": "<i class=\"fa-solid fa-car-wrench side-menu__icon\"></i>",
+            "link": "/module/vehicle/maintenance/",
+            "created_at": "2024-05-07T19:45:08.561Z",
+            "superUserExclusive": false
+        }
+    }
+]

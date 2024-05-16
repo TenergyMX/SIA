@@ -1,0 +1,82 @@
+<div class="modal fade" id="mdl_crud_verificacion" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down">
+        <form name="form-vrt" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 col-alert-verifiacion">
+                        <div class="alert alert-primary d-flex align-items-center" role="alert">
+                            <i class="fa-solid fa-circle-info fa-lg me-2"></i>
+                            <div class="message">
+                                Las fechas de verificación: 1er semestre (XXX - XXX), 2do semestre (XXX - XXX).
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 d-none">
+                        {% csrf_token %}
+                        <input type="text" name="id" value="id" class="form-control">
+                    </div>
+                    <div class="col-12 col-md-12 col-lg">
+                        <label for="">Vehiculo</label>
+                        <select name="vehiculo_id" class="form-control"></select>
+                        <input type="text" name="vehiculo__name" class="form-control" style="display: none;">
+                    </div>
+                    <div class="col-md-3 col-lg-4">
+                        <label for="">Engomado</label>
+                        <div class="input-group">
+                            <span class="input-group-text engomado-color-bg px-3"></span>
+                            <select name="engomado" class="form-control">
+                                <option value="" selected>---</option>
+                                <option value="Amarillo">Amarillo</option>
+                                <option value="Rosa">Rosa</option>
+                                <option value="Rojo">Rojo</option>
+                                <option value="Verde">verde</option>
+                                <option value="Azul">Azul</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-lg-4">
+                        <label for="">Periodo</label>
+                        <select name="periodo" class="form-control">
+                            <option value="1er semestre">1er semestre</option>
+                            <option value="2do semestre">2do semestre</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-4">
+                        <label for="">lugar de la verificacion</label>
+                        <input type="text" name="lugar" class="form-control" placeholder="Lugar de la verificación" required>
+                    </div>
+                    <div class="col-md-3 col-lg-4">
+                        <label for="">Fecha  de la verificacion (pago)</label>
+                        <input type="date" name="fecha_pago" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <label for="">Monto pagado</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="monto" class="form-control" placeholder="1500" required>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <label for="">Comprobante de pago</label>
+                        <input type="file" name="comprobante_pago" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Actualizar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

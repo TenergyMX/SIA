@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-nav-layout="vertical" data-theme-mode="light" data-header-styles="light"
+    data-menu-styles="dark" loader="disable">
+
+<head>
+    {% include "ynex/utils/head.html" %}
+    <script>
+        const redirect = "{{ redirect }}";
+    </script>
+</head>
+
+<body class="bg-white">
+    <div class="row authentication mx-0">
+        <div class="col-xxl-7 col-xl-7 col-lg-12">
+            <div class="row justify-content-center align-items-center h-100">
+                <div class="col-xxl-6 col-xl-7 col-lg-7 col-md-7 col-sm-8 col-12">
+                    <form class="p-5">
+                        <p class="h5 fw-semibold mb-2">
+                            LOG IN
+                        </p>
+                        <p class="mb-3 text-muted op-7 fw-normal">
+                            Bienvenido usuario
+                        </p>
+                        <div class="row gy-3">
+                            <div class="col-12 d-none">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ next }}">
+                            </div>
+                            <div class="col-xl-12 mt-0">
+                                <label for="signin-username" class="form-label text-default">
+                                    Correo Electrónico
+                                </label>
+                                <input type="text" name="username" class="form-control form-control-lg"
+                                    id="signin-username" placeholder="Correo" required>
+                            </div>
+                            <div class="col-xl-12 mb-3">
+                                <label for="signin-password" class="form-label text-default d-block">
+                                    Password
+                                    <a href="reset-password-cover.html" class="float-end text-danger">Forget password
+                                        ?</a>
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" name="password" class="form-control form-control-lg"
+                                        id="signin-password" placeholder="password">
+                                    <button class="btn btn-light" type="button"
+                                        onclick="createpassword('signin-password',this)" id="button-addon2">
+                                        <i class="fa-solid fa-eye align-middle"></i>
+                                    </button>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="defaultCheck1">
+                                        <label class="form-check-label text-muted fw-normal" for="defaultCheck1">
+                                            Remember password ?
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-12 d-grid mt-2">
+                                <button type="submit" class="btn btn-lg btn-primary">
+                                    Sign In
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-5 col-xl-5 col-lg-5 d-xl-block d-none px-0">
+            <div class="authentication-cover"></div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-param/2.0.0/jquery-param.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'assets/js/authentication.js' %}"></script>
+</body>
+
+</html>

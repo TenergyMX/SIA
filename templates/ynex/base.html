@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html
+    lang="en"
+    dir="ltr"
+    data-nav-layout="vertical"
+    data-theme="light"
+    data-theme-mode="light"
+    data-header-styles="light"
+    data-menu-styles="dark"
+    data-vertical-style="overlay"
+    data-toggled="icon-overlay-close"
+    loader="enable"
+>
+<head>
+    {% include "ynex/utils/head.html" %}
+    {% block head %} {% endblock %}
+</head>
+<body>
+    <div id="loader" class="">
+        <amp-img src="{% static 'assets/images/media/loader.svg' %}" alt="loader" layout="responsive" style="max-width: 300px;"></amp-img>
+    </div>
+
+    <div class="page">
+        {% include "ynex/utils/topbar.html" %}
+        {% include "ynex/utils/sidebar.html" %}
+
+        <!-- Start::app-content -->
+        <div class="main-content app-content">
+            <div class="container-fluid">
+                {% block content %}
+                <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+                    <h1 class="page-title fw-semibold fs-18 mb-0">Empty</h1>
+                    <div class="ms-md-1 ms-0">
+                        <nav>
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item">
+                                    <a href="javascript:void(0);">Pages</a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    Sin contenido
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+        <!-- x -->
+        {% include "ynex/utils/footer.html" %}
+    </div>
+
+    <div class="scrollToTop" style="display: none;">
+        <span class="arrow">
+            <i class="fa-solid fa-arrow-up"></i>
+        </span>
+    </div>
+
+    <div id="responsive-overlay"></div>
+
+    <!-- modals -->
+    {% block modals %} {% endblock %}
+    {% block offcanvas %} {% endblock %}
+
+    <!-- scripts -->
+    {% include "ynex/utils/scripts.html" %}
+    
+    <!-- defaultmenu -->
+    <script src="{% static 'assets/js/defaultmenu.js' %}"></script>
+    <!-- simplebar js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplebar/6.2.5/simplebar.min.js" integrity="sha512-HV1U44HR4mYVDcsxzJpghYyGEy2PvbePe9UFXlV3vnzf4yFhbKA9QNpnhy4VWwnaC2jKzijITVWHPZBCOuc51g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{% static 'assets/js/simplebar.js' %}"></script>
+    <script src="{% static 'assets/js/custom.js' %}"></script>
+    <script src="{% static 'assets/js/module.js' %}"></script>
+    {% block scripts %} {% endblock %}
+</body>
+</html>
