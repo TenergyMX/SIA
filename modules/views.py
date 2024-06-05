@@ -2430,7 +2430,7 @@ def get_notifications(request):
                         "alert": "warning",
                         "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
                         "title": f"Realizar el pago de la verificación 1er Sem.",
-                        "text": f"Vehículo: {item["name"]}",
+                        "text": f"Vehículo: {item['name']}",
                         "link": f"/module/vehicle/info/{item['id']}/"
                     })
                 elif (current_month + 1)  == cv[d]["s1"][0]["month_code"]:
@@ -2440,7 +2440,7 @@ def get_notifications(request):
                         "alert": "info",
                         "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
                         "title": f"Próximo pago de verificación en {month_name_ES}",
-                        "text": f"Vehículo: {item["name"]}",
+                        "text": f"Vehículo: {item['name']}",
                         "link": f"/module/vehicle/info/{item['id']}/"
                     })
                 elif current_month  == cv[d]["s2"][0]["month_code"] or current_month  == cv[d]["s2"][1]["month_code"]:
@@ -2449,7 +2449,7 @@ def get_notifications(request):
                         "alert": "warning",
                         "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
                         "title": f"Realizar el pago de la verificación 2do Sem.",
-                        "text": f"Vehículo: {item["name"]}",
+                        "text": f"Vehículo: {item['name']}",
                         "link": f"/module/vehicle/info/{item['id']}/"
                     })
                 elif (current_month + 1)  == cv[d]["s2"][0]["month_code"]:
@@ -2459,7 +2459,7 @@ def get_notifications(request):
                         "alert": "info",
                         "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
                         "title": f"Próximo pago de verificación en {month_name_ES}",
-                        "text": f"Vehículo: {item["name"]}",
+                        "text": f"Vehículo: {item['name']}",
                         "link": f"/module/vehicle/info/{item['id']}/"
                     })
         except Exception as e:
