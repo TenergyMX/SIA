@@ -1,4 +1,4 @@
-/core/__pycache__/
+/core
 /modules/migrations/
 /modules/__pycache__/
 /users/migrations/
