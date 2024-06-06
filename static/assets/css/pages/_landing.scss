@@ -412,9 +412,11 @@
         img {
             z-index: 11;
             position: relative;
-            width: 27.063rem;
-            height: 26.063rem;
+            max-width: 27.063rem;
+            width: 100%;
+            height: auto;
             margin-block-start: -10px;
+            object-fit: contain;
         }
 
         &:before {
@@ -507,11 +509,13 @@
     }
 
     .customize-image img {
-        width: 30.5rem;
-        height: 20rem;
+        max-width: 30.5rem;
+        width: 100%;
+        height: auto;
         margin-block-start: 20px;
         padding: 15px;
         position: relative;
+        object-fit: contain;
     }
 
     .landing-footer {

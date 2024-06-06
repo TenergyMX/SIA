@@ -1,0 +1,92 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Usuario con Equipo
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Equipo de Computo</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Asignado
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section>
+    <div class="row">
+        <div class="col-md-4 col-xxl-3">
+            <div class="card custom-card">
+                <div class="card-header justify-content-between">
+                    <div class="card-title">
+                        Usuarios
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-response">
+                        <table class="table table-bordered w-100" id="users_assigned_table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8 col-xxl-9">
+            <div class="card custom-card">
+                <div class="card-header justify-content-between">
+                    <div class="card-title">
+                        Computadora
+                    </div>
+                    <div class="">
+                        <button type="button" class="btn btn-sm btn-info-light" data-computer-system="refresh-table" title="Refrescar tabla">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered w-100" id="computer_equipment_table"></table>
+                    </div>
+                </div>
+            </div>
+            <div class="card custom-card">
+                <div class="card-header justify-content-between">
+                    <div class="card-title">
+                        Periferico
+                    </div>
+                    <div class="">
+                        <button type="button" class="btn btn-sm btn-info-light" data-computer-peripheral="refresh-table" title="Refrescar tabla">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered w-100" id="peripherals_table"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+{% include "computer-equipment/modals/mdl_crud_computerSystem.html" %}
+{% include "computer-equipment/modals/mdl_crud_computerPeripheral.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/computerEquipment.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/computerPeripheral.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/assigned.js' %}"></script>
+{% endblock %}

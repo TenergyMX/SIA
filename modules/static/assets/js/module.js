@@ -88,18 +88,21 @@ function deleteItem(_url, _data) {
                 processData: false,
                 contentType: false,
                 success: function (response) {
-                    console.log(response);
-                    if (!response.success && response.error) {
-                        reject(response.error["message"]);
-                    } else if (!response.success && response.warning) {
-                        reject(response.warning["message"]);
-                    } else if (!response.success) {
-                        reject("Ocurrió un error inesperado");
+                    if (!response.success) {
+                        console.log(response);
+                        if (response.error) {
+                            reject(response.error["message"]);
+                        } else if (response.warning) {
+                            reject(response.warning["message"]);
+                        } else {
+                            reject("Ocurrió un error inesperado");
+                        }
+                        return;
                     }
                     resolve("Se ha borrado el registro");
                 },
                 error: function (xhr, status, error) {
-                    console.log(response);
+                    console.error(`Error: ${status}, ${error}`);
                     reject(
                         "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde."
                     );
@@ -113,7 +116,7 @@ function deleteItem(_url, _data) {
 function getNotifications() {
     $.ajax({
         type: "GET",
-        url: "/get_notifications/",
+        url: "/get-notifications/",
         success: function (response) {
             var contenedor = $("#header-notification-scroll .simplebar-content");
             contenedor.html(null);
@@ -205,4 +208,17 @@ function load_vehicle_info_card(vehicle_id = 1) {
         },
         error: function (xhr, status, error) {},
     });
+}
+
+function deepMerge(target, source) {
+    for (const key in source) {
+        if (source.hasOwnProperty(key)) {
+            if (source[key] instanceof Object && !(source[key] instanceof Array)) {
+                target[key] = deepMerge(target[key] || {}, source[key]);
+            } else {
+                target[key] = source[key];
+            }
+        }
+    }
+    return target;
 }

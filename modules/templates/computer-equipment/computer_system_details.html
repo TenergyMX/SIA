@@ -1,0 +1,257 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Información del equipo de computo
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Equipo de Computo</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Info
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section>
+    <div class="row">
+        <div class="col-lg-4 col-xxl-4">
+            {% include "computer_equipment/cards/computer_system_info.html" %}
+        </div>
+        <div class="col-lg-8 col-xxl-8">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body p-0">
+                            <!-- nav -->
+                            <div class="p-1 border-bottom border-block-end-dashed">
+                                <ul class="nav nav-tabs mb-0 tab-style-6 justify-content-start">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="v-load" data-bs-toggle="tab" data-bs-target="#v-load-pane" type="button" role="tab" aria-controls="v-load-pane" aria-selected="true">
+                                            <span class="spinner-border spinner-border-sm align-middle" role="status" aria-hidden="true"></span>
+                                        </button>
+                                    </li>
+                                    {% if permiso.15.read %}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="v-software" data-bs-toggle="tab" data-bs-target="#v-software-pane" type="button" role="tab" aria-controls="v-software-pane" aria-selected="true">
+                                            Software
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.16.read %}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="v-audit" data-bs-toggle="tab" data-bs-target="#v-audit-pane" type="button" role="tab" aria-controls="v-audit-pane" aria-selected="true">
+                                            Auditoria
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.17.read %}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="v-maintenance" data-bs-toggle="tab" data-bs-target="#v-maintenance-pane" type="button" role="tab" aria-controls="v-maintenance-pane" aria-selected="true">
+                                            Mantenimiento
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            <!-- contenido -->
+                            <div class="p-3">
+                                <div class="tab-content">
+                                    <div class="tab-pane fade p-0 border-0 active show" id="v-load-pane" role="tabpanel" aria-labelledby="v-load" tabindex="0">
+                                        Loander
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-software-pane" role="tabpanel" aria-labelledby="v-software" tabindex="0">
+                                        <div class="card custom-card border mb-0">
+                                            <div class="card-header justify-content-between">
+                                                <div class="card-title">
+                                                    Software Instalado
+                                                </div>
+                                                <div class="">
+                                                    <button type="button" class="btn btn-sm btn-primary" data-computer-software="add-item-installation" title="Agregar">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                        Agregar
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-secondary-light" data-computer-software="refresh-details-table" title="Refrescar tabla">
+                                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive w-100">
+                                                    <table class="table table-bordered w-100" id="softwares_table">
+                                                        <thead></thead>
+                                                        <tbody></tbody>
+                                                        <tfoot></tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-audit-pane" role="tabpanel" aria-labelledby="v-audit" tabindex="0">
+                                        <div class="card custom-card border mb-0">
+                                            <div class="card-header justify-content-between">
+                                                <div class="card-title">
+                                                    Auditorias del equipo
+                                                </div>
+                                                <div class="">
+                                                    <button type="button" class="btn btn-sm btn-primary" data-sia-computer-equipment-audit="add-item" title="Agregar usuario">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                        Agregar
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-info-light" data-sia-computer-equipment-audit="refresh-table"
+                                                        title="Refrescar tabla" data-refresh-table="table_refrendo">
+                                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive w-100">
+                                                    <table class="table table-bordered w-100" id="audit_table">
+                                                        <thead></thead>
+                                                        <tbody></tbody>
+                                                        <tfoot></tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-maintenance-pane" role="tabpanel" aria-labelledby="v-maintenance" tabindex="0">
+                                        <div class="info">
+                                            <div class="card custom-card border mb-0">
+                                                <div class="card-header justify-content-between">
+                                                    <div class="card-title">
+                                                        Mantenimiento
+                                                    </div>
+                                                    <div class="">
+                                                        <button type="button" class="btn btn-sm btn-primary" data-sia-computer-equipment-maintenance="add-item" title="Agregar usuario">
+                                                            <i class="fa-solid fa-plus"></i>
+                                                            Agregar
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-info-light" data-sia-computer-equipment-maintenance="refresh-table"
+                                                            title="Refrescar tabla" data-refresh-table="table_refrendo">
+                                                            <i class="fa-solid fa-arrows-rotate"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-bordered w-100" id="maintenance_table">
+                                                            <thead></thead>
+                                                            <tbody></tbody>
+                                                            <tfoot></tfoot>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="info-details" style="display: none;">
+                                            {% include "computer_equipment/cards/maintenance_info.html" %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class=""></div>
+                            </div>
+                            <!-- end contenido -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="card">
+                        <div class="card-body"></div>
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="card">
+                        <div class="card-body"></div>
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="card">
+                        <div class="card-body"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+{% include "computer_equipment/modals/mdl_crud_software.html" %}
+{% include "computer_equipment/modals/mdl_crud_softwareInstallation.html" %}
+{% include "computer_equipment/modals/mdl_crud_audit.html" %}
+{% include "computer_equipment/modals/mdl_crud_maintenance.html" %}
+{% endblock %}
+
+{% block head %}
+<script>
+    const computerSystem_id = "{{ computerSystem_id }}";
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/users/providers.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/computerEquipment.js' %}"></script>
+<script>
+    const equipo = new ComputerEquipment({
+        data: { computerSystem_id: computerSystem_id },
+        infoCard: {},
+    });
+
+    const usuarios = new Users({
+        list: { id: ".modal select[name='user_id']"}
+    });
+
+    const proveedores = new Providers({
+        list: { id: ".modal select[name='provider_id']" }
+    });
+    
+    $(".card-info").addClass("border");
+</script>
+{% if permiso.15.read %}
+<script src="{% static 'assets/js/computer-equipment/computerSoftware.js' %}"></script>
+<script>
+    const software = new ComputerSoftware({
+        list: { id: "select[name='software_id']" },
+        table_installations: { id: "#softwares_table" },
+        computer: equipo
+    });
+</script>
+{% endif %}
+{% if permiso.16.read %}
+<script src="{% static 'assets/js/computer-equipment/audit.js' %}"></script>
+<script>
+    const auditorias = new ComputerEquipment_audit({
+        table: { id: "#audit_table"},
+        computer: equipo
+    });
+</script>
+{% endif %}
+{% if permiso.17.read %}
+<script src="{% static 'assets/js/computer-equipment/maintenance.js' %}"></script>
+<script>
+    const mantenimiento = new ComputerEquipment_maintenance({
+        table: { id: "#maintenance_table" },
+        computer: equipo
+    });
+</script>
+{% endif %}
+<script>
+    $(document).ready(function() {
+        var $tabs = $("ul.nav-tabs li");
+        $tabs.show();
+        $("#v-load").closest("li").remove();
+        $("#v-load-pane").remove();
+        
+        $tabs = $("ul.nav-tabs li");
+        $tabs.first().find('button').tab('show');
+    });
+</script>
+{% endblock %}

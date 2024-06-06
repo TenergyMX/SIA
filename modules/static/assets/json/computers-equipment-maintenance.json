@@ -1,0 +1,203 @@
+{
+    "status": "success",
+    "code": 200,
+    "message": "Mantenimiento cargado correctamente",
+    "apiVersion": "1.0",
+    "meta": {
+        "author": "LUIS ULICES GUTIERREZ"
+    },
+    "data": [
+        {
+            "id": 1,
+            "tipo": "preventivo",
+            "items": [
+                {
+                    "id": 1,
+                    "descripcion": "Actualización del Sistema Operativo y Software"
+                },
+                {
+                    "id": 2,
+                    "descripcion": "Escaneo y Eliminación de Virus y Malware"
+                },
+                {
+                    "id": 3,
+                    "descripcion": "Limpieza de Archivos Temporales y Basura"
+                },
+                {
+                    "id": 4,
+                    "descripcion": "Desfragmentación del Disco Duro (HDD)"
+                },
+                {
+                    "id": 5,
+                    "descripcion": "Backup de Datos"
+                },
+                {
+                    "id": 6,
+                    "descripcion": "Revisión y Actualización de Controladores (Drivers)"
+                },
+                {
+                    "id": 7,
+                    "descripcion": "Limpieza Física del Hardware"
+                },
+                {
+                    "id": 8,
+                    "descripcion": "Verificación de la Integridad del Disco Duro"
+                },
+                {
+                    "id": 9,
+                    "descripcion": "Revisión de las Conexiones y Cables"
+                },
+                {
+                    "id": 10,
+                    "descripcion": "Monitoreo de la Temperatura y el Rendimiento"
+                },
+                {
+                    "id": 11,
+                    "descripcion": "Revisión y Ajuste de la Configuración de Inicio"
+                },
+                {
+                    "id": 12,
+                    "descripcion": "Actualización del Firmware"
+                },
+                {
+                    "id": 13,
+                    "descripcion": "Chequeo de la Memoria RAM"
+                },
+                {
+                    "id": 14,
+                    "descripcion": "Verificación de la Fuente de Alimentación"
+                },
+                {
+                    "id": 15,
+                    "descripcion": "Reemplazo de la Pasta Térmica del Procesador"
+                },
+                {
+                    "id": 16,
+                    "descripcion": "Optimización de Configuraciones de Energía"
+                },
+                {
+                    "id": 17,
+                    "descripcion": "Revisión de Permisos y Configuraciones de Seguridad"
+                },
+                {
+                    "id": 18,
+                    "descripcion": "Actualización del Software de Seguridad y Firewall"
+                },
+                {
+                    "id": 19,
+                    "descripcion": "Limpieza de Contactos de Memoria y Tarjetas de Expansión"
+                },
+                {
+                    "id": 20,
+                    "descripcion": "Revisión y Mantenimiento del Sistema de Enfriamiento"
+                },
+                {
+                    "id": 21,
+                    "descripcion": "Reemplazo de Componentes Desgastados (ventiladores, cables, etc.)"
+                },
+                {
+                    "id": 22,
+                    "descripcion": "Optimización del Registro del Sistema"
+                },
+                {
+                    "id": 23,
+                    "descripcion": "Revisión de Unidades de Almacenamiento Externas"
+                },
+                {
+                    "id": 24,
+                    "descripcion": "Verificación de Conexiones de Red y Configuraciones"
+                },
+                {
+                    "id": 25,
+                    "descripcion": "Ajuste y Limpieza de Periféricos (teclado, ratón, monitor)"
+                },
+                {
+                    "id": 26,
+                    "descripcion": "Monitoreo y Gestión del Espacio en Disco"
+                },
+                {
+                    "id": 27,
+                    "descripcion": "Revisión y Optimización de la Configuración del Navegador"
+                },
+                {
+                    "id": 28,
+                    "descripcion": "Configuración de Puntos de Restauración del Sistema"
+                },
+                {
+                    "id": 29,
+                    "descripcion": "Pruebas de Rendimiento de Hardware"
+                },
+                {
+                    "id": 30,
+                    "descripcion": "Limpieza y Organización de Cables Externos"
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "tipo": "correctivo",
+            "items": [
+                {
+                    "id": 1,
+                    "descripcion": "Reparación de Hardware Dañado"
+                },
+                {
+                    "id": 2,
+                    "descripcion": "Reemplazo de Componentes Defectuosos"
+                },
+                {
+                    "id": 3,
+                    "descripcion": "Solución de Problemas de Software"
+                },
+                {
+                    "id": 4,
+                    "descripcion": "Respaldo y Restauración de Datos"
+                },
+                {
+                    "id": 5,
+                    "descripcion": "Diagnóstico y Solución de Problemas de Red"
+                },
+                {
+                    "id": 6,
+                    "descripcion": "Recuperación de Datos de Disco Duro Dañado"
+                },
+                {
+                    "id": 7,
+                    "descripcion": "Reparación de Sectores Defectuosos en el Disco Duro"
+                },
+                {
+                    "id": 8,
+                    "descripcion": "Reparación de Placa Base o Motherboard"
+                },
+                {
+                    "id": 9,
+                    "descripcion": "Reparación de Tarjeta Gráfica o de Video"
+                },
+                {
+                    "id": 10,
+                    "descripcion": "Reparación de Pantalla o Monitor"
+                },
+                {
+                    "id": 11,
+                    "descripcion": "Reparación de Problemas de Alimentación"
+                },
+                {
+                    "id": 12,
+                    "descripcion": "Reparación de Problemas de Sonido"
+                },
+                {
+                    "id": 13,
+                    "descripcion": "Reparación de Problemas de Conectividad (Wi-Fi, Bluetooth, etc.)"
+                },
+                {
+                    "id": 14,
+                    "descripcion": "Reparación de Problemas de Periféricos (teclado, ratón, impresora, etc.)"
+                },
+                {
+                    "id": 15,
+                    "descripcion": "Reparación de Problemas de Sobrecalentamiento"
+                }
+            ]
+        }
+    ]
+}

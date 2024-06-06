@@ -2,15 +2,15 @@
 
 .page-header-breadcrumb {
     .breadcrumb-item + .breadcrumb-item::before {
-        content: var(--bs-breadcrumb-divider, "\ea65");
-        font-family: "tabler-icons" !important;
+        content: var(--bs-breadcrumb-divider, "\f324");
+        font-family: "Font Awesome 6 Pro";
     }
 }
 [dir="rtl"] {
     .page-header-breadcrumb {
         .breadcrumb-item + .breadcrumb-item::before {
-            content: var(--bs-breadcrumb-divider, "\ea64");
-            font-family: "tabler-icons" !important;
+            content: var(--bs-breadcrumb-divider, "\f324");
+            font-family: "Font Awesome 6 Pro";
         }
     }
 }

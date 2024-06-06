@@ -1,0 +1,101 @@
+{
+    "status": "success",
+    "code": 200,
+    "message": "Mantenimiento cargado correctamente",
+    "apiVersion": "1.0",
+    "meta": {
+        "author": "LUIS ULICES GUTIERREZ"
+    },
+    "data": [
+        {
+            "id": 1,
+            "tipo": "preventivo",
+            "items": [
+                { "id": 1, "descripcion": "CAMBIO FILTRO DE ACEITE" },
+                { "id": 2, "descripcion": "CAMBIO DE BUJIAS" },
+                { "id": 3, "descripcion": "CAMBIO DE  FILTRO DE AIRE MOTOR" },
+                { "id": 4, "descripcion": "INSPECCION DE FRENOS" },
+                { "id": 5, "descripcion": "REVISION DE SUSPENSION: BALATAS" },
+                { "id": 6, "descripcion": "REVISION DE SUSPENSION: DISCOS" },
+                { "id": 7, "descripcion": "REVISION DE SUSPENSION: TAMBORES" },
+                {
+                    "id": 8,
+                    "descripcion": "REVISION DE SUSPENSION: RECTIFICADO DE DISCOS DELANTEROS"
+                },
+                {
+                    "id": 9,
+                    "descripcion": "REVISION DE SUSPENSION: RECTIFICADO DE DISCOS TRASEROS"
+                },
+                { "id": 10, "descripcion": "CAMBIO DE BALATAS DELANTERAS" },
+                { "id": 11, "descripcion": "CAMBIO DE BALATAS TRACERAS" },
+                { "id": 12, "descripcion": "CAMBIO DE FILTRO DE GASOLINA" },
+                { "id": 13, "descripcion": "CAMBIO DE FILTRO DE GASOLINA: AMORTIGUADORES" },
+                { "id": 14, "descripcion": "CAMBIO DE FILTRO DE GASOLINA: RESORTES" },
+                { "id": 15, "descripcion": "ROTACIÓN DE NEUMÁTICOS" },
+                { "id": 16, "descripcion": "INSPECCIÓN DE CORREA DE DISTRIBUCIÓN" },
+                { "id": 17, "descripcion": "CAMBIO DE CORREA DE DISTRIBUCIÓN" },
+                { "id": 18, "descripcion": "CHEQUEO DE NIVELES DE FLUIDOS: ACEITE DEL MOTOR" },
+                { "id": 19, "descripcion": "CHEQUEO DE NIVELES DE FLUIDOS: LÍQUIDO DE FRENOS" },
+                { "id": 20, "descripcion": "CHEQUEO DE NIVELES DE FLUIDOS: LÍQUIDO REFRIGERANTE" },
+                {
+                    "id": 21,
+                    "descripcion": "CHEQUEO DE NIVELES DE FLUIDOS: LÍQUIDO DE LA DIRECCIÓN ASISTIDA"
+                },
+                {
+                    "id": 22,
+                    "descripcion": "CHEQUEO DE NIVELES DE FLUIDOS: LÍQUIDO LIMPIAPARABRISAS"
+                },
+                {
+                    "id": 23,
+                    "descripcion": "CHEQUEO DE NIVELES DE FLUIDOS: LÍQUIDO DE LA TRANSMISIÓN (SI ES AUTOMÁTICO)"
+                },
+                {
+                    "id": 24,
+                    "descripcion": "CHEQUEO DE NIVELES DE FLUIDOS: LÍQUIDO DEL SISTEMA DE TRACCIÓN INTEGRAL (SI APLICA)"
+                },
+                { "id": 25, "descripcion": "NEUMÁTICOS: PRESIÓN" },
+                { "id": 26, "descripcion": "NEUMÁTICOS: DESGASTE" },
+                { "id": 27, "descripcion": "NEUMÁTICOS: ALINEACIÓN" },
+                { "id": 28, "descripcion": "LUCES: FAROS DELANTEROS" },
+                { "id": 29, "descripcion": "LUCES: FAROS TRACEROS" },
+                { "id": 30, "descripcion": "LUCES: DE FRENO" },
+                { "id": 31, "descripcion": "LUCES: DIRECCIONALES" },
+                { "id": 32, "descripcion": "LUCES: DE EMERGENCIA" },
+                { "id": 33, "descripcion": "BATERÍA: CARGA" },
+                { "id": 34, "descripcion": "BATERÍA: ESTADO DE TERMINALES" },
+                { "id": 35, "descripcion": "INSPECCION DE CORREAS: ESTADO Y TENSION" },
+                { "id": 36, "descripcion": "INSPECCION DE MANGUERAS: ESTADO Y POSIBLES FUGAS" },
+                { "id": 37, "descripcion": "INSPECCION DE ESCAPE: ESTADO Y FUGAS" },
+                { "id": 38, "descripcion": "SISTEMA DE CLIMATIZACIÓN: SISTEMA ELÉCTRICO" },
+                { "id": 39, "descripcion": "SISTEMA DE CLIMATIZACIÓN: FUSIBLES Y CONEXIONES" },
+                { "id": 40, "descripcion": "FIJACIONES Y SOPORTES: INSPECCION SOPORTE DE MOTOR" },
+                {
+                    "id": 41,
+                    "descripcion": "FIJACIONES Y SOPORTES: INSPECCION SOPORTE DE TRANSMISION"
+                },
+                { "id": 42, "descripcion": "CINTURONES DE SEGURIDAD: FUNCIONAMIENTO Y ESTADO" },
+                { "id": 43, "descripcion": "SCANER DE CODIGOS" },
+                { "id": 44, "descripcion": "LAVADO DE CARROCERIA" },
+                { "id": 45, "descripcion": "LAVADO DE MOTOR" },
+                { "id": 46, "descripcion": "ALINEACION" },
+                { "id": 47, "descripcion": "BALANCEO" }
+            ]
+        },
+        {
+            "id": 2,
+            "tipo": "correctivo",
+            "items": [
+                { "id": 1, "descripcion": "REVISIÓN BANDAS Y POLEAS" },
+                { "id": 2, "descripcion": "SUSPENSION, LUCES" },
+                { "id": 3, "descripcion": "FALLA EN CODIGOS" },
+                { "id": 4, "descripcion": "LAVADO DE MOTOR" },
+                { "id": 5, "descripcion": "LIMPIEZA DE CUERPO DE ACELERACION" },
+                { "id": 6, "descripcion": "LIMPIEZA SENSOR MAF" },
+                { "id": 7, "descripcion": "REVISAR FUGAS A MOTOR" },
+                { "id": 8, "descripcion": "REVISION DE FUGAS DE TRANSMISION" },
+                { "id": 9, "descripcion": "REVISION DE SOPORTE DE MOTOR Y TRANSMISION" },
+                { "id": 10, "descripcion": "CARGA DE ALTERNADOR Y BATERIA" }
+            ]
+        }
+    ]
+}

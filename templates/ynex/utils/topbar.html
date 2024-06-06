@@ -97,7 +97,7 @@
                             <p class="fw-semibold mb-0 lh-1">
                                 {{ user.username|default:"Usuario" }}
                             </p>
-                            <span class="d-block small text-muted lh-1">
+                            <span class="d-block small lh-1">
                                 {{ role.name|default:"Visita" }}
                             </span>
                         </div>
@@ -113,6 +113,14 @@
                             Profile
                         </a>
                     </li>
+                    {% if role.id == 1 %}
+                    <li>
+                        <a class="dropdown-item d-flex" href="/develop/">
+                            <i class="fa-solid fa-code fs-18 me-2 op-7"></i>
+                            Desarrollador
+                        </a>
+                    </li>
+                    {% endif %}
                     <li>
                         <a class="dropdown-item d-flex" href="/user/logout/">
                             <i class="fa-solid fa-right-from-bracket fs-18 me-2 op-7"></i>

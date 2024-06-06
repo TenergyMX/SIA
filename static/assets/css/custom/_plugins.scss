@@ -2038,7 +2038,16 @@ div.dtr-modal div.dtr-modal-background {
 }
 
 .dt-buttons {
-    float: left !important;
+    position: initial;
+
+    .btn-group {
+        position: initial;
+    }
+
+    .dt-button-collection {
+        background-color: $custom-white;
+        color: $default-text-color;
+    }
 }
 
 table.dataTable thead > tr > th.sorting,

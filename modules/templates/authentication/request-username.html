@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html
+    lang="en"
+    dir="ltr"
+    data-nav-layout="vertical"
+    data-theme-mode="light"
+    data-header-styles="light"
+    data-menu-styles="dark"
+    loader="disable"
+>
+<head>
+    {% include "ynex/utils/head.html" %}
+    <script>
+        const redirect = "{{ redirect }}";
+    </script>
+</head>
+
+<body class="">
+    <div class="container-lg">
+        <div class="row justify-content-center align-items-center authentication authentication-basic h-100">
+            <div class="col-xxl-4 col-xl-5 col-lg-5 col-md-6 col-sm-8 col-12">
+                <div class=""></div>
+                <div class="card custom-card">
+                    <form method="post" class="card-body p-4">
+                        <p class="h5 fw-semibold mb-2 text-center">Recuperar cuenta</p>
+                        <p class="mb-3 text-muted op-7 fw-normal text-center">
+                            Hola usuario
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-12 d-none">
+                                {% csrf_token %}
+                            </div>
+                            <div class="col-xl-12">
+                                <label for="username" class="form-label text-default">username</label>
+                                <input type="text" name="username" class="form-control form-control-lg" id="username" placeholder="Nombre de usuario">
+                            </div>
+                            <div class="col-xl-12 d-grid">
+                                <button type="submit" class="btn btn-lg btn-primary" aria-label="boton para enviar">
+                                    Enviar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-center"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/alertify.min.js"></script>
+    <script>
+        alertify.set('notifier', 'position', 'top-right');
+        alertify.set('notifier', 'delay', 1000);
+    </script>
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "success" %}
+                <script>
+                    alertify.success('{{ message }}');
+                </script>
+            {% elif message.tags == "error" %}
+                <script>
+                    alertify.error('{{ message }}');
+                </script>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</body>
+
+</html>

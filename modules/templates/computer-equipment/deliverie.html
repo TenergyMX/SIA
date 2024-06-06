@@ -1,0 +1,74 @@
+{% extends 'ynex/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Entrega
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Equipo de Computo</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Entrega
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section id="v-deliverie-pane">
+    <div class="info">
+        <div class="card custom-card">
+            <div class="card-header justify-content-between">
+                <div class="card-title">
+                    Entrega de equipo
+                </div>
+                <div class="">
+                    <button type="button" class="btn btn-sm btn-primary" data-sia-computer-equipment-deliverie="add-item" title="Agregar usuario" aria-label="add">
+                        <i class="fa-solid fa-plus"></i>
+                        Agregar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-info-light" data-sia-computer-equipment-deliverie="refresh-table"
+                        title="Refrescar tabla" aria-label="refresh">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive w-100">
+                    <table class="table table-bordered w-100" id="deliverie_table">
+                        <thead></thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+
+{% block modals %}
+{% include "computer-equipment/modals/mdl-crud-deliverie.html" %}
+{% endblock %}
+
+{% block head %} {% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/computerEquipment.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/responsiva.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/deliverie.js' %}"></script>
+<script>
+    const responsivas = new ComputerEquipment_responsiva({
+        list: { id: ".modal [name='responsible_id']" }
+    })
+
+    const entregas = new ComputerEquipment_deliverie({
+        table: { id: "#deliverie_table" }
+    })
+</script>
+{% endblock %}

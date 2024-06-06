@@ -48,16 +48,16 @@
 @mixin btn-primary($btn-color) {
     background-color: rgb(#{$btn-color}) !important;
     border-color: rgb(#{$btn-color}) !important;
-    color: $white !important;
+    color: #1a1c1e !important;
     &:hover {
         background-color: rgba(#{$btn-color}, 0.9) !important;
         border-color: rgb(#{$btn-color}) !important;
-        color: $white;
+        color: #1a1c1e;
     }
     &:focus {
         background-color: rgb(#{$btn-color});
         border-color: rgb(#{$btn-color});
-        color: $white;
+        color: #1a1c1e;
     }
 }
 @mixin btn-check-focus($btn-color) {

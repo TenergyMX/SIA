@@ -1,0 +1,84 @@
+<div class="card custom-card card-info">
+    <div class="card-header justify-content-between">
+        <div class="card-title">
+            Mantenimiento detalles
+        </div>
+        <div class="">
+            <button type="button" class="btn btn-icon btn-sm btn-primary" data-sia-computer-equipment-maintenance="show-info" title="Regresar">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive mb-3">
+            <table class="table table-sm table-bordered w-100">
+                <tbody>
+                    <tr class="tr-computer-equipment">
+                        <th colspan="2" class="bg-light text-center">EQUIPO</th>
+                    </tr>
+                    <tr class="tr-computer-equipment">
+                        <td>Nombre</td>
+                        <td><span data-key="computerSystem__name"></span></td>
+                    </tr>
+                    <tr class="tr-computer-equipment">
+                        <td>N. Serie</td>
+                        <td><span data-key="computerSystem__serial_number"></span></td>
+                    </tr>
+                    <tr class="">
+                        <th colspan="2" class="bg-light text-center">MANTENIMIENTO</th>
+                    </tr>
+                    <tr>
+                        <td>Tipo</td>
+                        <td><span data-key="type"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Realizado por</td>
+                        <td><span data-key="performed_by"></span></td>
+                    </tr>
+                    <tr class="tr-provider">
+                        <td>Proveedor</td>
+                        <td><span data-key="provider__name"></span></td>
+                    </tr>
+                    <tr class="tr-user">
+                        <td>Usuario</td>
+                        <td><span data-key="user"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Costo</td>
+                        <td><span data-key="cost"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Fecha</td>
+                        <td><span data-key="date"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <form action="">
+            {% csrf_token %}
+            <input type="hidden" name="id" value="0">
+
+            <!-- Lista -->
+            <ol class="list-group list-group-numbered placeholder-glow mb-3">
+                <li class="list-group-item">
+                    <span class="placeholder col-10 col-md-6"></span>
+                </li>
+                <li class="list-group-item">
+                    <span class="placeholder col-10 col-md-4"></span>
+                </li>
+            </ol>
+
+            <!-- botones -->
+            <div class="text-center mt-3 form-btn">
+                <button type="reset" class="btn btn-secondary-light">
+                    <i class="fa-solid fa-rotate-right me-1"></i>
+                    Restablecer
+                </button>
+                <button type="submit" class="btn btn-primary-light">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

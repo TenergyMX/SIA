@@ -1,0 +1,165 @@
+<div class="modal fade" id="mdl_crud_computerSystem" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 d-none">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="0">
+                        <input type="hidden" name="computerSystem_id" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Area</label>
+                        <select name="area_id" class="form-select"></select>
+                    </div>
+                     <div class="col-md-4">
+                        <label for="">Funcionando?</label>
+                        <select name="is_active" class="form-select">
+                            <option value="0">NO</option>
+                            <option value="1">SI</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Estado del equipo</label>
+                        <select name="equipment_status" class="form-select">
+                            <option value="">-----</option>
+                            <option value="Nuevo">Nuevo</option>
+                            <option value="Operativo">Operativo</option>
+                            <option value="En uso">En uso</option>
+                            <option value="Disponible">Disponible</option>
+                            <option value="En Mantenimiento">En Mantenimiento</option>
+                            <option value="En Reparación">En Reparación</option>
+                            <option value="Fuera de Servicio">Fuera de Servicio</option>
+                            <option value="Perdida o Robada">Perdida o Robada</option>
+                            <option value="En Cuarentena de Seguridad">En Cuarentena de Seguridad</option>
+                            <option value="No Funciona">No Funciona</option>
+                            <option value="Obsoleto">Obsoleto</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Nombre u clave</label>
+                        <input type="text" name="name" class="form-control" placeholder="Nombre u clave">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Numero de serie</label>
+                        <input type="text" name="serial_number" class="form-control" placeholder="Nombre u clave">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Tipo de equipos</label>
+                        <select name="equipment_type" class="form-select">
+                            <option value="">-----</option>
+                            <option value="Portátil">Portátil</option>
+                            <option value="Sobremesa">Sobremesa</option>
+                            <option value="Servidor">Servidor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Sistema Operativo</label>
+                        <input type="text" name="so" class="form-control" placeholder="Sistema Operativo">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Marca</label>
+                        <input type="text" name="brand" class="form-control" placeholder="Marca">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Modelo</label>
+                        <input type="text" name="model" class="form-control" placeholder="Modelo">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Procesador</label>
+                        <input type="text" name="processor" class="form-control" placeholder="Procesador">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Numero de nucleos</label>
+                        <input type="number" name="num_cores" class="form-control" placeholder="Numero de nucleos">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="processor_speed">Velocidad del procesador</label>
+                        <div class="input-group">
+                            <input type="number" id="processor_speed" name="processor_speed" class="form-control" placeholder="Velocidad del procesador" step="0.1" min="0">
+                            <span class="input-group-text">GHz</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Arquitectura del Procesador</label>
+                        <select name="architecture" class="form-select">
+                            <option value="">-----</option>
+                            <option value="x84">x84</option>
+                            <option value="x64">x64</option>
+                            <option value="AMR">AMR</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Almacenamiento Capacidad</label>
+                        <div class="input-group">
+                            <input type="number" name="disk_capacity" class="form-control" placeholder="Almacenamiento de disco duro" step="0.1" min="0">
+                            <span class="input-group-text">GB</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Almacenamiento Tipo</label>
+                        <select name="disk_type" class="form-select">
+                            <option value="">-----</option>
+                            <option value="HDD">HDD</option>
+                            <option value="SSD">SSD</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Memoria RAM</label>
+                        <div class="input-group">
+                            <input type="number" id="" name="ram" class="form-control" placeholder="Memoria RAM" step="0.1" min="0">
+                            <span class="input-group-text">GB</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Tipo de memoria RAM</label>
+                        <select name="ram_type" class="form-select">
+                            <option value="">-----</option>
+                            <option value="DDR">DDR</option>
+                            <option value="DDR2">DDR2</option>
+                            <option value="DDR3">DDR3</option>
+                            <option value="DDR4">DDR4</option>
+                            <option value="DDR5">DDR5</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Tarjeta Grafica</label>
+                        <input type="text" name="graphics_card" class="form-control" placeholder="Marca">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">color</label>
+                        <input type="text" name="color" class="form-control" placeholder="Marca">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Bateria</label>
+                        <input type="text" name="battery" class="form-control" placeholder="Marca">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Ubicación</label>
+                        <input type="text" name="location" class="form-control" placeholder="Marca">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Responsable Actual</label>
+                        <select name="current_responsible_id" class="form-select"></select>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

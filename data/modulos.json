@@ -5,7 +5,7 @@
         "fields": {
             "short_name": "Usuario",
             "name": "Usuarios",
-            "description": "COntexto de permisos y accesos de usuario",
+            "description": "Permisos y accesos de usuario",
             "created_at": "2024-04-08T18:22:23.397Z"
         }
     },
@@ -13,8 +13,8 @@
         "model": "users.module",
         "pk": 2,
         "fields": {
-            "short_name": "Veh├¡culo",
-            "name": "Veh├¡culos",
+            "short_name": "Vehículo",
+            "name": "Vehículo",
             "description": null,
             "created_at": "2024-04-09T23:26:02.918Z"
         }

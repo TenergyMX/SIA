@@ -1,0 +1,160 @@
+<div class="modal fade effect-scale" id="mdl_crud_computer_equipment_audit" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                    
+                </div>
+                <div class="info-1">
+                    <div class="row mb-2">
+                        <label for="" class="col-md-5 col-form-label">
+                            Equipo
+                        </label>
+                        <div class="col-md-7">
+                            <select name="computerSystem_id" class="form-select"></select>
+                            <input type="text" name="computerSystem__name" class="form-control" readonly style="display: none;">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <label for="" class="col-md-5 col-form-label">
+                            Limpieza del Equipo
+                        </label>
+                        <div class="col-md-7">
+                            <select name="pantalla_check" class="form-select">
+                                <option value="">-----</option>
+                                <option value="Malo">Malo</option>
+                                <option value="Regular">Regular</option>
+                                <option value="Bueno">Bueno</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <label for="" class="col-md-5 col-form-label">
+                            Fecha de la Última Limpieza:
+                        </label>
+                        <div class="col-md-7">
+                            <input type="date" name="fecha_ultima_limpieza" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row mb-2 is_checked">
+                        <label for="" class="col-md-5 col-form-label">
+                            ¿Revisado?
+                        </label>
+                        <div class="col-md-7">
+                            <select name="is_checked" class="form-select">
+                                <option value="0">NO</option>
+                                <option value="1">SI</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-2 table-responsive">
+                    <table class="table table-sm table-bordered w-100 mb-3">
+                        <tbody>
+                            <tr>
+                                <th colspan="2" class="text-center bg-primary bg-opacity-75">Pantalla</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <select name="pantalla_check" class="form-select">
+                                        <option value="">-----</option>
+                                        <option value="Malo">Malo</option>
+                                        <option value="Regular">Regular</option>
+                                        <option value="Bueno">Bueno</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <textarea name="pantalla_notas" rows="1" class="form-control" placeholder="Notas de la pantalla"></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th colspan="2" class="text-center bg-primary bg-opacity-75">Teclado</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <select name="teclado_check" class="form-select">
+                                        <option value="">-----</option>
+                                        <option value="Malo">Malo</option>
+                                        <option value="Regular">Regular</option>
+                                        <option value="Bueno">Bueno</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <textarea name="teclado_notas" rows="1" class="form-control" placeholder="Notas del teclado"></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th colspan="2" class="text-center bg-primary bg-opacity-75">Puertos</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <select name="puertos_check" class="form-select">
+                                        <option value="">-----</option>
+                                        <option value="Malo">Malo</option>
+                                        <option value="Regular">Regular</option>
+                                        <option value="Bueno">Bueno</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <textarea name="puertos_notas" rows="1" class="form-control" placeholder="Notas de los puertos"></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th colspan="2" class="text-center bg-primary bg-opacity-75">Cargador</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <select name="cargador_check" class="form-select">
+                                        <option value="">-----</option>
+                                        <option value="Malo">Malo</option>
+                                        <option value="Regular">Regular</option>
+                                        <option value="Bueno">Bueno</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <textarea name="cargador_notas" rows="1" class="form-control" placeholder="Notas de los puertos"></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th colspan="2" class="text-center bg-primary bg-opacity-75">Carcasa del equipo</th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <select name="carcasa_check" class="form-select">
+                                        <option value="">-----</option>
+                                        <option value="Malo">Malo</option>
+                                        <option value="Regular">Regular</option>
+                                        <option value="Bueno">Bueno</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <textarea name="carcasa_notas" rows="1" class="form-control" placeholder="Nota"></textarea>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                    <div class="">Notas Generales:</div>
+                    <textarea name="general_notes" row="2" class="form-control"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

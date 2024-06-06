@@ -1,5 +1,10 @@
 from django.http import HttpResponse
 from users.models import *
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from django.template.loader import render_to_string
+from decouple import config
 
 def get_module_user_permissions(_datos, _subModule_id):
     response = {"success": True, "data": {"info":{}, "access": {}}}
@@ -57,7 +62,7 @@ def get_sidebar(data={}, module_ids=None):
         if module_name not in modules:
             modules[module_name] = []
         modules[module_name].append({
-            "title": submodule.subModule.short_name if hasattr(submodule, 'subModule') else submodule.name,
+            "title": submodule.subModule.short_name if hasattr(submodule, 'subModule') else submodule.short_name,
             "icon": submodule.subModule.icon if hasattr(submodule, 'subModule') else submodule.icon,
             "link": submodule.subModule.link if hasattr(submodule, 'subModule') else submodule.link
         })
@@ -71,7 +76,7 @@ def get_user_access(context = {}):
     response = {"success": True}
     data = {}
 
-    if context["role"]["id"] in [1,2,3]:
+    if context["role"]["id"] in [1,2]:
         obj = SubModule.objects.values().exclude(is_active=False)
         for item in obj:
             data[item["id"]] = {}
@@ -113,7 +118,7 @@ def update_session_data(request):
     # Crear un diccionario con los datos de sesión
     session_data = {
         'access': {'id': None},
-        'role': {'id': None, 'name': None, 'level': None},
+        'role': {'id': 4, 'name': None, 'level': None},
         'company': {'id': None, 'name': None},
         'user': user_data
     }

@@ -15,9 +15,9 @@
         <div class="col-xxl-7 col-xl-7 col-lg-12">
             <div class="row justify-content-center align-items-center h-100">
                 <div class="col-xxl-6 col-xl-7 col-lg-7 col-md-7 col-sm-8 col-12">
-                    <form class="p-5">
+                    <form method="post" class="p-5">
                         <p class="h5 fw-semibold mb-2">
-                            LOG IN
+                            INICIAR SESÍON
                         </p>
                         <p class="mb-3 text-muted op-7 fw-normal">
                             Bienvenido usuario
@@ -29,16 +29,17 @@
                             </div>
                             <div class="col-xl-12 mt-0">
                                 <label for="signin-username" class="form-label text-default">
-                                    Correo Electrónico
+                                    Usuario
                                 </label>
                                 <input type="text" name="username" class="form-control form-control-lg"
                                     id="signin-username" placeholder="Correo" required>
                             </div>
                             <div class="col-xl-12 mb-3">
                                 <label for="signin-password" class="form-label text-default d-block">
-                                    Password
-                                    <a href="reset-password-cover.html" class="float-end text-danger">Forget password
-                                        ?</a>
+                                    Contraseña
+                                    <a href="/password-recovery/request-username/" class="float-end text-danger">
+                                        ¿Contraseña olvidada?
+                                    </a>
                                 </label>
                                 <div class="input-group">
                                     <input type="password" name="password" class="form-control form-control-lg"
@@ -73,7 +74,25 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-param/2.0.0/jquery-param.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{% static 'assets/js/authentication.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/alertify.min.js"></script>
+    <script src="{% static 'assets/js/two-step-verification.js' %}"></script>
+    <script>
+        alertify.set('notifier', 'position', 'top-right');
+        alertify.set('notifier', 'delay', 3000);
+    </script>
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "success" %}
+                <script>
+                    alertify.success('{{ message }}');
+                </script>
+            {% elif message.tags == "error" %}
+                <script>
+                    alertify.error('{{ message }}');
+                </script>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 </body>
 
 </html>

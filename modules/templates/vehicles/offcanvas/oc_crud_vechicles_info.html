@@ -1,0 +1,107 @@
+<div class="offcanvas offcanvas-start" tabindex="-1" id="oc_crud_vechicles_info" aria-labelledby="offcanvasExampleLabel">
+    <div class="offcanvas-header d-none">
+        <h5 class="offcanvas-title" id="offcanvasExampleLabel">Offcanvas</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form name="crud-vehicle-info">
+            <div class="row g-3">
+                <div class="col-12 d-none">
+                    {% csrf_token %}
+                    <input type="text" name="id" class="form-control">
+                </div>
+                <div class="col-md-12">
+                    <input type="file" name="filepond" class="filepond">
+                </div>
+                <div class="col-md-12">
+                    <label for="">Vehiculo</label>
+                    <input type="text" name="name" class="form-control" placeholder="Nombre u clave del vehiculo">
+                </div>
+                <div class="col-md-12">
+                    <label for="">Número de serie</label>
+                    <input type="text" name="serial_number" class="form-control" placeholder="Número de serie">
+                </div>
+                <div class="col-md-12">
+                    <label for="">Estado</label>
+                    <select name="state" class="form-select">
+                        <option value="QUERETARO">Querétaro</option>
+                        <option value="MEXICO">Estado de México</option>
+                        <option value="GUANAJUATO">Guanajuato</option>
+                        <option value="HIDALGO">Hidalgo</option>
+                        <option value="MICHOACAN">Michoacán</option>
+                        <option value="SAN LUIS POTOSI">San Luis Potosí</option>
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <label for="">color</label>
+                    <input type="text" name="color" class="form-control" placeholder="color" list="colors">
+                </div>
+                
+                <div class="col-md-12">
+                    <label for="">Placa</label>
+                    <input type="text" name="plate" class="form-control" placeholder="Ej. UMG-345-D">
+                </div>
+                <div class="col-md-12">
+                    <label for="">Modelo</label>
+                    <input type="text" name="model" class="form-control" placeholder="Modelo">
+                </div>
+                <div class="col-md-12">
+                    <label for="">Año</label>
+                    <input type="text" name="year" class="form-control" placeholder="Año">
+                </div>
+                <div class="col-md-12">
+                    <label for="">Marca</label>
+                    <input type="text" name="brand" class="form-control" placeholder="Marca">
+                </div>
+                <div class="col-md-12">
+                    <label for="">Kilometraje</label>
+                    <div class="input-group">
+                        <input type="text" name="mileage" class="form-control" placeholder="Kilometraje">
+                        <span class="input-group-text">Km</span>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <label for="">Tipo de transmisión</label>
+                    <select name="transmission_type" class="form-select">
+                        <option value="">-----</option>
+                        <option value="Estandar">Estandar</option>
+                        <option value="Automatico">Automatico</option>
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <label for="">Propietario</label>
+                    <select name="owner_id" class="form-select"></select>
+                    <div class="form-text">Vehículo a nombre de...</div>
+                </div>
+                <div class="col-md-12">
+                    <label for="">Responsable</label>
+                    <select name="responsible_id" class="form-select"></select>
+                    <div class="form-text">Quien está usando el vehiculo</div>
+                </div>
+                <div class="col-12 text-center">
+                    <button type="submit" name="update" class="btn btn-primary">
+                        Actualizar
+                    </button>
+                    <button type="submit" name="add" class="btn btn-primary">
+                        Guardar
+                    </button>
+                </div>
+            </div>
+            <div class="">
+                <datalist id="colors">
+                    <option value="Blanco">
+                    <option value="Negro">
+                    <option value="Gris">
+                    <option value="Plateado">
+                    <option value="Rojo">
+                    <option value="Azul">
+                    <option value="Verde">
+                    <option value="Amarillo">
+                    <option value="Naranja">
+                    <option value="Morado">
+                </datalist>
+            </div>
+        </form>
+    </div>
+    <div class="offcanvas-footer"></div>
+</div>

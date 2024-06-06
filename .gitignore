@@ -1,6 +1,13 @@
 /core
 /modules/migrations/
 /modules/__pycache__/
+/modules/views/authentication/__pycache__/
+/modules/views/computer-equipment/__pycache__/
+/modules/views/equipment-and-tools/__pycache__/
+/modules/views/infrastructure/__pycache__/
+/modules/views/main/__pycache__/
+/modules/views/users/__pycache__/
+/modules/views/vehicles/__pycache__/
 /users/migrations/
 /users/__pycache__/
 /static/assets/css/styles.css
@@ -9,3 +16,4 @@
 /docs/
 /__pycache__/
 db.sqlite3
+*.pyc

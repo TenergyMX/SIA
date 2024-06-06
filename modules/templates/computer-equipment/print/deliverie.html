@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ title }}</title>
+        <style>
+            *, ::after, ::before {
+                box-sizing: border-box;
+            }
+    
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+    
+            .table th,
+            .table td {
+                text-align: center;
+                vertical-align: middle;
+            }
+    
+            .table-bordered th,
+            .table-bordered td {
+                border: 1px solid #dee2e6;
+                padding: 5px;
+                vertical-align: bottom;
+            }
+    
+            .table-borderless th,
+            .table-borderless td {
+                padding: 5px;
+                vertical-align: bottom;
+            }
+    
+            section {
+                margin-bottom: 20px;
+                margin-top: 40px;
+            }
+    
+            p {
+                margin-bottom: 10px;
+            }
+    
+            ol {
+                padding-left: 20px;
+                margin-bottom: 10px;
+            }
+    
+            ol li {
+                margin-bottom: 5px;
+            }
+    
+            hr {
+                border-top: 1px solid #dee2e6;
+                margin-top: 5px;
+                margin-bottom: 5px;
+            }
+    
+            .text-center {
+                text-align: center;
+            }
+        </style>
+    </head>
+<body>
+    <section>
+        <p>
+            Yo, <strong>{{ user.name }}</strong>, certifico haber recibido el siguiente material detallado a continuación, el cual se me ha asignado para el desempeño de mis funciones laborales. A continuación, se encuentra la lista de equipos asignados:
+        </p>
+        <div class="">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>TIPO</th>
+                        <th>MODELO</th>
+                        <th>NUMERO DE SERIE</th>
+                        <th>ESTADO</th>
+                        <th>NOTAS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if data %}
+                    {% for item in data %}
+                    <tr>
+                        <td>{{ item.model }}</td>
+                        <td>{{ item.fields.model }}</td>
+                        <td>{{ item.fields.serial_number }}</td>
+                        <td><span></span></td>
+                        <td><span></span></td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5">Sin equipos asignados</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <br>
+    </section>
+    <section>
+        <br><br><br><br><br>
+        <br><br><br><br>
+        <div class="table-responsive">
+            <table class="table table-borderless">
+                <tbody>
+                    <tr>
+                        <td class="text-center" style="padding: auto 24px;">
+                            <hr>
+                        </td>
+                        <td class="text-center" style="padding: auto 24px;">
+                            <hr>
+                        </td>
+                        <td class="text-center" style="padding: auto 24px;">
+                            <hr>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Nombre y Firma de Empleado
+                        </td>
+                        <td>
+                            Nombre y Firma de quien recibe el cargo
+                        </td>
+                        <td>
+                            Nombre y Firma de jefe inmediato
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</body>
+</html>
