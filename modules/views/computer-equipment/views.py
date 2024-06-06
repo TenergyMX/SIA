@@ -439,7 +439,7 @@ def get_computers_equipment(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in datos:
-            item["btn_action"] = f"<a href='/computers-equipment/info/{item["id"]}/' class='btn btn-icon btn-sm btn-primary-light' data-computer-system='show-info' aria-label='info'>" \
+            item["btn_action"] = f"<a href='/computers-equipment/info/{item['id']}/' class='btn btn-icon btn-sm btn-primary-light' data-computer-system='show-info' aria-label='info'>" \
                 "<i class=\"fa-solid fa-eye\"></i>" \
             "</a>\n"
             if access["update"]:
