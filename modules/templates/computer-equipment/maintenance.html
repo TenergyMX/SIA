@@ -1,0 +1,89 @@
+{% extends 'ynex/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Mantenimiento
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Equipo de Computo</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Mantenimiento
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section id="v-maintenance-pane">
+    <div class="info">
+        <div class="card custom-card">
+            <div class="card-header justify-content-between">
+                <div class="card-title">
+                    Mantenimiento
+                </div>
+                <div class="">
+                    <button type="button" class="btn btn-sm btn-primary" data-sia-computer-equipment-maintenance="add-item" title="Agregar usuario">
+                        <i class="fa-solid fa-plus"></i>
+                        Agregar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-info-light" data-sia-computer-equipment-maintenance="refresh-table"
+                        title="Refrescar tabla" data-refresh-table="table_refrendo">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive w-100">
+                    <table class="table table-bordered w-100" id="maintenance_table">
+                        <thead></thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="info-details" style="display: none;">
+        <div class="row">
+            <div class="col-lg d-none d-xxl-block">
+                <div class="card">
+                    <div class="card-body"></div>
+                </div>
+            </div>
+            <div class="col-lg col-xxl-10">
+                {% include "computer-equipment/cards/maintenance_info.html" %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+
+{% block modals %}
+{% include "computer-equipment/modals/mdl_crud_maintenance.html" %}
+{% endblock %}
+
+{% block head %} {% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/users/providers.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/maintenance.js' %}"></script>
+<script>
+    const mantenimiento = new ComputerEquipment_maintenance({
+        table: { id: "#maintenance_table" },
+    });
+
+    const usuarios = new Users({
+        list: { id: ".modal select[name='user_id']"}
+    });
+
+    const proveedores = new Providers({
+        list: { id: ".modal select[name='provider_id']" }
+    });
+</script>
+{% endblock %}

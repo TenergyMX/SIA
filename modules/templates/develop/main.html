@@ -1,0 +1,107 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">Desarrollador</h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Usuarios</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Desarrollador
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+<section>
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card custom-card">
+                <div class="card-header justify-content-between">
+                    <div class="card-title">
+                        Carga de información a la Base de datos
+                    </div>
+                    <div class="">
+                        <ul class="nav nav-tabs justify-content-end nav-tabs-header mb-0" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" data-bs-toggle="tab" role="tab" aria-current="page" href="#file-header" aria-selected="true">
+                                    Archivo
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" data-bs-toggle="tab" role="tab" aria-current="page" href="#console-header" aria-selected="false" tabindex="-1">
+                                    Consola
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        <div class="tab-pane m-0 p-0 border-0 show active" id="file-header" role="tabpanel">
+                            <form action="">
+                                <div class="alert alert-primary d-flex align-items-center" role="alert">
+                                    <div class="me-2">
+                                        <i class="fa-regular fa-circle-info fa-xl"></i>
+                                    </div>
+                                    <div class="">
+                                        Los diccionarios que no se encuentren en la db pero si en el JSON se agregaran a la db.
+                                    </div>
+                                </div>
+                                <div class="alert alert-primary d-flex align-items-center" role="alert">
+                                    <div class="me-2">
+                                        <i class="fa-regular fa-circle-info fa-xl"></i>
+                                    </div>
+                                    <div class="">
+                                        Los diccionarios que que coincida con el id se actualizan las columnas seleccionadas en json.
+                                    </div>
+                                </div>
+                                <div class="">
+                                    {% csrf_token %}
+                                </div>
+                                <div class="row">
+                                    <label for="records" class="col-md-3 col-lg col-form-label">
+                                        JSON
+                                    </label>
+                                    <div class="col-md col-lg-10">
+                                        <input type="file" name="records" id="records" class="form-control" accept=".json,application/json">
+                                    </div>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <button type="submit" class="btn btn-lg btn-primary">
+                                        Guardar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="tab-pane m-0 p-0 border-0" id="console-header" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-bordered w-100" id="table-consola">
+                                    <thead>
+                                        <tr>
+                                            <th>Estatus</th>
+                                            <th>Modelo</th>
+                                            <th>Mensaje</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/develop/develop.js' %}"></script>
+{% endblock %}

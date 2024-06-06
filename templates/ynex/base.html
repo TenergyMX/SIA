@@ -18,7 +18,8 @@
 </head>
 <body>
     <div id="loader" class="">
-        <amp-img src="{% static 'assets/images/media/loader.svg' %}" alt="loader" layout="responsive" style="max-width: 300px;"></amp-img>
+        <!-- <amp-img src="{% static 'assets/images/media/loader.svg' %}" alt="loader" layout="responsive" style="max-width: 300px;"></amp-img> -->
+        <i class="fa-solid fa-loader fa-spin text-primary" style="font-size:5rem"></i>
     </div>
 
     <div class="page">
@@ -67,12 +68,24 @@
     {% include "ynex/utils/scripts.html" %}
     
     <!-- defaultmenu -->
-    <script src="{% static 'assets/js/defaultmenu.js' %}"></script>
+    <script src="{% static 'assets/js/defaultmenu.js' %}" defer></script>
     <!-- simplebar js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplebar/6.2.5/simplebar.min.js" integrity="sha512-HV1U44HR4mYVDcsxzJpghYyGEy2PvbePe9UFXlV3vnzf4yFhbKA9QNpnhy4VWwnaC2jKzijITVWHPZBCOuc51g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="{% static 'assets/js/simplebar.js' %}"></script>
     <script src="{% static 'assets/js/custom.js' %}"></script>
     <script src="{% static 'assets/js/module.js' %}"></script>
     {% block scripts %} {% endblock %}
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "success" %}
+                <script>
+                    alertify.success('{{ message }}');
+                </script>
+            {% elif message.tags == "error" %}
+                <script>
+                    alertify.error('{{ message }}');
+                </script>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 </body>
 </html>

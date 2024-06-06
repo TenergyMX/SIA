@@ -1,0 +1,67 @@
+{% extends 'ynex/base.html' %}
+
+{% block content %}
+<div class="">
+    <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+        <h1 class="page-title fw-semibold fs-18 mb-0">
+            Refrendo
+        </h1>
+        <div class="ms-md-1 ms-0"></div>
+    </div>
+    <section>
+        <div class="row">
+            <div class="col-md col-xxl">
+                <div class="card custom-card">
+                    <div class="card-header justify-content-between">
+                        <div class="card-title">
+                            Refrendo
+                        </div>
+                        <div class="">
+                            {% if access.create %}
+                            <button type="button" class="btn btn-sm btn-primary" data-vehicle-refrendo="add-item"
+                                title="Agregar usuario">
+                                <i class="fa-solid fa-plus"></i>
+                                Agregar
+                            </button>
+                            {% endif %}
+                            <button type="button" class="btn btn-icon btn-sm btn-info-light" data-vehicle-refrendo="refresh-table"
+                                title="Refrescar tabla" data-refresh-table="table_refrendo">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered w-100" id="table_refrendo">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+    {% include "vehicles/modals/mdl_crud_refrendo.html" %}
+{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/vehicles/vehicles.js' %}"></script>
+<script src="{% static 'assets/js/vehicles/vehicles_refrendo.js' %}"></script>
+<script>
+    const refrendo = new VehiclesRefrendo({
+        table: { id: "#table_refrendo" },
+        vehicle: new Vehicles({
+            list: { id: '[name="vehiculo_id"]' }
+        })
+    });
+</script>
+{% endblock %}

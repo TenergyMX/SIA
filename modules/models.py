@@ -44,6 +44,10 @@ class Vehicle(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        verbose_name = "Vehículo"
+        verbose_name_plural = "Vehículos"
+
     def __str__(self):
         owner_name = self.owner.username if self.owner else "Sin propietario"
         return f"{self.brand} {self.model} ({self.plate}) - {owner_name}"
@@ -106,6 +110,10 @@ class Vehicle_Responsive(models.Model):
 
     def __str__(self):
         return f"Responsiva para {self.vehicle}"    
+    
+    class Meta:
+        verbose_name = "Responsiva de Vehículo"
+        verbose_name_plural = "Responsivas de Vehículos"
 
 class Vehicle_Insurance(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
@@ -135,11 +143,15 @@ class Vehicle_Audit(models.Model):
     check_fuel_level = models.CharField(max_length=20, blank=True, null=True)
     general_notes = models.TextField(blank=True, null=True)
     is_checked = models.BooleanField(default=False)
-    visible = models.BooleanField(default=False)
+    is_visible = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Auditoría de {self.vehicle} el {self.audit_date}"
+    
+    class Meta:
+        verbose_name = 'Auditoría de Vehículo'
+        verbose_name_plural = 'Auditoría de Vehículos'
     
 class Vehicle_Maintenance(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
@@ -157,3 +169,249 @@ class Vehicle_Maintenance(models.Model):
     
     def __str__(self):
         return f"{self.vehicle} - {self.type} - {self.date}"
+    
+    class Meta:
+        verbose_name = 'Mantenimiento de Vehículo'
+        verbose_name_plural = 'Mantenimiento de Vehículos'
+    
+
+# Todo ----- [2] [ EQUIPOS DE COMPUTO ] -----
+
+class ComputerSystem(models.Model):
+    is_active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, blank=True, null=True)
+    serial_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Número de Serie")
+    name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Nombre")
+    equipment_type = models.CharField(max_length=20, blank=True, null=True, verbose_name="Tipo de Equipo")
+    so = models.CharField(max_length=20, blank=True, null=True, verbose_name="Sistema Operativo")
+    brand = models.CharField(max_length=50, blank=True, null=True, verbose_name="Marca")
+    model = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modelo")
+    processor = models.CharField(max_length=50, blank=True, null=True, verbose_name="Procesador")
+    num_cores = models.IntegerField(blank=True, null=True, verbose_name="Número de Núcleos")
+    processor_speed = models.FloatField(blank=True, null=True, verbose_name="Velocidad del Procesador")
+    architecture = models.CharField(max_length=20, blank=True, null=True, verbose_name="Arquitectura del Procesador")
+    disk_type = models.CharField(max_length=10, blank=True, null=True, verbose_name="Tipo de Disco Duro")
+    disk_capacity = models.CharField(max_length=20, blank=True, null=True, verbose_name="Capacidad de Almacenamiento")
+    ram = models.IntegerField(blank=True, null=True, verbose_name="RAM")
+    ram_type = models.CharField(max_length=20, blank=True, null=True, verbose_name="Tipo de RAM")
+    ram_speed = models.IntegerField(blank=True, null=True, verbose_name="Velocidad de RAM")
+    graphics_card = models.CharField(max_length=100, blank=True, null=True, verbose_name="Tarjeta Gráfica")
+    color = models.CharField(max_length=20, blank=True, null=True, verbose_name="Color")
+    battery = models.CharField(max_length=50, blank=True, null=True, verbose_name="Batería")
+    warranty = models.CharField(max_length=50, blank=True, null=True, verbose_name="Garantía")
+    location = models.CharField(max_length=100, blank=True, null=True, verbose_name="Ubicación")
+    previous_responsible = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='previous_responsible', verbose_name="Responsable Anterior")
+    current_responsible = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='current_responsible', verbose_name="Responsable Actual")
+    equipment_status = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Equipo")
+    last_maintenance_date = models.DateField(blank=True, null=True, verbose_name="Fecha del Último Mantenimiento")
+    comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
+
+    class Meta:
+        verbose_name = "Equipo de Computo"
+        verbose_name_plural = "Equipos de Computo"
+
+    def __str__(self):
+        if self.name:
+            return f"{self.name} ({self.brand} {self.model})"
+        else:
+            return "Equipo sin nombre"
+        
+class ComputerPeripheral(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
+    name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Nombre")
+    peripheral_type = models.CharField(max_length=20, blank=True, null=True, verbose_name="Tipo de Periférico")
+    brand = models.CharField(max_length=50, blank=True, null=True, verbose_name="Marca")
+    model = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modelo")
+    serial_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Número de Serie")
+    description = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    acquisition_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Adquisición")
+    location = models.CharField(max_length=100, blank=True, null=True, verbose_name="Ubicación")
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Responsable")
+    peripheral_status = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Periférico")
+    comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
+
+    class Meta:
+        verbose_name = "Periférico de Equipo de Computo"
+        verbose_name_plural = "Periféricos de Equipos de Computo"
+
+    def __str__(self):
+        if self.name:
+            if self.responsible:
+                return f"{self.name} ({self.brand} {self.model}) - Asignado a: {self.responsible.username}"
+            else:
+                return f"{self.name} ({self.brand} {self.model}) - Libre"
+        else:
+            return "Periférico sin nombre"
+        
+class Software(models.Model):
+    SOFTWARE_TYPE_CHOICES = [
+        ('individual', 'Individual'),
+        ('package', 'Paquete'),
+    ]
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
+    function = models.CharField(max_length=34, blank=True, null=True, verbose_name="Función del Software", help_text="Por ejemplo: Antivirus, Editor de texto, Suite de oficina, etc.")
+    name = models.CharField(max_length=100, verbose_name="Nombre del Software")
+    version = models.CharField(max_length=50, blank=True, null=True, verbose_name="Versión del Software")
+    description = models.TextField(blank=True, null=True, verbose_name="Descripción del Software")
+    software_type = models.CharField(max_length=10, choices=SOFTWARE_TYPE_CHOICES, default='individual', verbose_name="Tipo de Software")
+    is_unlimited = models.BooleanField(default=False, verbose_name="Instalaciones Ilimitadas")
+    max_installations = models.IntegerField(blank=True, null=True, verbose_name="Máximo de Instalaciones")
+    installation_count = models.IntegerField(default=0, verbose_name="Contador de Instalaciones")
+
+    class Meta:
+        verbose_name = "Software"
+        verbose_name_plural = "Softwares"
+
+    def __str__(self):
+        return self.name
+    
+class SoftwareInstallation(models.Model):
+    software = models.ForeignKey('Software', on_delete=models.CASCADE, verbose_name="Software", blank=True, null=True)
+    software_identifier = models.CharField(max_length=100, verbose_name="Identificador del Software", help_text="Identificador del software proporcionado por el proveedor")
+    computerSystem = models.ForeignKey('ComputerSystem', on_delete=models.CASCADE, verbose_name="Equipo")
+    installation_date = models.DateField(auto_now_add=True, verbose_name="Fecha de Instalación")
+
+    class Meta:
+        verbose_name = "Instalación de Software"
+        verbose_name_plural = "Instalaciones de Software"
+
+    def __str__(self):
+        return f"{self.software.name if self.software else 'Software sin nombre'} en {self.computerSystem.name}"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if not self.software:
+            raise ValidationError("Debe especificar un software.")
+        
+    def save(self, *args, **kwargs):
+        # Actualizar el contador de instalaciones del software al guardar la instalación
+        self.software.installation_count = SoftwareInstallation.objects.filter(software=self.software).count()
+        self.software.save()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Actualizar el contador de instalaciones del software al eliminar la instalación
+        self.software.installation_count = SoftwareInstallation.objects.filter(software=self.software).count() - 1
+        self.software.save()
+        super().delete(*args, **kwargs)
+        
+
+class ComputerEquipment_Maintenance(models.Model):
+    computerSystem = models.ForeignKey(
+        'ComputerSystem',
+        blank=True, null=True,
+        on_delete=models.CASCADE,
+        verbose_name="Equipo"
+    )
+    performed_by = models.CharField(max_length=100, blank=True,null=True, verbose_name='¿Quién lo hizo?', help_text="Usuario o Proveedor")
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Proveedor")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Usuario")
+    type = models.CharField(max_length=100,blank=True, null=True, verbose_name='Tipo de mantenimiento')
+    cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='Costo')
+    actions = models.TextField( blank=True,null=True,verbose_name='Acciones')
+    document = models.FileField(upload_to='doc/maintenance/', blank=True, null=True, verbose_name='Documento')
+    is_checked = models.BooleanField(default=False)
+    date = models.DateField(blank=True, null=True, verbose_name='Fecha de mantenimiento')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Mantenimiento de Equipo de Computo'
+        verbose_name_plural = 'Mantenimiento de Equipos de Computo'
+
+    def __str__(self):
+        return f"{self.type if self.type else 'Sin tipo'}"
+
+class ComputerEquipment_Audit(models.Model):
+    computerSystem = models.ForeignKey(
+        'ComputerSystem',
+        blank=True, null=True,
+        on_delete=models.CASCADE,
+        verbose_name="Equipo"
+    )
+    audit_date = models.DateField(blank=True, null=True, verbose_name="Fecha de la Auditoria")
+
+    pantalla_check = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estatus de la Pantalla")
+    pantalla_notas = models.TextField(blank=True, null=True, verbose_name="Notas del Estatus de la Pantalla")
+
+    teclado_check = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estatus del Teclado")
+    teclado_notas = models.TextField(blank=True, null=True, verbose_name="Notas del Estatus del Teclado")
+
+    puertos_check = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estatus de los Puertos")
+    puertos_notas = models.TextField(blank=True, null=True, verbose_name="Notas del Estatus de los Puertos")
+
+    cargador_check = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estatus del Cargador")
+    cargador_notas = models.TextField(blank=True, null=True, verbose_name="Notas del Estatus del Cargador")
+
+    carcasa_check = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estatus de la Carcasa del Equipo")
+    carcasa_notas = models.TextField(blank=True, null=True, verbose_name="Notas del Estatus de la Carcasa del Equipo")
+
+    limpieza_check = models.CharField(max_length=20, blank=True, null=True, verbose_name="Limpieza del Equipo")
+    fecha_ultima_limpieza = models.DateField(blank=True, null=True, verbose_name="Fecha de la Última Limpieza")
+
+    general_notes = models.TextField(blank=True, null=True, verbose_name="Notas Generales")
+    is_checked = models.BooleanField(default=False, verbose_name='¿Está revisado?')
+    is_visible = models.BooleanField(default=False, verbose_name='¿Está Visible?')
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+    class Meta:
+        verbose_name = "Auditoría de Equipo de Computo"
+        verbose_name_plural = "Auditoría de Equipos de Computo"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Auditoría - {self.created_at.strftime('%Y-%m-%d')}"
+    
+class ComputerEquipment_Responsiva(models.Model):
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable")
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Área del responsable")
+    items = models.TextField(blank=True, null=True, verbose_name='Items')
+    record = models.TextField(blank=True, null=True, verbose_name='Historial')
+    responsibility_letter = models.FileField(upload_to='doc/responsibility_letter/', blank=True, null=True, verbose_name='Responsiva')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+    class Meta:
+        verbose_name = "Responsiva de Equipo de Computo"
+        verbose_name_plural = "Responsivas de Equipos de Computo"
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Responsiva de {self.responsible}"
+    
+class ComputerEquipment_Deliveries(models.Model):
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable")
+    items = models.TextField(blank=True, null=True, verbose_name='Items')
+    responsibility_letter = models.FileField(upload_to='doc/responsibility_letter/', blank=True, null=True, verbose_name='Responsiva')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+
+    class Meta:
+        verbose_name = "Entrega de Equipo de Computo"
+        verbose_name_plural = "Entregas de Equipos de Computo"
+
+    def __str__(self):
+        return f"Entrega de equipo"
+    
+# Todo ----- [ 3ro ] -----
+
+class Infrastructure(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable")
+    type = models.TextField(blank=True, null=True, verbose_name="Tipo de infraestructura", help_text="ej. servidor, router, switch, etc")
+    state = models.TextField(blank=True, null=True, verbose_name="Estado", help_text="ej. activo, inactivo, en mantenimiento, etc.")
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, blank=True, null=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=2)
+    notes = models.TextField(blank=True, null=True, verbose_name="Notas")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+    class Meta:
+        verbose_name = "Infraestructura"
+        verbose_name_plural = "Infraestructura"
+
+    def __str__(self):
+        return f"Infrastructure"

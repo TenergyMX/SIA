@@ -1,0 +1,73 @@
+{% extends 'ynex/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Auditoria
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Equipo de Computo</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Auditoria
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section id="v-audit-pane">
+    <div class="info">
+        <div class="card custom-card">
+            <div class="card-header justify-content-between">
+                <div class="card-title">
+                    Auditorias
+                </div>
+                <div class="">
+                    <button type="button" class="btn btn-sm btn-primary" data-sia-computer-equipment-audit="add-item" title="Agregar usuario" aria-label="add">
+                        <i class="fa-solid fa-plus"></i>
+                        Agregar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-info-light" data-sia-computer-equipment-audit="refresh-table"
+                        title="Refrescar tabla" aria-label="refresh">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive w-100">
+                    <table class="table table-bordered w-100" id="audit_table">
+                        <thead></thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+
+{% block modals %}
+{% include "computer-equipment/modals/mdl_crud_audit.html" %}
+{% endblock %}
+
+{% block head %} {% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/computerEquipment.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/audit.js' %}"></script>
+<script>
+    const auditorias = new ComputerEquipment_audit({
+        table: { id: "#audit_table"}
+    });
+
+    const equipos = new ComputerEquipment({
+        list: { id: ".modal select[name='computerSystem_id']"}
+    })
+</script>
+{% endblock %}

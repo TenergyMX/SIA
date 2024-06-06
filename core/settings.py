@@ -149,6 +149,13 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/user/login/'
 
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'tenergy.com.mx'
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_HOST_USER = 'cadena.suministro@tenergy.com.mx'
+EMAIL_HOST_PASSWORD = 'Energia2024!'
 
 # ! PWA
 # PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR,'..','static','pwa', 'sw.js')

@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html
+    lang="en"
+    dir="ltr"
+    data-nav-layout="vertical"
+    data-theme-mode="light"
+    data-header-styles="light"
+    data-menu-styles="dark"
+    loader="disable"
+>
+<head>
+    {% include "ynex/utils/head.html" %}
+    <script>
+        const redirect = "{{ redirect }}";
+    </script>
+</head>
+
+<body class="">
+    <div class="container-lg">
+        <div class="row justify-content-center align-items-center authentication authentication-basic h-100">
+            <div class="col-xxl-4 col-xl-5 col-lg-5 col-md-6 col-sm-8 col-12">
+                <div class=""></div>
+                <div class="card custom-card">
+                    <form method="post" class="card-body p-5">
+                        <p class="h5 fw-semibold mb-2 text-center">
+                            Verifica tu cuenta
+                        </p>
+                        <p class="mb-4 text-muted op-7 fw-normal text-center">
+                            Ingrese el código de 4 dígitos enviado a tu de correo electrónico registrado.
+                        </p>
+                        <div class="d-none">
+                            {% csrf_token %}
+                        </div>
+                        <div class="row gx-2">
+                            <div class="col-3">
+                                <input type="text" name="token[]" class="form-control form-control-lg text-center" id="one" maxlength="1" onkeyup="clickEvent(this,'two')">
+                            </div>
+                            <div class="col-3">
+                                <input type="text" name="token[]" class="form-control form-control-lg text-center" id="two" maxlength="1" onkeyup="clickEvent(this,'three')">
+                            </div>
+                            <div class="col-3">
+                                <input type="text" name="token[]" class="form-control form-control-lg text-center" id="three" maxlength="1" onkeyup="clickEvent(this,'four')">
+                            </div>
+                            <div class="col-3">
+                                <input type="text" name="token[]" class="form-control form-control-lg text-center" id="four" maxlength="1">
+                            </div>
+                        </div>
+                        <div class="mt-3 d-none">
+                            <span class="label">
+                                ¿No recibiste un código?
+                            </span>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-lg btn-primary w-100">
+                                Verificar
+                            </button>
+                        </div>
+                        <div class="text-center">
+                            <p class="fs-12 text-danger mt-3 mb-0">
+                                ¡No compartas el código de verificación con nadie!
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/alertify.min.js"></script>
+    <script src="{% static 'assets/js/two-step-verification.js' %}"></script>
+    <script>
+        alertify.set('notifier', 'position', 'top-right');
+        alertify.set('notifier', 'delay', 1000);
+    </script>
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "success" %}
+                <script>
+                    alertify.success('{{ message }}');
+                </script>
+            {% elif message.tags == "error" %}
+                <script>
+                    alertify.error('{{ message }}');
+                </script>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</body>
+
+</html>

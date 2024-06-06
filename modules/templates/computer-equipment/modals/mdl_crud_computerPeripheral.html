@@ -1,0 +1,91 @@
+<div class="modal fade" id="mdl_crud_computerPeripheral" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 d-none">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="0">
+                        <input type="hidden" name="computerSystem_id" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Nombre u clave</label>
+                        <input type="text" name="name" class="form-control" placeholder="Nombre u clave">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Tipo</label>
+                        <select name="peripheral_type" class="form-select">
+                            <option value="Teclado">Teclado</option>
+                            <option value="Mouse">Mouse</option>
+                            <option value="Monitor">Monitor</option>
+                            <option value="Altavoces">Altavoces</option>
+                            <option value="Impresora">Impresora</option>
+                            <option value="Webcam">Webcam</option>
+                            <option value="Micrófono">Micrófono</option>
+                            <option value="Tableta gráfica">Tableta gráfica</option>
+                            <option value="Escáner">Escáner</option>
+                            <option value="Disco duro externo">Disco duro externo</option>
+                            <option value="Router">Router</option>
+                            <option value="Switch">Switch</option>
+                            <option value="Tarjeta de sonido">Tarjeta de sonido</option>
+                            <option value="Tarjeta de red">Tarjeta de red</option>
+                            <option value="Lector de tarjetas">Lector de tarjetas</option>
+                            <option value="Joystick">Joystick</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Marca</label>
+                        <input type="text" name="brand" class="form-control" placeholder="Marca">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Modelo</label>
+                        <input type="text" name="model" class="form-control" placeholder="Modelo">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Número de serie</label>
+                        <input type="text" name="serial_number" class="form-control" placeholder="Número de serie">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Número de serie</label>
+                        <textarea name="description" class="form-control" rows="1" placeholder="Descripción"></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Fecha de Adquisición</label>
+                        <input type="date" name="acquisition_date" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Ubicación</label>
+                        <input type="text" name="location" class="form-control" placeholder="Ubicación">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Responsable</label>
+                        <select name="responsible_id" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Estado</label>
+                        <input type="text" name="peripheral_status" class="form-control" placeholder="Estado del periferico">
+                    </div>
+                    <div class="col-md">
+                        <label for="">Comentarios</label>
+                        <textarea name="comments" class="form-control" rows="1" placeholder="Descripción"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

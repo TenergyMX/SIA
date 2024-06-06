@@ -1,0 +1,67 @@
+<div class="modal fade" id="mdl_crud_software" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 d-none">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Funcion</label>
+                        <input type="text" name="function" class="form-control" placeholder="Que tipo de software es" list="opciones-funcion">
+                        <datalist id="opciones-funcion">
+                            <option value="Antivitus"></option>
+                            <option value="Editor de texto"></option>
+                        </datalist>    
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Nombre</label>
+                        <input type="text" name="name" class="form-control" placeholder="Nombre">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Version</label>
+                        <input type="text" name="version" class="form-control" placeholder="Version">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Tipo</label>
+                        <select name="software_type" class="form-select">
+                            <option value="individual">individual</option>
+                            <option value="package">Paquete</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Ilimitado</label>
+                        <select name="is_unlimited" class="form-select">
+                            <option value="1">SI</option>
+                            <option value="0">NO</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Maximo de intalaciones</label>
+                        <input type="number" name="max_installations" class="form-control" placeholder="cantidad">
+                    </div>
+                    <div class="col-md">
+                        <label for="">Descripción</label>
+                        <input name="description" class="form-control" placeholder="Descripción del software">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
