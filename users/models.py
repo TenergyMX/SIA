@@ -56,7 +56,7 @@ class User_Access(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
     area = models.ForeignKey(Area, on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-    #updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
 
     class Meta:
         verbose_name = "Acceso de Usuario"
@@ -101,7 +101,7 @@ class SubModule_Permission(models.Model):
     update = models.BooleanField(default=False)
     delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-    #updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
 
     def __str__(self):
         return f"Permisos de {self.user} en el submódulo: {self.subModule}"
