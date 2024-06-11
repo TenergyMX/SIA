@@ -56,7 +56,7 @@ class User_Access(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
     area = models.ForeignKey(Area, on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+    #updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
 
     class Meta:
         verbose_name = "Acceso de Usuario"
