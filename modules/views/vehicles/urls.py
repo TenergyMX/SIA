@@ -13,6 +13,8 @@ urlpatterns = [
     path("vehicles/insurance/", views.module_vehicle_insurance),
     path("vehicles/audit/", views.module_vehicle_audit),
     path("vehicles/maintenance/", views.module_vehicle_maintenance),
+    path("vehicles/calendar/", views.vehicles_calendar_views),
+    path("vehicles/fuel/", views.vehicles_fuel_views),
 
     # TODO ---------- [ REQUEST ] ----------
 
@@ -70,4 +72,12 @@ urlpatterns = [
     path("get_vehicles_maintenance/", views.get_vehicles_maintenance),
     path("update_vehicle_maintenance/", views.update_vehicle_maintenance),
     path("delete_vehicle_maintenance/", views.delete_vehicle_maintenance),
+
+    path("get-vehicles-calendar/", views.get_vehicles_calendar),
+
+    path("add-vehicle-fuel/", views.add_vehicle_fuel),
+    path("get-vehicle-fuels/", views.get_vehicles_fuels),
+    path("get-vehicle-fuels-charts/", views.get_vehicles_fuels_charts),
+    path("update-vehicle-fuel/", views.update_vehicle_fuel),
+    path("delete-vehicle-fuel/", views.delete_vehicle_fuel),
 ]
