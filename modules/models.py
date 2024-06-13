@@ -415,3 +415,23 @@ class Infrastructure(models.Model):
 
     def __str__(self):
         return f"Infrastructure"
+    
+
+class Vehicle_fuel(models.Model):
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Vehículo")
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable")
+    payment_receipt = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Recibo de pago")
+    fuel = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, blank=True, null=True, verbose_name="Gasolina (Litros)")
+    fuel_type = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
+    notes = models.TextField(blank=True, null=True, verbose_name="Notas")
+    date = models.DateField(blank=True, null=True, verbose_name='Fecha de rellenado')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+    class Meta:
+        verbose_name = "Gasolina del Vehículo"
+        verbose_name_plural = "Gasolina de Vehículos"
+
+    def __str__(self):
+        return f"Gasolina"
