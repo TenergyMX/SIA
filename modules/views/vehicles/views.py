@@ -1,6 +1,7 @@
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect, HttpResponse
 from django.db.models import F, Q, Value, Max, Sum, CharField, BooleanField
+from django.db.models.functions import TruncMonth
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -13,6 +14,7 @@ import json, os
 import requests
 import random
 import glob
+import calendar
 from decimal import Decimal
 from modules.utils import * # Esto es un helpers
 
@@ -189,6 +191,42 @@ def module_vehicle_maintenance(request):
 
     if context["access"]["read"]:
         template = "vehicles/maintenance.html"
+    else:
+        template = "error/access_denied.html"
+    return render(request, template, context)
+
+@login_required
+def vehicles_calendar_views(request):
+    context = user_data(request)
+    module_id = 2
+    submodule_id = 21
+
+    access = get_module_user_permissions(context, submodule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+
+    if context["access"]["read"]:
+        template = "vehicles/calendar.html"
+    else:
+        template = "error/access_denied.html"
+    return render(request, template, context)
+
+@login_required
+def vehicles_fuel_views(request):
+    context = user_data(request)
+    module_id = 2
+    submodule_id = 22
+
+    access = get_module_user_permissions(context, submodule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+
+    if context["access"]["read"]:
+        template = "vehicles/fuel.html"
     else:
         template = "error/access_denied.html"
     return render(request, template, context)
@@ -1884,280 +1922,281 @@ def delete_vehicle_maintenance(request):
     return JsonResponse(response)
 
 
-def get_notifications(request):
-    response = {"success": False, "data": []}
+
+def get_vehicles_calendar(request):
     context = user_data(request)
+    response = {"status": "error", "message": "sin procesar", "data": []}
+    dt = request.GET
+    month = dt.get("month")
+    year = dt.get("year")
+    response["data"] = []
     company_id = context["company"]["id"]
+
+    # Obtener la fecha actual
     fecha_actual = datetime.now().date()
-    current_year = datetime.today().year
-    current_month = datetime.today().month
-    roles_usuario = [1,2,3]
 
-    access = get_user_access(context)
-    access = access["data"]
+    mante = Vehicle_Maintenance.objects.filter(vehicle__company_id = company_id).values("date", "vehicle__name")
+    audit = Vehicle_Audit.objects.filter(vehicle__company_id = company_id).values("audit_date", "vehicle__name")
+    tenencia = Vehicle_Tenencia.objects.filter().values("vehiculo__name", "fecha_pago")
+    refrendo = Vehicle_Refrendo.objects.filter().values("vehiculo__name", "fecha_pago")
+    verificacion = Vehicle_Verificacion.objects.filter().values("vehiculo__name", "fecha_pago")
 
-    obj_vehicles = Vehicle.objects.filter(company_id=company_id).values().exclude(is_active=False)
-    if context["role"]["id"] not in roles_usuario:
-        obj_vehicles = obj_vehicles.filter(responsible_id = context["user"]["id"])
 
-    # !   /-----------------------------------------------/
-    # !  /  VEHICULOS   / INFO
-    # ! /-----------------------------------------------/
-    # Nada de nada
-    # !   /-----------------------------------------------/
-    # !  /  VEHICULOS   / TENENCIA 
-    # ! /-----------------------------------------------/
-    if 5 in access and access[5]["read"]:
-        obj_tenencia = Vehicle_Tenencia.objects.filter(vehiculo__company_id=company_id)
 
-        if context["role"]["id"] not in roles_usuario:
-            obj_tenencia = obj_tenencia.filter(vehiculo__responsible_id=context["user"]["id"])
+    if year and year != None:
+        mante = mante.filter(date__year = year)
+        audit = audit.filter(audit_date__year = year)
+        verificacion = verificacion.filter(fecha_pago__year = year)
 
-        obj_tenencia = obj_tenencia.values('vehiculo__id', 'vehiculo__name').annotate(ultima_fecha_pago=Max('fecha_pago'))
+    if month and month != None:
+        mante = mante.filter(date__month = month)
+        audit = audit.filter(audit_date__month = month)
+        verificacion = verificacion.filter(fecha_pago__month = month)
 
-        vehicles_with_tenencia = set()
-        for item in obj_tenencia:
-            ultima_fecha_pago = item["ultima_fecha_pago"]
-            if ultima_fecha_pago < fecha_actual:
-                response["data"].append({
-                    "alert": "danger",
-                    "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                    "title": "Vehículo sin tenencia (Vencido)",
-                    "text": f"Vehículo: {item['vehiculo__name']}",
-                    "link": f"/module/vehicle/info/{item['vehiculo__id']}/"
-                })
-            elif fecha_actual <= ultima_fecha_pago <= fecha_actual + timedelta(days=5):
-                dias_restantes = (ultima_fecha_pago - fecha_actual).days
-                response["data"].append({
-                    "alert": "info",
-                    "icon": "<i class=\"fa-solid fa-info fs-18\"></i>",
-                    "title": f"Tenencia a punto de vencer en {dias_restantes} días",
-                    "text": f"Vehículo: {item['vehiculo__name']}",
-                    "link": f"/module/vehicle/info/{item['vehiculo__id']}/"
-                })
-            vehicles_with_tenencia.add(item['vehiculo__id'])
-
-        vehicles_without_tenencia = obj_vehicles.exclude(id__in=vehicles_with_tenencia)
-
-        for vehicle in vehicles_without_tenencia:
+    # Función auxiliar para obtener el color en función de la fecha de finalización
+    def get_color(end_date):
+        if end_date < fecha_actual:
+            return "#A5C334"  # Verde
+        else:
+            return "#FFA500"
+    
+    # Función auxiliar para agregar eventos al response
+    def add_event(event_list, title_prefix, date_field, name_field):
+        for item in event_list:
+            end_date = item[date_field]
+            color = get_color(end_date)
             response["data"].append({
-                "alert": "danger",
-                "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                "title": "Vehículo sin tenencia",
-                "text": f"Vehículo: {vehicle['name']}",
-                "link": f"/module/vehicle/info/{vehicle['id']}/"
+                "title": f"{title_prefix}: {item[name_field]}",
+                "start": end_date,
+                "end": end_date,
+                "color": color,
+                "description": ""
             })
-        pass
-    # !   /-----------------------------------------------/
-    # !  /  VEHICULOS   / REFRENDO 
-    # ! /-----------------------------------------------/
-    if 6 in access and access[6]["read"]:
-        obj_refrendo = Vehicle_Refrendo.objects.filter(vehiculo__company_id=company_id)
 
-        # Filtrar por el rol del usuario
-        if context["role"]["id"] not in roles_usuario:
-            obj_refrendo = obj_refrendo.filter(vehiculo__responsible_id=context["user"]["id"])
+    # Agregar eventos de mantenimiento, auditoría y verificación
+    add_event(mante, "Mant", "date", "vehicle__name")
+    add_event(audit, "Auditoria", "audit_date", "vehicle__name")
+    add_event(tenencia, "Pago de Tenencia", "fecha_pago", "vehiculo__name")
+    add_event(refrendo, "Pago de Refrendo", "fecha_pago", "vehiculo__name")
+    add_event(verificacion, "Pago de Verificación", "fecha_pago", "vehiculo__name")
 
-        # Anotar la última fecha de pago por vehículo
-        obj_refrendo = obj_refrendo.values('vehiculo__id', 'vehiculo__name') \
-            .annotate(ultima_fecha=Max('fecha_pago'))
-        
-        # Verificar si hay vehículos sin refrendos o vencidos
-        vehicles_with_refrendo = set()
-        for item in obj_refrendo:
-            if item["ultima_fecha"] < fecha_actual:
-                response["data"].append({
-                    "alert": "warning",
-                    "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                    "title": "Vehículo sin refrendo (Vencido)",
-                    "text": f"Vehículo: {item['vehiculo__name']}",
-                    "link": f"/module/vehicle/info/{item['vehiculo__id']}/"
-                })
-            elif item["ultima_fecha"] <= fecha_actual + timedelta(days=5):
-                dias_restantes = (item["ultima_fecha"] - fecha_actual).days
-                response["data"].append({
-                    "alert": "info",
-                    "icon": "<i class=\"fa-solid fa-info fs-18\"></i>",
-                    "title": f"refrendo a punto de vencer en {abs(dias_restantes)} días",
-                    "text": f"Vehículo: {item['vehiculo__name']}",
-                    "link": f"/module/vehicle/info/{item['vehiculo__id']}/"
-                })
-            vehicles_with_refrendo.add(item['vehiculo__id'])
-        
-        # Obtener los vehículos que no tienen registros de seguro
-        vehicles_without_refrendo = obj_vehicles.exclude(id__in=vehicles_with_refrendo) \
-            .values_list('name', flat=True)
 
-        # Agregar vehículos sin registros de refrendo
-        for name in vehicles_without_refrendo:
-            response["data"].append({
-                "alert": "danger",
-                "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                "title": "Vehículo sin refrendo",
-                "text": f"Vehículo: {name}"
-            })
-        pass
-    # !   /-----------------------------------------------/
-    # !  /  VEHICULOS   / VERIFICACION 
-    # ! /-----------------------------------------------/
-    if 7 in access and access[7]["read"]:
-        obj_verificacion = Vehicle_Verificacion.objects.filter(vehiculo__company_id=company_id)
-
-        if context["role"]["id"] not in roles_usuario:
-            obj_verificacion = obj_verificacion.filter(vehiculo__responsible_id=context["user"]["id"])
-        try:
-            url = request.build_absolute_uri(settings.STATIC_URL + 'assets/json/calendario_de_verificacion.json')
-            file_json = requests.get(url)
-            cv = file_json.json()
-            cv = cv["data"]
-
-            def obtener_ultimo_digito(diccionario):
-                plate = diccionario.get('plate', '')
-                for char in reversed(plate):
-                    if char.isdigit():
-                        return char
-                return False
-            
-            for item in obj_vehicles:
-                # print(item)
-                d = obtener_ultimo_digito(item)
-                payment_months = [cv[d]["s1"][0]["month_code"], cv[d]["s1"][1]["month_code"]]
-                payment_months_ES = [cv[d]["s1"][0]["month_name_ES"], cv[d]["s1"][1]["month_name_ES"]]
-
-                registro = obj_verificacion.filter(
-                    Q(fecha_pago__year= current_year) &
-                    Q(fecha_pago__month__in = payment_months) &
-                    Q(vehiculo_id = item["id"])
-                )
-                if registro.exists():
-                    """" El registro existe, No hacer nada """
-                elif current_month  in payment_months:
-                    """" Estamos en el mes para el pago del 1er Semestre """
-                    response["data"].append({
-                        "alert": "warning",
-                        "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
-                        "title": f"Realizar el pago de la verificación 1er Sem.",
-                        "text": f"Vehículo: {item['name']}",
-                        "link": f"/module/vehicle/info/{item['id']}/"
-                    })
-                elif (current_month + 1)  == cv[d]["s1"][0]["month_code"]:
-                    """" Falta un mes para el pago del 1er Semestre """
-                    month_name_ES = cv[d]["s1"][0]["month_name_ES"]
-                    response["data"].append({
-                        "alert": "info",
-                        "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
-                        "title": f"Próximo pago de verificación en {month_name_ES}",
-                        "text": f"Vehículo: {item['name']}",
-                        "link": f"/module/vehicle/info/{item['id']}/"
-                    })
-                elif current_month  == cv[d]["s2"][0]["month_code"] or current_month  == cv[d]["s2"][1]["month_code"]:
-                    """" Estamos en el mes para el pago del 2do Semestre """
-                    response["data"].append({
-                        "alert": "warning",
-                        "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
-                        "title": f"Realizar el pago de la verificación 2do Sem.",
-                        "text": f"Vehículo: {item['name']}",
-                        "link": f"/module/vehicle/info/{item['id']}/"
-                    })
-                elif (current_month + 1)  == cv[d]["s2"][0]["month_code"]:
-                    """" Falta un mes para el pago del 2er Semestre """
-                    month_name_ES = cv[d]["s2"][0]["month_name_ES"]
-                    response["data"].append({
-                        "alert": "info",
-                        "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
-                        "title": f"Próximo pago de verificación en {month_name_ES}",
-                        "text": f"Vehículo: {item['name']}",
-                        "link": f"/module/vehicle/info/{item['id']}/"
-                    })
-        except Exception as e:
-            print("Error: Vehiculos Verificacion")
-    # !   /-----------------------------------------------/
-    # !  /  VEHICULOS / SEGUROS
-    # ! /-----------------------------------------------/
-    if 9 in access and access[9]["read"]:
-        obj_seguros = Vehicle_Insurance.objects.filter(vehicle__company_id=company_id)
-
-        # Filtrar por el rol del usuario
-        if context["role"]["id"] not in roles_usuario:
-            obj_seguros = obj_seguros.filter(vehicle__responsible_id=context["user"]["id"])
-
-        # Anotar la última fecha de seguro por vehículo
-        obj_seguros = obj_seguros.values('vehicle__id', 'vehicle__name') \
-            .annotate(ultima_fecha=Max('end_date'))
-
-        # Verificar si hay vehículos sin seguros o vencidos
-        vehicles_with_seguro = set()
-        for item in obj_seguros:
-            ultima_fecha = item["ultima_fecha"]
-            if ultima_fecha < fecha_actual:
-                response["data"].append({
-                    "alert": "warning",
-                    "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                    "title": "Vehículo sin seguro (Vencido)",
-                    "text": f"Vehículo: {item['vehicle__name']}",
-                    "link": f"/module/vehicle/info/{vehicle['id']}/"
-                })
-            elif ultima_fecha <= fecha_actual + timedelta(days=5):
-                dias_restantes = (ultima_fecha - fecha_actual).days
-                response["data"].append({
-                    "alert": "info",
-                    "icon": "<i class=\"fa-solid fa-info fs-18\"></i>",
-                    "title": f"Seguro a punto de vencer en {dias_restantes} días",
-                    "text": f"Vehículo: {item['vehicle__name']}",
-                    "link": f"/module/vehicle/info/{vehicle['id']}/"
-                })
-            vehicles_with_seguro.add(item['vehicle__id'])
-
-        # Obtener los vehículos que no tienen registros de seguro
-        vehicles_without_seguro = obj_vehicles.exclude(id__in=vehicles_with_seguro)
-
-        # Agregar notificación para vehículos sin seguro
-        for vehicle in vehicles_without_seguro:
-            response["data"].append({
-                "alert": "danger",
-                "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                "title": "Vehículo sin seguro",
-                "text": f"Vehículo: {vehicle['name']}",
-                "link": f"/module/vehicle/info/{vehicle['id']}/"
-            })
-        pass
-    # !   /-----------------------------------------------/
-    # !  /  VEHICULOS / AUDITORIA
-    # ! /-----------------------------------------------/
-    if 10 in access and access[10]["read"]:
-        obj_auditorias = Vehicle_Audit.objects.filter( vehicle__company_id = company_id )
-
-        if context["role"]["id"] not in roles_usuario:
-            obj_auditorias = obj_auditorias.filter(vehicle__responsible_id=context["user"]["id"])
-
-        obj_auditorias_hoy = obj_auditorias.filter(audit_date=fecha_actual)
-        obj_auditorias_hoy.filter(visible=False).update(visible=True)
-
-        for auditoria in obj_auditorias_hoy:
-            response["data"].append({
-                "alert": "info",
-                "icon": "<i class=\"fa-solid fa-clipboard-check fs-18\"></i>",
-                "title": "Auditoría programada para hoy",
-                "text": f"Vehículo: {auditoria.vehicle.name}",
-                "link": f"/module/vehicle/info/{auditoria.vehicle.id}/"
-            })
-        pass
-    # !   /-----------------------------------------------/
-    # !  /  VEHICULOS / MANTENIMIENTO
-    # ! /-----------------------------------------------/
-    if 11 in access and access[11]["read"]:
-        obj_mantenimiento = Vehicle_Maintenance.objects.filter(vehicle__company_id=company_id)
-
-        # Filtrar por el rol del usuario
-        if context["role"]["id"] not in roles_usuario:
-            obj_mantenimiento = obj_mantenimiento.filter(vehicle__responsible_id=context["user"]["id"])
-        pass
-    # ! -----------------------------------------------
-    response["recordsTotal"] = len(response["data"])
-    response["success"] = True
+    response["status"] = "success"
+    response["message"] = "eventos cargados exitosamente"
     return JsonResponse(response)
 
 
+
+def add_vehicle_fuel(request):
+    context = user_data(request)
+    response = {"status": "error", "message": "sin procesar","data": []}
+    dt = request.POST
+    vehicle_id = dt.get("vehicle_id", None)
+    responsible_id = dt.get("responsible_id", None)
+    company_id = context["company"]["id"]
+    
+    try:
+        obj = Vehicle.objects.get(id = vehicle_id)
+    except Vehicle.DoesNotExist:
+        response["status"] = "error"
+        response["message"] = "El objeto no existe"
+        return JsonResponse(response)
+    
+    responsible_id = obj.responsible_id
+
+    if not responsible_id or responsible_id == None:
+        response["status"] = "warning"
+        response["message"] = "El vehículo no tiene un responsable asignado"
+
+    try:
+        with transaction.atomic():
+            obj = Vehicle_fuel(
+                vehicle_id = vehicle_id,
+                responsible_id = responsible_id,
+                fuel = dt.get("fuel"),
+                fuel_type = dt.get("fuel_type"),
+                cost = dt.get("cost"),
+                notes = dt.get("notes"),
+                date = dt.get("date"),
+            )
+            obj.save()
+            id = obj.id
+
+            if 'payment_receipt' in request.FILES and request.FILES['payment_receipt']:
+                load_file = request.FILES['payment_receipt']
+                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
+                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+
+                file_name, extension = os.path.splitext(load_file.name)                
+                new_name = f"payment_receipt_{id}{extension}"
+
+                # Eliminar archivos anteriores usando glob
+                old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"payment_receipt{id}.*"))
+                for old_file_path in old_files:
+                    if os.path.exists(old_file_path):
+                        os.remove(old_file_path)
+                fs.save(folder_path + new_name, load_file)
+                obj.payment_receipt = folder_path + new_name
+                obj.save()
+
+            response["id"] = obj.id
+        response["status"] = "success"
+        response["message"] = "Exito"
+    except Exception as e:
+        response["status"] = "error"
+        response["message"] = str(e)
+    return JsonResponse(response)
+
+def get_vehicles_fuels(request):
+    context = user_data(request)
+    response = {"status": "error", "message": "sin procesar","data": []}
+    dt = request.GET
+    vehicle_id = dt.get("vehicle_id", None)
+    subModule_id = 22
+
+    datos = Vehicle_fuel.objects.values(
+        "id",
+        "vehicle_id", "vehicle__name",
+        "responsible_id", "responsible__first_name", "responsible__last_name",
+        "payment_receipt",
+        "fuel", "fuel_type",
+        "cost", "notes","date"
+    )
+
+    access = get_module_user_permissions(context, subModule_id)
+    access = access["data"]["access"]
+    
+    for item in datos:
+        item["btn_action"] = ""
+        if access["update"]:
+            item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-vehicle-fuel=\"update-item\">" \
+                "<i class=\"fa-solid fa-pen\"></i>" \
+            "</button>\n"
+        if access["delete"]:
+            item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-sia-vehicle-fuel=\"delete-item\">" \
+                "<i class=\"fa-solid fa-trash\"></i>" \
+            "</button>\n"
+    response["data"] = list(datos)
+    response["status"] = "success"
+    response["message"] = "Datos cargados exitosamente"
+    return JsonResponse(response)
+
+def get_vehicles_fuels_charts(request):
+    context = user_data(request)
+    dt = request.GET
+    vehicle_id = dt.get("vehicle_id", None)
+    tipo = dt.get("type", "Litros")
+    year = dt.get("year")
+    
+    response = {
+        "status": "error",
+        "message": "sin procesar",
+        "data": {
+            "chart": {
+                "series": {"data": []},
+                "xaxis": {"categories": []},
+                "yaxis": {"title": {"text": "nada"}}
+            }
+        }
+    }
+
+    datos = Vehicle_fuel.objects.all()
+    if year:
+        datos = datos.filter(date__year=year)
+    if vehicle_id:
+        datos = datos.filter(vehicle_id=vehicle_id)
+
+    MONTHS_ES = {
+        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+    }
+
+    if tipo in ["Litros", "Pesos"]:
+        field = 'fuel' if tipo == "Litros" else 'cost'
+        datos_por_mes = datos.annotate(
+            mes=TruncMonth('date')
+        ).values('mes').annotate(
+            total=Sum(field)
+        ).order_by('mes')
+
+        for dato in datos_por_mes:
+            month_name = MONTHS_ES[dato['mes'].month]
+            response["data"]["chart"]["xaxis"]["categories"].append(month_name)
+            response["data"]["chart"]["series"]["data"].append(float(dato['total']))
+
+        response["data"]["chart"]["yaxis"]["title"]["text"] = "Litros" if tipo == "Litros" else "Costos"
+        response["data"]["chart"]["name"] = "Litros" if tipo == "Litros" else "Importe"
+        response["status"] = "success"
+        response["message"] = "Datos cargados exitosamente"
+    else:
+        response["message"] = "Tipo no válido"
+
+    return JsonResponse(response)
+
+def update_vehicle_fuel(request):
+    context = user_data(request)
+    response = {"status": "error", "message": "sin procesar","data": []}
+    dt = request.POST
+    id = dt.get("id", None)
+    vehicle_id = dt.get("vehicle_id", None)
+    responsible_id = dt.get("responsible_id", None)
+    company_id = context["company"]["id"]
+    
+    try:
+        with transaction.atomic():
+            obj = Vehicle_fuel.objects.get(id = id)
+            obj.fuel = dt.get("fuel")
+            obj.fuel_type = dt.get("fuel_type")
+            obj.cost = dt.get("cost")
+            obj.notes = dt.get("notes")
+            obj.date = dt.get("date")
+            obj.save()
+            id = obj.id
+
+            if 'payment_receipt' in request.FILES and request.FILES['payment_receipt']:
+                load_file = request.FILES['payment_receipt']
+                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
+                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+
+                file_name, extension = os.path.splitext(load_file.name)                
+                new_name = f"payment_receipt_{id}{extension}"
+
+                # Eliminar archivos anteriores usando glob
+                old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"payment_receipt{id}.*"))
+                for old_file_path in old_files:
+                    if os.path.exists(old_file_path):
+                        os.remove(old_file_path)
+                fs.save(folder_path + new_name, load_file)
+                obj.payment_receipt = folder_path + new_name
+                obj.save()
+
+            response["id"] = obj.id
+        response["status"] = "success"
+        response["message"] = "Exito"
+    except Exception as e:
+        response["status"] = "error"
+        response["message"] = str(e)
+    return JsonResponse(response)
+
+def delete_vehicle_fuel(request):
+    response = {"success": False, "data": []}
+    dt = request.POST
+    id = dt.get("id", None)
+
+    if id == None:
+        response["error"] = {"message": "Proporcione un id valido", id: id}
+        return JsonResponse(response)
+
+    try:
+        obj = Vehicle_fuel.objects.get(id = id)
+    except Vehicle_fuel.DoesNotExist:
+        response["error"] = {"message": "El objeto no existe"}
+        return JsonResponse(response)
+    else:
+        obj.delete()
+    response["success"] = True
+    return JsonResponse(response)
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

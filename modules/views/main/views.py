@@ -1,6 +1,7 @@
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect, HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import F, Q, Value, Max, Sum, CharField, BooleanField
 from django.http import JsonResponse
@@ -19,7 +20,13 @@ def home_view(request):
     context = {}
     return render(request, "home/index.html", context)
 
+def error_404_view(request, exception):
+    # Aquí va tu lógica para manejar el error 404
+    return render(request, 'error/404.html', status=404)
 
+def error_500_view(request):
+    # Aquí va tu lógica para manejar el error 500
+    return render(request, 'error/500.html', status=500)
 
 def develop_view(request):
     context = user_data(request)
@@ -305,9 +312,9 @@ def get_notifications(request):
     return JsonResponse(response)
 
 
+@require_POST
 def update_or_create_records(request):
-    response = {'status': "error", "data": []}
-    response["data"] = []
+    response = {'status': "error", "message": "Sin Procesar"}
     dt = request.POST
 
     if request.method != 'POST':
@@ -319,26 +326,35 @@ def update_or_create_records(request):
         return JsonResponse(response, status=400)
     
     try:
-        archivo_json = request.FILES['records']
-        contenido_json = json.load(archivo_json)
-    except (json.JSONDecodeError, UnicodeDecodeError):
+        archivo = request.FILES['records']
+        archivo.seek(0)
+        archivo_data = archivo.read()
+        archivo_str = archivo_data.decode('utf-8')
+        contenido_json = json.loads(archivo_str)
+    except UnicodeDecodeError:
+        response["message"] = "El archivo no está codificado en UTF-8."
+        return JsonResponse(response, status=400)
+    except json.JSONDecodeError:
         response["message"] = "El archivo no tiene un formato JSON válido."
         return JsonResponse(response, status=400)
     
     if not isinstance(contenido_json, list):
         response["message"] = "El JSON debe ser una lista de objetos."
         return JsonResponse(response, status=400)
-    
+
+    response["data"] = []
+
+
     with transaction.atomic():
         for item in contenido_json:
             model_name = item.get("model")
             pk = item.get("pk")
             fields = item.get("fields", {})
 
-            if not model_name or not pk or not fields:
+            if not model_name or not fields:
                 response["data"].append({
                     "status": "error",
-                    "message": f"El registro con PK {pk} no tiene un formato válido.",
+                    "message": f"El registro con PK {pk} no tiene un formato válido." if pk else "Faltan datos obligatorios.",
                     "model": model_name
                 })
                 continue
@@ -353,6 +369,11 @@ def update_or_create_records(request):
                     "model": model_name
                 })
                 continue
+
+            # Convertir campos relacionados a campo_id
+            for key in list(fields.keys()):
+                if key in [f.name for f in model._meta.fields if f.is_relation]:
+                    fields[f"{key}_id"] = fields.pop(key)
 
             if pk:
                 try:

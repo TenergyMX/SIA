@@ -1,0 +1,175 @@
+{% extends 'ynex/base.html' %}
+
+{% block content %}
+{% load static %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Combustible
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Vehículos</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Combustible
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 col-xxl-12">
+        <div class="card custom-card">
+            <div class="card-header justify-content-between">
+                <div class="card-title">
+                    Combustible
+                </div>
+                <div class="">
+                    {% if access.create %}
+                    <button type="button" class="btn btn-sm btn-primary" data-sia-vehicle-fuel="add-item"
+                        title="Agregar Mantenimiento">
+                        <i class="fa-solid fa-plus me-1"></i>
+                        Agregar
+                    </button>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-info-light" data-sia-vehicle-fuel="refresh-table"
+                        title="Refrescar tabla">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered w-100" id="fuel_table">
+                        <thead></thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-9 col-xxl-8">
+        <div class="card custom-card card-apexcharts">
+            <div class="card-header justify-content-between">
+                <div class="card-title">
+                    Historial
+                </div>
+                <form class="">
+                    <div class="">
+                        {% csrf_token %}
+                    </div>
+                    <div class="row g-1">
+                        <div class="col">
+                            <select name="vehicle_id" class="form-select form-select-sm"></select>
+                        </div>
+                        <div class="col">
+                            <select name="type" class="form-select form-select-sm">
+                                <option value="Litros">Litros</option>
+                                <option value="Pesos">Pesos</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <select name="year" class="form-select form-select-sm"></select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="" id="chart"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg col-xxl d-none d-lg-block">
+        <div class="card custom-card shadow-none projects-tracking-card overflow-hidden text-center">
+            <div class="card-body">
+                <img src="{% static 'assets/images/media/media-86.svg' %}" alt="" class="img-fluid mb-1">
+                <div class="">
+                    <span class="fs-15 fw-semibold d-block mt-4 mb-3">
+                        SIA
+                    </span>
+                </div>
+                <span class="shape-1 text-primary">
+                    <i class="fa-regular fa-circle fs-20"></i>
+                </span>
+                <span class="shape-2 text-secondary">
+                    <i class="fa-regular fa-triangle fs-20"></i>
+                </span>
+                <span class="shape-3 text-warning">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-4 text-info">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-5 text-success">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-6 text-danger">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-7 text-pink">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-8 text-teal">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-9 text-primary">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-10 text-secondary">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-11 text-warning">
+                    <i class="fa-regular fa-square fs-20"></i>
+                </span>
+                <span class="shape-12 text-info">
+                    <i class="fa-regular fa-hexagon fs-20"></i>
+                </span>
+                <span class="shape-13 text-success">
+                    <i class="fa-regular fa-hexagon fs-20"></i>
+                </span>
+                <span class="shape-14 text-danger">
+                    <i class="fa-regular fa-star fs-20"></i>
+                </span>
+                <span class="shape-15 text-pink">
+                    <i class="fa-regular fa-star fs-20"></i>
+                </span>
+                <span class="shape-16 text-teal">
+                    <i class="fa-regular fa-octagon fs-20"></i>
+                </span>
+            </div>
+        </div>
+        <div class="card custom-card">
+            <div class="card-body"></div>
+        </div>
+    </div>
+    <!-- <div class="col-md-6 col-xxl"></div> -->
+</div>
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+    {% include "vehicles/modals/mdl-crud-fuel.html" %}
+{% endblock %}
+
+{% block offcanvas %} {% endblock %}
+
+{% block head %} {% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/vehicles/vehicles.js' %}"></script>
+<script src="{% static 'assets/js/vehicles/fuel.js' %}"></script>
+<script>
+    const combustible = new ComputerEquipment_fuel({
+        table: { id: "#fuel_table" },
+        graph: { id: "#chart" }
+    })
+
+    const vehiculos = new Vehicles({
+        list: { id: 'select[name="vehicle_id"]' }
+    })
+</script>
+{% endblock %}

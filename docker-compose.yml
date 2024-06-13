@@ -1,0 +1,24 @@
+services:
+
+#  db:
+#    container_name: database
+#    image: postgres
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - ./postgres_data:/var/lib/postgresql/data/
+#    env_file:
+#      - ./venv/postgres.env 
+#    networks:
+#      - dbnet
+
+  sia-git:
+    container_name: sia-git
+    build: .
+    ports: 
+      - "8080:8080"
+    volumes:
+      - ./docs/:/app/docs/
+      - ./staticfiles/:/app/staticfiles/
+      - ./users/migrations:/app/users/migrations
+
