@@ -10,6 +10,7 @@ admin.site.register(Vehicle_Responsive)
 admin.site.register(Vehicle_Insurance)
 admin.site.register(Vehicle_Audit)
 admin.site.register(Vehicle_Maintenance)
+admin.site.register(Vehicle_fuel)
 
 admin.site.register(ComputerSystem)
 admin.site.register(ComputerPeripheral)
