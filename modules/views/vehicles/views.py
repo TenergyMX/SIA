@@ -17,6 +17,9 @@ import glob
 import calendar
 from decimal import Decimal
 from modules.utils import * # Esto es un helpers
+#nuevas importaciones
+import zipfile
+
 
 
 # TODO --------------- [ VARIABLES ] ---------- 
@@ -1236,7 +1239,9 @@ def delete_vehicle_responsiva(request):
 
 def add_vehicle_insurance(request):
     response = {"success": False, "data": []}
+    print("antes del post")
     dt = request.POST
+    print("despues del post")
 
     vehicle_id = dt.get("vehicle_id")
 
@@ -1283,11 +1288,17 @@ def add_vehicle_insurance(request):
                     old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{obj.id}.{item}")
                     if os.path.exists(old_file_path):
                         os.remove(old_file_path)
-                
-                new_name = f"doc_{obj.id}{extension}"
-                fs.save(folder_path + new_name, load_file)
 
-                obj.doc = folder_path + new_name
+                # Crear el archivo ZIP
+                zip_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{obj.id}.zip")
+                os.makedirs(os.path.dirname(zip_file_path), exist_ok=True)
+                with zipfile.ZipFile(zip_file_path, 'w') as zipf:
+                    # Add the uploaded file to the zip file
+                    zipf.writestr(file_name + extension, load_file.read())
+
+                # Guardar la ruta del archivo ZIP en el objeto
+                obj.doc = folder_path + f"doc_{obj.id}.zip"
+                print("esto es una prueba")
                 obj.save()
 
             # Configurar la respuesta exitosa
