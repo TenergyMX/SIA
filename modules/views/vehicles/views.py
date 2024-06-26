@@ -1346,7 +1346,7 @@ def get_vehicle_insurance(request):
         item["btn_action"] = ""
         if item["doc"] != None:
             item["btn_action"] = f"""<a href="/{item['doc']}" class="btn btn-sm btn-info" download>
-                <i class="fa-solid fa-file"></i>
+                <i class="fa-solid fa-file"></i> Descargar
             </a>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-insurance=\"update-item\">

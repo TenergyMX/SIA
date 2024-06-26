@@ -27,3 +27,18 @@ class ComputerEquipment_AuditAdmin(admin.ModelAdmin):
 admin.site.register(ComputerEquipment_Responsiva)
 admin.site.register(ComputerEquipment_Deliveries)
 admin.site.register(Infrastructure)
+
+@admin.register(Infrastructure_Category)
+class InfrastructureCategoryAdmin(admin.ModelAdmin):
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'short_name', 'description')
+
+@admin.register(Infrastructure_Item)
+class InfrastructureItemAdmin(admin.ModelAdmin):
+    list_filter = ('company', 'is_active', 'created_at', 'category')
+    search_fields = ('name', 'description')
+
+@admin.register(Infrastructure_Review)
+class InfrastructureReviewAdmin(admin.ModelAdmin):
+    list_filter = ('category', 'checked')
+    search_fields = ('checked', 'notes')

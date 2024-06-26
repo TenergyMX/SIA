@@ -1,0 +1,68 @@
+<div class="modal fade effect-scale" id="mdl-crud-infrastructure-item" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="">Categoría</label>
+                        <select name="category_id" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Nombre</label>
+                        <input type="text" name="name" class="form-control" placeholder="Nombre">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Descripción</label>
+                        <input type="text" name="description" class="form-control" placeholder="Descripción">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Cantidad</label>
+                        <input type="number" name="quantity" class="form-control" placeholder="Cantidad" step="0.01">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Activo</label>
+                        <select name="is_active" class="form-select">
+                            <option value="0">NO</option>
+                            <option value="1">SI</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Fecha de inicio</label>
+                        <input type="date" name="start_date" class="form-control" placeholder="Fecha de inicio">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Periodo (cantidad)</label>
+                        <input type="number" name="time_quantity" class="form-control" placeholder="Cantidad. Ej. 1">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Periodo (Unidad)</label>
+                        <select name="time_unit" class="form-select">
+                            <option value="day">Día(s)</option>
+                            <option value="month">Mes(e)</option>
+                            <option value="year">Año(s)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

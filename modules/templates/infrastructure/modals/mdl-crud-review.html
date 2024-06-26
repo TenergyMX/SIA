@@ -1,0 +1,61 @@
+<div class="modal fade effect-scale" id="mdl-crud-infrastructure-review" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="">Categoría</label>
+                        <select name="category_id" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Item</label>
+                        <select name="item_id" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Check</label>
+                        <select name="checked" class="form-select">
+                            <option value="Malo">Malo</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Bueno">Bueno</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">notas</label>
+                        <input type="text" name="notes" class="form-control" placeholder="Notas">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Fecha</label>
+                        <input type="date" name="date" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Revisado Por</label>
+                        <select name="reviewer_id" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Archivo</label>
+                        <input type="file" name="file" class="form-control" placeholder="Archivo">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
