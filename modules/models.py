@@ -191,7 +191,7 @@ class ComputerSystem(models.Model):
     num_cores = models.IntegerField(blank=True, null=True, verbose_name="Número de Núcleos")
     processor_speed = models.FloatField(blank=True, null=True, verbose_name="Velocidad del Procesador")
     architecture = models.CharField(max_length=20, blank=True, null=True, verbose_name="Arquitectura del Procesador")
-    disk_type = models.CharField(max_length=10, blank=True, null=True, verbose_name="Tipo de Disco Duro")
+    disk_type = models.CharField(max_length=100, blank=True, null=True, verbose_name="Tipo de Disco Duro")
     disk_capacity = models.CharField(max_length=20, blank=True, null=True, verbose_name="Capacidad de Almacenamiento")
     ram = models.IntegerField(blank=True, null=True, verbose_name="RAM")
     ram_type = models.CharField(max_length=20, blank=True, null=True, verbose_name="Tipo de RAM")

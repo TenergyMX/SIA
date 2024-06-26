@@ -343,7 +343,10 @@ def add_computer_system(request):
             location = dt.get("location"),
             current_responsible_id = dt.get("current_responsible_id"),
             equipment_status = dt.get("equipment_status"),
-            comments = dt.get("comments")
+            comments = dt.get("comments"),
+            disk_type = dt.get("disk_type"),
+            architecture = dt.get("architecture"),
+            disk_capacity = dt.get("disk_capacity"),
         )
         obj.save()
         response["id"] = obj.id
