@@ -191,7 +191,7 @@ class ComputerSystem(models.Model):
     num_cores = models.IntegerField(blank=True, null=True, verbose_name="Número de Núcleos")
     processor_speed = models.FloatField(blank=True, null=True, verbose_name="Velocidad del Procesador")
     architecture = models.CharField(max_length=20, blank=True, null=True, verbose_name="Arquitectura del Procesador")
-    disk_type = models.CharField(max_length=10, blank=True, null=True, verbose_name="Tipo de Disco Duro")
+    disk_type = models.CharField(max_length=100, blank=True, null=True, verbose_name="Tipo de Disco Duro")
     disk_capacity = models.CharField(max_length=20, blank=True, null=True, verbose_name="Capacidad de Almacenamiento")
     ram = models.IntegerField(blank=True, null=True, verbose_name="RAM")
     ram_type = models.CharField(max_length=20, blank=True, null=True, verbose_name="Tipo de RAM")
@@ -435,3 +435,64 @@ class Vehicle_fuel(models.Model):
 
     def __str__(self):
         return f"Gasolina"
+
+# Todo ----- [ 3ro ] -----
+    
+class Infrastructure_Category(models.Model):
+    name = models.CharField(blank=True, null=True, max_length=128, unique=True, verbose_name="Nombre")
+    short_name = models.CharField(blank=True, null=True, max_length=48, unique=True, verbose_name="Nombre Corto")
+    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
+    description = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+    class Meta:
+        verbose_name = "Categoría de Infraestructura"
+        verbose_name_plural = "Categorías de Infraestructura"
+        ordering = ['name']
+
+    def _str_(self):
+        return f"Infraestructura de {self.short_name}"
+    
+class Infrastructure_Item(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
+    category = models.ForeignKey(Infrastructure_Category, on_delete=models.CASCADE, verbose_name="categoría", related_name='items')
+    name = models.CharField(max_length=128, verbose_name="Nombre")
+    description = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    quantity = models.PositiveIntegerField(verbose_name="Cantidad")
+    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
+    start_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Inicio")
+    time_quantity = models.PositiveIntegerField(blank=True, null=True, default=1, verbose_name="Cantidad de Tiempo")
+    time_unit = models.CharField(max_length=50, blank=True, null=True, choices=[
+        ('day', 'Día(s)'),
+        ('month', 'Mes(es)'),
+        ('year', 'Año(s)')
+    ], verbose_name="Unidad de Tiempo")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+    
+    class Meta:
+        verbose_name = "Item de Infraestructura"
+        verbose_name_plural = "Items de Infraestructura"
+        ordering = ['company_id','name']
+
+    def _str_(self):
+        return f"{self.category.name}: {self.name} ({self.quantity}) para {self.time_quantity} {self.time_unit}"
+    
+class Infrastructure_Review(models.Model):
+    category = models.ForeignKey(Infrastructure_Category, on_delete=models.CASCADE, verbose_name="Categoría" ,related_name='reviews')
+    item = models.ForeignKey(Infrastructure_Item, on_delete=models.CASCADE, verbose_name="Item" ,related_name='reviews')
+    checked = models.CharField(blank=True, null=True, max_length=20, default='Regular', verbose_name="Check")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notas")
+    date = models.DateField(blank=True, null=True, verbose_name="Fecha")
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='Crítico')
+    file = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Archivo")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+    class Meta:
+        verbose_name = "revisión de la Infraestructura"
+        verbose_name_plural = "revisiónes de la Infraestructura"
+
+    def _str_(self):
+        return f"{self.category.name}: {self.item.name} ({self.checked}) ({self.date})"
