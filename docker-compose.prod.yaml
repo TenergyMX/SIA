@@ -12,8 +12,8 @@ services:
 #    networks:
 #      - dbnet
 
-  sia-git:
-    container_name: sia-git
+  sia-app:
+    container_name: sia-app
     build: .
     ports: 
       - "8000:8000"
@@ -31,8 +31,8 @@ services:
 #    depends_on:
 #      - db
 
-  nginx:
-    container_name: nginx-sia
+  sia-nginx:
+    container_name: sia-nginx
     image: nginx
     ports:
       - "80:80"
@@ -52,8 +52,8 @@ services:
     depends_on:
       - sia-git
 
-  certbot:
-    container_name: sia-certbot
+  sia-certbot:
+    container_name: sia-certbotSSL
     image: certbot/certbot
     volumes:
       - ./certbot/letsencrypt:/etc/letsencrypt/:rw
