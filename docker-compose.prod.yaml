@@ -50,7 +50,7 @@ services:
       - certnet
       - jenkins_network
     depends_on:
-      - sia-git
+      - sia-app
 
   sia-certbot:
     container_name: sia-certbotSSL
