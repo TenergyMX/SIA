@@ -28,9 +28,9 @@ WORKDIR /app
 
 #RUN git pull
 
-RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
+
+RUN pip install --no-cache-dir -r requirements.txt
 
 RUN python manage.py collectstatic --no-input
 
