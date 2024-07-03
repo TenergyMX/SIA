@@ -10,23 +10,23 @@ RUN apt-get update \
 
 RUN apt-get install libssl-dev
 
-RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
+#RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
 
-COPY id_ed25519 /root/.ssh/id_ed25519
+#COPY id_ed25519 /root/.ssh/id_ed25519
 
-RUN chmod 600 /root/.ssh/id_ed25519
+#RUN chmod 600 /root/.ssh/id_ed25519
 
-RUN echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config
+#RUN echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config
 
 WORKDIR /app
 
 #COPY . .
 
-RUN git clone --depth 1  git@github.com:TenergyMX/SIA.git .
+#RUN git clone --depth 1  git@github.com:TenergyMX/SIA.git .
 
-RUN pip install --upgrade pip
+#RUN pip install --upgrade pip
 
-RUN git pull
+#RUN git pull
 
 RUN pip install --no-cache-dir -r requirements.txt
 
