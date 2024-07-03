@@ -1,4 +1,4 @@
-gunicorn# -*- encoding: utf-8 -*-
+#gunicorn -*- encoding: utf-8 -*-
 import multiprocessing
 
 wsgi_app = "core.wsgi:application"
