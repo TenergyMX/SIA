@@ -1,0 +1,16 @@
+jenkins:
+  systemMessage: "Welcome to Jenkins configured by code!"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_ID}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  tools:
+    jdk:
+      installations:
+        - name: "jdk8"
+          home: "/usr/lib/jvm/java-8-openjdk-amd64"
