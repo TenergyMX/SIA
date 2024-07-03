@@ -15,10 +15,6 @@
 /__pycache__/
 db.sqlite3
 *.pyc
-Dockerfile
-docker-compose.yml
 /.vscode
-gunicorn-cfg.py
-nginx/
 postgres_data/
 staticfiles/
