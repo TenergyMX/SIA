@@ -18,3 +18,4 @@ db.sqlite3
 /.vscode
 postgres_data/
 staticfiles/
+/certbot
