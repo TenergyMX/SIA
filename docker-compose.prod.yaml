@@ -48,7 +48,7 @@ services:
     networks:
       - nginxnet
       - certnet
-      - jenkins_network
+#      - jenkins_network
     depends_on:
       - sia-app
 
