@@ -26,7 +26,7 @@ services:
 #      - ../pwa/service-worker.js:/service-worker.js
     networks:
       - nginxnet
-      - jenkins_network
+#      - jenkins_network
 #      - dbnet
 #    depends_on:
 #      - db
@@ -61,14 +61,14 @@ services:
 #      - ./servers-data/certbot/log:/var/log
     networks:
       - certnet
-      - jenkins_network
+#      - jenkins_network
 
 networks:
   nginxnet:
     driver: bridge
   certnet:
     driver: bridge
-  jenkins_network:
-    external: true
+#  jenkins_network:
+#    external: true
 #  dbnet:
 #    driver: bridge
