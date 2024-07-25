@@ -1,4 +1,6 @@
-/core
+/core/db.sqlite3
+/core/settings.py
+/core/.env
 /modules/migrations/
 /modules/__pycache__/
 /modules/views/authentication/__pycache__/
