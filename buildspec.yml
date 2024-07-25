@@ -9,8 +9,7 @@ phases:
       - echo Initialiazong environment
       - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain sia-tenergy --domain-owner 903371078608 --query authorizationToken --output text`
       - aws --version
-      - aws --username
-      - aws --password-stdin
+      - aws configure
       - aws ecr get-login-password --region $__ECR_REGION__ | docker login --username AWS --password-stdin $__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/__ECR_REPOSITORY_NAME__
       - REPOSITORY_URI=__ACCOUNT_NUMBER__.dkr.ecr.__ECR_REGION__.amazonaws.com/__ECR_REPOSITORY_NAME__
   build: 
