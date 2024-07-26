@@ -32,6 +32,14 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.0 --asset core.tar.gz \core.tar.gz
+
+RUN tar -xvf core.tar.gz
+
+RUN aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.2 --asset venv.tar.gz \venv.tar.gz
+
+RUN tar -xvf venv.tar.gz
+
 RUN python manage.py collectstatic --no-input
 
 #ENV DATABASE_ADDRESS=
