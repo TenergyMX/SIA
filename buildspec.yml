@@ -4,7 +4,6 @@ phases:
   install:
     runtime-versions:
       python: 3.x
-      docker: 24
   pre_build:
     commands:
       - echo Initialiazong environment
