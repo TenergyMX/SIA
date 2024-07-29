@@ -26,7 +26,8 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:latest
-      - docker save -o $REPOSITORY_URI:latest
+      - docker images 
+#      - docker save -o $REPOSITORY_URI:latest
       - aws s3 cp sia-app.tar s3://sia-docker-image
 artifacts:
   files:
