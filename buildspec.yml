@@ -12,8 +12,6 @@ phases:
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.0 --asset core.tar.gz \core.tar.gz
       - aws ecr get-login-password --region $__ECR_REGION__ | docker login --username AWS --password-stdin $__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME_
       - REPOSITORY_URI=$__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME__
-      - docker save -o sia-app.tar 903371078608.dkr.ecr.us-east-2.amazonaws.com/sia-app
-      - aws s3 cp sia-app.tar s3://sia-docker-image
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.0 --asset core.tar.gz \core.tar.gz
       - tar -xvf core.tar.gz
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.2 --asset venv.tar.gz \venv.tar.gz
@@ -28,6 +26,8 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:latest
+      - docker save -o $REPOSITORY_URI:latest
+      - aws s3 cp sia-app.tar s3://sia-docker-image
 artifacts:
   files:
     - appspec.yml
