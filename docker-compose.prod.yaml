@@ -13,8 +13,8 @@ services:
 #      - dbnet
 
   sia-app:
-    container_name: sia-app
-    build: .
+    container_name: sia-app-test
+    image: 903371078608.dkr.ecr.us-east-2.amazonaws.com/sia-app:latest
     ports: 
       - "8000:8000"
     volumes:
@@ -32,7 +32,7 @@ services:
 #      - db
 
   sia-nginx:
-    container_name: sia-nginx
+    container_name: sia-nginx-test
     image: nginx
     ports:
       - "80:80"

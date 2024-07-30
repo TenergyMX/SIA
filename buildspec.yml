@@ -26,8 +26,8 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:latest
-      - docker save -o sia-app.tar 903371078608.dkr.ecr.us-east-2.amazonaws.com/sia-app
-      - aws s3 cp sia-app.tar s3://sia-docker-image
+#      - docker save -o sia-app.tar 903371078608.dkr.ecr.us-east-2.amazonaws.com/sia-app
+#      - aws s3 cp sia-app.tar s3://sia-docker-image
 artifacts:
   files:
     - appspec.yml
