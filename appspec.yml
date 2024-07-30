@@ -2,14 +2,17 @@ version: 0.0
 os: linux
 hooks:
   BeforeInstall:
-    - location: /home/ubuntu/test-sia/scripts/install.sh
+    - commands: cd /home/ubuntu/test-sia
+      location: scripts/install.sh
       timeout: 300
       runas: root
   ApplicationStart:
-    - location: /home/ubuntu/test-sia/scripts/run_app.sh
+    - commands: cd /home/ubuntu/test-sia
+      location: scripts/run_app.sh
       timeout: 300
       runas: root
   ApplicationStop:
-    - location: /home/ubuntu/test-sia/scripts/stop_app.sh
+    - commands: cd /home/ubuntu/test-sia
+      location: scripts/stop_app.sh
       runas: root
       timeout: 10
