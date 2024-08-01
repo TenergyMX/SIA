@@ -8,6 +8,7 @@ phases:
     commands:
       - echo Initialiazing environment
       - echo Initialiazing virtual environment
+      - sudo apt install python3.12-venv
       - python3 -m venv v-env
       - source v-env/bin/activate
       - echo virtual environment activated
