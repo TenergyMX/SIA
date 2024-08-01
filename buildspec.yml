@@ -7,11 +7,6 @@ phases:
   pre_build:
     commands:
       - echo Initialiazing environment
-      - echo Initialiazing virtual environment
-      - sudo apt install python3.12-venv
-      - python3 -m venv v-env
-      - source v-env/bin/activate
-      - echo virtual environment activated
       - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain sia-tenergy --domain-owner 903371078608 --query authorizationToken --output text`
       - aws --version
       - aws codeartifact login --tool pip --repository pypi-store --domain sia-tenergy --domain-owner $__ACCOUNT_NUMBER --region $__ECR_REGION__
