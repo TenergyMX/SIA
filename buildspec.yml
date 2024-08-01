@@ -7,9 +7,9 @@ phases:
   pre_build:
     commands:
       - echo Initialiazing environment
+      - echo Getting CodeArtifact authorization...
       - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain sia-tenergy --domain-owner 903371078608 --query authorizationToken --output text`
-      - aws --version
-      - aws codeartifact login --tool pip --repository pypi-store --domain sia-tenergy --domain-owner $__ACCOUNT_NUMBER__ --region $__ECR_REGION__
+      - export PIP_INDEX_URL="https://aws:${CODEARTIFACT_AUTH_TOKEN}@sia-tenergy-$__ACCOUNT_NUMBER__.d.codeartifact.$__ECR_REGION__.amazonaws.com/pypi/pypi-store/simple/"
       - aws ecr get-login-password --region $__ECR_REGION__ | docker login --username AWS --password-stdin $__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME_
       - REPOSITORY_URI=$__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME__
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.0 --asset core.tar.gz \core.tar.gz
