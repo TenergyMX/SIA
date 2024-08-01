@@ -8,7 +8,7 @@ phases:
     commands:
       - echo Initialiazing environment
       - echo Initialiazing virtual environment
-      - python -m venv venv
+      - python3 -m venv venv
       - source venv/bin/activate
       - echo virtual environment activated
       - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain sia-tenergy --domain-owner 903371078608 --query authorizationToken --output text`
