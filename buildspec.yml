@@ -12,6 +12,7 @@ phases:
       - export PIP_INDEX_URL="https://aws:${CODEARTIFACT_AUTH_TOKEN}@sia-tenergy-$__ACCOUNT_NUMBER__.d.codeartifact.$__ECR_REGION__.amazonaws.com/pypi/pypi-store/simple/"
       - aws ecr get-login-password --region $__ECR_REGION__ | docker login --username AWS --password-stdin $__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME_
       - REPOSITORY_URI=$__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME__
+      - echo "[s3] use-sigv4 = True" > .boto
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.0 --asset core.tar.gz \core.tar.gz
       - tar -xvf core.tar.gz
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.2 --asset venv.tar.gz \venv.tar.gz
