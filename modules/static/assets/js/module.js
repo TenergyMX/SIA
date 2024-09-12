@@ -203,7 +203,6 @@ function load_vehicle_info_card(vehicle_id = 1) {
             $.each(datos, function (index, value) {
                 div.find(`[data-key-value="${index}"]`).html(value);
             });
-
             div.find("img").attr("src", datos["image_path"]);
         },
         error: function (xhr, status, error) {},

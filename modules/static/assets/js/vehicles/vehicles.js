@@ -104,6 +104,7 @@ class Vehicles {
                     },
                     beforeSend: function () {},
                     success: function (response) {
+                        console.log(response["imgPath"]);
                         var card = $(".card-vehicle-info");
 
                         $.each(response["data"], function (index, value) {
@@ -115,7 +116,8 @@ class Vehicles {
                             ${response["data"]["responsible__first_name"]}
                             ${response["data"]["responsible__last_name"]}
                         `);
-                        card.find("picture img").attr("src", response["data"]["image_path"]);
+
+                        card.find("picture img").attr("src", response["imgPath"]);
 
                         self.data.id = response["data"]["id"] || null;
                         self.data.vehicle_id = response["data"]["id"] || null;

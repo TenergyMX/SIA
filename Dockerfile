@@ -8,7 +8,7 @@ RUN apt-get update \
 &&  ln -fs /usr/share/zoneinfo/America/Mexico_City /etc/localtime \
 &&  dpkg-reconfigure --frontend noninteractive tzdata
 
-RUN apt-get install libssl-dev
+RUN apt-get install libssl-dev -y
 
 #RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
 

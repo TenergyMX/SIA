@@ -8,24 +8,36 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.conf import settings
 from modules.models import *
+from pathlib import Path
+from os.path import join, dirname
 from users.models import *
 from datetime import datetime, timedelta
+from botocore.exceptions import NoCredentialsError
+from dotenv import load_dotenv
+from django.core.exceptions import ValidationError
 import json, os
 import requests
 import random
 import glob
 import calendar
+import boto3
 from decimal import Decimal
 from modules.utils import * # Esto es un helpers
 #nuevas importaciones
 import zipfile
 
-
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
 
 # TODO --------------- [ VARIABLES ] ---------- 
 
 AUDITORIA_VEHICULAR_POR_MES = 2
+AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_DEFAULT_REGION=os.environ.get('AWS_ACCESS_KEY_ID')
+bucket_name = "siaapp"
 
+s3 = boto3.client('s3')
 
 # TODO --------------- [ VIEWS ] --------------- 
 @login_required
@@ -236,6 +248,42 @@ def vehicles_fuel_views(request):
 
 # TODO --------------- [ HELPER ] ----------
 
+def upload_to_s3(file_name, bucket_name, object_name=None):
+    """Upload a file to an S3 bucket.
+
+    :param file_name: File to upload
+    :param bucket_name: S3 bucket name
+    :param object_name: S3 object name. If not specified, file_name is used
+    :return: True if file was uploaded, else False
+    """
+    if object_name is None:
+        object_name = file_name.name
+
+    try:
+        validate_image(file_name)
+        s3.upload_fileobj(file_name, bucket_name, object_name)
+        print(f"File '{file_name}' uploaded to '{bucket_name}/{object_name}'")
+        return True
+    except FileNotFoundError:
+        print("The file was not found.")
+        return False
+    except NoCredentialsError:
+        print("Credentials not available.")
+        return False
+    
+def generate_presigned_url(bucket_name, object_name, expiration=3600):
+    s3 = boto3.client('s3')
+    return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
+
+def validate_image(file):
+    # Check file size (e.g., max 5 MB)
+    if file.size > 3 * 1024 * 1024:
+        raise ValidationError("Image file is too large ( > 5 MB ).")
+
+    # Check content type (e.g., only allow PNG and JPEG)
+    if file.content_type not in ['image/jpeg', 'image/png', 'image/jpg']:
+        raise ValidationError("Only JPEG and PNG images are allowed.")
+    
 # TODO --------------- [ REQUEST ] ----------
 
 def add_vehicle_info(request):
@@ -273,20 +321,33 @@ def add_vehicle_info(request):
         id = obj.id
 
         if 'cover-image' in request.FILES and request.FILES['cover-image']:
-            load_file = request.FILES['cover-image']
-            folder_path = f"docs/{company_id}/vehicle/{id}/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            load_file = request.FILES.get('cover-image')
+            #folder_path = f"docs/{company_id}/vehicle/{id}/"
+            
+            s3Path = f'docs/{company_id}/vehicle/{id}/'
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
             file_name, extension = os.path.splitext(load_file.name)                
             new_name = f"cover-image{extension}"
 
             # Eliminar archivos de portada anteriores usando glob
-            old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, "cover-image.*"))
-            for old_file_path in old_files:
-                if os.path.exists(old_file_path):
-                    os.remove(old_file_path)
-            fs.save(folder_path + new_name, load_file)
-            obj.image_path = folder_path + new_name
+            #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, "cover-image.*"))
+            #for old_file_path in old_files:
+            #    if os.path.exists(old_file_path):
+            #        os.remove(old_file_path)
+            #imageTemp = fs.save(folder_path + new_name, load_file)
+            #localPath = folder_path + new_name
+            s3Name = s3Path + new_name
+            #print(f"nombre del bucket {bucket_name}")
+            #print(f"nombre del folder {load_file.name}")
+            #print(f"nombre del archivo {load_file}")
+            #print(f"access key {AWS_ACCESS_KEY_ID}")
+            #print(f"aws region {AWS_DEFAULT_REGION}")
+            #print(f"secret access key {AWS_SECRET_ACCESS_KEY}")
+            
+            upload_to_s3(load_file, bucket_name, s3Name)
+    
+            obj.image_path = s3Name
             obj.save()
         response["success"] = True
         response["status"] = "success"
@@ -358,10 +419,14 @@ def get_vehicle_info(request):
         "serial_number", "state", "validity",
         "vehicle_type", "year", "image_path"
     )[0]
-    data["image_path"] = "/" + data["image_path"]
+    tempImgPath = generate_presigned_url(bucket_name, data["image_path"])
+    #data["image_path"]
+    print(tempImgPath)
+    
 
     response["data"] = data
     response["success"] = True
+    response["imgPath"] = tempImgPath
     return JsonResponse(response)
 
 def get_vehicles_info(request):
@@ -396,7 +461,11 @@ def get_vehicles_info(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in data:
-            item["image_path"] = "/" + item["image_path"]
+            #item["image_path"] = "/" + item["image_path"]
+            tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
+            item["image_path"] = tempImgPath
+            print(item["image_path"])
+            #print(generate_presigned_url(bucket_name, item["image_path"]))
             item["btn_action"] = f"""
             <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
                 <i class="fa-solid fa-eye"></i>

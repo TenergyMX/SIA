@@ -19,5 +19,7 @@ db.sqlite3
 *.pyc
 /.vscode
 postgres_data/
-#staticfiles/
+/staticfiles/
 /certbot
+/nginx-local/
+/modules/views/vehicles/.env

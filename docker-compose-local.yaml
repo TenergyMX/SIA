@@ -1,0 +1,57 @@
+services:
+  db:
+    container_name: database
+    build: ./postgres/.
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./venv/postgres.env 
+    networks:
+      - dbnet
+
+  sia-app:
+    container_name: sia-app-test
+    build: .
+    ports: 
+      - "8000:8000"
+    volumes:
+      - ./docs/:/app/docs/
+      - ./staticfiles/:/app/staticfiles/
+      - ./users/migrations/:/app/users/migrations
+      - ./modules/migrations:/app/modules/migrations
+#      - ../pwa/:/manifest.json
+#      - ../pwa/service-worker.js:/service-worker.js
+    networks:
+      - nginxnet
+      - dbnet
+    depends_on:
+      - db
+
+  sia-nginx:
+    container_name: sia-nginx-test
+    image: nginx
+    ports:
+      - "80:80"
+    #  - "443:443"
+    volumes:
+      - ./nginx-local/default.conf:/etc/nginx/conf.d/default.conf
+      - ./staticfiles/:/staticfiles/
+      - ./modules/templates/:/var/www/html/
+    #  - ./certbot/letsencrypt:/etc/letsencrypt/:ro
+    #  - ./certbot/www:/var/www/certbot/:ro
+      - ./manifest.json:/manifest.json
+      - ./service-worker.js:/service-worker.js
+    networks:
+      - nginxnet
+    depends_on:
+      - sia-app
+
+networks:
+  nginxnet:
+    driver: bridge
+  certnet:
+    driver: bridge
+  dbnet:
+    driver: bridge

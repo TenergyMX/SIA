@@ -105,7 +105,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'sia',
-        'USER': 'admin_siadb',
+        'USER': 'postgres',
         'PASSWORD': DATABASE_PASSWORD,
         'HOST': os.environ.get('DATABASE_ADDRESS'),  # o '127.0.0.1' si prefieres la dirección IP
         'PORT': '5432',       # o el puerto que hayas configurado
@@ -146,11 +146,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_ROOT = os.path.join(CORE_DIR, 'static')
-STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(CORE_DIR, 'staticfiles')
+STATIC_URL = '/staticfiles/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'modules/static')
     #os.path.join(CORE_DIR, 'static')
 ]
 
