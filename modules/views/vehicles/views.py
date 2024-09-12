@@ -21,6 +21,7 @@ import random
 import glob
 import calendar
 import boto3
+import boto3.session
 from decimal import Decimal
 from modules.utils import * # Esto es un helpers
 #nuevas importaciones
@@ -38,6 +39,8 @@ AWS_DEFAULT_REGION=os.environ.get('AWS_ACCESS_KEY_ID')
 bucket_name = "siaapp"
 
 s3 = boto3.client('s3')
+session = boto3.session.Session(region_name='us-east-2')
+s3client = session.client('s3', config= boto3.session.Config(signature_version='s3v4'))
 
 # TODO --------------- [ VIEWS ] --------------- 
 @login_required
