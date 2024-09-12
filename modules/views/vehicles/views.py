@@ -518,16 +518,18 @@ def update_vehicle_info(request):
             load_file = request.FILES['cover-image']
             folder_path = f"docs/{company_id}/vehicle/{id}/"
             
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)                
             new_name = f"cover-image{extension}"
 
             # Eliminar archivos de portada anteriores usando glob
-            old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, "cover-image.*"))
-            for old_file_path in old_files:
-                if os.path.exists(old_file_path):
-                    os.remove(old_file_path)
-            fs.save(folder_path + new_name, load_file)
+            #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, "cover-image.*"))
+            #for old_file_path in old_files:
+            #    if os.path.exists(old_file_path):
+            #        os.remove(old_file_path)
+            #fs.save(folder_path + new_name, load_file)
+            s3Name = folder_path + new_name
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.image_path = folder_path + new_name
             obj.save()
         response["status"] = "success"

@@ -104,7 +104,7 @@ class Vehicles {
                     },
                     beforeSend: function () {},
                     success: function (response) {
-                        console.log(response["imgPath"]);
+                        // console.log(response["imgPath"]);
                         var card = $(".card-vehicle-info");
 
                         $.each(response["data"], function (index, value) {
