@@ -420,10 +420,9 @@ def get_vehicle_info(request):
         "vehicle_type", "year", "image_path"
     )[0]
     tempImgPath = generate_presigned_url(bucket_name, data["image_path"])
-    #data["image_path"]
-    print(tempImgPath)
+    data["image_path"] = tempImgPath
+    print(f'S3 rute{tempImgPath}')
     
-
     response["data"] = data
     response["success"] = True
     response["imgPath"] = tempImgPath
@@ -464,7 +463,7 @@ def get_vehicles_info(request):
             #item["image_path"] = "/" + item["image_path"]
             tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
             item["image_path"] = tempImgPath
-            print(item["image_path"])
+            #print(item["image_path"])
             #print(generate_presigned_url(bucket_name, item["image_path"]))
             item["btn_action"] = f"""
             <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
