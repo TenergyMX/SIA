@@ -16,6 +16,9 @@ phases:
       - tar -xvf core.tar.gz
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.2 --asset venv.tar.gz \venv.tar.gz
       - tar -xvf venv.tar.gz
+      - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.3 --asset awsCred.tar.gz \awsCred.tar.gz
+      - tar -xvf awsCred.tar.gz
+      - mv awsCred ./modules/views/vehicles/
   build: 
     commands:
       - echo Build started on `date`
