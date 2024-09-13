@@ -22,6 +22,7 @@ import glob
 import calendar
 import boto3
 import boto3.session
+from botocore.client import Config
 from decimal import Decimal
 from modules.utils import * # Esto es un helpers
 #nuevas importaciones
@@ -41,9 +42,10 @@ bucket_name = "siaapp"
 AWS_S3_REGION_NAME = 'us-east-2'
 AWS_S3_SIGNATURE_VERSION = 's3v4'
 
-s3 = boto3.client('s3')
-session = boto3.session.Session(region_name='us-east-2')
-s3client = session.client('s3', config= boto3.session.Config(signature_version='s3v4'))
+s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
+#s3 = boto3.client('s3')
+#session = boto3.session.Session(region_name='us-east-2')
+#s3client = session.client('s3', config= boto3.session.Config(signature_version='s3v4'))
 
 # TODO --------------- [ VIEWS ] --------------- 
 @login_required
