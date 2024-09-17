@@ -267,6 +267,8 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
     :param object_name: S3 object name. If not specified, file_name is used
     :return: True if file was uploaded, else False
     """
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
     if object_name is None:
         object_name = file_name.name
 
@@ -283,7 +285,8 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
         return False
     
 def generate_presigned_url(bucket_name, object_name, expiration=3600):
-    s3 = boto3.client('s3')
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
     return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
 
 def validate_image(file):
