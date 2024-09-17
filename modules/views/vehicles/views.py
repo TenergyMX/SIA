@@ -39,10 +39,11 @@ AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_DEFAULT_REGION=os.environ.get('AWS_ACCESS_KEY_ID')
 bucket_name = "siaapp"
 
-AWS_S3_REGION_NAME = 'us-east-2'
-AWS_S3_SIGNATURE_VERSION = 's3v4'
+#AWS_S3_SIGNATURE_VERSION = 's3v4'
+#AWS_S3_REGION_NAME = 'us-east-2'
 
 s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
+boto3.set_stream_logger('')
 #s3 = boto3.client('s3')
 #session = boto3.session.Session(region_name='us-east-2')
 #s3client = session.client('s3', config= boto3.session.Config(signature_version='s3v4'))
