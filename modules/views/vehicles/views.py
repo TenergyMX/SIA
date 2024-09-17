@@ -43,6 +43,8 @@ bucket_name = "siaapp"
 #AWS_S3_REGION_NAME = 'us-east-2'
 
 s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
+s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 boto3.set_stream_logger('')
 #s3 = boto3.client('s3')
 #session = boto3.session.Session(region_name='us-east-2')
