@@ -12,8 +12,7 @@ phases:
       - export PIP_INDEX_URL="https://aws:${CODEARTIFACT_AUTH_TOKEN}@sia-tenergy-$__ACCOUNT_NUMBER__.d.codeartifact.$__ECR_REGION__.amazonaws.com/pypi/pypi-store/simple/"
       - aws ecr get-login-password --region $__ECR_REGION__ | docker login --username AWS --password-stdin $__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME_
       - REPOSITORY_URI=$__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME__
-      - mkdir .aws
-      - echo -e "[default]\nregion=us-east-2\ns3 =\n   addressing_style = path\n   signature_version = s3v4" > .aws/config
+      - NGINX_REPOSITORY_URI=$__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/nginx
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.0 --asset core.tar.gz \core.tar.gz
       - tar -xvf core.tar.gz
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.2 --asset venv.tar.gz \venv.tar.gz
@@ -21,20 +20,28 @@ phases:
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.3 --asset awsCred.tar.gz \awsCred.tar.gz
       - tar -xvf awsCred.tar.gz
       - mv awsCred.env ./modules/views/vehicles/
+      - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.1 --asset certbot.tar.gz \certbot.tar.gz
+      - tar -xvf certbot.tar.gz
+      - mv certbot/ nginx/
+     
   build: 
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t $REPOSITORY_URI:latest --build-arg PIP_INDEX_URL .
+      - cd nginx
+      - docker build -t $NGINX_REPOSITORY_URI:latest .
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:latest
+      - docker push $NGINX_REPOSITORY_URI:latest
 #      - docker save -o sia-app.tar 903371078608.dkr.ecr.us-east-2.amazonaws.com/sia-app
 #      - aws s3 cp sia-app.tar s3://sia-docker-image
 artifacts:
   files:
-    - appspec.yml
-    - scripts/**/*
+  #  - appspec.yml
+  #  - scripts/**/*
+    - imagedefinitions.json
   discard-paths: no

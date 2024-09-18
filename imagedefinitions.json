@@ -1,0 +1,10 @@
+[
+    {
+        "name": "sia",
+        "imageUri": "903371078608.dkr.ecr.us-east-2.amazonaws.com/sia-app:latest"
+    },
+    {
+        "name": "nginx",
+        "imageUri": "903371078608.dkr.ecr.us-east-2.amazonaws.com/sia-nginx:latest"
+    }
+]
