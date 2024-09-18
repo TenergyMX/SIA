@@ -35,7 +35,9 @@ phases:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker images...
+      - echo Pushing sia image
       - docker push $REPOSITORY_URI:latest
+      - echo Pushing nginx image
       - docker push $NGINX_REPOSITORY_URI:latest
 #      - docker save -o sia-app.tar 903371078608.dkr.ecr.us-east-2.amazonaws.com/sia-app
 #      - aws s3 cp sia-app.tar s3://sia-docker-image
