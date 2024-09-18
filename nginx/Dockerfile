@@ -14,7 +14,7 @@ RUN apt-get update \
 &&  ln -fs /usr/share/zoneinfo/America/Mexico_City /etc/localtime \
 &&  dpkg-reconfigure --frontend noninteractive tzdata
 
-COPY ./sia.conf /etc/nginx/conf.d/default.conf
+COPY ./default.conf /etc/nginx/conf.d/default.conf
 
 RUN apt-get install -y certbot
 RUN apt-get install -y python3-certbot-nginx
