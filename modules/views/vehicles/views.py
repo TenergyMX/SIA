@@ -23,10 +23,12 @@ import calendar
 import boto3
 import boto3.session
 from botocore.client import Config
+from zipfile import ZipFile
+from io import BytesIO
 from decimal import Decimal
 from modules.utils import * # Esto es un helpers
 #nuevas importaciones
-import zipfile
+#import zipfile
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -528,7 +530,7 @@ def update_vehicle_info(request):
         obj.save()
 
         if 'cover-image' in request.FILES and request.FILES['cover-image'] and True:
-            load_file = request.FILES['cover-image']
+            load_file = request.FILES.get['cover-image']
             folder_path = f"docs/{company_id}/vehicle/{id}/"
             
             #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
@@ -1361,28 +1363,41 @@ def add_vehicle_insurance(request):
 
             # Guardar el archivo adjunto, si existe
             if 'doc' in request.FILES and request.FILES['doc']:
-                load_file = request.FILES['doc']
+                load_file = request.FILES.get['doc']
                 company_id = request.session.get('company').get('id')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/seguro/"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
                 file_name, extension = os.path.splitext(load_file.name)
-
+                zip_buffer = BytesIO()
                 # Eliminar el archivo anterior, si existe
-                for item in ["pdf", "doc", "docx", "xls", "xlsx"]:
-                    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{obj.id}.{item}")
-                    if os.path.exists(old_file_path):
-                        os.remove(old_file_path)
+                # Esto no aplica en AWS S3 Buckets
+                #for item in ["pdf", "doc", "docx", "xls", "xlsx"]:
+                #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{obj.id}.{item}")
+                #    if os.path.exists(old_file_path):
+                #        os.remove(old_file_path)
 
                 # Crear el archivo ZIP
-                zip_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{obj.id}.zip")
-                os.makedirs(os.path.dirname(zip_file_path), exist_ok=True)
-                with zipfile.ZipFile(zip_file_path, 'w') as zipf:
+                #zip_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{obj.id}.zip")
+                #os.makedirs(os.path.dirname(zip_file_path), exist_ok=True)
+                #with zipfile.ZipFile(zip_file_path, 'w') as zipf:
                     # Add the uploaded file to the zip file
-                    zipf.writestr(file_name + extension, load_file.read())
+                #    zipf.writestr(file_name + extension, load_file.read())
+                #NEW SAVE IN AWS S3
+                with ZipFile(zip_buffer, 'w') as zip_file:
+                    # Add the uploaded file to the ZIP archive
+                    # The first argument is the name the file will have inside the ZIP
+                    # The second argument is the file-like object to add
+                    zip_file.writestr(load_file.name, load_file.read())
+
+                 # After writing, move the buffer's pointer back to the start
+                zip_buffer.seek(0)
 
                 # Guardar la ruta del archivo ZIP en el objeto
                 obj.doc = folder_path + f"doc_{obj.id}.zip"
-                print("esto es una prueba")
+                #print("esto es una prueba")
+                
+                upload_to_s3(zip_buffer, bucket_name, obj.doc)
+
                 obj.save()
 
             # Configurar la respuesta exitosa
@@ -1416,6 +1431,7 @@ def get_vehicle_insurance(request):
         "policy_number", "insurance_company", "cost", "validity", "doc", "start_date", "end_date"
     )
 
+
     if context["role"]["id"] not in [1,2,3]:
         lista = lista.filter(
             vehicle__responsible_id=context["user"]["id"]
@@ -1429,7 +1445,8 @@ def get_vehicle_insurance(request):
     for item in lista:
         item["btn_action"] = ""
         if item["doc"] != None:
-            item["btn_action"] = f"""<a href="/{item['doc']}" class="btn btn-sm btn-info" download>
+            tempDoc = generate_presigned_url(bucket_name, item["doc"])
+            item["btn_action"] = f"""<a href="/{tempDoc}" class="btn btn-sm btn-info" download>
                 <i class="fa-solid fa-file"></i> Descargar
             </a>\n"""
         if access["update"]:
