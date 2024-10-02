@@ -19,6 +19,7 @@ admin.site.register(SoftwareInstallation)
 admin.site.register(ComputerEquipment_Maintenance)
 
 @admin.register(ComputerEquipment_Audit)
+
 class ComputerEquipment_AuditAdmin(admin.ModelAdmin):
     list_display = ('computerSystem', 'audit_date', 'is_checked', 'is_visible')
     search_fields = ('computerSystem__name', 'audit_date')
@@ -42,3 +43,9 @@ class InfrastructureItemAdmin(admin.ModelAdmin):
 class InfrastructureReviewAdmin(admin.ModelAdmin):
     list_filter = ('category', 'checked')
     search_fields = ('checked', 'notes')
+
+#tabla-equipos y herramientas
+admin.site.register(Equipement_category)
+admin.site.register(Equipment_Tools)
+admin.site.register(Equipment_Tools_Responsiva)
+admin.site.register(Equipmets_Tools_locations)

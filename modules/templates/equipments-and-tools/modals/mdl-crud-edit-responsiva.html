@@ -1,0 +1,28 @@
+<div class="modal fade effect-scaleform_edit_responsiva" id="mdl-crud-edit-responsiva" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_edit_responsiva" onsubmit="edit_date_responsiva(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Actualizar fecha de entrega </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                    <input type="hidden" name="times_requested_responsiva" value="0"> 
+
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4" >
+                        <label for="fecha_edit">Ingresa la nueva fecha</label>
+                        <input type="date" id="fecha_edit" name="fecha_edit" class="form-control" placeholder="Fecha actualizada">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>
