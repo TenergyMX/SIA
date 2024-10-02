@@ -496,3 +496,80 @@ class Infrastructure_Review(models.Model):
 
     def _str_(self):
         return f"{self.category.name}: {self.item.name} ({self.checked}) ({self.date})"
+    
+
+#tablas para el modulo de equipos y herramientas--
+#tabla categorias
+class Equipement_category(models.Model):
+    name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre")
+    short_name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre Corto")
+    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
+    description = models.TextField(blank=True, null=True, verbose_name="Descripción")
+
+    def clean(self):
+        super().clean()
+
+        # Convertir a minúsculas para validación insensible a mayúsculas y minúsculas
+        name_lower = self.name.lower() if self.name else None
+        short_name_lower = self.short_name.lower() if self.short_name else None
+
+        if Equipement_category.objects.exclude(pk=self.pk).filter(name__iexact=name_lower).exists():
+            raise ValidationError({'name': 'El nombre ya existe en la base de datos. Ingresa un nombre diferente.'})
+
+        if Equipement_category.objects.exclude(pk=self.pk).filter(short_name__iexact=short_name_lower).exists():
+            raise ValidationError({'short_name': 'El nombre corto ya existe en la base de datos. Ingresa un nombre corto diferente.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # Llamar al método clean() antes de guardar
+        super().save(*args, **kwargs)
+
+class Equipmets_Tools_locations(models.Model):
+    location_name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre")
+    location_status = models.BooleanField(default=True, verbose_name="¿Está activa la ubicación?")
+    location_company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)   
+
+
+#tabla de equipos y herramientas 
+class Equipment_Tools(models.Model):
+    equipment_category = models.ForeignKey(Equipement_category, on_delete=models.CASCADE, verbose_name="Categoria" ,related_name='reviews')
+    equipment_area = models.ForeignKey(Area, on_delete=models.CASCADE, verbose_name="Area" ,blank=True, null=True)
+    equipment_responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable del equipo" ,blank=True, null=True)
+    equipment_name = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Nombre equipo")
+    equipment_type = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="tipo de equipo")
+    equipment_brand = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Marca")
+    equipment_description = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Descripcion")
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')
+    equipment_technical_sheet = models.FileField(upload_to='docs/Equipments_tools', blank=True, null=True, verbose_name="Ficha tecnica")
+    equipment_location = models.ForeignKey(Equipmets_Tools_locations, on_delete=models.CASCADE, verbose_name="Ubicación" ,blank=True, null=True)
+
+    
+#tabla de responsivas
+class Equipment_Tools_Responsiva(models.Model):
+    equipment_name = models.ForeignKey(Equipment_Tools, on_delete=models.CASCADE, verbose_name="Equipo" ,related_name='reviews')
+    #usuario o responsable temporal 
+    responsible_equipment = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')
+    status_equipment = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Equipo")
+    fecha_inicio = models.DateField(blank=True, null=True, verbose_name="Fecha inicio")       
+    fecha_entrega = models.DateField(blank=True, null=True, verbose_name="Fecha Entrega")  
+    times_requested_responsiva = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Tiempo solicitado")
+    signature_responsible = models.FileField(upload_to='docs/Equipments_tools/signatures/', blank=True, null=True, verbose_name="Firma del responsable")
+    date_receipt = models.DateField(blank=True, null=True, verbose_name="Fecha de recibido")
+    signature_almacen = models.FileField(upload_to='docs/Equipments_tools/signatures/', blank=True, null=True, verbose_name="Firma de almacen")
+    comments = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Comentarios")
+    status_modified = models.BooleanField(default=False, verbose_name="Estado modificado")  # Campo para rastrear modificaciones del estado
+
+
+#se deben agregar a admin.py para poder visualizarlos en el administrador 
+
+
+
+
+
+
+
+
+
+
+

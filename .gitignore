@@ -19,5 +19,8 @@ db.sqlite3
 *.pyc
 /.vscode
 postgres_data/
-#staticfiles/
+staticfiles/
 /certbot
+docker-compose-local.yaml
+Dockerfile_local
+/nginx_local

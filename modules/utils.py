@@ -120,9 +120,9 @@ def update_session_data(request):
         'access': {'id': None},
         'role': {'id': 4, 'name': None, 'level': None},
         'company': {'id': None, 'name': None},
-        'user': user_data
+        'user': user_data,
+        'area': {'id': None, 'name': None}
     }
-
     # Actualizar el diccionario de datos de sesión si hay acceso
     if access:
         session_data.update({
@@ -134,22 +134,24 @@ def update_session_data(request):
             },
             'company': {
                 'id': access.company.id,
-                'name': access.company.name,
+                'name': access.company.name,   
+            },
+            'area': {
+                'id': access.area.id,
+                'name': access.area.name,
             }
         })
-
     # Actualizar la sesión con los datos recopilados
     request.session.update(session_data)
 
 def user_data(request):
     context = {}
-    
     # Verificar y actualizar los datos de sesión
-    if not request.session.get('company'):
+    print(request.session.get('access'))
+    if not request.session.get('company') or not request.session.get('area'):
         update_session_data(request)
         context["success"] = True
-    
-    # Obtener los datos de sesión y agregarlos al contexto
-    context.update({ key: request.session.get(key, {}) for key in ["access", "role", "user", "company"] })
 
+    # Obtener los datos de sesión y agregarlos al contexto
+    context.update({ key: request.session.get(key, {}) for key in ["access", "role", "user", "company", "area"] })
     return context
