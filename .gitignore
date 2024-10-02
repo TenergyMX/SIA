@@ -1,7 +1,7 @@
 /core/db.sqlite3
 /core/settings.py
 /core/.env
-/modules/migrations/
+#/modules/migrations/
 /modules/__pycache__/
 /modules/views/authentication/__pycache__/
 /modules/views/computer-equipment/__pycache__/
@@ -10,7 +10,7 @@
 /modules/views/main/__pycache__/
 /modules/views/users/__pycache__/
 /modules/views/vehicles/__pycache__/
-/users/migrations/
+#/users/migrations/
 /users/__pycache__/
 /venv/
 /docs/
