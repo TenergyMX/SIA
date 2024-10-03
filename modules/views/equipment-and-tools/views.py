@@ -89,7 +89,7 @@ def responsiva(request):
     context["sidebar"] = sidebar["data"]
 
     
-#permisos para agregar responivas
+#permisos para agregar responsivas
     context["area"] = context["area"]["name"].lower()
     context["create"] = access["data"]["access"]["create"]
     print("esto contiene mi create de responsivas")

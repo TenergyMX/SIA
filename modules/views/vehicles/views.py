@@ -1982,8 +1982,9 @@ def update_vehicle_maintenance(request):
     id = dt.get("id", None)
 
     context = user_data(request)
-    tipo_user = context["user"]["username"].lower() 
-
+    tipo_user = context["role"]["name"].lower()
+    print("este es el tipo de usuario:")
+    print(tipo_user)
 
     if not id:
         response["error"] = {"message": "No se proporcionó un ID válido"}
@@ -1992,7 +1993,7 @@ def update_vehicle_maintenance(request):
     try:
         obj_vehicle = Vehicle.objects.get(id=vehicle_id)
 
-        if tipo_user != "administrador":
+        if tipo_user not in ["administrador", "super usuario"]:
             mileage = Decimal(dt.get("mileage")) if dt.get("mileage") else None
             if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
                 response["status"] = "warning"
@@ -2031,7 +2032,7 @@ def update_vehicle_maintenance(request):
             obj.type = dt.get("type")
         if dt.get("cost"):
             obj.cost = dt.get("cost")
-        if dt.get("mileage"):
+        if dt.get("mileage") and (tipo_user == "administrador" or tipo_user == "super usuario"):
             obj.mileage = dt.get("mileage")
         if dt.get("time"):
             obj.time = dt.get("time")
