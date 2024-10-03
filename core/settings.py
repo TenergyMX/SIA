@@ -106,7 +106,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'sia',
         'USER': 'postgres',
-        'PASSWORD': DATABASE_PASSWORD,
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
         'HOST': os.environ.get('DATABASE_ADDRESS'),  # o '127.0.0.1' si prefieres la dirección IP
         'PORT': '5432',       # o el puerto que hayas configurado
     }
@@ -151,9 +151,11 @@ STATIC_URL = '/staticfiles/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'modules/static')
-    #os.path.join(CORE_DIR, 'static')
+    os.path.join(CORE_DIR, 'modules/static')
+    
 ]
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

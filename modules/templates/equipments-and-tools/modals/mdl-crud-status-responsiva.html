@@ -1,0 +1,70 @@
+<div class="modal fade effect-scaleform_status_responsiva" id="mdl-crud-status-responsiva" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_status_responsiva" enctype="multipart/form-data" onsubmit="status_responsiva(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Estado del equipo</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="status_equipment">Estado del equipo o herramienta</label>
+                        <select id="status_equipment" name="status_equipment" class="form-select">
+                            <option value="" disabled selected>Seleccione el estado del equipo</option>
+                            <option value="0">Regresado</option>
+                            <option value="1">Incompleto</option>
+                            <option value="2">Dañado</option>
+                            <option value="3">No devuelto</option>
+                        </select>                                              
+                    </div>
+                    <div id="return_amount_group" class="col-md-4 mb-4 d-none">
+                        <label for="return_amount" class="form-label">Cantidad a devolver</label>
+                        <input type="number" id="return_amount" name="return_amount" class="form-control" min="0">
+                    </div>
+                    <div id="comments" class="col-md-12 mb-4 d-none">
+                        <label for="comments" class="form-label">Comentarios</label>
+                        <input type="text" id="comments" name="comments" class="form-control" placeholder="Comentarios y notas" maxlength="255">
+                    </div>
+
+                    <!-- Campo para la firma del almacén -->
+                    <div class="col-md col-lg text-center inicial">
+                        <label for="" class="d-block text-start">
+                            Firma del almacén:
+                        </label>
+                        <canvas
+                            id="canvas-signature-almacen"
+                            width="350"
+                            height="180"
+                            style="
+                                border: 2px dotted #cccccc;
+                                border-radius: 5px;
+                                cursor: crosshair;
+                            "
+                        ></canvas>
+                        <div class="row justify-content-center g-2">
+                            <div class="col-5 col-lg-3">
+                                <button type="button" id="canvas-signature-btn-clear-almacen" class="btn btn-danger btn-sm w-100" title="Limpiar todo">
+                                    <i class="fa-solid fa-broom-wide"></i>
+                                </button>
+                            </div>
+                            <div class="col-5 col-lg-3">
+                                <button type="button" id="canvas-signature-btn-undo-almacen" class="btn btn-primary btn-sm w-100" title="Regresar">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>

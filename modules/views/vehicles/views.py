@@ -31,7 +31,9 @@ from io import BytesIO
 from decimal import Decimal
 from modules.utils import * # Esto es un helpers
 #nuevas importaciones
-#import zipfile
+import zipfile
+import subprocess
+from django.views.decorators.csrf import csrf_exempt
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -67,7 +69,8 @@ def vehicles(request):
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
-
+    print('Estos son los permisos')
+    print(access)
     if context["access"]["read"]:
         template = "vehicles/vechicles.html"
     else:
@@ -1978,6 +1981,10 @@ def update_vehicle_maintenance(request):
     vehicle_id = dt.get("vehicle_id")
     id = dt.get("id", None)
 
+    context = user_data(request)
+    tipo_user = context["user"]["username"].lower() 
+
+
     if not id:
         response["error"] = {"message": "No se proporcionó un ID válido"}
         return JsonResponse(response)
@@ -1985,12 +1992,13 @@ def update_vehicle_maintenance(request):
     try:
         obj_vehicle = Vehicle.objects.get(id=vehicle_id)
 
-        # Verificamos que el kilometraje sea coerente
-        mileage = Decimal(dt.get("mileage")) if dt.get("mileage") else None
-        if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
-            response["status"] = "warning"
-            response["messahe"] = "El kilometraje del vehículo es mayor que el kilometraje proporcionado."
-            return JsonResponse(response)
+        if tipo_user != "administrador":
+            mileage = Decimal(dt.get("mileage")) if dt.get("mileage") else None
+            if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
+                response["status"] = "warning"
+                response["message"] = "El kilometraje del vehículo es mayor que el kilometraje proporcionado."
+                return JsonResponse(response)
+            
     except Vehicle.DoesNotExist:
         response["status"] = "success"
         response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
@@ -2356,6 +2364,109 @@ def delete_vehicle_fuel(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
+
+
+
+@csrf_exempt
+def add_option(request):
+    if request.method == 'POST':
+        try:
+            print('Recibiendo petición POST')
+            
+            # Cargar datos del cuerpo del request
+            data = json.loads(request.body)
+            print(f'Datos recibidos: {data}')
+            
+            option_name = data.get('option_maintenance_name', '').strip()
+            maintenance_type = data.get('maintenance_type', '').strip()
+
+            if not option_name or not maintenance_type:
+                print('Datos faltantes en el request')
+                return JsonResponse({'status': 'error', 'message': 'Faltan datos necesarios'}, status=400)
+
+            print(f"Se va a agregar la opción: {option_name}")
+            print(f"Tipo de mantenimiento: {maintenance_type}")
+
+            # Definir la ruta del archivo JSON
+            directorio_actual = os.path.dirname(os.path.abspath(__file__))
+            directorio_json = os.path.join(directorio_actual, '..', '..', 'static', 'assets', 'json', 'vehicles-maintenance.json')
+            print(f"Ruta del archivo JSON: {directorio_json}")
+
+            # Cargar el JSON desde el archivo
+            with open(directorio_json, 'r') as file:
+                json_data = json.load(file)
+                print('JSON cargado correctamente')
+
+            # Función para agregar un nuevo ítem
+            def agregar_item(json_data, tipo_mantenimiento, nueva_descripcion):
+                for mantenimiento in json_data['data']:
+                    if mantenimiento['tipo'].lower() == tipo_mantenimiento.lower():
+                        max_id = max([item['id'] for item in mantenimiento['items']])
+                        nuevo_id = max_id + 1
+                        nuevo_item = {
+                            "id": nuevo_id,
+                            "descripcion": nueva_descripcion
+                        }
+                        mantenimiento['items'].append(nuevo_item)
+                        return json_data
+                return None
+
+            # Llamar a la función para agregar el ítem
+            data_actualizada = agregar_item(json_data, maintenance_type, option_name)
+
+            if data_actualizada:
+                print('Datos actualizados, guardando el archivo')
+                # Guardar el JSON actualizado
+                with open(directorio_json, 'w') as file:
+                    json.dump(data_actualizada, file, indent=4)
+
+                # Ejecutar python manage.py collectstatic
+                try:
+                    print('Ejecutando collectstatic...')
+                    subprocess.run(['python', 'manage.py', 'collectstatic', '--noinput'], check=True)
+                    print('Collectstatic ejecutado correctamente')
+                except subprocess.CalledProcessError as e:
+                    print(f'Error al ejecutar collectstatic: {e}')
+                    return JsonResponse({'status': 'error', 'message': 'Error al ejecutar collectstatic'}, status=500)
+
+                return JsonResponse({'status': 'success', 'message': 'Mantenimiento agregado correctamente'})
+            else:
+                print('Tipo de mantenimiento no encontrado')
+                return JsonResponse({'status': 'error', 'message': 'Tipo de mantenimiento no encontrado'}, status=400)
+            
+        except json.JSONDecodeError:
+            print('Error al decodificar el JSON')
+            return JsonResponse({'status': 'error', 'message': 'Error en el formato de JSON'}, status=400)
+        except Exception as e:
+            print(f'Error interno: {str(e)}')
+            return JsonResponse({'status': 'error', 'message': f'Error interno: {str(e)}'}, status=500)
+
+    print('Método no permitido')
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'},status=405)
+
+
+def obtener_opciones(request):
+    directorio_actual = os.path.dirname(os.path.abspath(__file__))
+    directorio_json = os.path.join(directorio_actual, '..', '..', 'static', 'assets', 'json', 'vehicles-maintenance.json')
+
+    try:
+        with open(directorio_json, 'r') as file:
+            json_data = json.load(file)
+            print("este es el json")
+            print(json_data)
+
+        opciones = []
+        for mantenimiento in json_data['data']:
+            for item in mantenimiento['items']:
+                opciones.append({
+                    'id': item['id'],
+                    'descripcion': item['descripcion']
+                })
+
+        return JsonResponse(opciones, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

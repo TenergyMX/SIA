@@ -1,0 +1,82 @@
+<div class="modal fade effect-scaleform_add_responsiva" id="mdl-crud-responsiva" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_responsiva" enctype="multipart/form-data" onsubmit="add_responsiva(); return false" method="POST" >
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar Responsiva</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+     
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" id="equipment_id" name="equipment_id" value="">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="equipment_name">Nombre del equipo</label>
+                        <input type="text" id="equipment_name" name="equipment_name" class="form-control" placeholder="Nombre del equipo" required>
+                    </div>  
+
+                    <div class="col-md-4">
+                        <label for="equipment_responsible">Responsable</label>
+                        <select name="equipment_responsible" id="equipment_responsible" class="form-select" required>
+                            
+                            <!-- Las opciones se llenarán dinámicamente con JavaScript -->
+                        </select>
+                    </div>                      
+
+                    <div class="col-md-4">
+                        <label for="amount">Cantidad de equipos/herramientas</label>
+                        <input type="text" id="amount" name="amount" class="form-control" placeholder="Cantidad" minlength="1" maxlength="4" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Fecha de entrega</label>
+                        <input type="date" id="fecha_entrega" name="fecha_entrega" class="form-control" placeholder="Fecha de entrega">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="times_requested_responsiva">Tiempo solicitado</label>
+                        <input type="text" id="times_requested_responsiva" name="times_requested_responsiva" class="form-control" placeholder="Tiempo solicitado" maxlength="255">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="comments">Notas</label>
+                        <input type="text" id="comments" name="comments" class="form-control" placeholder="Comentarios y notas" maxlength="255" required>
+                    </div>
+
+                    <div class="col-md col-lg text-center inicial">
+                        <label for="" class="d-block text-start">
+                            Firma del responsable:
+                        </label>
+                        <canvas
+                            id="canvas-signature"
+                            width="350"
+                            height="180"
+                            class=""
+                            style="
+                                border: 2px dotted #cccccc;
+                                border-radius: 5px;
+                                cursor: crosshair;
+                            "
+                        ></canvas>
+                        <div class="row justify-content-center g-2">
+                            <div class="col-5 col-lg-3">
+                                <button type="button" id="canvas-signature-btn-clear" name="clear" class="btn btn-danger btn-sm w-100" title="Limpiar todo">
+                                    <i class="fa-solid fa-broom-wide"></i>
+                                </button>
+                            </div>
+                            <div class="col-5 col-lg-3">
+                                <button type="button" id="canvas-signature-btn-undo" name="undo" class="btn btn-primary btn-sm w-100" title="Regresar">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>

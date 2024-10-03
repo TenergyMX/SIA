@@ -1,0 +1,84 @@
+<div class="modal fade effect-scaleform_add_equipments_tools" id="mdl-crud-equipments-tools" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_add_equipments_tools" onsubmit="add_equipment_tool(); return false" method="POST" >
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+     
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="categoria_id">Categoría</label>
+                        <select name="equipment_category" id="categoria_id" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una categoría</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="equipment_name">Nombre del equipo/herramienta</label>
+                        <input type="text" id="equipment_name" name="equipment_name" class="form-control" placeholder="Nombre del equipo/herramienta" minlength="3" maxlength="50" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="equipment_type">Tipo de equipo</label>
+                        <input type="text" id="equipment_type" name="equipment_type" class="form-control" placeholder="Tipo de equipo" maxlength="255" required>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="equipment_brand">Marca</label>
+                        <input type="text" id="equipment_brand" name="equipment_brand" class="form-control" placeholder="Marca" maxlength="255" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="equipment_description">Descripción</label>
+                        <input type="text" id="equipment_description" name="equipment_description" class="form-control" placeholder="Descripción" maxlength="255">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cost">Costo</label>
+                        <input type="text" id="cost" name="cost" class="form-control" placeholder="Costo" maxlength="255" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="amount">Cantidad</label>
+                        <input type="text" id="amount" name="amount" class="form-control" placeholder="Cantidad" maxlength="255" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="equipment_area">Area</label>
+                        <select name="equipment_area" id="equipment_area" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una de las áreas</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="responsible_equipment">Responsable </label>
+                        <select name="responsible_equipment" id="responsible_equipment" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un responsable </option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="equipment_location">Ubicación</label>
+                        <select name="equipment_location" id="equipment_location" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una de las ubicaciones</option>
+                        </select>
+                    </div>
+                    
+                    
+                    
+
+                    <div class="col-md-8">
+                        <label for="formFile" class="form-label">Ficha técnica</label>
+                        <input class="form-control" type="file" id="formFile" name="equipment_technical_sheet">
+                    </div>                    
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -83,4 +83,7 @@ urlpatterns = [
     path("get-vehicle-fuels-charts/", views.get_vehicles_fuels_charts),
     path("update-vehicle-fuel/", views.update_vehicle_fuel),
     path("delete-vehicle-fuel/", views.delete_vehicle_fuel),
+    path("add_maintenance_option/", views.add_vehicle_maintenance),
+    path("add_option/", views.add_option),
+    path("obtener_opciones/", views.obtener_opciones),
 ]
