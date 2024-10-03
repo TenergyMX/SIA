@@ -22,7 +22,10 @@ import glob
 import calendar
 import boto3
 import boto3.session
+import io
+import mimetypes
 from botocore.client import Config
+import zipfile
 from zipfile import ZipFile
 from io import BytesIO
 from decimal import Decimal
@@ -41,8 +44,7 @@ AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_DEFAULT_REGION=os.environ.get('AWS_ACCESS_KEY_ID')
 bucket_name = "siaapp"
 
-#AWS_S3_SIGNATURE_VERSION = 's3v4'
-#AWS_S3_REGION_NAME = 'us-east-2'
+ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
 s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
@@ -269,13 +271,23 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
     :param object_name: S3 object name. If not specified, file_name is used
     :return: True if file was uploaded, else False
     """
+    extension = file_name.name.split(".")[-1]
+    print(extension)
+
+    #print(file_name)
+    #print(f'EXTENSION del archivo: {extension.split(".")[-1]}')
     s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
     boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
     if object_name is None:
         object_name = file_name.name
 
     try:
-        validate_image(file_name)
+        if isinstance(file_name, io.BytesIO):
+            print("The object is of type io.BytesIO")
+        else:
+            print("The object is NOT of type io.BytesIO")
+            validate_image(file_name)
+        #if extension != "zip":
         s3.upload_fileobj(file_name, bucket_name, object_name)
         print(f"File '{file_name}' uploaded to '{bucket_name}/{object_name}'")
         return True
@@ -285,6 +297,7 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
     except NoCredentialsError:
         print("Credentials not available.")
         return False
+
     
 def generate_presigned_url(bucket_name, object_name, expiration=3600):
     s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
@@ -293,13 +306,21 @@ def generate_presigned_url(bucket_name, object_name, expiration=3600):
 
 def validate_image(file):
     # Check file size (e.g., max 5 MB)
-    if file.size > 3 * 1024 * 1024:
-        raise ValidationError("Image file is too large ( > 5 MB ).")
-
+    if file.size > 10 * 1024 * 1024:
+        raise ValidationError("Image file is too large ( > 10 MB ).")
     # Check content type (e.g., only allow PNG and JPEG)
-    if file.content_type not in ['image/jpeg', 'image/png', 'image/jpg']:
-        raise ValidationError("Only JPEG and PNG images are allowed.")
+    if file.content_type not in ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']:
+        raise ValidationError("Only JPEG, PNG and PDF files are allowed.")
+
+def is_valid_file_type(file_name):
+    """Check if the file is of an allowed type based on extension."""
+    # Get the file extension
+    file_extension = mimetypes.guess_extension(file_name.content_type)
     
+    if file_extension and file_extension.lower() in ALLOWED_FILE_EXTENSIONS:
+        return True
+    return False
+
 # TODO --------------- [ REQUEST ] ----------
 
 def add_vehicle_info(request):
@@ -530,7 +551,7 @@ def update_vehicle_info(request):
         obj.save()
 
         if 'cover-image' in request.FILES and request.FILES['cover-image'] and True:
-            load_file = request.FILES.get['cover-image']
+            load_file = request.FILES.get('cover-image')
             folder_path = f"docs/{company_id}/vehicle/{id}/"
             
             #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
@@ -600,15 +621,19 @@ def add_vehicle_tenencia(request):
 
         # Guardar el archivo en caso de existir
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES['comprobante_pago']
+            load_file = request.FILES.get('comprobante_pago')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/tenencia/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
             
             new_name = f"comprobante_pago_{id}.{extension}"
-            fs.save(folder_path + new_name, load_file)
+            #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante_pago = folder_path + new_name
+            s3Name = folder_path + new_name
+
+            upload_to_s3(load_file, bucket_name, s3Name)
+
             obj.save()
 
         response["success"] = True
@@ -700,16 +725,18 @@ def update_vehicle_tenencia(request):
         
         # Guardar el archivo en caso de existir
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES['comprobante_pago']
+            load_file = request.FILES.get('comprobante_pago')
             company_id = request.session.get('company').get('id')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/tenencia/{id}/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)                
             
             new_name = f"comprobante_pago{extension}"
-            fs.save(folder_path + new_name, load_file)
-            
+            #fs.save(folder_path + new_name, load_file)
+            s3Name = folder_path + new_name
+
             obj.comprobante_pago = folder_path + new_name
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
         
         response["success"] = True
@@ -762,15 +789,17 @@ def add_vehicle_refrendo(request):
 
         # Guardar el archivo en caso de existir
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES['comprobante_pago']
+            load_file = request.FILES.get('comprobante_pago')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/refrendo/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
             
             new_name = f"comprobante_pago_{id}{extension}"
-            fs.save(folder_path + new_name, load_file)
+            #fs.save(folder_path + new_name, load_file)
             
+            s3Name = folder_path + new_name
             obj.comprobante_pago = folder_path + new_name
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
 
         response["success"] = True
@@ -860,16 +889,18 @@ def update_vehicle_refrendo(request):
         
         # Guardar el archivo en caso de existir
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES['comprobante_pago']
+            load_file = request.FILES.get('comprobante_pago')
             company_id = request.session.get('company').get('id')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/refrendo/{id}/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)                
             
             new_name = f"comprobante_pago{extension}"
-            fs.save(folder_path + new_name, load_file)
+            s3Name = folder_path + new_name
+            #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante_pago = folder_path + new_name
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
         
         response["success"] = True
@@ -924,15 +955,17 @@ def add_vehicle_verificacion(request):
 
         # Guardar el archivo en caso de existir
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES['comprobante_pago']
+            load_file = request.FILES.get('comprobante_pago')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/verificacion/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
             
             new_name = f"comprobante_pago_{id}{extension}"
-            fs.save(folder_path + new_name, load_file)
+            #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante_pago = folder_path + new_name
+            s3Name = folder_path + new_name
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
 
         response["success"] = True
@@ -1035,16 +1068,18 @@ def update_vehicle_verificacion(request):
         
         # Guardar el archivo en caso de existir
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES['comprobante_pago']
+            load_file = request.FILES.get('comprobante_pago')
             company_id = request.session.get('company').get('id')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/verificacion/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)                
             
             new_name = f"comprobante_pago_{id}{extension}"
-            fs.save(folder_path + new_name, load_file)
+            s3Name = folder_path + new_name
+            #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante_pago = folder_path + new_name
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
         
         response["success"] = True
@@ -1094,20 +1129,22 @@ def add_vehicle_responsiva(request):
             obj_vehicle.save()
 
             if 'signature' in request.FILES and request.FILES['signature']:
-                load_file = request.FILES['signature']
+                load_file = request.FILES.get('signature')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
                 file_name, extension = os.path.splitext(load_file.name)
 
                 # Eliminar el archivo anterior con el mismo nombre
-                for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-                    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"signature.{item}")
-                    if os.path.exists(old_file_path): os.remove(old_file_path)
+#                for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
+#                    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"signature.{item}")
+#                    if os.path.exists(old_file_path): os.remove(old_file_path)
                 
                 new_name = f"signature{extension}"
-                fs.save(folder_path + new_name, load_file)
+                s3Name = folder_path + new_name
+                #fs.save(folder_path + new_name, load_file)
 
                 obj.signature = folder_path + new_name
+                upload_to_s3(load_file, bucket_name, s3Name)
                 obj.save()
         if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
             load_file = request.FILES['image_path_exit_1']
@@ -1325,9 +1362,7 @@ def delete_vehicle_responsiva(request):
 
 def add_vehicle_insurance(request):
     response = {"success": False, "data": []}
-    print("antes del post")
     dt = request.POST
-    print("despues del post")
 
     vehicle_id = dt.get("vehicle_id")
 
@@ -1363,12 +1398,13 @@ def add_vehicle_insurance(request):
 
             # Guardar el archivo adjunto, si existe
             if 'doc' in request.FILES and request.FILES['doc']:
-                load_file = request.FILES.get['doc']
+                load_file = request.FILES.get('doc')
                 company_id = request.session.get('company').get('id')
-                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/seguro/"
-                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                folder_path = f'docs/{company_id}/vehicle/{vehicle_id}/seguro/'
+                #fs = FileSystemStor0age(location=settings.MEDIA_ROOT)
                 file_name, extension = os.path.splitext(load_file.name)
-                zip_buffer = BytesIO()
+                new_name = f"doc_{obj.id}{extension}"
+                #zip_buffer = io.BytesIO()
                 # Eliminar el archivo anterior, si existe
                 # Esto no aplica en AWS S3 Buckets
                 #for item in ["pdf", "doc", "docx", "xls", "xlsx"]:
@@ -1382,21 +1418,28 @@ def add_vehicle_insurance(request):
                 #with zipfile.ZipFile(zip_file_path, 'w') as zipf:
                     # Add the uploaded file to the zip file
                 #    zipf.writestr(file_name + extension, load_file.read())
-                #NEW SAVE IN AWS S3
-                with ZipFile(zip_buffer, 'w') as zip_file:
+
+                #NEW SAVE ZIP IN AWS S3
+                #with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
                     # Add the uploaded file to the ZIP archive
                     # The first argument is the name the file will have inside the ZIP
                     # The second argument is the file-like object to add
-                    zip_file.writestr(load_file.name, load_file.read())
-
+                    #zip_file.writestr(load_file.name, load_file.read())
                  # After writing, move the buffer's pointer back to the start
-                zip_buffer.seek(0)
+                #zip_buffer.seek(0)
+
+                #SAVE FILE WITH THE ORIGINAL EXTENSION
+
+
+                s3Name = folder_path + new_name
 
                 # Guardar la ruta del archivo ZIP en el objeto
-                obj.doc = folder_path + f"doc_{obj.id}.zip"
-                #print("esto es una prueba")
+                obj.doc = s3Name
+                #zip_buffer.name = new_name
                 
-                upload_to_s3(zip_buffer, bucket_name, obj.doc)
+                upload_to_s3(load_file, bucket_name, s3Name)
+
+                print("upload succed")
 
                 obj.save()
 
@@ -1446,7 +1489,7 @@ def get_vehicle_insurance(request):
         item["btn_action"] = ""
         if item["doc"] != None:
             tempDoc = generate_presigned_url(bucket_name, item["doc"])
-            item["btn_action"] = f"""<a href="/{tempDoc}" class="btn btn-sm btn-info" download>
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
                 <i class="fa-solid fa-file"></i> Descargar
             </a>\n"""
         if access["update"]:
@@ -1485,7 +1528,6 @@ def delete_vehicle_insurance(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
-
 
 
 def add_vehicle_audit(request):
@@ -1818,22 +1860,25 @@ def add_vehicle_maintenance(request):
     try:
         # Guardar el archivo en caso de existir
         if 'comprobante' in request.FILES and request.FILES['comprobante']:
-            load_file = request.FILES['comprobante']
+            load_file = request.FILES.get('comprobante')
             company_id = request.session.get('company').get('id')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/maintenance/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"comprobante_{id}{extension}"
+
+            s3Name = folder_path + new_name
             
             # Eliminar el archivo anterior en caso de existir
             for item in ["png", "jpg", "jpeg","gif", "pdf", "doc", "docx", "xls", "xlsx"]:
                 old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"comprobante_{id}.{item}")
                 if os.path.exists(old_file_path): os.remove(old_file_path)
             
-            fs.save(folder_path + new_name, load_file)
+            #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante = folder_path + new_name
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
         pass
     except Exception as e:
@@ -1989,22 +2034,24 @@ def update_vehicle_maintenance(request):
         
         # Guardar el archivo en caso de existir
         if 'comprobante' in request.FILES and request.FILES['comprobante']:
-            load_file = request.FILES['comprobante']
+            load_file = request.FILES.get('comprobante')
             company_id = request.session.get('company').get('id')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/maintenance/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"comprobante_{id}{extension}"
+            s3Name = folder_path + new_name
             
             # Eliminar el archivo anterior en caso de existir
-            for item in ["png", "jpg", "jpeg","gif", "pdf", "doc", "docx", "xls", "xlsx"]:
-                old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"comprobante_{id}.{item}")
-                if os.path.exists(old_file_path): os.remove(old_file_path)
+#            for item in ["png", "jpg", "jpeg","gif", "pdf", "doc", "docx", "xls", "xlsx"]:
+#                 old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"comprobante_{id}.{item}")
+#                 if os.path.exists(old_file_path): os.remove(old_file_path)
             
-            fs.save(folder_path + new_name, load_file)
+            #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante = folder_path + new_name
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
 
         response["status"] = "success"
