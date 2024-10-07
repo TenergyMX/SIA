@@ -50,6 +50,7 @@ bucket_name=str(AWS_BUCKET_NAME)
 
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
+s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
 s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 boto3.set_stream_logger('')
