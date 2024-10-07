@@ -45,12 +45,11 @@ AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_DEFAULT_REGION=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
-bucket_name=AWS_BUCKET_NAME
+bucket_name=str(AWS_BUCKET_NAME)
 
 
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
-s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
 s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 boto3.set_stream_logger('')
@@ -462,7 +461,9 @@ def get_vehicle_info(request):
         "vehicle_type", "year", "image_path"
     )[0]
     tempImgPath = generate_presigned_url(bucket_name, data["image_path"])
+    print(f'database route{data["image_path"]}')
     data["image_path"] = tempImgPath
+    print(f'S3 rute{tempImgPath}')
     print(f'S3 rute{tempImgPath}')
     
     response["data"] = data
