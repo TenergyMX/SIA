@@ -45,7 +45,8 @@ AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_DEFAULT_REGION=os.environ.get('AWS_DEFAULT_REGION')
 AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
-bucket_name=str(AWS_BUCKET_NAME)
+bucket_name="siaapp"
+#bucket_name=str(AWS_BUCKET_NAME)
 
 
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
