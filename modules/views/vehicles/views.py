@@ -50,8 +50,8 @@ AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
-s3 = boto3.client('s3', region_name='us-east-1', config=Config(signature_version='s3v4'))
-boto3.client('s3', region_name='us-east-1', config=Config(signature_version='s3v4'))
+s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 boto3.set_stream_logger('')
 #s3 = boto3.client('s3')
 #session = boto3.session.Session(region_name='us-east-2')
@@ -280,8 +280,8 @@ def upload_to_s3(file_name, AWS_BUCKET_NAME, object_name=None):
 
     #print(file_name)
     #print(f'EXTENSION del archivo: {extension.split(".")[-1]}')
-    s3 = boto3.client('s3', region_name='us-east-1', config=Config(signature_version='s3v4'))
-    boto3.client('s3', region_name='us-east-1', config=Config(signature_version='s3v4'))
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
     if object_name is None:
         object_name = file_name.name
 
@@ -304,8 +304,8 @@ def upload_to_s3(file_name, AWS_BUCKET_NAME, object_name=None):
 
     
 def generate_presigned_url(AWS_BUCKET_NAME, object_name, expiration=3600):
-    s3 = boto3.client('s3', region_name='us-east-1', config=Config(signature_version='s3v4'))
-    boto3.client('s3', region_name='us-east-1', config=Config(signature_version='s3v4'))
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
     return s3.generate_presigned_url('get_object',Params={'Bucket': AWS_BUCKET_NAME, 'Key': object_name}, ExpiresIn=expiration)
 
 def validate_image(file):
