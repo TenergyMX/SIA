@@ -23,10 +23,10 @@ $(document).ready(function() {
                 className: "toggleable",
             },
             { 
-                data: null,
-                defaultContent: "<button type='button' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_category_category(this)' aria-label='info'><i class='fa-solid fa-pen'></i></button> " +
-                                "<button type='button' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_category(this)' aria-label='delete'><i class='fa-solid fa-trash'></i></button>",
-                orderable: false
+                data: "btn_action",
+                render: function(data, type, row) {
+                    return data;  
+                }
             }
         ],
         language: {
@@ -34,28 +34,26 @@ $(document).ready(function() {
         },
         pageLength: 10
     });
-    
-    // Función para recargar la tabla
-    function reloadTable() {
-        table.ajax.reload(); // Esto recargará los datos de la tabla
-    }
-
-    // Manejar el clic en el botón de recargar
-    $('#refreshTableButton').on('click', function() {
-        reloadTable();
-    });
 });
 
-// Función para mostrar el formulario
+// Función para mostrar el formulario en modo agregar
 function add_category() {
     var obj_modal = $("#mdl-crud-equipments-tools-category");
     obj_modal.modal("show");
+
+    // Configurar el modal para agregar
+    $('#mdl-crud-equipments-tools-category .modal-title').text('Agregar Categoría');
+    $('#form_add_category_equip').attr('onsubmit', 'add_equipment_category(); return false');
+    
+    // Establecer el valor predeterminado de 'is_active' a '1' para nuevos registros
+    $('#form_add_category_equip [name="is_active"]').val('1');
+    $('#active-field').addClass('d-none'); // Ocultar el campo 'is_active'
 }
+
 // Función para agregar una categoría
 function add_equipment_category() {
-    var form = $('#form_add_category_equip')[0];//id del formulario dentro del modal 
+    var form = $('#form_add_category_equip')[0];
     var formData = new FormData(form);
-
     $.ajax({
         url: '/add_equipment_category/', 
         type: 'POST',
@@ -64,54 +62,68 @@ function add_equipment_category() {
         contentType: false,
         success: function(response) {
             if (response.success) {
-                $('#form_add_category_equip')[0].reset();//id del formulario dentro del modal
-                $('#mdl-crud-equipments-tools-category').modal('hide');//id del modal 
-                alert(response.message); // Mensaje de éxito
-                $('#equipments_tools_table').DataTable().ajax.reload(); // Recargar la tabla
+                $('#form_add_category_equip')[0].reset();
+                $('#mdl-crud-equipments-tools-category').modal('hide');
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500
+                });
+                $('#equipments_tools_table').DataTable().ajax.reload();
             } else {
-                alert('An error occurred: ' + response.message);
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message,
+                    icon: "error",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
             }
         },
         error: function(xhr, status, error) {
             console.error("Error al guardar la categoría:", error);
-            alert("Hubo un error al guardar la categoría.");
+            Swal.fire({
+                title: "¡Error!",
+                text: response.message,
+                icon: "error",
+                showConfirmButton: false,
+                timer: 1500
+            });
         },
         beforeSend: function(xhr) {
             xhr.setRequestHeader('X-CSRFToken', $('input[name="csrfmiddlewaretoken"]').val());
         }
     });
 }
+
 // Evento para el botón de editar
 function edit_category_category(boton) {
-    //crear una nueva instancia hacia la fila que se esta seleccionando 
     var row = $(boton).closest('tr');
-    //busca en la tabla la fila que se obtiene al inicio y almacena toda la informacion de la misma
     var data = $('#equipments_tools_table').DataTable().row(row).data();
-   
+
     // Mostrar el modal
     $('#mdl-crud-equipments-tools-category').modal('show');
 
     // Cambiar el título del modal para indicar que es una actualización
     $('#mdl-crud-equipments-tools-category .modal-title').text('Editar Categoría');
+
     // Cargar los datos en el formulario
     $('#form_add_category_equip [name="id"]').val(data.id);
     $('#form_add_category_equip [name="name"]').val(data.name);
     $('#form_add_category_equip [name="short_name"]').val(data.short_name);
-    $('#form_add_category_equip [name="description"]').val(data.description)
-    if (data.is_active == true){
-        $('#form_add_category_equip [name="is_active"]').val("1");  
-    }else{
-        $('#form_add_category_equip [name="is_active"]').val("0");
-    }
-    //cambia la funcion del formulario para evitar
-    $('#form_add_category_equip').attr('onsubmit', ' edit_category(); return false');
+    $('#form_add_category_equip [name="description"]').val(data.description);
+    $('#form_add_category_equip [name="is_active"]').val(data.is_active ? '1' : '0');
 
+    // Configurar el formulario para editar
+    $('#form_add_category_equip').attr('onsubmit', 'edit_category(); return false');
+    $('#active-field').removeClass('d-none'); // Mostrar el campo 'is_active'
 }
-function edit_category(){
+
+// Función para editar una categoría
+function edit_category() {
     var form = $('#form_add_category_equip')[0];
     var formData = new FormData(form);
-    $('#form_add_category_equip').attr('onsubmit', ' add_category(); return false');
-
     $.ajax({
         url: '/edit_category/', 
         type: 'POST',
@@ -122,49 +134,83 @@ function edit_category(){
             if (response.success) {
                 $('#form_add_category_equip')[0].reset();
                 $('#mdl-crud-equipments-tools-category').modal('hide');
-                alert(response.message); // Mensaje de éxito
-                $('#equipments_tools_table').DataTable().ajax.reload(); // Recargar la tabla
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500
+                });
+                $('#equipments_tools_table').DataTable().ajax.reload();
             } else {
-                alert('An error occurred: ' + response.message);
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message,
+                    icon: "error",
+                    timer: 1500
+                });
             }
         },
         error: function(xhr, status, error) {
             console.error("Error al guardar la categoría:", error);
-            alert("Hubo un error al guardar la categoría.");
+            Swal.fire({
+                title: "¡Error!",
+                text: response.message,
+                icon: "error",
+                timer: 1500
+            });
         },
         beforeSend: function(xhr) {
             xhr.setRequestHeader('X-CSRFToken', $('input[name="csrfmiddlewaretoken"]').val());
         }
     });
 }
-function delete_category(boton){
+
+
+// Función para eliminar una categoría
+function delete_category(boton) {
     var row = $(boton).closest('tr');
     var data = $('#equipments_tools_table').DataTable().row(row).data();
-
-    console.log(data);
-
-    if (confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
-        $.ajax({
-            url: '/delete_category/', 
-            type: 'POST',
-            data: {
-                id: data.id
-            },
-            success: function(response) {
-                if (response.success) {
-                    alert(response.message); 
-                    $('#equipments_tools_table').DataTable().ajax.reload(); 
-                } else {
-                    alert('An error occurred: ' + response.message);
+    Swal.fire({
+        title: "¿Estás seguro?",
+        text: "¡No podrás revertir esta acción!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, elimínalo!"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Si el usuario confirma la eliminación, hacer la solicitud AJAX
+            $.ajax({
+                url: '/delete_category/',
+                type: 'POST',
+                data: {
+                    id: data.id
+                },
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-CSRFToken', $('input[name="csrfmiddlewaretoken"]').val());
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: "¡Eliminado!",
+                            text: response.message,
+                            icon: "success",
+                            timer: 1500
+                        }).then(() => {
+                            // Recargar la tabla después de la eliminación exitosa
+                            $('#equipments_tools_table').DataTable().ajax.reload();
+                        });
+                    } else {
+                        Swal.fire("Error", response.message, "error");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error al eliminar la categoría:", error);
+                    Swal.fire("Error", "Hubo un error al eliminar la categoría.", "error");
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error("Error al eliminar la categoría:", error);
-                alert("Hubo un error al eliminar la categoría.");
-            },
-            beforeSend: function(xhr) {
-                xhr.setRequestHeader('X-CSRFToken', $('input[name="csrfmiddlewaretoken"]').val());
-            }
-        });
-    }
+            });
+        }
+    });
 }
+

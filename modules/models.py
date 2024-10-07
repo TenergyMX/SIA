@@ -547,7 +547,6 @@ class Equipment_Tools(models.Model):
 #tabla de responsivas
 class Equipment_Tools_Responsiva(models.Model):
     equipment_name = models.ForeignKey(Equipment_Tools, on_delete=models.CASCADE, verbose_name="Equipo" ,related_name='reviews')
-    #usuario o responsable temporal 
     responsible_equipment = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal")
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')
     status_equipment = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Equipo")
@@ -557,11 +556,12 @@ class Equipment_Tools_Responsiva(models.Model):
     signature_responsible = models.FileField(upload_to='docs/Equipments_tools/signatures/', blank=True, null=True, verbose_name="Firma del responsable")
     date_receipt = models.DateField(blank=True, null=True, verbose_name="Fecha de recibido")
     signature_almacen = models.FileField(upload_to='docs/Equipments_tools/signatures/', blank=True, null=True, verbose_name="Firma de almacen")
-    comments = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Comentarios")
+    comments = models.CharField(blank=True, null=True, max_length=300, default='Regular', verbose_name="Comentarios")
     status_modified = models.BooleanField(default=False, verbose_name="Estado modificado")  # Campo para rastrear modificaciones del estado
+    pdf_document = models.FileField(upload_to='docs/Equipments_tools/pdfs/', blank=True, null=True, verbose_name="Documento PDF")
 
 
-#se deben agregar a admin.py para poder visualizarlos en el administrador 
+#agregar a admin.py para poder visualizarlos en el administrador 
 
 
 

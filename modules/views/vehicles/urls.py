@@ -47,6 +47,8 @@ urlpatterns = [
     path("get_vehicle_verificacion/", views.get_vehicle_verificacion),
     path("get_vehicles_verificacion/", views.get_vehicles_verificacion),
     path("update_vehicle_verificacion/", views.update_vehicle_verificacion),
+    path("delete_vehicle_verificacion/", views.delete_vehicle_verificacion),
+
 
     # TODO ----- [ Responsiva ] -----
     path("add_vehicle_responsiva/", views.add_vehicle_responsiva),

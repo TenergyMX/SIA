@@ -16,8 +16,10 @@ from django.conf import settings
 import logging
 import json, os
 import base64
-from django.core.files.base import ContentFile
 import time
+from django.template.loader import get_template
+from io import BytesIO
+from xhtml2pdf import pisa
 
 # Llamar módulos y submódulos 
 #submodulo de categorias 
@@ -656,7 +658,34 @@ def add_responsiva(request):
                 requested_amount.amount = available_amount - amount
                 requested_amount.save()
 
-                return JsonResponse({'success': True, 'message': 'Responsiva agregada correctamente'})
+                responsiva_instance = Equipment_Tools_Responsiva.objects.latest('id')  # Obtiene la última responsiva
+
+               # Generar el PDF después de guardar la responsiva
+                pdf_context = {
+                    'responsiva': responsiva_instance,
+                    'responsible_name': responsiva_instance.responsible_equipment.username,  # Nombre del responsable
+                    'signature_responsible': request.build_absolute_uri(responsiva_instance.signature_responsible.url) if responsiva_instance.signature_responsible else None,  # URL absoluta de la firma
+                }
+
+                pdf_file = render_to_pdf('equipments-and-tools/responsiva/responsiva_equipments.html', pdf_context)
+                pdf_path = f"docs/Equipments_tools/responsivas/{timestamp}/responsiva_{timestamp}.pdf"
+
+                # Guarda el PDF en el servidor
+                with open(os.path.join(settings.MEDIA_ROOT, pdf_path), 'wb') as f:
+                    f.write(pdf_file.getvalue())
+
+                # Actualiza la responsiva para guardar la ruta del PDF
+                responsiva_instance.pdf_document = pdf_path
+                responsiva_instance.save()
+                
+                # Retornar la URL del PDF
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Responsiva agregada correctamente',
+                    'pdf_url': f"{request.scheme}://{request.get_host()}/{pdf_path}"
+                })
+
+
         except Equipment_Tools.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Equipo no encontrado'})
         except Exception as e:
@@ -664,6 +693,19 @@ def add_responsiva(request):
 
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
 
+
+def render_to_pdf(template_src, context_dict):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+
+    result = BytesIO()
+    pdf = pisa.CreatePDF(html, dest=result)
+
+    if pdf.err:
+        return None  # Devuelve None si hay un error al crear el PDF
+
+    result.seek(0)
+    return result
 
 #-------------------------------------------------------------------------------
 # Funcion para obtener los nombres de los usuarios para la responsiva
@@ -973,9 +1015,6 @@ def cancel_responsiva(request):
             return JsonResponse({'success': False, 'message': 'Error interno del servidor.'}, status=500)
 
     return JsonResponse({'success': False, 'message': 'Método no permitido.'}, status=405)
-
-
-
 
 #función para obtener la fecha actual del servidor 
 def get_server_date(request):

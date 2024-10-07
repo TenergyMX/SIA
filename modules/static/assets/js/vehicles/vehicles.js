@@ -45,6 +45,7 @@ class Vehicles {
                     url: "/get_vehicles_info/",
                     dataSrc: "data",
                     data: {},
+                    
                 },
                 columns: [
                     { title: "Nombre", data: "name", className: "toggleable" },
@@ -141,6 +142,8 @@ class Vehicles {
                     },
                     beforeSend: function () {},
                     success: function (response) {
+                        console.log("Respuesta de la API:", response);
+
                         var select = $(self.list.id);
                         select.html(null);
                         $.each(response["data"], function (index, value) {
