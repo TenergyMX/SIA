@@ -45,6 +45,7 @@ AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_DEFAULT_REGION=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
+bucket_name=AWS_BUCKET_NAME
 
 
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
@@ -267,11 +268,11 @@ def vehicles_fuel_views(request):
 
 # TODO --------------- [ HELPER ] ----------
 
-def upload_to_s3(file_name, AWS_BUCKET_NAME, object_name=None):
+def upload_to_s3(file_name, bucket_name, object_name=None):
     """Upload a file to an S3 bucket.
 
     :param file_name: File to upload
-    :param AWS_BUCKET_NAME: S3 bucket name
+    :param bucket_name: S3 bucket name
     :param object_name: S3 object name. If not specified, file_name is used
     :return: True if file was uploaded, else False
     """
@@ -292,8 +293,8 @@ def upload_to_s3(file_name, AWS_BUCKET_NAME, object_name=None):
             print("The object is NOT of type io.BytesIO")
             validate_image(file_name)
         #if extension != "zip":
-        s3.upload_fileobj(file_name, AWS_BUCKET_NAME, object_name)
-        print(f"File '{file_name}' uploaded to '{AWS_BUCKET_NAME}/{object_name}'")
+        s3.upload_fileobj(file_name, bucket_name, object_name)
+        print(f"File '{file_name}' uploaded to '{bucket_name}/{object_name}'")
         return True
     except FileNotFoundError:
         print("The file was not found.")
@@ -303,10 +304,10 @@ def upload_to_s3(file_name, AWS_BUCKET_NAME, object_name=None):
         return False
 
     
-def generate_presigned_url(AWS_BUCKET_NAME, object_name, expiration=3600):
+def generate_presigned_url(bucket_name, object_name, expiration=3600):
     s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
     boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    return s3.generate_presigned_url('get_object',Params={'Bucket': AWS_BUCKET_NAME, 'Key': object_name}, ExpiresIn=expiration)
+    return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
 
 def validate_image(file):
     # Check file size (e.g., max 5 MB)
@@ -379,14 +380,14 @@ def add_vehicle_info(request):
             #imageTemp = fs.save(folder_path + new_name, load_file)
             #localPath = folder_path + new_name
             s3Name = s3Path + new_name
-            #print(f"nombre del bucket {AWS_BUCKET_NAME}")
+            #print(f"nombre del bucket {bucket_name}")
             #print(f"nombre del folder {load_file.name}")
             #print(f"nombre del archivo {load_file}")
             #print(f"access key {AWS_ACCESS_KEY_ID}")
             #print(f"aws region {AWS_DEFAULT_REGION}")
             #print(f"secret access key {AWS_SECRET_ACCESS_KEY}")
             
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
     
             obj.image_path = s3Name
             obj.save()
@@ -460,7 +461,7 @@ def get_vehicle_info(request):
         "serial_number", "state", "validity",
         "vehicle_type", "year", "image_path"
     )[0]
-    tempImgPath = generate_presigned_url(AWS_BUCKET_NAME, data["image_path"])
+    tempImgPath = generate_presigned_url(bucket_name, data["image_path"])
     data["image_path"] = tempImgPath
     print(f'S3 rute{tempImgPath}')
     
@@ -502,10 +503,10 @@ def get_vehicles_info(request):
         access = access["data"]["access"]
         for item in data:
             #item["image_path"] = "/" + item["image_path"]
-            tempImgPath = generate_presigned_url(AWS_BUCKET_NAME, item["image_path"])
+            tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
             item["image_path"] = tempImgPath
             #print(item["image_path"])
-            #print(generate_presigned_url(AWS_BUCKET_NAME, item["image_path"]))
+            #print(generate_presigned_url(bucket_name, item["image_path"]))
             item["btn_action"] = f"""
             <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
                 <i class="fa-solid fa-eye"></i>
@@ -569,7 +570,7 @@ def update_vehicle_info(request):
             #        os.remove(old_file_path)
             #fs.save(folder_path + new_name, load_file)
             s3Name = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.image_path = folder_path + new_name
             obj.save()
         response["status"] = "success"
@@ -636,7 +637,7 @@ def add_vehicle_tenencia(request):
             obj.comprobante_pago = folder_path + new_name
             s3Name = folder_path + new_name
 
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
 
             obj.save()
 
@@ -740,7 +741,7 @@ def update_vehicle_tenencia(request):
             s3Name = folder_path + new_name
 
             obj.comprobante_pago = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
         
         response["success"] = True
@@ -803,7 +804,7 @@ def add_vehicle_refrendo(request):
             
             s3Name = folder_path + new_name
             obj.comprobante_pago = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
 
         response["success"] = True
@@ -904,7 +905,7 @@ def update_vehicle_refrendo(request):
             #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante_pago = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
         
         response["success"] = True
@@ -969,7 +970,7 @@ def add_vehicle_verificacion(request):
             
             obj.comprobante_pago = folder_path + new_name
             s3Name = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
 
         response["success"] = True
@@ -1083,7 +1084,7 @@ def update_vehicle_verificacion(request):
             #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante_pago = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
         
         response["success"] = True
@@ -1148,7 +1149,7 @@ def add_vehicle_responsiva(request):
                 #fs.save(folder_path + new_name, load_file)
 
                 obj.signature = folder_path + new_name
-                upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+                upload_to_s3(load_file, bucket_name, s3Name)
                 obj.save()
         if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
             load_file = request.FILES['image_path_exit_1']
@@ -1441,7 +1442,7 @@ def add_vehicle_insurance(request):
                 obj.doc = s3Name
                 #zip_buffer.name = new_name
                 
-                upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+                upload_to_s3(load_file, bucket_name, s3Name)
 
                 print("upload succed")
 
@@ -1492,7 +1493,7 @@ def get_vehicle_insurance(request):
     for item in lista:
         item["btn_action"] = ""
         if item["doc"] != None:
-            tempDoc = generate_presigned_url(AWS_BUCKET_NAME, item["doc"])
+            tempDoc = generate_presigned_url(bucket_name, item["doc"])
             item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
                 <i class="fa-solid fa-file"></i> Descargar
             </a>\n"""
@@ -1882,7 +1883,7 @@ def add_vehicle_maintenance(request):
             #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
         pass
     except Exception as e:
@@ -2061,7 +2062,7 @@ def update_vehicle_maintenance(request):
             #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            upload_to_s3(load_file, bucket_name, s3Name)
             obj.save()
 
         response["status"] = "success"
