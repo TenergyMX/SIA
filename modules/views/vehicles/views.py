@@ -44,7 +44,7 @@ AUDITORIA_VEHICULAR_POR_MES = 2
 AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_DEFAULT_REGION=os.environ.get('AWS_ACCESS_KEY_ID')
-bucket_name = "siaapp"
+AWS_BUCKET_NAME=os.environ.get('AWS_BUCKET_NAME')
 
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
