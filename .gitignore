@@ -22,4 +22,4 @@ postgres_data/
 /staticfiles/
 /certbot
 /nginx-local/
-/modules/views/vehicles/.env
+/modules/views/vehicles/awsCred.env
