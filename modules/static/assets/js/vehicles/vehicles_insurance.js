@@ -135,7 +135,7 @@ class VehiclesInsurance {
                     obj_modal
                         .find("[name='vehicle__name']")
                         .val(self.vehicle.data.vehicle__name || null);
-                    break;
+                    break;
                 case "update-item":
                     obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
@@ -250,6 +250,7 @@ class VehiclesInsurance {
         });
 
         obj_modal.find("form").on("submit", function (e) {
+            alert("prueba");
             e.preventDefault();
             var submit = $("button[type='submit']:focus", this).attr("name");
             var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_insurance/";
@@ -284,7 +285,7 @@ class VehiclesInsurance {
                         "error"
                     );
                 },
-            });
-        });
+            });
+        });
     }
 }

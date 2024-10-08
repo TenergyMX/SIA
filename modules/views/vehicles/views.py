@@ -752,9 +752,10 @@ def update_vehicle_tenencia(request):
 
 def delete_vehicle_tenencia(request):
     response = {"success": False, "data": []}
-    dt = request.GET
+    dt = request.POST
     id = dt.get("id", None)
-
+    print("este es el id: ")
+    print(id)
     if id == None:
         response["error"] = {"message": "Proporcione un id valido"}
         return JsonResponse(response)
@@ -916,7 +917,7 @@ def update_vehicle_refrendo(request):
 
 def delete_vehicle_refrendo(request):
     response = {"success": False, "data": []}
-    dt = request.GET
+    dt = request.POST
     id = dt.get("id", None)
 
     if id == None:
@@ -1680,24 +1681,33 @@ def get_vehicles_audit(request):
     response["success"] = True
     return JsonResponse(response)
 
+from django.http import JsonResponse
+from django.db.models import Q
+import random
+from datetime import datetime, timedelta
+
 def update_vehicle_audit(request):
     response = {"success": False}
     dt = request.POST
 
-    id = dt.get("id", None)
+    vehicle_audit_id = dt.get("id")
     vehicle_id = dt.get("vehicle_id")
     company_id = request.session['company']["id"]
 
-    if id is None or id == "":
-        response["error"] = {"message": "No se proporcionó un ID válido para actualizar.", "id": id}
-        return JsonResponse(response)
-    
+    if not vehicle_audit_id:
+        return JsonResponse({
+            "success": False,
+            "error": {"message": "No se proporcionó un ID válido para actualizar."}
+        })
+
     try:
-        obj = Vehicle_Audit.objects.get(id=id)
+        obj = Vehicle_Audit.objects.get(id=vehicle_audit_id)
     except Vehicle_Audit.DoesNotExist:
-        response["error"] = {"message": f"No existe ningún resgitro con el ID '{id}'"}
-        return JsonResponse(response)
-    
+        return JsonResponse({
+            "success": False,
+            "error": {"message": f"No existe ningún registro con el ID '{vehicle_audit_id}'"}
+        })
+
     try:
         obj.check_interior = dt.get("check_interior")
         obj.notes_interior = dt.get("notes_interior")
@@ -1706,34 +1716,29 @@ def update_vehicle_audit(request):
         obj.check_tires = dt.get("check_tires")
         obj.notes_tires = dt.get("notes_tires")
         obj.check_antifreeze_level = dt.get("check_antifreeze_level")
-        obj.check_fuel_level = dt.get("check_tires")
+        obj.check_fuel_level = dt.get("check_fuel_level")  # Corrige este campo
         obj.general_notes = dt.get("general_notes")
 
         obj.save()
-
-        # response["id"] = obj.id
         response["success"] = True
     except Exception as e:
-        response["success"] = False
-        response["error"] = {"message": str(e)}
+        return JsonResponse({
+            "success": False,
+            "error": {"message": str(e)}
+        })
 
-    # ! Generar Las proximas Auditorias
+    # Generar las próximas auditorías
     try:
-        obj_vehiculos = Vehicle.objects.filter(
-            company_id = company_id,
-            active = True
-        )
-
-        obj_auditoria = Vehicle_Audit.objects.filter(vehicle__company_id = company_id)
+        obj_vehiculos = Vehicle.objects.filter(company_id=company_id, is_active=True)
+        obj_auditoria = Vehicle_Audit.objects.filter(vehicle__company_id=company_id)
 
         obj_auditoria_no_check = obj_auditoria.filter(
-            (Q(check_interior=None) | Q(check_interior="")),
-            (Q(check_exterior=None) | Q(check_exterior="")),
-            (Q(check_tires=None) | Q(check_tires=""))
+            Q(check_interior__isnull=True) | Q(check_interior=""),
+            Q(check_exterior__isnull=True) | Q(check_exterior=""),
+            Q(check_tires__isnull=True) | Q(check_tires="")
         )
 
         if obj_auditoria_no_check.count() == 0:
-            """ Generar las nuevas auditorias """
             list_id_vehiculos = list(obj_vehiculos.values_list("id", flat=True))
             random.shuffle(list_id_vehiculos)
 
@@ -1742,49 +1747,37 @@ def update_vehicle_audit(request):
             residuo = count % AUDITORIA_VEHICULAR_POR_MES
             total_partes = partes_completas + (1 if residuo != 0 else 0)
 
-            # Fecha Final
             fecha_actual = datetime.now()
-
-            # Calcular la fecha de inicio
             fecha_inicio = fecha_actual - timedelta(days=30 * total_partes)
-            
-            # Obtener los registros  de los últimos N meses
+
             list_id_vehiculos_auditados = Vehicle_Audit.objects.filter(
                 audit_date__gte=fecha_inicio,
                 audit_date__lte=fecha_actual
             ).values_list("vehicle_id", flat=True)
 
             vehiculos_no_auditados = set(list_id_vehiculos) - set(list_id_vehiculos_auditados)
-            vehiculos_no_auditados = list(vehiculos_no_auditados)
-            vehiculos_no_auditados = vehiculos_no_auditados[:AUDITORIA_VEHICULAR_POR_MES]
-            
+            vehiculos_no_auditados = list(vehiculos_no_auditados)[:AUDITORIA_VEHICULAR_POR_MES]
+
             if len(vehiculos_no_auditados) < AUDITORIA_VEHICULAR_POR_MES:
                 for item in list_id_vehiculos:
                     if item not in vehiculos_no_auditados:
                         vehiculos_no_auditados.append(item)
-                    if len(vehiculos_no_auditados) == AUDITORIA_VEHICULAR_POR_MES: break
-                    
-            # Crear las auditorias en la tabla
+                    if len(vehiculos_no_auditados) == AUDITORIA_VEHICULAR_POR_MES:
+                        break
 
-            # Calcular la fecha del mes siguiente
             fecha_siguiente = fecha_actual.replace(day=28) + timedelta(days=4)
             fecha_siguiente = fecha_siguiente.replace(day=28)
-
-            # Generar una fecha aleatoria dentro del rango del día 10 al 28 del mes siguiente
             fecha_aleatoria = fecha_siguiente.replace(day=random.randint(10, 28))
 
             for id in vehiculos_no_auditados:
-                obj = Vehicle_Audit(
-                    vehicle_id = id,
-                    audit_date = fecha_aleatoria
-                )
-                obj.save()
-        pass
+                Vehicle_Audit.objects.create(vehicle_id=id, audit_date=fecha_aleatoria)
+
     except Exception as e:
         response["success"] = False
         response["error"] = {"message": str(e)}
 
     return JsonResponse(response)
+
 
 def delete_vehicle_audit(request):
     response = {"success": False, "data": []}
@@ -2471,6 +2464,24 @@ def obtener_opciones(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+def delete_vehicle_verificacion(request):
+    response = {"success": False, "data": []}
+    dt = request.POST
+    id = dt.get("id", None)
+
+    if id == None:
+        response["error"] = {"message": "Proporcione un id valido"}
+        return JsonResponse(response)
+
+    try:
+        obj = Vehicle_Verificacion.objects.get(id = id)
+    except Vehicle_Verificacion.DoesNotExist:
+        response["error"] = {"message": "El objeto no existe"}
+        return JsonResponse(response)
+    else:
+        obj.delete()
+    response["success"] = True
+    return JsonResponse(response)
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

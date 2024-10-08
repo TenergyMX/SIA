@@ -51,6 +51,8 @@ urlpatterns = [
     path("approve_responsiva/", views.approve_responsiva),
     path("cancel_responsiva/", views.cancel_responsiva),
 
+    #url para generar el pdf de la responsiva
+    path("render_to_pdf/", views.render_to_pdf),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

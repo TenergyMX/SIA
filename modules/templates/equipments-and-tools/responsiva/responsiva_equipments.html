@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        *, ::after, ::before {
+            box-sizing: border-box;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #dee2e6;
+            padding: 5px;
+            vertical-align: bottom;
+        }
+
+        .table-borderless th,
+        .table-borderless td {
+            padding: 5px;
+            vertical-align: bottom;
+        }
+
+        section {
+            margin-bottom: 20px;
+            margin-top: 40px;
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+
+        ol {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        ol li {
+            margin-bottom: 5px;
+        }
+
+        hr {
+            border-top: 1px solid #dee2e6;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <br>
+    <br>
+    <section>
+        <p>
+            Yo, <strong>{{ responsible_name }}</strong>, certifico haber recibido el siguiente material detallado a continuación, el cual se me ha asignado para el desempeño de mis funciones laborales. A continuación, se encuentra la lista de equipos asignados:
+        </p>
+        <div class="">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>NOMBRE DEL EQUIPO/HERRAMIENTA</th> <!--nombre del equipo o herramienta de la tabla responsivas-->
+                        <th>CANTIDAD</th><!--cantidad del equipo o herramienta de la tabla responsivas-->
+                        <th>DIAS SOLICITADOS</th><!--dias solicitados de la tabla responsivas-->
+                        <th>DESCRIPCIÓN DEL EQUIPO O HERRAMIENTA</th><!--comentarios de la tabla responsivas-->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if responsiva %}
+                    <tr>
+                        <td>{{ responsiva.equipment_name.equipment_name }}</td>  <!-- Cambia según cómo accedas al nombre del equipo -->
+                        <td>{{ responsiva.amount }}</td>
+                        <td>{{ responsiva.times_requested_responsiva }}</td>
+                        <td>{{ responsiva.comments }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4">Sin equipos asignados</td>
+                    </tr>
+                    {% endif %}
+                </tbody>                
+            </table>
+        </div>
+        <br>
+    </section>
+
+    <section>
+        <p>
+            Él cual me comprometo a cuidar, mantener en buen estado, utilizar  única y exclusivamente para asuntos relacionados con mi actividad laboral y cumplir con las Políticas Internas de la Empresa  y descritas en el documento, responsabilizándome de los mismos bajo cualquier circunstancia en términos de los artículos 134, fracción VI y 135, fracciones III y IX de la Ley Federal del Trabajo, obligándome a cubrir su costo en caso de pérdida por negligencia de mi parte. 
+        </p>
+    </section>
+    <section>
+        <p class="fw-bold">Políticas de Material o Herramientas Entregados</p>
+        <ol>
+            <li>El material entregado deberá ser utilizado únicamente para actividades relacionadas con los objetivos y metas de la Empresa.</li>
+            <li>Todo el personal sin excepción que desee trasladar el material ó herramienta fuera de las instalaciones de la Empresa deberá notificar al Líder de su área por medio de correo electrónico.</li>
+            <li>En caso de falla de las herramientas entregadas se deberá informar y/o solicitar servicio de reparación mediante una requisición al área de Compras.</li>
+            <li>No  alterar o dañar físicamente el Material o Herramientas</li>
+            <li>Queda prohíbo colocar cualquier tipo de estampilla fuera de los que la Empresa asigne para su inventario.</li>
+            <li>En caso de extravió por descuido o negligencia de alguno de las herramientas entregados al personal, se deberán pagar de acuerdo con una valoración que asigne el área de Finanzas.</li>
+            <li>Si el material entregado no es el correcto a causa de una mala especificación en la requisición el costo del mismo será descontado vía nomina al solicitante.</li>
+            <li>En caso de extravío de cualquier Material o Herramienta entregado con un valor mínimo de $10,000 deberá ser reportado al área de Compras de forma inmediata mediante un correo. En caso de robo o hurto del material se deberá presentar una denuncia ante la PGJ el día del suceso o un día posterior al evento. Además de mandar un correo a RH con la siguiente información:
+
+                <ul>
+                    <li>Nombre completo de Usuario</li>
+                    <li>Área</li>
+                    <li>Líder </li>
+                    <li>Activo fijo (código asignado) o especificaciones del material o herramienta(Marca, modelo, etc.)</li>
+                    <li>Tipo de reporte que se realizó por el robo</li>
+                    <li>Explicación como ocurrió el evento, incluyendo fecha lugar y hora</li>
+                </ul>
+                Será sujeto a Valoración por Dirección General si amerita el descuento del material o herramienta por vía nómina. 
+            </li>
+            <li>
+                Esta carta no aplica para material de desgaste o en su defecto si es material para un cliente externo.
+            </li>
+            <li>
+                El personal se hará responsable por el equipo principal de trabajo descrito en esta carta, así como el material/herramienta de trabajo que se le asigne en los sistemas internos de la empresa.
+            </li>
+        </ol>
+    </section>
+    <section>
+        <br><br>
+        <div class="table-responsive_equipments">
+            <table class="table table-borderless">
+                <tbody>
+                    <tr>
+                        <td class="text-center" style="padding: auto 24px;">
+                            {% if signature_responsible %}
+                                <img src="{{ signature_responsible }}" alt="Firma" style="width: 200px; display: block; margin: auto;" />
+                            {% else %}
+                                <p>No hay firma disponible.</p>
+                            {% endif %}
+                        </td>
+                        <td class="text-center" style="padding: auto 24px;">
+                            <hr>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>{{ responsible_name }}</strong><br>
+                            Nombre y Firma de Empleado
+                        </td>
+
+                        <td>
+                            Nombre y Firma del área de álmacen
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</body>
+</html>

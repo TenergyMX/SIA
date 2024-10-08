@@ -170,6 +170,7 @@ class VehiclesTenencia {
                             self.tbl_tenencia.ajax.reload();
                         })
                         .catch((error) => {
+                            console.error("este es el Error en la eliminación:", error); // Para ver el error en la consola
                             Swal.fire("Error", error, "error");
                         });
                     break;

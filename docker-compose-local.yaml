@@ -28,10 +28,14 @@ services:
       
       - ./users/migrations/:/app/users/migrations
       - ./modules/migrations:/app/modules/migrations
-      - ./modules/views:/app/modules/views
-
-
-
+      - ./modules/static/assets/js/equipment-and-tools/:/app/modules/static/assets/js/equipment-and-tools/
+      - ./modules/views/equipment-and-tools/:/app/modules/views/equipment-and-tools/
+      - ./modules/templates/equipments-and-tools/:/app/modules/templates/equipments-and-tools/
+      - ./modules/templates/equipments-and-tools/modals/:/app/modules/templates/equipments-and-tools/modals/
+      - ./modules/views/vehicles/:/app/modules/views/vehicles/
+      - ./modules/static/assets/js/vehicles/:/app/modules/static/assets/js/vehicles/
+#     - ../pwa/:/manifest.json
+#     - ../pwa/service-worker.js:/service-worker.js
     networks:
       - nginxnet
       - dbnet
@@ -52,7 +56,7 @@ services:
     #  - ./certbot/www:/var/www/certbot/:ro
       - ./manifest.json:/manifest.json
       - ./service-worker.js:/service-worker.js
-
+      - ./modules/:/app/modules/
     networks:
       - nginxnet
     depends_on:
