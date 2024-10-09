@@ -648,21 +648,23 @@ function add_responsiva(formData) {
         contentType: false,
         success: function(response) {
             if (response.success) {
+                console.log(response);
                 $('#form_responsiva')[0].reset();
                 ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
                 $('#mdl-crud-responsiva').modal('hide'); 
-
-                // Abrir el PDF generado
-                if (response.pdf_url) {
-                    window.open(response.pdf_url, 'responsiva_blank');
-                }
 
                 Swal.fire({
                     title: "¡Éxito!",
                     text: response.message,
                     icon: "success",
                     timer: 1000
+                /*}).then(() => {
+                    // Aquí se abrirá el PDF después de que el mensaje se cierre
+                    if (response.pdf_url) {
+                        window.open(response.pdf_url, '_blank'); // Abre el PDF en una nueva pestaña
+                    }*/
                 });
+
                 $('#table_equipments_tools').DataTable().ajax.reload(); 
             } else {
                 Swal.fire({
@@ -677,7 +679,7 @@ function add_responsiva(formData) {
             console.error("Error al guardar la Responsiva:", error);
             Swal.fire({
                 title: "¡Error!",
-                text: response.message,
+                text: xhr.responseJSON.message || "Error inesperado.",
                 icon: "error",
                 timer: 1500
             });
