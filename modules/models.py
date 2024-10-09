@@ -537,7 +537,7 @@ class Equipment_Tools(models.Model):
     equipment_name = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Nombre equipo")
     equipment_type = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="tipo de equipo")
     equipment_brand = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Marca")
-    equipment_description = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Descripcion")
+    equipment_description = models.CharField(blank=True, null=True, max_length=350, default='Regular', verbose_name="Descripcion")
     cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')
     equipment_technical_sheet = models.FileField(upload_to='docs/Equipments_tools', blank=True, null=True, verbose_name="Ficha tecnica")
@@ -558,8 +558,6 @@ class Equipment_Tools_Responsiva(models.Model):
     signature_almacen = models.FileField(upload_to='docs/Equipments_tools/signatures/', blank=True, null=True, verbose_name="Firma de almacen")
     comments = models.CharField(blank=True, null=True, max_length=300, default='Regular', verbose_name="Comentarios")
     status_modified = models.BooleanField(default=False, verbose_name="Estado modificado")  # Campo para rastrear modificaciones del estado
-    pdf_document = models.FileField(upload_to='docs/Equipments_tools/pdfs/', blank=True, null=True, verbose_name="Documento PDF")
-
 
 #agregar a admin.py para poder visualizarlos en el administrador 
 

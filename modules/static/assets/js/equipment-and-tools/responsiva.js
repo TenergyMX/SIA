@@ -4,7 +4,7 @@ $(document).ready(function () {
 
     // Manejar el cambio en el estado del equipo
     $("#status_equipment").change(function () {
-        var status = $(this).c();
+        var status = $(this).val();
         // Siempre mostrar el campo de comentarios
         $("#comments").removeClass("d-none");
 
@@ -22,6 +22,8 @@ $(document).ready(function () {
     $("#mdl-crud-status-responsiva").on("show.bs.modal", function () {
         $("#form_status_responsiva")[0].reset();
         ctxAlmacen.clearRect(0, 0, canvasAlmacen.width, canvasAlmacen.height); // Limpiar el canvas
+        $("#comments").addClass("d-none"); // Ocultar el campo de comentarios al abrir
+        $("#return_amount_group").addClass("d-none"); // Ocultar el campo de cantidad al abrir
     });
 });
 
@@ -54,30 +56,15 @@ function get_responsiva() {
             { data: "fecha_inicio" },
             { data: "fecha_entrega" },
             { data: "times_requested_responsiva" },
-            {
-                title: "Firma del responsable",
-                data: function (d) {
-                    if (d["signature_responsible"]) {
-                        return `<a href="/${d["signature_responsible"]}" class="btn btn-sm btn-outline-primary" target="_blank">
-                            Firma del responsable
-                        </a>`;
-                    } else {
-                        return "Sin firma del responsable";
-                    }
-                },
-                orderable: false,
-            },
             { data: "date_receipt" },
             {
-                title: "Firma de almacen",
-                data: function (d) {
-                    if (d["signature_almacen"]) {
-                        return `<a href="/${d["signature_almacen"]}" class="btn btn-sm btn-outline-primary" target="_blank">
-                            Firma de almacen
-                        </a>`;
-                    } else {
-                        return "Sin firma de almacen";
-                    }
+                data: "id",
+                render: function (data, type, row) {
+                    return (
+                        '<button class="btn btn-primary-light btn-sm" onclick="generatePdf(' +
+                        row.id +
+                        ')"><i class="fa-solid fa-file-pdf"></i> Generar PDF</button>'
+                    );
                 },
                 orderable: false,
             },
@@ -525,6 +512,47 @@ function validar_fecha() {
         },
         error: function (xhr, status, error) {
             console.error("Error al actualizar los estados:", error);
+        },
+    });
+}
+
+// Función para generar PDF
+function generatePdf(responsivaId) {
+    $.ajax({
+        url: "/generate_pdf/" + responsivaId + "/",
+        type: "GET",
+        success: function (response) {
+            if (response.success) {
+                // Puedes abrir el PDF en una nueva ventana o redirigir a la URL del PDF
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                }).then(() => {
+                    // Aquí se abrirá el PDF después de que el mensaje se cierre
+                    if (response.pdf_url) {
+                        window.open(response.pdf_url, "_blank"); // Abre el PDF en una nueva pestaña
+                    }
+                });
+                $("#table_responsiva").DataTable().ajax.reload();
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message,
+                    icon: "error",
+                    timer: 1500,
+                });
+            }
+        },
+        error: function (xhr, error, thrown) {
+            console.error("Error en la solicitud AJAX:", thrown);
+            Swal.fire({
+                title: "¡Error!",
+                text: "No se pudo generar el PDF.",
+                icon: "error",
+                timer: 1500,
+            });
         },
     });
 }

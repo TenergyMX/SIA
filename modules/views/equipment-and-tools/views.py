@@ -20,6 +20,8 @@ import time
 from django.template.loader import get_template
 from io import BytesIO
 from xhtml2pdf import pisa
+import logging
+
 
 # Llamar módulos y submódulos 
 #submodulo de categorias 
@@ -667,24 +669,33 @@ def add_responsiva(request):
                     'signature_responsible': request.build_absolute_uri(responsiva_instance.signature_responsible.url) if responsiva_instance.signature_responsible else None,  # URL absoluta de la firma
                 }
 
+                # Generar y guardar el PDF
                 pdf_file = render_to_pdf('equipments-and-tools/responsiva/responsiva_equipments.html', pdf_context)
-                pdf_path = f"docs/Equipments_tools/responsivas/{timestamp}/responsiva_{timestamp}.pdf"
-
-                # Guarda el PDF en el servidor
-                with open(os.path.join(settings.MEDIA_ROOT, pdf_path), 'wb') as f:
-                    f.write(pdf_file.getvalue())
-
-                # Actualiza la responsiva para guardar la ruta del PDF
-                responsiva_instance.pdf_document = pdf_path
-                responsiva_instance.save()
+                pdf_folder_path = f"docs/Equipments_tools/pdfs/{timestamp}/"  # Ruta para el PDF
                 
-                # Retornar la URL del PDF
+                # Crear la ruta completa para el PDF
+                full_pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_folder_path)
+
+                # Crea la carpeta si no existe
+                if not os.path.exists(full_pdf_path):
+                    os.makedirs(full_pdf_path)
+
+                # Guardar el PDF en el servidor
+                pdf_file_name = f"responsiva_{timestamp}.pdf"
+                with open(os.path.join(full_pdf_path, pdf_file_name), 'wb') as f:
+                    f.write(pdf_file.getvalue())  # Guarda el PDF en el servidor
+
+                # Retornar la URL del PDF (si decides usarla en el futuro)
+                pdf_url = f"{request.scheme}://{request.get_host()}/{pdf_folder_path}{pdf_file_name}"
+                # Actualiza el objeto de la responsiva para incluir la URL del PDF
+                responsiva_instance.pdf_url = pdf_url
+
+                # Retornar la respuesta JSON
                 return JsonResponse({
                     'success': True,
                     'message': 'Responsiva agregada correctamente',
-                    'pdf_url': f"{request.scheme}://{request.get_host()}/{pdf_path}"
+                    'pdf_url': pdf_url  
                 })
-
 
         except Equipment_Tools.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Equipo no encontrado'})
@@ -754,9 +765,7 @@ def get_responsiva(request):
             'fecha_inicio',
             'fecha_entrega',
             'times_requested_responsiva',
-            'signature_responsible',
             'date_receipt',
-            'signature_almacen',
             'comments',
             'status_modified',
         ))
@@ -764,6 +773,7 @@ def get_responsiva(request):
         for item in responsiva:
             item["btn_action"] = ""
             item["boton_action"] = ""
+
 
             if access["update"] and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
                 if item['status_equipment'] == 'Solicitado':
@@ -1095,3 +1105,95 @@ def validar_fecha(request):
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
     return JsonResponse({'success': False, 'message': 'Método no permitido.'}, status=405)
+
+
+logger = logging.getLogger(__name__)
+
+def image_to_base64(image_path):
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode('utf-8')
+    except Exception as e:
+        logger.error("Error al leer la imagen: %s", str(e))
+        return None
+
+#funcion para generar el pdf
+@login_required
+def generate_pdf(request, responsiva_id):
+    logger.info("Se ha llamado a la función generate_pdf con ID: %s", responsiva_id)
+    
+    try:
+        responsiva_instance = get_object_or_404(Equipment_Tools_Responsiva, id=responsiva_id)
+        logger.info("Responsiva encontrada, generando PDF...")
+
+        # Convertir imágenes a Base64
+        header_image_base64 = None
+        footer_image_base64 = None
+
+        header_image_path = os.path.join(settings.MEDIA_ROOT, 'modules/templates/equipments-and-tools/responsiva/img/encabezado.png')
+        footer_image_path = os.path.join(settings.MEDIA_ROOT, 'modules/templates/equipments-and-tools/responsiva/img/pie.png')
+
+
+        logger.info("Ruta de la imagen de encabezado: %s", header_image_path)
+        logger.info("Ruta de la imagen de pie de página: %s", footer_image_path)
+
+        if os.path.exists(header_image_path):
+            header_image_base64 = f"data:image/png;base64,{image_to_base64(header_image_path)}"
+            logger.info("Imagen de encabezado cargada exitosamente.")
+        else:
+            logger.warning("No se encontró la imagen de encabezado en: %s", header_image_path)
+
+        if os.path.exists(footer_image_path):
+            footer_image_base64 = f"data:image/png;base64,{image_to_base64(footer_image_path)}"
+            logger.info("Imagen de pie de página cargada exitosamente.")
+        else:
+            logger.warning("No se encontró la imagen de pie de página en: %s", footer_image_path)
+
+        # Contexto para el PDF
+        pdf_context = {
+            'responsiva': responsiva_instance,
+            'responsible_name': responsiva_instance.responsible_equipment.username,
+            'signature_responsible': request.build_absolute_uri(responsiva_instance.signature_responsible.url) if responsiva_instance.signature_responsible else None,
+            'signature_almacen': request.build_absolute_uri(responsiva_instance.signature_almacen.url) if responsiva_instance.signature_almacen else None,
+            'header_image': header_image_base64,
+            'footer_image': footer_image_base64,
+        }
+
+        # Generar PDF
+        pdf_file = render_to_pdf('equipments-and-tools/responsiva/responsiva_equipments.html', pdf_context)
+
+        if pdf_file is None:
+            logger.error("Error al generar el PDF.")
+            return JsonResponse({'success': False, 'message': 'Error al generar el PDF.'})
+
+        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+        pdf_folder_path = f"docs/Equipments_tools/pdfs_responsiva/{timestamp}/"
+        full_pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_folder_path)
+
+        # Crear la carpeta si no existe
+        if not os.path.exists(full_pdf_path):
+            os.makedirs(full_pdf_path)
+
+        # Guardar el PDF en el servidor
+        pdf_file_name = f"responsiva_{timestamp}.pdf"
+        try:
+            with open(os.path.join(full_pdf_path, pdf_file_name), 'wb') as f:
+                f.write(pdf_file.getvalue())
+            logger.info("PDF guardado en: %s", os.path.join(full_pdf_path, pdf_file_name))
+        except Exception as e:
+            logger.error("Error al guardar el PDF: %s", str(e))
+            return JsonResponse({'success': False, 'message': 'Error al guardar el PDF.'})
+
+        # URL del PDF
+        pdf_url = f"{request.scheme}://{request.get_host()}/{pdf_folder_path}{pdf_file_name}"
+        responsiva_instance.pdf_url = pdf_url  # Actualiza la responsiva si es necesario
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Responsiva generada correctamente',
+            'pdf_url': pdf_url
+        })
+
+    except Equipment_Tools_Responsiva.DoesNotExist:
+        logger.error("Responsiva no encontrada.")
+        return JsonResponse({'success': False, 'message': 'Responsiva no encontrada.'})
