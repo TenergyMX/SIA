@@ -53,7 +53,7 @@ class ComputerEquipment_responsiva {
                         title: "Responsiva",
                         data: function (d) {
                             if (d["responsibility_letter"]) {
-                                return `<a href="/${d["responsibility_letter"]}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                return `<a href="${d["responsibility_letter"]}" class="btn btn-sm btn-outline-primary" target="_blank">
                                     Responsiva
                                 </a>`;
                             } else {
@@ -103,7 +103,7 @@ class ComputerEquipment_responsiva {
                         select.append("<option value=''>-----</option>");
                         $.each(response["data"], function (index, value) {
                             select.append(
-                                `<option value="${value["id"]}" data-sia-user-id="${
+                                `<option value="${value["responsible_id"]}" data-sia-user-id="${
                                     value["responsible_id"]
                                 }">
                                 ${

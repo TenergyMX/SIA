@@ -25,6 +25,7 @@ import boto3.session
 import io
 import mimetypes
 from botocore.client import Config
+from botocore.exceptions import ClientError
 import zipfile
 from zipfile import ZipFile
 from io import BytesIO
@@ -49,10 +50,10 @@ bucket_name=AWS_BUCKET_NAME
 
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
-s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
-s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+#s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
+#s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-boto3.set_stream_logger('')
+#boto3.set_stream_logger('')
 #s3 = boto3.client('s3')
 #session = boto3.session.Session(region_name='us-east-2')
 #s3client = session.client('s3', config= boto3.session.Config(signature_version='s3v4'))
@@ -324,6 +325,25 @@ def is_valid_file_type(file_name):
     if file_extension and file_extension.lower() in ALLOWED_FILE_EXTENSIONS:
         return True
     return False
+
+def delete_s3_object(bucket_name, object_name):
+    """Delete an object from an S3 bucket.
+
+    :param bucket_name: The name of the S3 bucket
+    :param object_name: The name (key) of the object to delete
+    :return: True if object was deleted, else False
+    """
+    # Initialize an S3 client
+    s3 = boto3.client('s3')
+    
+    try:
+        # Delete the object
+        response = s3.delete_object(Bucket=bucket_name, Key=object_name)
+        print(f"Object '{object_name}' deleted from bucket '{bucket_name}'.")
+        return True
+    except ClientError as e:
+        print(f"Error occurred while deleting object: {e}")
+        return False
 
 # TODO --------------- [ REQUEST ] ----------
 
