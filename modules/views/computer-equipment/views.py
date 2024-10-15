@@ -610,6 +610,35 @@ def get_computer_peripherals(request):
     response["success"] = True
     return JsonResponse(response)
 
+def add_computer_peripherals(request):
+    context = user_data(request)
+    response = {"success": False}
+    dt = request.POST
+    company_id = context["company"]["id"]
+
+    try:
+        obj = ComputerPeripheral(
+            company_id = company_id,
+            name = dt.get("name"),
+            peripheral_type = dt.get("peripheral_type"),
+            brand = dt.get("brand"),
+            model = dt.get("model"),
+            responsible_id = dt.get("responsible_id"),
+            serial_number = dt.get("serial_number"),
+            description = dt.get("description"),
+            acquisition_date = dt.get("acquisition_date"),
+            location = dt.get("location"),
+            peripheral_status = dt.get("peripheral_status"),
+            comments = dt.get("comments")
+        )
+        obj.save()
+        response["id"] = obj.id
+        response["success"] = True
+    except Exception as e:
+        response["error"] = {"message": str(e)}
+
+    return JsonResponse(response)
+
 def update_computer_peripheral(request):
     response = {"success": False}
     dt = request.POST

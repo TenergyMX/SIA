@@ -22,7 +22,7 @@ urlpatterns = [
     path("update-computer-system/", views.update_computer_system),
     path("delete-computer-system/", views.delete_computer_system),
 
-    path("add_computer_peripheral/", views.get_computer_peripherals),
+    path("add_computer_peripheral/", views.add_computer_peripherals),
     path("get_computer_peripherals/", views.get_computer_peripherals),
     path("update_computer_peripheral/", views.update_computer_peripheral),
     path("delete_computer_peripheral/", views.delete_computer_peripheral),
