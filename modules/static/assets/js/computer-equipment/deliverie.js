@@ -33,7 +33,7 @@ class ComputerEquipment_deliverie {
                         title: "PDF",
                         data: function (d) {
                             if (d["responsibility_letter"]) {
-                                return `<a href="/${d["responsibility_letter"]}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                return `<a href="${d["responsibility_letter"]}" class="btn btn-sm btn-outline-primary" target="_blank">
                                     Responsiva
                                 </a>`;
                             } else {

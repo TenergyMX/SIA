@@ -1520,21 +1520,23 @@ def add_computer_equipment_deliverie(request):
             id = response["id"]
 
             if 'responsibility_letter' in request.FILES and request.FILES['responsibility_letter']:
-                load_file = request.FILES['responsibility_letter']
+                load_file = request.FILES.get('responsibility_letter')
                 folder_path = f"docs/{company_id}/computers-equipment/deliveries/"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)
                 new_name = f"doc_{id}{extension}"
+                s3Name = folder_path + new_name
 
                 # Eliminar archivo en caso de existir duplicado
-                old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{id}.*"))
-                for old_file_path in old_files:
-                    if os.path.exists(old_file_path):
-                        os.remove(old_file_path)
+                #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{id}.*"))
+                #for old_file_path in old_files:
+                #    if os.path.exists(old_file_path):
+                #        os.remove(old_file_path)
 
                 # Guardar archivo
-                fs.save(folder_path + new_name, load_file)
+                #fs.save(folder_path + new_name, load_file)
+                upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
 
                 # Guardar ruta en la tabla
                 obj.responsibility_letter = folder_path + new_name
@@ -1556,11 +1558,24 @@ def get_computer_equipment_deliveries(request):
         "responsibility_letter",
         "responsible_id", "responsible__first_name", "responsible__last_name",
     )
+
+    modified_data_list = []
+
+    for data in datos:
+        modified_data = data.copy()
+
+        file_path = data.get('responsibility_letter')
+        tempLetterPath = generate_presigned_url(AWS_BUCKET_NAME, file_path)
+        modified_responsibility_letter = tempLetterPath
+        
+        modified_data['responsibility_letter'] = modified_responsibility_letter
+        modified_data_list.append(modified_data)
+
     response["success"] = True
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
-    for item in datos:
+    for item in modified_data_list:
         item["btn_action"] = ""
         if access["update"]:
             item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-computer-equipment-deliverie=\"update-item\" aria-label=\"Update\">" \
@@ -1571,7 +1586,7 @@ def get_computer_equipment_deliveries(request):
                 "<i class=\"fa-solid fa-trash\"></i>" \
             "</button>"
         pass
-    response["data"] = list(datos)
+    response["data"] = list(modified_data_list)
     return JsonResponse(response)
 
 def update_computer_equipment_deliverie(request):
