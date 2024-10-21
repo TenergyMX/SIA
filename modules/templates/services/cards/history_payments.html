@@ -1,0 +1,43 @@
+<div class="card custom-card card-info">
+    
+    <div class="card-header justify-content-between">
+        <div class="card-title">
+            Historial de Pagos
+        </div>
+        
+        <button type="button" class="btn btn-sm btn-success" onclick="exportToExcel()" title="Exportar a Excel">
+            <i class="fa-solid fa-file-excel"></i>
+            Exportar a Excel
+        </button>
+        
+        <div class="">
+            <button type="button" class="btn btn-icon btn-sm btn-primary" onclick="show_services_table()" title="Regresar">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button> 
+        </div>
+    </div>
+
+
+    <div class="card-body">
+        <!-- tabla -->
+        <div class="table-responsive">
+            <table class="table table-bordered w-100" id="table-history-payments">
+                <thead>
+                    <tr>
+                        <th>Id de pago</th>
+                        <th>Nombre del servicio</th>
+                        <th>Comprobante de Pago</th>
+                        <th>Costo total</th>
+                        <th>Fecha de pago</th>
+                        <th>Estado de pago</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot></tfoot>
+            </table>
+        </div>
+        <!-- end tabla -->
+    </div>   
+</div>
+
+

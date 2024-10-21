@@ -50,7 +50,7 @@ function get_responsiva() {
                 render: function(data) {
                     return data;  
                 },
-                orderable: false // No permitir ordenamiento en esta columna
+                orderable: false 
             },            
             { data: 'fecha_inicio' },
             { data: 'fecha_entrega' },

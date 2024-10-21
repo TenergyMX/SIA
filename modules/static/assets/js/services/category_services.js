@@ -1,20 +1,27 @@
 $(document).ready(function() {
-    // Inicializar la tabla de datos
-    $('#equipments_tools_table').DataTable({
+    table_category_services();
+});
+
+function table_category_services() {
+    $('#table_category_services').DataTable({
         destroy: true,
         processing: true,
         ajax: {
-            url: '/get_equipments_tools_categorys/', 
+            url: "/get_table_category_service/",
             type: 'GET',
-            dataSrc: 'data' 
+            dataSrc: 'data',
+            error: function(xhr, error, thrown) {
+                console.error("Error en la carga de datos: ", error);
+                alert("No se pudo cargar la información de las categorias");
+            }
         },
         columns: [
             { data: 'id' },
-            { data: 'name' },
-            { data: 'short_name' },
-            { data: 'description' },
+            { data: 'name_category' },
+            { data: 'short_name_category' },
+            { data: 'description_category' },
             {
-                data: "is_active",
+                data: "is_active_category",
                 render: function (d) {
                     return d
                         ? '<span class="badge bg-outline-success">Activo</span>'
@@ -34,43 +41,59 @@ $(document).ready(function() {
         },
         pageLength: 10
     });
-});
+}
+
 
 // Función para mostrar el formulario en modo agregar
-function add_category() {
-    var obj_modal = $("#mdl-crud-equipments-tools-category");
+function add_category_services() {
+    var obj_modal = $("#mdl-crud-category-services");
     obj_modal.modal("show");
 
     // Configurar el modal para agregar
-    $('#mdl-crud-equipments-tools-category .modal-title').text('Agregar Categoría');
-    $('#form_add_category_equip').attr('onsubmit', 'add_equipment_category(); return false');
+    $('#mdl-crud-category-services .modal-title').text('Agregar Categoría de servicios');
+    $('#form_add_category_services').attr('onsubmit', 'add_category(); return false');
     
     // Establecer el valor predeterminado de 'is_active' a '1' para nuevos registros
-    $('#form_add_category_equip [name="is_active"]').val('1');
-    $('#active-field').addClass('d-none'); // Ocultar el campo 'is_active'
+    $('#form_add_category_services [name="is_active"]').val('1');
 }
 
 // Función para agregar una categoría
-function add_equipment_category() {
-    var form = $('#form_add_category_equip')[0];
+function add_category() {
+    var form = $('#form_add_category_services')[0];
     var formData = new FormData(form);
+    
+    // Validar campos
+    var name = formData.get('name').trim();
+    var shortName = formData.get('short_name').trim();
+    var description = formData.get('description').trim();
+
+    if (!name || !shortName || !description) {
+        Swal.fire({
+            title: "¡Error!",
+            text: "Todos los campos son obligatorios.",
+            icon: "error",
+            showConfirmButton: true
+        });
+        return;
+    }
+
     $.ajax({
-        url: '/add_equipment_category/', 
+        url: '/add_category/', 
         type: 'POST',
         data: formData,
         processData: false,
         contentType: false,
         success: function(response) {
             if (response.success) {
-                $('#form_add_category_equip')[0].reset();
-                $('#mdl-crud-equipments-tools-category').modal('hide');
+                $('#form_add_category_services')[0].reset();
+                $('#mdl-crud-category-services').modal('hide');
                 Swal.fire({
                     title: "¡Éxito!",
                     text: response.message,
                     icon: "success",
                     timer: 1500
                 });
-                $('#equipments_tools_table').DataTable().ajax.reload();
+                $('#table_category_services').DataTable().ajax.reload();
             } else {
                 Swal.fire({
                     title: "¡Error!",
@@ -81,7 +104,7 @@ function add_equipment_category() {
                 });
             }
         },
-        error: function(xhr, status, error) {
+        error: function(error) {
             console.error("Error al guardar la categoría:", error);
             Swal.fire({
                 title: "¡Error!",
@@ -91,72 +114,55 @@ function add_equipment_category() {
                 timer: 1500
             });
         },
-        beforeSend: function(xhr) {
-            xhr.setRequestHeader('X-CSRFToken', $('input[name="csrfmiddlewaretoken"]').val());
-        }
     });
 }
 
+
 // Evento para el botón de editar
-function edit_category_category(boton) {
+function edit_category_services(boton) {
     var row = $(boton).closest('tr');
-    var data = $('#equipments_tools_table').DataTable().row(row).data();
+    var data = $('#table_category_services').DataTable().row(row).data();
 
     // Mostrar el modal
-    $('#mdl-crud-equipments-tools-category').modal('show');
+    $('#mdl-crud-category-services').modal('show');
 
     // Cambiar el título del modal para indicar que es una actualización
-    $('#mdl-crud-equipments-tools-category .modal-title').text('Editar Categoría');
+    $('#mdl-crud-category-services .modal-title').text('Editar Categoría de Servicios');
 
     // Cargar los datos en el formulario
-    $('#form_add_category_equip [name="id"]').val(data.id);
-    $('#form_add_category_equip [name="name"]').val(data.name);
-    $('#form_add_category_equip [name="short_name"]').val(data.short_name);
-    $('#form_add_category_equip [name="description"]').val(data.description);
-    $('#form_add_category_equip [name="is_active"]').val(data.is_active ? '1' : '0');
+    $('#form_add_category_services [name="id"]').val(data.id);
+    $('#form_add_category_services [name="name"]').val(data.name_category);
+    $('#form_add_category_services [name="short_name"]').val(data.short_name_category);
+    $('#form_add_category_services [name="description"]').val(data.description_category);
+    $('#form_add_category_services [name="is_active"]').val(data.is_active_category ? '1' : '0');
 
     // Configurar el formulario para editar
-    $('#form_add_category_equip').attr('onsubmit', 'edit_category(); return false');
+    $('#form_add_category_services').attr('onsubmit', 'edit_category(); return false');
     $('#active-field').removeClass('d-none'); // Mostrar el campo 'is_active'
 }
 
+
 // Función para editar una categoría
 function edit_category() {
-    var form = $('#form_add_category_equip')[0];
+    var form = $('#form_add_category_services')[0];
     var formData = new FormData(form);
-
-        // Validar campos
-        var name = formData.get('name').trim();
-        var shortName = formData.get('short_name').trim();
-        var description = formData.get('description').trim();
-    
-        if (!name || !shortName || !description) {
-            Swal.fire({
-                title: "¡Error!",
-                text: "Todos los campos son obligatorios.",
-                icon: "error",
-                showConfirmButton: true
-            });
-            return;
-        }
-    
     $.ajax({
-        url: '/edit_category/', 
+        url: '/edit_category_services/', 
         type: 'POST',
         data: formData,
         processData: false,
         contentType: false,
         success: function(response) {
             if (response.success) {
-                $('#form_add_category_equip')[0].reset();
-                $('#mdl-crud-equipments-tools-category').modal('hide');
+                $('#form_add_category_services')[0].reset();
+                $('#mdl-crud-category-services').modal('hide');
                 Swal.fire({
                     title: "¡Éxito!",
                     text: response.message,
                     icon: "success",
                     timer: 1500
                 });
-                $('#equipments_tools_table').DataTable().ajax.reload();
+                $('#table_category_services').DataTable().ajax.reload();
             } else {
                 Swal.fire({
                     title: "¡Error!",
@@ -166,7 +172,7 @@ function edit_category() {
                 });
             }
         },
-        error: function(xhr, status, error) {
+        error: function(error) {
             console.error("Error al guardar la categoría:", error);
             Swal.fire({
                 title: "¡Error!",
@@ -175,17 +181,14 @@ function edit_category() {
                 timer: 1500
             });
         },
-        beforeSend: function(xhr) {
-            xhr.setRequestHeader('X-CSRFToken', $('input[name="csrfmiddlewaretoken"]').val());
-        }
     });
 }
 
 
 // Función para eliminar una categoría
-function delete_category(boton) {
+function delete_category_services(boton) {
     var row = $(boton).closest('tr');
-    var data = $('#equipments_tools_table').DataTable().row(row).data();
+    var data = $('#table_category_services').DataTable().row(row).data();
     Swal.fire({
         title: "¿Estás seguro?",
         text: "¡No podrás revertir esta acción!",
@@ -198,7 +201,7 @@ function delete_category(boton) {
         if (result.isConfirmed) {
             // Si el usuario confirma la eliminación, hacer la solicitud AJAX
             $.ajax({
-                url: '/delete_category/',
+                url: '/delete_category_services/',
                 type: 'POST',
                 data: {
                     id: data.id
@@ -215,13 +218,13 @@ function delete_category(boton) {
                             timer: 1500
                         }).then(() => {
                             // Recargar la tabla después de la eliminación exitosa
-                            $('#equipments_tools_table').DataTable().ajax.reload();
+                            $('#table_category_services').DataTable().ajax.reload();
                         });
                     } else {
                         Swal.fire("Error", response.message, "error");
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function(error) {
                     console.error("Error al eliminar la categoría:", error);
                     Swal.fire("Error", "Hubo un error al eliminar la categoría.", "error");
                 }

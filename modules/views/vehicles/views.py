@@ -39,9 +39,10 @@ load_dotenv(dotenv_path)
 
 AUDITORIA_VEHICULAR_POR_MES = 2
 AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_DEFAULT_REGION=os.environ.get('AWS_ACCESS_KEY_ID')
-bucket_name = "siaapp"
+AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_DEFAULT_REGION=os.environ.get('AWS_DEFAULT_REGION')
+AWS_BUCKET_NAME=os.environ.get('AWS_BUCKET_NAME')
+bucket_name = AWS_BUCKET_NAME
 
 #AWS_S3_SIGNATURE_VERSION = 's3v4'
 #AWS_S3_REGION_NAME = 'us-east-2'
@@ -533,7 +534,7 @@ def update_vehicle_info(request):
         obj.save()
 
         if 'cover-image' in request.FILES and request.FILES['cover-image'] and True:
-            load_file = request.FILES.get['cover-image']
+            load_file = request.FILES.get('cover-image')
             folder_path = f"docs/{company_id}/vehicle/{id}/"
             
             #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
@@ -1367,7 +1368,7 @@ def add_vehicle_insurance(request):
 
             # Guardar el archivo adjunto, si existe
             if 'doc' in request.FILES and request.FILES['doc']:
-                load_file = request.FILES.get['doc']
+                load_file = request.FILES.get('doc')
                 company_id = request.session.get('company').get('id')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/seguro/"
                 #fs = FileSystemStorage(location=settings.MEDIA_ROOT)

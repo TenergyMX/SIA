@@ -498,7 +498,41 @@ class Infrastructure_Review(models.Model):
         return f"{self.category.name}: {self.item.name} ({self.checked}) ({self.date})"
     
 
-#tablas para el modulo de equipos y herramientas--
+#tablas de datos para el modulo de servicios--modulo 5 
+#tabla categorias de servicios num.5 
+class Services_Category(models.Model):
+    name_category = models.CharField(blank=True, null=True, max_length=100, unique=True, verbose_name="Nombre")
+    short_name_category = models.CharField(blank=True, null=True, max_length=50, unique=True, verbose_name="Nombre Corto")
+    is_active_category = models.BooleanField(default=True, verbose_name="¿Está Activo?")
+    description_category = models.TextField(blank=True, null=True, verbose_name="Descripción")
+
+#tabla servicios 
+class Services(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
+    category_service = models.ForeignKey(Services_Category, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Categoría de servicios" )
+    name_service = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Nombre servicio")
+    description_service = models.TextField(blank=True, null=True, verbose_name="Descripcion Servicio")
+    provider_service = models.ForeignKey(Provider, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Proveedor")
+    start_date_service = models.DateField(blank=True, null=True, verbose_name="Fecha de inicio")
+    time_quantity_service = models.PositiveIntegerField(blank=True, null=True, default=1, verbose_name="Cantidad de Tiempo")
+    time_unit_service = models.CharField(max_length=50, blank=True, null=True, choices=[
+        ('day', 'Día(s)'),
+        ('month', 'Mes(es)'),
+        ('year', 'Año(s)')
+    ], verbose_name="Unidad de Tiempo")
+    price_service = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad de servicios')
+
+#tabla pagos de servicios
+class Payments_Services(models.Model):
+    name_service_payment = models.ForeignKey(Services, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Nombre del servicio")
+    proof_payment = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Comprobante de pago")
+    total_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
+    next_date_payment = models.DateField(blank=True, null=True, verbose_name="Proxima fecha de pago")     
+    #comments_payment = models.CharField(blank=True, null=True, max_length=300, default='Regular', verbose_name="Comentarios de pagos")
+    status_payment  = models.BooleanField(default=False, verbose_name="Estado de pago")  # Campo para rastrear modificaciones del estado
+
+
+#tablas para el modulo de equipos y herramientas--modulo 6 num.6
 #tabla categorias
 class Equipement_category(models.Model):
     name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre")
@@ -526,7 +560,8 @@ class Equipement_category(models.Model):
 class Equipmets_Tools_locations(models.Model):
     location_name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre")
     location_status = models.BooleanField(default=True, verbose_name="¿Está activa la ubicación?")
-    location_company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)   
+    location_company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True) 
+  
 
 
 #tabla de equipos y herramientas 
@@ -558,6 +593,9 @@ class Equipment_Tools_Responsiva(models.Model):
     signature_almacen = models.FileField(upload_to='docs/Equipments_tools/signatures/', blank=True, null=True, verbose_name="Firma de almacen")
     comments = models.CharField(blank=True, null=True, max_length=300, default='Regular', verbose_name="Comentarios")
     status_modified = models.BooleanField(default=False, verbose_name="Estado modificado")  # Campo para rastrear modificaciones del estado
+
+
+
 
 #agregar a admin.py para poder visualizarlos en el administrador 
 

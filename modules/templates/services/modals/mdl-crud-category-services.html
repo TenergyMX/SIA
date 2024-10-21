@@ -1,0 +1,43 @@
+<div class="modal fade effect-scale" id="mdl-crud-category-services" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_add_category_services" onsubmit="add_category(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="name">Nombre</label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="Nombre" minlength="3" required maxlength="50">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="short_name">Nombre Corto</label>
+                        <input type="text" id="short_name" name="short_name" class="form-control" placeholder="Nombre Corto" minlength="3" required maxlength="50">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="description">Descripción</label>
+                        <input type="text" id="description" name="description" class="form-control" placeholder="Descripción" maxlength="255" required>
+                    </div>
+                    <div class="col-md-4 d-none" id="active-field">
+                        <label for="is_active">Activo</label>
+                        <select id="is_active" name="is_active" class="form-select">
+                            <option value="0">NO</option>
+                            <option value="1">SI</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
