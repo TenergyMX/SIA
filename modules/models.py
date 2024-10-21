@@ -531,6 +531,7 @@ class Equipmets_Tools_locations(models.Model):
 
 #tabla de equipos y herramientas 
 class Equipment_Tools(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     equipment_category = models.ForeignKey(Equipement_category, on_delete=models.CASCADE, verbose_name="Categoria" ,related_name='reviews')
     equipment_area = models.ForeignKey(Area, on_delete=models.CASCADE, verbose_name="Area" ,blank=True, null=True)
     equipment_responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable del equipo" ,blank=True, null=True)

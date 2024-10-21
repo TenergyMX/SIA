@@ -31,7 +31,7 @@ function load_table_equi() {
                 title: "Ficha técnica",
                 data: function (d) {
                     if (d["equipment_technical_sheet"]) {
-                        return `<a href="/${d["equipment_technical_sheet"]}" class="btn btn-sm btn-outline-primary" target="_blank">Ficha técnica</a>`;
+                        return `<a href="/get_doc/?s3path=${d["equipment_technical_sheet"]}" class="btn btn-sm btn-outline-primary" target="_blank">Ficha técnica</a>`;
                     } else {
                         return "Sin Ficha técnica";
                     }
@@ -258,7 +258,7 @@ function add_equipment_tool() {
         processData: false, // No procesar los datos
         contentType: false, // No establecer el tipo de contenido
         success: function (response) {
-            if (response.success) {
+            if (response.status == "success") {
                 // Si la respuesta es exitosa
                 $("#form_add_equipments_tools")[0].reset(); // Resetea el formulario
                 $("#mdl-crud-equipments-tools").modal("hide"); // Cierra el modal

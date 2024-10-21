@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse
+from django.http import HttpResponseRedirect
 from modules.models import *
 from users.models import *
 from modules.utils import * 
@@ -21,7 +22,17 @@ from django.template.loader import get_template
 from io import BytesIO
 from xhtml2pdf import pisa
 import logging
+from dotenv import load_dotenv
+from os.path import join, dirname
+from pathlib import Path
 
+dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
+#dotenv_path = join(os.path.dirname(os.path.abspath(__file__)), 'awsCred.env')
+load_dotenv(dotenv_path)
+
+AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
+print(AWS_BUCKET_NAME)
+bucket_name=AWS_BUCKET_NAME
 
 # Llamar módulos y submódulos 
 #submodulo de categorias 
@@ -244,6 +255,13 @@ def delete_category(request):
 
 #-------------------------------------------------------------------------------
 # Tabla de datos para los equipos y herramientas
+def get_doc(request):
+    file_path = request.GET.get("s3path", "sin informacion")
+    print(f'get_doc_path: {file_path}')
+    s3DocPatch = generate_presigned_url(AWS_BUCKET_NAME, file_path)
+    return HttpResponseRedirect(s3DocPatch)
+
+
 def get_equipments_tools(request):
     response = {"status": "error", "message": "Sin procesar"}
     context = user_data(request)
@@ -276,6 +294,18 @@ def get_equipments_tools(request):
             'equipment_technical_sheet'
         ))
 
+        modified_data_list = []
+
+        for data in equipments:
+            modified_data = data.copy()
+
+            file_path = data.get('equipment_technical_sheet')
+            technical_sheet = generate_presigned_url(AWS_BUCKET_NAME, file_path)
+            modified_path = technical_sheet
+        
+        modified_data['responsibility_letter'] = modified_path
+        modified_data_list.append(modified_data)
+
        
         for item in equipments:
             item["btn_action"] = ""
@@ -306,7 +336,7 @@ def get_equipments_tools(request):
                 "<i class='fa-solid fa-rectangle-history'></i>"
                 "</button>"
             )
-
+        print(modified_data_list)
         response["data"] = equipments
         response["status"] = "success"
         response["message"] = "Datos cargados exitosamente"
@@ -411,65 +441,100 @@ def add_location(request):
 @login_required
 @csrf_exempt
 def add_equipment_tools(request):
+    print("entrando a add equipment")
     context = user_data(request)
+    response = {"status": "error", "message": "sin procesar" }
+    dt = request.POST
+    company_id = context["company"]["id"]
     subModule_id = 30
     access = get_module_user_permissions(context, subModule_id)  
+    
 
     access = access["data"]["access"]
     area = context["area"]["name"]
     create = access["create"]
     tipo_user = context["role"]["name"]
 
+
     if request.method == 'POST':
         try:
-            # Obtener datos del POST
-            equipment_category_id = request.POST.get('equipment_category')
-            equipment_name = request.POST.get('equipment_name')
-            equipment_type = request.POST.get('equipment_type')
-            equipment_brand = request.POST.get('equipment_brand')
-            equipment_description = request.POST.get('equipment_description')
-            cost = request.POST.get('cost')
-            amount = request.POST.get('amount')
-            equipment_area_id = request.POST.get('equipment_area')
-            equipment_responsible_id = request.POST.get('responsible_equipment')
-            equipment_location_id = request.POST.get('equipment_location')
-            equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
+
+            obj = Equipment_Tools(
+                # Obtener datos del POST
+                company_id = company_id,
+                equipment_category_id = request.POST.get('equipment_category'),
+                equipment_name = request.POST.get('equipment_name'),
+                equipment_type = request.POST.get('equipment_type'),
+                equipment_brand = request.POST.get('equipment_brand'),
+                equipment_description = request.POST.get('equipment_description'),
+                cost = request.POST.get('cost'),
+                amount = request.POST.get('amount'),
+                equipment_area_id = request.POST.get('equipment_area'),
+                equipment_responsible_id = request.POST.get('responsible_equipment'),
+                equipment_location_id = request.POST.get('equipment_location'),
+                
+            )
+            obj.save()
+            id = obj.id
 
             # Validar campos obligatorios
-            if not equipment_category_id or not equipment_name or not equipment_responsible_id:
-                return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
+            #if not obj.equipment_category_id or not obj.equipment_name or not obj. equipment_responsible_id:
+            #    return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
 
             # Verificar que el nombre del equipo no esté en uso
-            if Equipment_Tools.objects.filter(equipment_name__iexact=equipment_name).exists():
-                return JsonResponse({'success': False, 'message': 'El registro ya existe en la base de datos. Intenta con otro nombre.'}, status=400)
+            #if obj.objects.filter(equipment_name__iexact=obj.equipment_name).exists():
+            #    return JsonResponse({'success': False, 'message': 'El registro ya existe en la base de datos. Intenta con otro nombre.'}, status=400)
 
             # Obtener objetos relacionados
-            category = get_object_or_404(Equipement_category, id=equipment_category_id)
-            area = get_object_or_404(Area, id=equipment_area_id)
-            responsible = get_object_or_404(User, id=equipment_responsible_id)
-            location = get_object_or_404(Equipmets_Tools_locations, id=equipment_location_id)
+            #category = get_object_or_404(Equipement_category, id=obj.equipment_category_id)
+            #area = get_object_or_404(Area, id=obj.equipment_area_id)
+            #responsible = get_object_or_404(User, id=obj.equipment_responsible_id)
+            #location = get_object_or_404(Equipmets_Tools_locations, id=obj.equipment_location_id)
 
             # Crear el nuevo equipo o herramienta
-            Equipment_Tools.objects.create(
-                equipment_category=category,
-                equipment_name=equipment_name,
-                equipment_type=equipment_type,
-                equipment_brand=equipment_brand,
-                equipment_description=equipment_description,
-                cost=cost,
-                amount=amount,
-                equipment_area=area,
-                equipment_responsible=responsible,
-                equipment_location=location,
-                equipment_technical_sheet=equipment_technical_sheet
-            )
+            #Equipment_Tools.objects.create(
+            #    equipment_category=category,
+            #    equipment_name=equipment_name,
+            #    equipment_type=equipment_type,
+            #    equipment_brand=equipment_brand,
+            #    equipment_description=equipment_description,
+            #    cost=cost,
+            #    amount=amount,
+            #    equipment_area=area,
+            #    equipment_responsible=responsible,
+            #    equipment_location=location,
+            #    equipment_technical_sheet=equipment_technical_sheet
+            #)
 
-            return JsonResponse({'success': True, 'message': 'Equipo o herramienta agregado exitosamente.'})
+            if 'equipment_technical_sheet' in request.FILES and request.FILES['equipment_technical_sheet']:
+                equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
 
+                print(f'extension: {equipment_technical_sheet.name}')
+                print(f'nombre: {obj.equipment_name}')
+
+                folder_path = f"docs/{company_id}/Equipments_tools/technical_sheet/{id}/"
+
+                file_name, extension = os.path.splitext(equipment_technical_sheet.name)
+
+                new_name = f'equipment_technical_sheet_{obj.equipment_name}{extension}'
+                print(new_name)
+                s3Name = folder_path + new_name
+
+                upload_to_s3(equipment_technical_sheet, bucket_name, s3Name)
+                obj.equipment_technical_sheet = s3Name
+                obj.save()
+
+            response["status"] = "success"
+            #response["success"] = "success"
+            response["message"] = "Guardado"
+        except ValidationError as e:
+            response["status"] = "error"
+            response["message"] = e.message_dict
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error interno del servidor: {str(e)}'}, status=500)
-
-    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'}, status=405)
+            response["status"] = "error"
+            response["message"] = str(e)
+        return JsonResponse(response) 
+      
 
 # Función para editar los registros de los equipos o herramientas
 @login_required

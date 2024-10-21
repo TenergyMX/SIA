@@ -36,7 +36,7 @@ import zipfile
 import subprocess
 from django.views.decorators.csrf import csrf_exempt
 
-dotenv_path = join(dirname(__file__), 'awsCred.env')
+dotenv_path = join(dirname(dirname(__file__)), 'awsCred.env')
 load_dotenv(dotenv_path)
 
 # TODO --------------- [ VARIABLES ] ---------- 
