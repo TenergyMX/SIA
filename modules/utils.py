@@ -41,7 +41,7 @@ def get_module_user_permissions(_datos, _subModule_id):
     if _datos["role"]["id"] in [1,2]:
         response["data"]["access"] = {key: True for key in response["data"]["access"]}
     else:
-        obj = SubModule_Permission.objects.filter(user_id = _datos["user"]["id"], subModule_id = _subModule_id)
+        obj = SubModule_Permission.objects.filter(user__user__id = _datos["user"]["id"], subModule_id = _subModule_id)
         
         if obj.count() > 0:
             obj = obj.values(
@@ -76,7 +76,7 @@ def get_sidebar(data={}, module_ids=None):
         submodules = SubModule_Permission.objects.filter(
             subModule__is_active = True,
             read = True,
-            user_id = data["user"]["id"]
+            user__user__id = data["user"]["id"]
         ).order_by('subModule__module_id')
 
         if module_ids is not None:
@@ -114,7 +114,7 @@ def get_user_access(context = {}):
             data[item["id"]]["delete"] = True
     else:
         obj = SubModule_Permission.objects.filter(
-            user_id = context["user"]["id"]
+            user__user__id = context["user"]["id"]
         ).values()
         
         for item in obj:
