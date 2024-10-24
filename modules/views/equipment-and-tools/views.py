@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from modules.models import *
 from users.models import *
 from modules.utils import * 
@@ -18,6 +18,7 @@ import logging
 import json, os
 import base64
 import time
+import requests
 from django.template.loader import get_template
 from io import BytesIO
 from xhtml2pdf import pisa
@@ -25,6 +26,7 @@ import logging
 from dotenv import load_dotenv
 from os.path import join, dirname
 from pathlib import Path
+from dateutil.parser import parse
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 #dotenv_path = join(os.path.dirname(os.path.abspath(__file__)), 'awsCred.env')
@@ -457,6 +459,13 @@ def add_equipment_tools(request):
 
 
     if request.method == 'POST':
+        equipment_name = request.POST.get('equipment_name')
+
+        # Check if equipment_name already exists
+        if Equipment_Tools.objects.filter(equipment_name=equipment_name).exists():
+            # Handle the case where the equipment_name already exists
+            return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra en la base de datos, ingresa otro diferente.'})
+        
         try:
 
             obj = Equipment_Tools(
@@ -474,37 +483,12 @@ def add_equipment_tools(request):
                 equipment_location_id = request.POST.get('equipment_location'),
                 
             )
+            if not all([obj.company_id, obj.equipment_category, obj.equipment_name, obj.equipment_type, 
+                    obj.equipment_brand, obj.equipment_description, obj.cost, obj.amount, 
+                    obj.equipment_area, obj.responsible_equipment, obj.equipment_location]):
+                return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
             obj.save()
             id = obj.id
-
-            # Validar campos obligatorios
-            #if not obj.equipment_category_id or not obj.equipment_name or not obj. equipment_responsible_id:
-            #    return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
-
-            # Verificar que el nombre del equipo no esté en uso
-            #if obj.objects.filter(equipment_name__iexact=obj.equipment_name).exists():
-            #    return JsonResponse({'success': False, 'message': 'El registro ya existe en la base de datos. Intenta con otro nombre.'}, status=400)
-
-            # Obtener objetos relacionados
-            #category = get_object_or_404(Equipement_category, id=obj.equipment_category_id)
-            #area = get_object_or_404(Area, id=obj.equipment_area_id)
-            #responsible = get_object_or_404(User, id=obj.equipment_responsible_id)
-            #location = get_object_or_404(Equipmets_Tools_locations, id=obj.equipment_location_id)
-
-            # Crear el nuevo equipo o herramienta
-            #Equipment_Tools.objects.create(
-            #    equipment_category=category,
-            #    equipment_name=equipment_name,
-            #    equipment_type=equipment_type,
-            #    equipment_brand=equipment_brand,
-            #    equipment_description=equipment_description,
-            #    cost=cost,
-            #    amount=amount,
-            #    equipment_area=area,
-            #    equipment_responsible=responsible,
-            #    equipment_location=location,
-            #    equipment_technical_sheet=equipment_technical_sheet
-            #)
 
             if 'equipment_technical_sheet' in request.FILES and request.FILES['equipment_technical_sheet']:
                 equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
@@ -517,7 +501,6 @@ def add_equipment_tools(request):
                 file_name, extension = os.path.splitext(equipment_technical_sheet.name)
 
                 new_name = f'equipment_technical_sheet_{obj.equipment_name}{extension}'
-                print(new_name)
                 s3Name = folder_path + new_name
 
                 upload_to_s3(equipment_technical_sheet, bucket_name, s3Name)
@@ -525,7 +508,6 @@ def add_equipment_tools(request):
                 obj.save()
 
             response["status"] = "success"
-            #response["success"] = "success"
             response["message"] = "Guardado"
         except ValidationError as e:
             response["status"] = "error"
@@ -573,7 +555,12 @@ def edit_equipments_tools(request):
 
             # Actualizar ficha técnica solo si se proporciona un archivo nuevo
             if equipment_technical_sheet:
-                equipment_tool.equipment_technical_sheet = equipment_technical_sheet
+                folder_path = f"docs/{equipment_tool.company_id}/Equipments_tools/technical_sheet/{id}/"
+                file_name, extension = os.path.splitext(equipment_technical_sheet.name)
+                new_name = f'equipment_technical_sheet_{equipment_tool.equipment_name}{extension}'
+                s3Name = folder_path + new_name
+                upload_to_s3(equipment_technical_sheet, AWS_BUCKET_NAME, s3Name)
+                equipment_tool.equipment_technical_sheet = s3Name
 
             equipment_tool.save()
 
@@ -623,6 +610,9 @@ def add_responsiva(request):
     area = context["area"]["name"].lower()
     create = access["create"]
     tipo_user = context["role"]["name"].lower()
+    company_id = context["company"]["id"]
+    #print(company_id)
+    
 
     if request.method == 'POST':
         # Extraer datos del formulario
@@ -635,9 +625,9 @@ def add_responsiva(request):
 
         # Establecer la fecha actual como la fecha de inicio
         fecha_inicio = datetime.now().date()
-
         # Validar la fecha de entrega
         try:
+            print(f'paseee data: {fecha_entrega}')
             fecha_entrega_date = parse_date(fecha_entrega)
         except ValueError:
             return JsonResponse({'success': False, 'message': 'Fecha de entrega inválida.'})
@@ -694,22 +684,19 @@ def add_responsiva(request):
  
                 # Usar un timestamp para el nombre del archivo de la firma
                 timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-                folder_path = f"docs/Equipments_tools/responsivas/{timestamp}/"  # Ruta de la firma
-
-                # Crear la ruta completa
-                full_path = os.path.join(settings.MEDIA_ROOT, folder_path)
-
-                # Crea la carpeta si no existe
-                if not os.path.exists(full_path):
-                    os.makedirs(full_path)
+                folder_path = f"docs/{company_id}/Equipments_tools/signatureResponsivas/{timestamp}/"  # Ruta de la firma
 
                 # Generar un nombre único para la firma
                 new_name = f"signature_{timestamp}.png"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-                fs.save(os.path.join(folder_path, new_name), signature_file)
+                s3Name = folder_path + new_name
+                upload_to_s3(signature_file, AWS_BUCKET_NAME, s3Name)
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                #fs.save(os.path.join(folder_path, new_name), signature_file)
+                
 
                 # Crear la nueva responsiva del equipo
                 Equipment_Tools_Responsiva.objects.create(
+                    company_id = company_id,
                     equipment_name=requested_amount,
                     responsible_equipment=responsible,
                     amount=amount,
@@ -717,7 +704,7 @@ def add_responsiva(request):
                     fecha_inicio=fecha_inicio,
                     fecha_entrega=fecha_entrega_date,
                     times_requested_responsiva=times_requested_responsiva,
-                    signature_responsible=os.path.join(folder_path, new_name),  # Aquí se asigna el archivo de la firma
+                    signature_responsible=s3Name,  # Aquí se asigna el archivo de la firma
                     comments=comments,
                 )
 
@@ -725,41 +712,12 @@ def add_responsiva(request):
                 requested_amount.amount = available_amount - amount
                 requested_amount.save()
 
-                responsiva_instance = Equipment_Tools_Responsiva.objects.latest('id')  # Obtiene la última responsiva
-
-               # Generar el PDF después de guardar la responsiva
-                pdf_context = {
-                    'responsiva': responsiva_instance,
-                    'responsible_name': responsiva_instance.responsible_equipment.username,  # Nombre del responsable
-                    'signature_responsible': request.build_absolute_uri(responsiva_instance.signature_responsible.url) if responsiva_instance.signature_responsible else None,  # URL absoluta de la firma
-                }
-
-                # Generar y guardar el PDF
-                pdf_file = render_to_pdf('equipments-and-tools/responsiva/responsiva_equipments.html', pdf_context)
-                pdf_folder_path = f"docs/Equipments_tools/pdfs/{timestamp}/"  # Ruta para el PDF
-                
-                # Crear la ruta completa para el PDF
-                full_pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_folder_path)
-
-                # Crea la carpeta si no existe
-                if not os.path.exists(full_pdf_path):
-                    os.makedirs(full_pdf_path)
-
-                # Guardar el PDF en el servidor
-                pdf_file_name = f"responsiva_{timestamp}.pdf"
-                with open(os.path.join(full_pdf_path, pdf_file_name), 'wb') as f:
-                    f.write(pdf_file.getvalue())  # Guarda el PDF en el servidor
-
-                # Retornar la URL del PDF (si decides usarla en el futuro)
-                pdf_url = f"{request.scheme}://{request.get_host()}/{pdf_folder_path}{pdf_file_name}"
-                # Actualiza el objeto de la responsiva para incluir la URL del PDF
-                responsiva_instance.pdf_url = pdf_url
 
                 # Retornar la respuesta JSON
                 return JsonResponse({
                     'success': True,
                     'message': 'Responsiva agregada correctamente',
-                    'pdf_url': pdf_url  
+                    #'pdf_url': pdf_url  
                 })
 
         except Equipment_Tools.DoesNotExist:
@@ -775,6 +733,7 @@ def render_to_pdf(template_src, context_dict):
     html = template.render(context_dict)
 
     result = BytesIO()
+    result.name = "responsiva.pdf"
     pdf = pisa.CreatePDF(html, dest=result)
 
     if pdf.err:
@@ -927,8 +886,11 @@ logger = logging.getLogger(__name__)
 @login_required
 @csrf_exempt
 def status_responsiva(request):
+    context = user_data(request)
+    company_id = context["company"]["id"]
     if request.method == 'POST':
         try:
+            company_id = company_id
             equipment_id = request.POST.get('id')
             status_value = request.POST.get('status_equipment')
             comments = request.POST.get('comments')
@@ -956,16 +918,11 @@ def status_responsiva(request):
 
             # Usar un timestamp para el nombre del archivo de la firma
             timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-            folder_path = f"docs/Equipments_tools/responsivas/{timestamp}/"
-            full_path = os.path.join(settings.MEDIA_ROOT, folder_path)
-
-            # Crear la ruta completa
-            if not os.path.exists(full_path):
-                os.makedirs(full_path)
+            folder_path = f"docs/{company_id}/Equipments_tools/signatureAlmacen/{timestamp}/"
 
             new_name = f"signature_almacen_{timestamp}.png"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-            fs.save(os.path.join(folder_path, new_name), signature_almacen_file)
+            s3Name = folder_path + new_name
+            upload_to_s3(signature_almacen_file, AWS_BUCKET_NAME, s3Name)
 
             try:
                 return_amount = int(return_amount) if return_amount else 0
@@ -980,7 +937,7 @@ def status_responsiva(request):
                     responsiva.status_equipment = status_name
                     responsiva.comments = comments
                     responsiva.date_receipt = timezone.now().date()
-                    responsiva.signature_almacen = os.path.join(folder_path, new_name)
+                    responsiva.signature_almacen = s3Name
 
                     # Solo marcar como modificado si el estado cambia
                     responsiva.status_modified = True
@@ -1218,8 +1175,8 @@ def generate_pdf(request, responsiva_id):
         pdf_context = {
             'responsiva': responsiva_instance,
             'responsible_name': responsiva_instance.responsible_equipment.username,
-            'signature_responsible': request.build_absolute_uri(responsiva_instance.signature_responsible.url) if responsiva_instance.signature_responsible else None,
-            'signature_almacen': request.build_absolute_uri(responsiva_instance.signature_almacen.url) if responsiva_instance.signature_almacen else None,
+            'signature_responsible': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_responsible)),
+            'signature_almacen': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_almacen)),
             'header_image': header_image_base64,
             'footer_image': footer_image_base64,
         }
@@ -1232,32 +1189,40 @@ def generate_pdf(request, responsiva_id):
             return JsonResponse({'success': False, 'message': 'Error al generar el PDF.'})
 
         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-        pdf_folder_path = f"docs/Equipments_tools/pdfs_responsiva/{timestamp}/"
-        full_pdf_path = os.path.join(settings.MEDIA_ROOT, pdf_folder_path)
+        pdf_folder_path = f"docs/{responsiva_instance.company_id}/Equipments_tools/pdfs_responsiva/{timestamp}/"
 
-        # Crear la carpeta si no existe
-        if not os.path.exists(full_pdf_path):
-            os.makedirs(full_pdf_path)
-
-        # Guardar el PDF en el servidor
+        # Guardar el PDF en AWS S3 Bucket
         pdf_file_name = f"responsiva_{timestamp}.pdf"
+        s3Name = pdf_folder_path + pdf_file_name
+
         try:
-            with open(os.path.join(full_pdf_path, pdf_file_name), 'wb') as f:
-                f.write(pdf_file.getvalue())
-            logger.info("PDF guardado en: %s", os.path.join(full_pdf_path, pdf_file_name))
+            upload_to_s3(pdf_file, AWS_BUCKET_NAME, s3Name)
+            url = generate_presigned_url(AWS_BUCKET_NAME, s3Name)
+            response = requests.get(url)
+    
+            # Store the PDF content in memory using BytesIO
+            pdfFile = BytesIO(response.content)
+    
+            # Prepare the response
+            pdf_response = HttpResponse(pdfFile.getvalue(), content_type='application/pdf')
+    
+            # Set headers to open the file in a new browser tab
+            pdf_response['Content-Disposition'] = 'inline; filename="responsiva.pdf"'
+        
         except Exception as e:
             logger.error("Error al guardar el PDF: %s", str(e))
             return JsonResponse({'success': False, 'message': 'Error al guardar el PDF.'})
 
         # URL del PDF
-        pdf_url = f"{request.scheme}://{request.get_host()}/{pdf_folder_path}{pdf_file_name}"
+        pdf_url = f"{request.scheme}:{s3Name}"
         responsiva_instance.pdf_url = pdf_url  # Actualiza la responsiva si es necesario
-
-        return JsonResponse({
-            'success': True,
-            'message': 'Responsiva generada correctamente',
-            'pdf_url': pdf_url
-        })
+        return pdf_response
+    
+        #return JsonResponse({
+        #    'success': True,
+        #    'message': 'Responsiva generada correctamente',
+        #    'pdf_url': pdf_response
+        #})
 
     except Equipment_Tools_Responsiva.DoesNotExist:
         logger.error("Responsiva no encontrada.")

@@ -521,29 +521,22 @@ function generatePdf(responsivaId) {
     $.ajax({
         url: "/generate_pdf/" + responsivaId + "/",
         type: "GET",
-        success: function (response) {
-            if (response.success) {
-                // Puedes abrir el PDF en una nueva ventana o redirigir a la URL del PDF
-                Swal.fire({
-                    title: "¡Éxito!",
-                    text: response.message,
-                    icon: "success",
-                    timer: 1500,
-                }).then(() => {
-                    // Aquí se abrirá el PDF después de que el mensaje se cierre
-                    if (response.pdf_url) {
-                        window.open(response.pdf_url, "_blank"); // Abre el PDF en una nueva pestaña
-                    }
-                });
-                $("#table_responsiva").DataTable().ajax.reload();
-            } else {
-                Swal.fire({
-                    title: "¡Error!",
-                    text: response.message,
-                    icon: "error",
-                    timer: 1500,
-                });
-            }
+        xhrFields: {
+            responseType: "blob", // Important: Receive the response as a blob (binary data)
+        },
+        //success: function (response) {
+        success: function (blob) {
+            // Create a URL for the blob data
+            var url = window.URL.createObjectURL(blob);
+            Swal.fire({
+                title: "¡Éxito!",
+                text: "pdf generado exitosamente", //response.message,
+                icon: "success",
+                timer: 1500,
+            }).then(() => {
+                // Open the PDF in a new tab
+                window.open(url, "_blank");
+            });
         },
         error: function (xhr, error, thrown) {
             console.error("Error en la solicitud AJAX:", thrown);
