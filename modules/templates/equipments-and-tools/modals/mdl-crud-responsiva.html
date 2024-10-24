@@ -29,10 +29,18 @@
                         <label for="amount">Cantidad de equipos/herramientas</label>
                         <input type="text" id="amount" name="amount" class="form-control" placeholder="Cantidad" minlength="1" maxlength="4" required>
                     </div>
+                    {% if tipo_user == "administrador" or tipo_user == "super usuario" %}
                     <div class="col-md-4">
-                        <label for="">Fecha de entrega</label>
+                        <label for="fecha_inicio">Fecha de inicio</label>
+                        <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" placeholder="Fecha de inicio">
+                    </div>
+                    {% endif %}                    
+                    <div class="col-md-4">
+                        <label for="fecha_entrega">Fecha de entrega</label>
                         <input type="date" id="fecha_entrega" name="fecha_entrega" class="form-control" placeholder="Fecha de entrega">
                     </div>
+                    
+
                     <div class="col-md-4">
                         <label for="times_requested_responsiva">Tiempo solicitado</label>
                         <input type="text" id="times_requested_responsiva" name="times_requested_responsiva" class="form-control" placeholder="Tiempo solicitado" maxlength="255">

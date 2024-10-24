@@ -92,14 +92,21 @@ def responsiva(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    
-#permisos para agregar responivas
+#permisos para agregar responsivas
     context["area"] = context["area"]["name"].lower()
     context["create"] = access["data"]["access"]["create"]
     print("esto contiene mi create de responsivas")
     print(context)
-    context["tipo_user"] = context["role"]["name"].lower
+    context["tipo_user"] = context["role"]["name"].lower()
 
+
+    tipo_user = context["role"]["name"].lower()
+    print("este es el rol de usuario con el que cuenta")
+    print(tipo_user)
+    user_name = context["user"]["username"].lower()
+    print("este es el nombre del usuario con el que cuenta")
+    print(user_name)
+    
     if context["access"]["read"]:
         template = "equipments-and-tools/responsiva.html"
     else:
@@ -249,11 +256,17 @@ def get_equipments_tools(request):
     context = user_data(request)
     subModule_id = 30
     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+    print("esto contiene mi access:", access)
     area = context["area"]["name"]
     tipo_user = context["role"]["name"]
     editar = access["update"]
     eliminar = access["delete"]
     agregar = access["create"]
+    leer = access["read"]
+    print("Permiso de crear, es el siguinete:", access["create"])
+    print("Tipo de usuario:", tipo_user)
+    print("Área del usuario:", area)
+
     try:
         equipments = list(Equipment_Tools.objects.select_related(
             'equipment_category', 'equipment_area', 'equipment_responsible', 'equipment_location'
@@ -293,19 +306,21 @@ def get_equipments_tools(request):
                     "<i class='fa-solid fa-trash'></i>"
                     "</button> "
                 )
-            if access["create"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+            if access["create"] is True and not (tipo_user.lower() in ["administrador", "super usuario"] or area.lower() == "almacen"):
+
                 item["btn_action"] += (
                     "<button type='button' class='btn btn-icon btn-sm btn-info-light add-responsiva-btn' "
                     "onclick='modal_responsiva(this)' aria-label='responsiva'>"
                     "<i class='fa-solid fa-file-circle-plus'></i>"
                     "</button>"
                 )
-            item["btn_action"] += (
-                "<button type='button' class='btn btn-icon btn-sm btn-info-light history-btn' "
-                "onclick='modal_history(this)' aria-label='history'>"
-                "<i class='fa-solid fa-rectangle-history'></i>"
-                "</button>"
-            )
+            if access["read"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+                item["btn_action"] += (
+                    "<button type='button' class='btn btn-icon btn-sm btn-info-light history-btn' "
+                    "onclick='modal_history(this)' aria-label='history'>"
+                    "<i class='fa-solid fa-rectangle-history'></i>"
+                    "</button>"
+                )
 
         response["data"] = equipments
         response["status"] = "success"
@@ -549,6 +564,8 @@ def delete_equipment_tool(request):
 @csrf_exempt  
 def add_responsiva(request):
     context = user_data(request)
+    print("esto contiene tu comtext:")
+    print(context)
     module_id = 6
     subModule_id = 31
     request.session["last_module_id"] = module_id
@@ -557,7 +574,13 @@ def add_responsiva(request):
     access = access["data"]["access"]
     area = context["area"]["name"].lower()
     create = access["create"]
+
     tipo_user = context["role"]["name"].lower()
+    print("este es el rol de usuario con el que cuenta")
+    print(tipo_user)
+    user_name = context["user"]["username"].lower()
+    print("este es el nombre del usuario con el que cuenta")
+    print(user_name)
 
     if request.method == 'POST':
         # Extraer datos del formulario
@@ -568,17 +591,27 @@ def add_responsiva(request):
         times_requested_responsiva = request.POST.get('times_requested_responsiva')
         comments = request.POST.get('comments', '')
 
-        # Establecer la fecha actual como la fecha de inicio
-        fecha_inicio = datetime.now().date()
+        print(f"Fecha de entrega recibida: {fecha_entrega}") 
 
-        # Validar la fecha de entrega
+    
+        print(f"Datos recibidos a traves del formulario: {request.POST}")  
+
+        if not fecha_entrega or not isinstance(fecha_entrega, str):
+            return JsonResponse({'success': False, 'message': 'Fecha de entrega no proporcionada.'})
         try:
-            fecha_entrega_date = parse_date(fecha_entrega)
+            fecha_entrega_date = datetime.strptime(fecha_entrega, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({'success': False, 'message': 'Fecha de entrega inválida.'})
 
+        # Obtener la fecha de inicio
+        fecha_inicio_str = request.POST.get('fecha_inicio', '')
+        fecha_inicio = parse_date(fecha_inicio_str) if fecha_inicio_str else datetime.now().date()
+
+        print(f"Fecha de inicio: {fecha_inicio}, Fecha de entrega: {fecha_entrega_date}") 
+
+        # Verificar que la fecha de entrega sea mayor a la fecha de inicio
         if fecha_entrega_date <= fecha_inicio:
-            return JsonResponse({'success': False, 'message': 'La fecha de entrega debe ser mayor a la fecha actual.'})
+            return JsonResponse({'success': False, 'message': 'La fecha de entrega debe ser mayor a la fecha de inicio.'})
 
         try:
             with transaction.atomic():
@@ -597,7 +630,7 @@ def add_responsiva(request):
                 if tipo_user in ['administrador', 'super usuario'] or area == 'almacen':
                     responsible = get_object_or_404(User, id=equipment_responsible_id)
                 else:
-                    responsible = context['user']  # Asume que es el mismo usuario
+                    responsible = get_object_or_404(User, username=context['user']['username'])
 
 
                 signature_file = request.FILES.get('signature')
@@ -619,7 +652,7 @@ def add_responsiva(request):
                 signature_file.seek(0)
 
 
-                # Verificar si la imagen es completamente blanca (opcional)
+                # Verificar si la imagen es completamente blanca
                 if signature_file.content_type == 'image/png':
                     if file_data[0:8] == b'\x89PNG\r\n':
                         # Comprobar que no sea completamente blanca
@@ -655,6 +688,7 @@ def add_responsiva(request):
                     signature_responsible=os.path.join(folder_path, new_name),  # Aquí se asigna el archivo de la firma
                     comments=comments,
                 )
+
 
                 # Actualizar la cantidad del equipo
                 requested_amount.amount = available_amount - amount
@@ -744,31 +778,56 @@ def get_responsible_user(request):
 def get_responsiva(request):
     response = {"status": "error", "message": "Sin procesar"}
     context = user_data(request)
+    print("esta informacion contiene el context de tabla de resposnisvs:", context)
     isList = request.GET.get("isList", False)
     subModule_id = 31
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
-    area = context["area"]["name"]
-    tipo_user = context["role"]["name"]
+    area = context["area"]["name"].lower()
+    tipo_user = context["role"]["name"].lower()
     editar = access["update"]
     create = access["create"]
+    user_name = context["user"]["username"].lower()
+    print("este es el usuario que ha iniciado sesion:", user_name)
 
     try:
-        responsiva = list(Equipment_Tools_Responsiva.objects.select_related(
-            'equipment_name', 'responsible_equipment'
-        ).values(
-            'id', 
-            'equipment_name__equipment_name',  # nombre del equipo
-            'responsible_equipment__username',  # nombre del usuario
-            'amount',
-            'status_equipment',
-            'fecha_inicio',
-            'fecha_entrega',
-            'times_requested_responsiva',
-            'date_receipt',
-            'comments',
-            'status_modified',
-        ))
+        if tipo_user in ["administrador", "almacen", "super usuario"]:
+
+            responsiva = list(Equipment_Tools_Responsiva.objects.select_related(
+                'equipment_name', 'responsible_equipment'
+            ).values(
+                'id', 
+                'equipment_name__equipment_name',  # nombre del equipo
+                'responsible_equipment__username',  # nombre del usuario
+                'amount',
+                'status_equipment',
+                'fecha_inicio',
+                'fecha_entrega',
+                'times_requested_responsiva',
+                'date_receipt',
+                'comments',
+                'status_modified',
+            ))
+        else:
+            print(f"Consultando registros para el usuario: {user_name}")
+
+            responsiva = list(Equipment_Tools_Responsiva.objects.select_related(
+                'equipment_name', 'responsible_equipment'
+            ).filter(responsible_equipment__username__iexact=user_name).values(
+                'id',
+                'equipment_name__equipment_name',
+                'responsible_equipment__username',
+                'amount',
+                'status_equipment',
+                'fecha_inicio',
+                'fecha_entrega',
+                'times_requested_responsiva',
+                'date_receipt',
+                'comments',
+                'status_modified',
+            ))
+            
+            print(f"Registros encontrados: {responsiva}")
 
         for item in responsiva:
             item["btn_action"] = ""
@@ -832,7 +891,7 @@ def get_responsiva(request):
             elif item['status_equipment'] in ['Incompleto', 'Dañado']:
                 item['status_equipment'] = '<span class="badge bg-outline-warning">{}</span>'.format(item['status_equipment'])
             else:
-                item['status_equipment'] = ''  # Dejar vacío si el estado es desconocido o no se ha definido
+                item['status_equipment'] = ''  
 
         response["data"] = responsiva
         response["status"] = "success"

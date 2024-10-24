@@ -50,8 +50,6 @@ function load_table_equi() {
     });
 }
 
-
-
 // Función para cargar las categorías en el select
 function get_equipment_categories(selectedCategoryId) {
     $.ajax({
@@ -97,7 +95,6 @@ function get_equipment_areas(selectedAreaId) {
         }
     });
 }
-
 
 //Función para cargar los nombres de los usuarios que ya han sido registrados para agregar un equipo o herramienta
 function get_responsible_users(selectedUserId) {
@@ -164,7 +161,6 @@ function get_company(selectedCompanyId) {
     });
 }
 
-
 //fucion para mostrar el modal de una nueva ubicacion 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('equipment_location').addEventListener('change', function() {
@@ -176,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
 
 // Función para agregar una nueva ubicación
 function add_location() {
@@ -368,8 +363,6 @@ function edit_equipments_tools() {
     });
 }
 
-
-
 //funcion para eliminar los equipos y herramientas 
 function delete_equipment_tool(boton){
     var row = $(boton).closest('tr');
@@ -448,7 +441,6 @@ function get_responsible_user(selectedUserId) {
     });
 }
 
-
 // Función para mostrar el modal de responsiva
 function modal_responsiva(button) {
     var obj_modal = $("#mdl-crud-responsiva");
@@ -460,62 +452,68 @@ function modal_responsiva(button) {
 
     // Cargar los responsables
     get_responsible_user();
-    // Asignar eventos para calcular la diferencia de fechas
-    $('#fecha_inicio, #fecha_entrega').on('change', calcularDiferencia);
+
+
+    // Mostrar u ocultar el campo de fecha de inicio
+    var tipo_user = "{{ tipo_user }}";
+   
+ 
+
+    //  calcular la diferencia de fechas
+    $('#fecha_inicio, #fecha_entrega').on('change', function() {
+        calcularDiferencia();
+        verificarFechaEntrega();
+    });
+
+    // Deshabilitar fechas pasadas si no hay fecha de inicio
+    verificarFechaEntrega();
 }
 
 // Función para calcular la diferencia de días entre la fecha de inicio y la fecha de entrega
 function calcularDiferencia() {
-    var fechaentrega = $('#fecha_entrega').val();
+    var fecha_entrega = $('#fecha_entrega').val();
+    var fecha_inicio = $('#fecha_inicio').val(); 
 
-    if (fechaentrega) {
+    if (fecha_entrega) {
         $.ajax({
-            url: '/get_server_date/', 
+            url: '/get_server_date/',
             type: 'GET',
             success: function(response) {
-                var server_date = response.server_date; // Fecha actual del servidor en formato YYYY-MM-DD
+                var server_date = new Date(response.server_date); 
 
-                // Convertir la fecha del servidor a un objeto Date en UTC
-                var fecha_inicio = new Date(server_date + 'T00:00:00Z');
-                var fecha_entrega_date = new Date(fechaentrega);
+             
+                var fecha_inicio_date = fecha_inicio ? new Date(fecha_inicio) : server_date;
 
-                // Convertir la fecha de entrega a la misma zona horaria que la fecha del servidor
-                fecha_entrega_date.setMinutes(fecha_entrega_date.getMinutes() - fecha_entrega_date.getTimezoneOffset());
-
-                // Verificar si las fechas son válidas
-                if (isNaN(fecha_inicio.getTime()) || isNaN(fecha_entrega_date.getTime())) {
+                // Validar fechas
+                if (isNaN(fecha_inicio_date.getTime()) || isNaN(new Date(fecha_entrega).getTime())) {
                     Swal.fire({
                         title: "Fecha no válida",
                         text: "Una o ambas fechas son inválidas. Por favor, ingrese fechas válidas.",
                         icon: "error",
                         timer: 1000
                     });
-                    $('#form_responsiva [name="times_requested_responsiva"]').val(''); // Limpiar el campo de tiempo solicitado
+                    $('#form_responsiva [name="times_requested_responsiva"]').val(''); 
                     return;
                 }
 
-                // Verificar si la fecha de entrega es mayor a la fecha actual del servidor
-                if (fecha_entrega_date <= fecha_inicio) {
+                // Comprobar si la fecha de entrega es mayor a la de inicio
+                var fecha_entrega_date = new Date(fecha_entrega);
+                if (fecha_entrega_date <= fecha_inicio_date) {
                     Swal.fire({
                         title: "Fecha no válida",
-                        text: "Esta fecha no es válida, ya pasó. Ingresa una fecha diferente.",
+                        text: "La fecha de entrega debe ser mayor a la fecha de inicio.",
                         icon: "error",
                         timer: 1000
                     });
-                    $('#fecha_entrega').val(''); // Limpiar el campo de fecha de entrega
-                    $('#form_responsiva [name="times_requested_responsiva"]').val(''); // Limpiar el campo de tiempo solicitado
-                } else {
-                    // Calcular la diferencia en milisegundos
-                    var diferencia_ms = fecha_entrega_date - fecha_inicio;
-                    
-                    // Convertir la diferencia a días
-                    var total_dias = Math.ceil(diferencia_ms / (1000 * 60 * 60 * 24));
-                    
-                    // Mostrar la diferencia en el campo de tiempo solicitado
-                    $('#form_responsiva [name="times_requested_responsiva"]').val(total_dias);
+                    return;
                 }
+
+                var diferencia_ms = fecha_entrega_date - fecha_inicio_date;
+                var total_dias = Math.ceil(diferencia_ms / (1000 * 60 * 60 * 24));
+                $('#form_responsiva [name="times_requested_responsiva"]').val(total_dias);
             },
             error: function(xhr, status, error) {
+                // Manejar errores de obtención de fecha del servidor
                 console.error('Error al obtener la fecha del servidor:', error);
                 Swal.fire({
                     title: "Error",
@@ -526,6 +524,31 @@ function calcularDiferencia() {
             }
         });
     }
+}
+
+
+
+// Función para verificar y establecer restricciones en la fecha de entrega
+function verificarFechaEntrega() {
+    $.ajax({
+        url: '/get_server_date/',
+        type: 'GET',
+        success: function(response) {
+            var server_date = response.server_date; 
+            var today = new Date(server_date);
+            today.setHours(0, 0, 0, 0); 
+
+            var fecha_inicio = $('#fecha_inicio').val();
+            if (!fecha_inicio) {
+                $('#fecha_entrega').attr('min', server_date); 
+            } else {
+                $('#fecha_entrega').removeAttr('min'); 
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al obtener la fecha del servidor:', error);
+        }
+    });
 }
 
 
@@ -640,6 +663,8 @@ document.getElementById('form_responsiva').addEventListener('submit', function(e
 
 // Función para agregar una responsiva
 function add_responsiva(formData) {
+    console.log("Datos del formulario:", Object.fromEntries(formData));
+
     $.ajax({
         url: '/add_responsiva/', 
         type: 'POST',
@@ -649,7 +674,7 @@ function add_responsiva(formData) {
         success: function(response) {
             if (response.success) {
                 console.log(response);
-                $('#form_responsiva')[0].reset();
+                $('#form_responsiva')[0].reset(); // Resetear el formulario
                 ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
                 $('#mdl-crud-responsiva').modal('hide'); 
 
@@ -658,11 +683,6 @@ function add_responsiva(formData) {
                     text: response.message,
                     icon: "success",
                     timer: 1000
-                /*}).then(() => {
-                    // Aquí se abrirá el PDF después de que el mensaje se cierre
-                    if (response.pdf_url) {
-                        window.open(response.pdf_url, '_blank'); // Abre el PDF en una nueva pestaña
-                    }*/
                 });
 
                 $('#table_equipments_tools').DataTable().ajax.reload(); 
