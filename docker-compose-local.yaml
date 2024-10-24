@@ -20,6 +20,8 @@ services:
       - ./docs/:/app/docs/
       - ./staticfiles/:/app/staticfiles/
       - ./modules/:/app/modules/
+      - ./modules/templates/:/var/www/html/
+
     networks:
       - nginxnet
       - dbnet
