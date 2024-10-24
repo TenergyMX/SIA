@@ -19,13 +19,7 @@ services:
     volumes:
       - ./docs/:/app/docs/
       - ./staticfiles/:/app/staticfiles/
-#      - ../pwa/:/manifest.json
-#      - ../pwa/service-worker.js:/service-worker.js
       - ./modules/:/app/modules/
-      
-      - ./users/migrations/:/app/users/migrations
-#     - ../pwa/:/manifest.json
-#     - ../pwa/service-worker.js:/service-worker.js
     networks:
       - nginxnet
       - dbnet
