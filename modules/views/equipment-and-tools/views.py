@@ -306,14 +306,22 @@ def get_equipments_tools(request):
                     "<i class='fa-solid fa-trash'></i>"
                     "</button> "
                 )
-            if access["create"] is True and not (tipo_user.lower() in ["administrador", "super usuario"] or area.lower() == "almacen"):
+            if access["create"] is True:
+                if tipo_user.lower() in ["administrador", "super usuario"] or area.lower() == "almacen":
+                    item["btn_action"] += (
+                        "<button type='button' class='btn btn-icon btn-sm btn-info-light add-responsiva-btn' "
+                        "onclick='modal_responsiva(this)' aria-label='responsiva'>"
+                        "<i class='fa-solid fa-file-circle-plus'></i>"
+                        "</button>"
+                    )
+                elif not (area.lower() == "almacen"):
+                    item["btn_action"] += (
+                        "<button type='button' class='btn btn-icon btn-sm btn-info-light add-responsiva-btn' "
+                        "onclick='modal_responsiva(this)' aria-label='responsiva'>"
+                        "<i class='fa-solid fa-file-circle-plus'></i>"
+                        "</button>"
+                    )
 
-                item["btn_action"] += (
-                    "<button type='button' class='btn btn-icon btn-sm btn-info-light add-responsiva-btn' "
-                    "onclick='modal_responsiva(this)' aria-label='responsiva'>"
-                    "<i class='fa-solid fa-file-circle-plus'></i>"
-                    "</button>"
-                )
             if access["read"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
                 item["btn_action"] += (
                     "<button type='button' class='btn btn-icon btn-sm btn-info-light history-btn' "

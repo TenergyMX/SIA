@@ -59,10 +59,14 @@ function get_responsiva() {
             {
                 data: 'id',
                 render: function(data, type, row) {
-                    return '<button class="btn btn-primary-light btn-sm" onclick="generatePdf(' + row.id + ')"><i class="fa-solid fa-file-pdf"></i> Generar PDF</button>';
+                    if (row.status_equipment.includes('Cancelado')) {
+                        return ''; 
+                    } else {
+                        return '<button class="btn btn-primary-light btn-sm" onclick="generatePdf(' + row.id + ')"><i class="fa-solid fa-file-pdf"></i> Generar PDF</button>';
+                    }
                 },
                 orderable: false
-            },            
+            },   
             { data: 'comments' },
             {
                 data: 'btn_action',  
