@@ -518,7 +518,7 @@ function calcularDiferencia() {
                 }
 
                 var diferencia_ms = fecha_entrega_date - fecha_inicio_date;
-                var total_dias = Math.ceil(diferencia_ms / (1000 * 60 * 60 * 24));
+                var total_dias = Math.ceil(diferencia_ms / (1000 * 60 * 60 * 24)) + 1;
                 $('#form_responsiva [name="times_requested_responsiva"]').val(total_dias);
             },
             error: function (xhr, status, error) {

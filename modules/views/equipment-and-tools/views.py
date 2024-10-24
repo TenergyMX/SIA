@@ -578,7 +578,7 @@ def edit_equipments_tools(request):
 
             # Actualizar ficha técnica solo si se proporciona un archivo nuevo
             if equipment_technical_sheet:
-                folder_path = f"docs/{equipment_tool.company_id}/Equipments_tools/technical_sheet/{id}/"
+                folder_path = f"docs/{equipment_tool.company_id}/Equipments_tools/technical_sheet/{equipment_tool.id}/"
                 file_name, extension = os.path.splitext(equipment_technical_sheet.name)
                 new_name = f'equipment_technical_sheet_{equipment_tool.equipment_name}{extension}'
                 s3Name = folder_path + new_name
