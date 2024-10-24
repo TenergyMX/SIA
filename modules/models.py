@@ -547,6 +547,7 @@ class Equipment_Tools(models.Model):
     
 #tabla de responsivas
 class Equipment_Tools_Responsiva(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     equipment_name = models.ForeignKey(Equipment_Tools, on_delete=models.CASCADE, verbose_name="Equipo" ,related_name='reviews')
     responsible_equipment = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal")
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')

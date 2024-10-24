@@ -192,8 +192,8 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
     :param object_name: S3 object name. If not specified, file_name is used
     :return: True if file was uploaded, else False
     """
+    print(f'EL NOMBRE ESSS: {file_name}')
     extension = file_name.name.split(".")[-1]
-    print(extension)
 
     #print(file_name)
     #print(f'EXTENSION del archivo: {extension.split(".")[-1]}')
