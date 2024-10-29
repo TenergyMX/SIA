@@ -54,8 +54,8 @@
                     <div class="header-element">
                         <div class="horizontal-logo">
                             <a href="/" class="header-logo" aria-label="Logo">
-                                <img src="{% static 'assets/images/brand-logos/toggle-logo.png' %}" alt="logo" class="toggle-logo" loading="lazy">
-                                <img src="{% static 'assets/images/brand-logos/toggle-dark.png' %}" alt="logo" class="toggle-dark" loading="lazy">
+                                <img src="" alt="logo" class="toggle-logo" loading="lazy">
+                                <img src="" alt="logo" class="toggle-logo" loading="lazy">
                             </a>
                         </div>
                     </div>
@@ -79,8 +79,8 @@
                         <div class="landing-logo-container">
                             <div class="horizontal-logo">
                                 <a href="/" class="header-logo" aria-label="index">
-                                    <img src="" alt="" class="desktop-logo">
-                                    <img src="" alt="" class="desktop-white">
+                                    <img src="{% static 'assets/images/brand-logos/logo.png' %}" alt="" class="desktop-logo">
+                                    <img src="{% static 'assets/images/brand-logos/logo.png' %}" alt="" class="desktop-white">
                                 </a>
                             </div>
                         </div>
@@ -99,6 +99,11 @@
                             <li class="slide">
                                 <a class="side-menu__item" href="#contact">
                                     <span class="side-menu__label">Contacto</span>
+                                </a>
+                            </li>
+                            <li class="slide">
+                                <a class="side-menu__item" href="/vehicles/">
+                                    <span class="side-menu__label">Inicio de sesión</span>
                                 </a>
                             </li>
                         </ul>
@@ -151,7 +156,7 @@
                 </section>
             </div>
             <!-- Modulos -->
-            <section class="section" id="">
+            <section class="section" id="login">
                 <div class="container">
                     <div class="row">
                         <div class="col-12 text-center">
@@ -378,8 +383,7 @@
                                         </span>
                                     </p>
                                     <p class="fs-13 mb-1">
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                                        Iure quos debitis aliquam .
+                                        Copyright 2024 TENERGY
                                     </p>
                                 </div>
                                 <div class="card-body py-2">
@@ -644,40 +648,27 @@
                     <p class="fs-12 fw-semibold text-success mb-1">
                         <span class="landing-section-heading">CONTACTO</span>
                     </p>
-                    <h3 class="fw-semibold mb-2">¿Tienes preguntas?</h3>
-                    <h6 class="fw-semibold mb-2">No dudes en contactarnos para cualquier consulta o comentario.</h6>
-                    <div class="row justify-content-center"></div>
-                    <div class="row text-start">
-                    
-                        <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12 col-sm-12">
-                            <div class="card custom-card  overflow-hidden section-bg border overflow-hidden shadow-none">
+                    <h3 class="fw-semibold mb-2 custom-heading">¿Tienes preguntas?</h3>
+                    <h4 class="fw-semibold mb-4 custom-heading">No dudes en contactarnos para cualquier consulta o comentario.</h4>
+                    <div class="row justify-content-center">
+                        <div class="col-12">
+                            <div class="card custom-card overflow-hidden section-bg border shadow-none">
                                 <div class="card-body">
-                                    <div class="row g-3">
-                                        <div class="col-4">
-                                            <div class="form-group">
-                                                <label for="contact-form--name" class="form-label ">
-                                                    Nombre completo:
-                                                </label>
-                                                <input type="text" name="name" class="form-control " id="contact-form--name" placeholder="Nombre completo">
-                                            </div>
+                                    <div class="row g-4">
+                                        <div class="col-md-4">
+                                            <h5 for="name" class="fw-semibold">Nombre</h5>
+                                            <input type="text" id="name" name="name" class="form-control form-control-lg" placeholder="Nombre completo" style="height: 40px;">
                                         </div>
-                                        <div class="col-4">
-                                            <div class="form-group">
-                                                <label for="contact-form--namecompany" class="form-label ">
-                                                    Nombre de la empresa:
-                                                </label>
-                                                <input type="text" name="namecompany" class="form-control " id="contact-form--namecompany" placeholder="Nombre de la empresa">
-                                            </div>
+                                        <div class="col-md-4">
+                                            <h5 for="name_company" class="fw-semibold">Nombre de la empresa</h5>
+                                            <input type="text" id="name_company" name="name_company" class="form-control form-control-lg" placeholder="Nombre de la empresa" style="height: 40px;">
                                         </div>
-                                        <div class="col-4">
-                                            <div class="form-group">
-                                                <label for="contact-form--number" class="form-label ">
-                                                    Número de teléfono:
-                                                </label>
-                                                <input type="text" name="number" class="form-control " id="contact-form--number" placeholder="Número de teléfono">
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
+                                        <div class="col-md-4">
+                                            <h5 for="number_phone" class="fw-semibold">Número de teléfono</h5>
+                                            <input type="text" id="number_phone" name="number_phone" class="form-control form-control-lg" placeholder="Número de teléfono" style="height: 40px;">
+                                        </div>
+                                        
+                                        <div class="col-12 mt-3">
                                             <button type="button" class="btn btn-lg btn-primary" aria-label="Enviar">
                                                 Enviar
                                             </button>
@@ -685,34 +676,45 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div>  
                     </div>
                 </div>
             </section>
-            <!-- x -->
-            <section class="section landing-footer text-fixed-white">
+                    
+             <!-- x -->
+             <section class="section landing-footer text-fixed-white">
                 <div class="container">
-                    <div class="row">
-                        <div class="col-md-4 col-sm-6 col-12 mb-md-0 mb-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 col-sm-6 col-12 mb-md-0 mb-3 text-center text-md-start">
                             <div class="px-4">
-                                <p class="fw-semibold mb-3">
-                                    <a href="/" aria-label="index">
-                                        <img src="{% static 'assets/images/brand-logos/desktop-dark.png' %}" alt="nada" loading="lazy">
-                                    </a>
-                                </p>
-                                <p class="mb-0 op-6 fw-normal">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Autem ea esse ad</p>
+                                <a href="" aria-label="index">
+                                    <img src="/static/assets/images/brand-logos/sia.png" alt="" class="desktop-white">
+                                </a>
                             </div>
                         </div>
-                        <div class=""></div>
-                        <div class=""></div>
+                        <div class="col-md-6 col-sm-6 col-12 mb-md-0 mb-3">
+                            <div class="px-4">
+                                <h2 class="fw-semibold mb-3">Contacto</h2>
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="fas fa-home"></i> Camino a Calichar KM 100 + 1, Apaseo el Alto. Guanajuato, México.
+                                </h6>
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="fas fa-phone"></i> (442) 208 6040
+                                </h6>
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="fas fa-envelope"></i> cris.cuamatzi@tenergy.com.mx
+                                </h6>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
+            
             <!-- x -->
             <div class="text-center landing-main-footer py-3">
                 <div class="text-muted fs-15">
-                    Copyright ©
-                    <span id="year">2024</span>
+                     © 2024
+                    <span id="year"> Copyright: Tenergy</span>
                 </div>
             </div>
             <!-- x -->

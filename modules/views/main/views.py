@@ -42,6 +42,7 @@ def get_notifications(request):
     response = {"success": False, "data": []}
     context = user_data(request)
     company_id = context["company"]["id"]
+    print("esto contiene company_id", company_id)
     fecha_actual = datetime.now().date()
     current_year = datetime.today().year
     current_month = datetime.today().month
@@ -54,6 +55,32 @@ def get_notifications(request):
     if context["role"]["id"] not in roles_usuario:
         obj_vehicles = obj_vehicles.filter(responsible_id = context["user"]["id"])
 
+
+    obj_responsivas = Equipment_Tools_Responsiva.objects.filter(
+    responsible_equipment=context["user"]["id"]
+    )
+
+        # Notificaciones de estado "Solicitado"
+    for responsiva in obj_responsivas.filter(status_equipment='Solicitado'):
+        response["data"].append({
+            "alert": "warning",
+            "icon": "<i class=\"fa-solid fa-exclamation-triangle fs-18\"></i>",
+            "title": "Equipo solicitado",
+            "text": f"El equipo '{responsiva.equipment_name.equipment_name}' está en estado 'Solicitado'.",
+            "link": f"/equipment/info/{responsiva.equipment_name.id}/"
+        })
+
+    # Notificaciones de estado "No devuelto"
+    for responsiva in obj_responsivas.filter(status_equipment='No devuelto'):
+        response["data"].append({
+            "alert": "danger",
+            "icon": "<i class=\"fa-solid fa-exclamation-circle fs-18\"></i>",
+            "title": "Equipo no devuelto",
+            "text": f"El equipo '{responsiva.equipment_name.equipment_name}' no ha sido devuelto.",
+            "link": f"/equipment/info/{responsiva.equipment_name.id}/"
+        })    
+    
+
     # !   /-----------------------------------------------/
     # !  /  VEHICULOS   / INFO
     # ! /-----------------------------------------------/
@@ -61,6 +88,8 @@ def get_notifications(request):
     # !   /-----------------------------------------------/
     # !  /  VEHICULOS   / TENENCIA 
     # ! /-----------------------------------------------/
+
+    
     if 5 in access and access[5]["read"]:
         obj_tenencia = Vehicle_Tenencia.objects.filter(vehiculo__company_id=company_id)
 
