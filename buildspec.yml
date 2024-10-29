@@ -22,7 +22,7 @@ phases:
       - cp awsCred.env ./modules/views/computer-equipment/
       - cp awsCred.env ./modules/
       - mv awsCred.env ./modules/views/vehicles/
-      - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.1 --asset certbot.tar.gz \certbot.tar.gz
+      - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.4 --asset certbot.tar.gz \certbot.tar.gz
       - tar -xvf certbot.tar.gz
       - mv certbot/ nginx/
      
