@@ -17,8 +17,11 @@ import requests
 
 # TODO --------------- [ VIEWS ] ---------- 
 def home_view(request):
+
     context = {}
     return render(request, "home/index.html", context)
+
+
 
 def error_404_view(request, exception):
     # Aquí va tu lógica para manejar el error 404
@@ -33,9 +36,7 @@ def develop_view(request):
     last_module_id = request.session.get("last_module_id", 2)
     sidebar = get_sidebar(context, [1, last_module_id])
     context["sidebar"] = sidebar["data"]
-    return render(request, "develop/main.html", context)
-
-
+    return render(request, "develop/main.html",context)
 # TODO --------------- [ REQUEST ] ----------
 
 def get_notifications(request):

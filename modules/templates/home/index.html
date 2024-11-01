@@ -49,6 +49,7 @@
 <body class="landing-body">
     <div class="landing-page-wrapper">
         <header class="app-header">
+            
             <div class="main-header-container container-fluid">
                 <div class="header-content-left">
                     <div class="header-element">
@@ -71,6 +72,8 @@
                 </div>
             </div>
         </header>
+
+        
 
         <aside class="app-sidebar sticky" id="sidebar">
             <div class="container-xl">
@@ -103,11 +106,52 @@
                             </li>
                             <li class="slide">
                                 <a class="side-menu__item" href="/vehicles/">
-                                    <span class="side-menu__label">Inicio de sesión</span>
+                                    <span class="side-menu__label">Inicio de sesion</span>
                                 </a>
                             </li>
+                            <li class="slide">
+                                <a class="side-menu__item" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-sm-2 me-0">
+                                            <img src="https://cdn-icons-png.freepik.com/512/552/552721.png" alt="img" width="32" height="32" class="rounded-circle">
+                                        </div>
+                                        <div class="d-sm-block d-none">
+                                            <p class="fw-semibold mb-0 lh-1">
+                                                {{ user.username|default:"Usuario" }}
+                                            </p>
+                                            <span class="d-block small lh-1">
+                                                {{ role.name|default:"Visita" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                                <ul class="main-header-dropdown dropdown-menu pt-0 overflow-hidden header-profile-dropdown dropdown-menu-end" aria-labelledby="user-info">
+                                    <li>
+                                        <a class="dropdown-item d-flex" href="/user/profile/">
+                                            <i class="fa-solid fa-user fs-18 me-2 op-7"></i>
+                                            Perfil
+                                        </a>
+                                    </li>
+                                    {% if role.id == 1 %}
+                                    <li>
+                                        <a class="dropdown-item d-flex" href="/develop/">
+                                            <i class="fa-solid fa-code fs-18 me-2 op-7"></i>
+                                            Desarrollador
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    <li>
+                                        <a class="dropdown-item d-flex" href="/user/logout/">
+                                            <i class="fa-solid fa-right-from-bracket fs-18 me-2 op-7"></i>
+                                            Cerrar sesión
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
                         </ul>
+        
                         <div class="slide-right d-none" id="slide-right"></div>
+                        
                         <div class="d-none">
                             <div class="btn-list d-lg-flex d-none mt-lg-2 mt-xl-0 mt-0">
                                 <a href="#" class="btn btn-wave btn-primary">
@@ -127,6 +171,11 @@
                 </div>
             </div>
         </aside>
+        
+
+        
+
+        
 
         <div class="main-content landing-main px-0">
             <div class="landing-banner landing-banner-1" id="home">
