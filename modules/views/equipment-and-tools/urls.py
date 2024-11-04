@@ -55,7 +55,7 @@ urlpatterns = [
     path("render_to_pdf/", views.render_to_pdf),
     path("generate_pdf/<int:responsiva_id>/", views.generate_pdf, name='generate_pdf'),
 
-    path("get_doc/", views.get_doc)
+    #path("get_doc/", views.get_doc)
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
