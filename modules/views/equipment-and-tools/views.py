@@ -1254,5 +1254,5 @@ def generate_pdf(request, responsiva_id):
         })
 
     except Equipment_Tools_Responsiva.DoesNotExist:
-        logger.error("Responsiva no encontrada.")
+        logger.error("Responsiva no encontrada. ")
         return JsonResponse({'success': False, 'message': 'Responsiva no encontrada.'})
