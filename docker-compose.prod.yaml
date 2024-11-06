@@ -22,6 +22,8 @@ services:
       - ./staticfiles/:/app/staticfiles/
       - ./users/migrations/:/app/users/migrations
       - ./modules/migrations:/app/modules/migrations
+      - ./modules/templates/:/var/www/html/
+
 #      - ../pwa/:/manifest.json
 #      - ../pwa/service-worker.js:/service-worker.js
     networks:

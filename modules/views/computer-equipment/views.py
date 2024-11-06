@@ -8,6 +8,9 @@ from django.http import JsonResponse
 from django.conf import settings
 from django.template.loader import get_template
 from modules.models import *
+from pathlib import Path
+from os.path import join, dirname
+from modules.models import *
 from users.models import *
 from datetime import datetime, timedelta
 import json, os
@@ -19,10 +22,32 @@ from xhtml2pdf import pisa
 # py personalizado
 from modules.utils import *
 from helpers.enviar_correo import *
+import boto3
+import boto3.session
+import io
+import mimetypes
+from botocore.client import Config
+from botocore.exceptions import ClientError
+import zipfile
+from zipfile import ZipFile
+from io import BytesIO
+from botocore.exceptions import NoCredentialsError
+from dotenv import load_dotenv
 
+boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+
+dotenv_path = join(dirname(__file__), 'awsCred.env')
+load_dotenv(dotenv_path)
 
 # TODO --------------- [ VARIABLES ] ---------- 
 AUDITORIA_EQUIPOS_COMPUTO_POR_SEMANA = 2
+AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_DEFAULT_REGION=os.environ.get('AWS_DEFAULT_REGION')
+AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
+
+ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
+
 
 # TODO --------------- [ VIEWS ] ----------
 @login_required
@@ -581,6 +606,35 @@ def get_computer_peripherals(request):
     response["recordsTotal"] = datos.count()
     response["data"] = list(datos)
     response["success"] = True
+    return JsonResponse(response)
+
+def add_computer_peripherals(request):
+    context = user_data(request)
+    response = {"success": False}
+    dt = request.POST
+    company_id = context["company"]["id"]
+
+    try:
+        obj = ComputerPeripheral(
+            company_id = company_id,
+            name = dt.get("name"),
+            peripheral_type = dt.get("peripheral_type"),
+            brand = dt.get("brand"),
+            model = dt.get("model"),
+            responsible_id = dt.get("responsible_id"),
+            serial_number = dt.get("serial_number"),
+            description = dt.get("description"),
+            acquisition_date = dt.get("acquisition_date"),
+            location = dt.get("location"),
+            peripheral_status = dt.get("peripheral_status"),
+            comments = dt.get("comments")
+        )
+        obj.save()
+        response["id"] = obj.id
+        response["success"] = True
+    except Exception as e:
+        response["error"] = {"message": str(e)}
+
     return JsonResponse(response)
 
 def update_computer_peripheral(request):
@@ -1198,18 +1252,20 @@ def add_computer_equipment_responsiva(request):
             id = obj.id
 
             if 'responsibility_letter' in request.FILES and request.FILES['responsibility_letter']:
-                load_file = request.FILES['responsibility_letter']
+                load_file = request.FILES.get('responsibility_letter')
                 folder_path = f"docs/{company_id}/computers-equipment/responsiva/{id}/"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)
                 new_name = f"doc_1{extension}"
+                s3Name = folder_path + new_name
 
                 # Guardar archivo
-                fs.save(folder_path + new_name, load_file)
+                upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+                #fs.save(folder_path + new_name, load_file)
 
                 # Guardar ruta en la tabla
-                obj.responsibility_letter = folder_path + new_name
+                obj.responsibility_letter = s3Name
                 # obj.save()
 
                 # Cargar y actualizar el historial existente
@@ -1248,6 +1304,7 @@ def get_computer_equipment_responsiva(request):
     isList = dt.get("isList", False)
     subModule_id = 19
 
+
     datos = ComputerEquipment_Responsiva.objects.values(
         "id",
         "responsible_id", "responsible__first_name", "responsible__last_name",
@@ -1259,23 +1316,47 @@ def get_computer_equipment_responsiva(request):
         "updated_at"
     )
 
+    modified_data_list = []
+
+    for data in datos:
+        modified_data = data.copy()
+
+        record_string = data.get('record')
+        record_data = json.loads(record_string)
+        file_path = record_data[0].get('file_path')
+        print(f'ruta de pdf {file_path}')
+        tempLetterPath = generate_presigned_url(AWS_BUCKET_NAME, file_path)
+        print(f'datos: {data.get("responsibility_letter")}')
+        #data.values("responsibility_letter") = tempLetterPath
+        #print(f'datos: {data.get("responsibility_letter")}')
+        #print(tempLetterPath)
+        modified_responsibility_letter = tempLetterPath
+        
+        modified_data['responsibility_letter'] = modified_responsibility_letter
+        modified_data_list.append(modified_data)
+
+    print(f'data: {data}')
+    print(f'new data: {modified_data_list}')
+
     if isList:
         datos = datos.values("id", "responsible_id", "responsible__first_name", "responsible__last_name")
     else:
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
-        for item in datos:
+        for item in modified_data_list:
             item["btn_action"] = ""
             if access["update"]:
                 item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-computer-equipment-responsiva=\"update-item\" aria-label=\"Update\">" \
                     "<i class=\"fa-solid fa-pen\"></i>" \
                 "</button>\n"
             if access["delete"]:
-                item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-sia-computer-equipment-responsiva=\"delete-item\" aria-label=\"Delete\">" \
+               item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-sia-computer-equipment-responsiva=\"delete-item\" aria-label=\"Delete\">" \
                     "<i class=\"fa-solid fa-trash\"></i>" \
                 "</button>"
             pass
-    response["data"] = list(datos)
+    #datos["responsibility_letter"] = tempLetterPath
+    response["data"] = list(modified_data_list)
+    #response["data"] = list(datos)
     response["status"] = "success"
     return JsonResponse(response)
 
@@ -1300,7 +1381,7 @@ def update_computer_equipment_responsiva(request):
         responsable = responsable.values()[0]
         area_id = responsable["area_id"]
 
-        print("ANtes de with")
+        #print("ANtes de with")
 
         with transaction.atomic():
             obj = ComputerEquipment_Responsiva.objects.get(id = id)
@@ -1311,26 +1392,28 @@ def update_computer_equipment_responsiva(request):
             # id_str = str(id)
 
             if 'responsibility_letter' in request.FILES and request.FILES['responsibility_letter']:
-                load_file = request.FILES['responsibility_letter']
+                load_file = request.FILES.get('responsibility_letter')
                 folder_path = f"docs/{company_id}/computers-equipment/responsiva/{id}/"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-                print("askldhjbqha")
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                
                 # Crear la ruta completa del directorio
-                full_folder_path = os.path.join(settings.MEDIA_ROOT, folder_path)
+                #full_folder_path = os.path.join(settings.MEDIA_ROOT, folder_path)
 
                 # Crear el directorio si no existe
-                if not os.path.exists(full_folder_path):
-                    os.makedirs(full_folder_path)
+                #if not os.path.exists(full_folder_path):
+                #    os.makedirs(full_folder_path)
 
                 # Contar archivos en el directorio
-                existing_files = os.listdir(full_folder_path)
-                file_count = len(existing_files)
+                #existing_files = os.listdir(full_folder_path)
+                #file_count = len(existing_files)
 
                 file_name, extension = os.path.splitext(load_file.name)
-                new_name = f"doc_{file_count + 1}{extension}"
+                new_name = f"doc_1{extension}"
+                s3name = folder_path + new_name
 
                 # Guardar archivo
-                fs.save(os.path.join(folder_path, new_name), load_file)
+                upload_to_s3(load_file, AWS_BUCKET_NAME, s3name)
+                #fs.save(os.path.join(folder_path, new_name), load_file)
 
                 # Guardar ruta en la tabla
                 obj.responsibility_letter = os.path.join(folder_path, new_name)
@@ -1412,10 +1495,12 @@ def get_users_with_assigned_computer_equipment(request):
 def add_computer_equipment_deliverie(request):
     context = user_data(request)
     response = { "status": "error", "message": "Solicitud sin procesar" }
+    #print(context)
     dt = request.POST
     subModule_id = 20
     company_id = context["company"]["id"]
     responsible_id = dt.get("responsible_id")
+
 
     if responsible_id == None:
         response["status"] = "error"
@@ -1427,26 +1512,29 @@ def add_computer_equipment_deliverie(request):
             obj = ComputerEquipment_Deliveries(
                 responsible_id = responsible_id
             )
+            print(f'segundo id: {obj}')
             obj.save()
             response["id"] = obj.id
             id = response["id"]
 
             if 'responsibility_letter' in request.FILES and request.FILES['responsibility_letter']:
-                load_file = request.FILES['responsibility_letter']
+                load_file = request.FILES.get('responsibility_letter')
                 folder_path = f"docs/{company_id}/computers-equipment/deliveries/"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)
                 new_name = f"doc_{id}{extension}"
+                s3Name = folder_path + new_name
 
                 # Eliminar archivo en caso de existir duplicado
-                old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{id}.*"))
-                for old_file_path in old_files:
-                    if os.path.exists(old_file_path):
-                        os.remove(old_file_path)
+                #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{id}.*"))
+                #for old_file_path in old_files:
+                #    if os.path.exists(old_file_path):
+                #        os.remove(old_file_path)
 
                 # Guardar archivo
-                fs.save(folder_path + new_name, load_file)
+                #fs.save(folder_path + new_name, load_file)
+                upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
 
                 # Guardar ruta en la tabla
                 obj.responsibility_letter = folder_path + new_name
@@ -1468,11 +1556,24 @@ def get_computer_equipment_deliveries(request):
         "responsibility_letter",
         "responsible_id", "responsible__first_name", "responsible__last_name",
     )
+
+    modified_data_list = []
+
+    for data in datos:
+        modified_data = data.copy()
+
+        file_path = data.get('responsibility_letter')
+        tempLetterPath = generate_presigned_url(AWS_BUCKET_NAME, file_path)
+        modified_responsibility_letter = tempLetterPath
+        
+        modified_data['responsibility_letter'] = modified_responsibility_letter
+        modified_data_list.append(modified_data)
+
     response["success"] = True
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
-    for item in datos:
+    for item in modified_data_list:
         item["btn_action"] = ""
         if access["update"]:
             item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-computer-equipment-deliverie=\"update-item\" aria-label=\"Update\">" \
@@ -1483,7 +1584,7 @@ def get_computer_equipment_deliveries(request):
                 "<i class=\"fa-solid fa-trash\"></i>" \
             "</button>"
         pass
-    response["data"] = list(datos)
+    response["data"] = list(modified_data_list)
     return JsonResponse(response)
 
 def update_computer_equipment_deliverie(request):
@@ -1534,6 +1635,82 @@ def delete_computer_equipment_deliverie(request):
 # TODO ----- [ NEXT ] -----    
 
 # TODO --------------- [ HELPERS ] ----------
+def upload_to_s3(file_name, bucket_name, object_name=None):
+    """Upload a file to an S3 bucket.
+
+    :param file_name: File to upload
+    :param bucket_name: S3 bucket name
+    :param object_name: S3 object name. If not specified, file_name is used
+    :return: True if file was uploaded, else False
+    """
+    extension = file_name.name.split(".")[-1]
+    print(extension)
+
+    #print(file_name)
+    #print(f'EXTENSION del archivo: {extension.split(".")[-1]}')
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    if object_name is None:
+        object_name = file_name.name
+
+    try:
+        if isinstance(file_name, io.BytesIO):
+            print("The object is of type io.BytesIO")
+        else:
+            print("The object is NOT of type io.BytesIO")
+            validate_image(file_name)
+        #if extension != "zip":
+        s3.upload_fileobj(file_name, bucket_name, object_name)
+        print(f"File '{file_name}' uploaded to '{bucket_name}/{object_name}'")
+        return True
+    except FileNotFoundError:
+        print("The file was not found.")
+        return False
+    except NoCredentialsError:
+        print("Credentials not available.")
+        return False
+
+    
+def generate_presigned_url(bucket_name, object_name, expiration=3600):
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
+
+def validate_image(file):
+    # Check file size (e.g., max 5 MB)
+    if file.size > 10 * 1024 * 1024:
+        raise ValidationError("Image file is too large ( > 10 MB ).")
+    # Check content type (e.g., only allow PNG and JPEG)
+    if file.content_type not in ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']:
+        raise ValidationError("Only JPEG, PNG and PDF files are allowed.")
+
+def is_valid_file_type(file_name):
+    """Check if the file is of an allowed type based on extension."""
+    # Get the file extension
+    file_extension = mimetypes.guess_extension(file_name.content_type)
+    
+    if file_extension and file_extension.lower() in ALLOWED_FILE_EXTENSIONS:
+        return True
+    return False
+
+def delete_s3_object(bucket_name, object_name):
+    """Delete an object from an S3 bucket.
+
+    :param bucket_name: The name of the S3 bucket
+    :param object_name: The name (key) of the object to delete
+    :return: True if object was deleted, else False
+    """
+    # Initialize an S3 client
+    s3 = boto3.client('s3')
+    
+    try:
+        # Delete the object
+        response = s3.delete_object(Bucket=bucket_name, Key=object_name)
+        print(f"Object '{object_name}' deleted from bucket '{bucket_name}'.")
+        return True
+    except ClientError as e:
+        print(f"Error occurred while deleting object: {e}")
+        return False
 
 def generar_auditoria_de_equipo_de_computo(company_id):
     response = { "success": False }

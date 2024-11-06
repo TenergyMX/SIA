@@ -5,6 +5,34 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from django.template.loader import render_to_string
 from decouple import config
+import json, os
+from os.path import join, dirname
+import boto3
+import boto3.session
+import io
+import mimetypes
+from botocore.client import Config
+from botocore.exceptions import ClientError
+import zipfile
+from zipfile import ZipFile
+from io import BytesIO
+from botocore.exceptions import NoCredentialsError
+from dotenv import load_dotenv
+from django.core.exceptions import ValidationError
+
+boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+
+dotenv_path = join(dirname(__file__), 'awsCred.env')
+load_dotenv(dotenv_path)
+
+AUDITORIA_VEHICULAR_POR_MES = 2
+AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_DEFAULT_REGION=os.environ.get('AWS_DEFAULT_REGION')
+AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
+
+
+ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 def get_module_user_permissions(_datos, _subModule_id):
     response = {"success": True, "data": {"info":{}, "access": {}}}
@@ -13,7 +41,7 @@ def get_module_user_permissions(_datos, _subModule_id):
     if _datos["role"]["id"] in [1,2]:
         response["data"]["access"] = {key: True for key in response["data"]["access"]}
     else:
-        obj = SubModule_Permission.objects.filter(user_id = _datos["user"]["id"], subModule_id = _subModule_id)
+        obj = SubModule_Permission.objects.filter(user__user__id = _datos["user"]["id"], subModule_id = _subModule_id)
         
         if obj.count() > 0:
             obj = obj.values(
@@ -48,7 +76,7 @@ def get_sidebar(data={}, module_ids=None):
         submodules = SubModule_Permission.objects.filter(
             subModule__is_active = True,
             read = True,
-            user_id = data["user"]["id"]
+            user__user__id = data["user"]["id"]
         ).order_by('subModule__module_id')
 
         if module_ids is not None:
@@ -86,7 +114,7 @@ def get_user_access(context = {}):
             data[item["id"]]["delete"] = True
     else:
         obj = SubModule_Permission.objects.filter(
-            user_id = context["user"]["id"]
+            user__user__id = context["user"]["id"]
         ).values()
         
         for item in obj:
@@ -155,3 +183,81 @@ def user_data(request):
     # Obtener los datos de sesión y agregarlos al contexto
     context.update({ key: request.session.get(key, {}) for key in ["access", "role", "user", "company", "area"] })
     return context
+
+def upload_to_s3(file_name, bucket_name, object_name=None):
+    """Upload a file to an S3 bucket.
+
+    :param file_name: File to upload
+    :param bucket_name: S3 bucket name
+    :param object_name: S3 object name. If not specified, file_name is used
+    :return: True if file was uploaded, else False
+    """
+    print(f'EL NOMBRE ESSS: {file_name}')
+    extension = file_name.name.split(".")[-1]
+
+    #print(file_name)
+    #print(f'EXTENSION del archivo: {extension.split(".")[-1]}')
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    if object_name is None:
+        object_name = file_name.name
+
+    try:
+        if isinstance(file_name, io.BytesIO):
+            print("The object is of type io.BytesIO")
+        else:
+            print("The object is NOT of type io.BytesIO")
+            validate_image(file_name)
+        #if extension != "zip":
+        s3.upload_fileobj(file_name, bucket_name, object_name)
+        print(f"File '{file_name}' uploaded to '{bucket_name}/{object_name}'")
+        return True
+    except FileNotFoundError:
+        print("The file was not found.")
+        return False
+    except NoCredentialsError:
+        print("Credentials not available.")
+        return False
+
+    
+def generate_presigned_url(bucket_name, object_name, expiration=3600):
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
+
+def validate_image(file):
+    # Check file size (e.g., max 5 MB)
+    if file.size > 10 * 1024 * 1024:
+        raise ValidationError("Image file is too large ( > 10 MB ).")
+    # Check content type (e.g., only allow PNG and JPEG)
+        print(f'el content type es: {file.content_type}')
+    if file.content_type not in ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']:
+        raise ValidationError("Only JPEG, PNG and PDF files are allowed.")
+
+def is_valid_file_type(file_name):
+    """Check if the file is of an allowed type based on extension."""
+    # Get the file extension
+    file_extension = mimetypes.guess_extension(file_name.content_type)
+    
+    if file_extension and file_extension.lower() in ALLOWED_FILE_EXTENSIONS:
+        return True
+    return False
+
+def delete_s3_object(bucket_name, object_name):
+    """Delete an object from an S3 bucket.
+
+    :param bucket_name: The name of the S3 bucket
+    :param object_name: The name (key) of the object to delete
+    :return: True if object was deleted, else False
+    """
+    # Initialize an S3 client
+    s3 = boto3.client('s3')
+    
+    try:
+        # Delete the object
+        response = s3.delete_object(Bucket=bucket_name, Key=object_name)
+        print(f"Object '{object_name}' deleted from bucket '{bucket_name}'.")
+        return True
+    except ClientError as e:
+        print(f"Error occurred while deleting object: {e}")
+        return False

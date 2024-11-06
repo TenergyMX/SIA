@@ -572,13 +572,14 @@ class Equipmets_Tools_locations(models.Model):
 
 #tabla de equipos y herramientas 
 class Equipment_Tools(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     equipment_category = models.ForeignKey(Equipement_category, on_delete=models.CASCADE, verbose_name="Categoria" ,related_name='reviews')
     equipment_area = models.ForeignKey(Area, on_delete=models.CASCADE, verbose_name="Area" ,blank=True, null=True)
     equipment_responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable del equipo" ,blank=True, null=True)
     equipment_name = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Nombre equipo")
     equipment_type = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="tipo de equipo")
     equipment_brand = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Marca")
-    equipment_description = models.CharField(blank=True, null=True, max_length=350, default='Regular', verbose_name="Descripcion")
+    equipment_description = models.TextField(blank=True, null=True, verbose_name="Descripcion")
     cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')
     equipment_technical_sheet = models.FileField(upload_to='docs/Equipments_tools', blank=True, null=True, verbose_name="Ficha tecnica")
@@ -587,6 +588,7 @@ class Equipment_Tools(models.Model):
     
 #tabla de responsivas
 class Equipment_Tools_Responsiva(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     equipment_name = models.ForeignKey(Equipment_Tools, on_delete=models.CASCADE, verbose_name="Equipo" ,related_name='reviews')
     responsible_equipment = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal")
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')
