@@ -167,7 +167,7 @@ class InfrastructureItem {
         return new Promise((resolve, reject) => {
             $.ajax({
                 type: "GET",
-                url: "http://localhost/generates_review/",
+                url: "/generates_review/",
                 success: function (response) {
                     resolve(response);
                 },
