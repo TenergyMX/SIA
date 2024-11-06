@@ -524,12 +524,18 @@ class Services(models.Model):
 
 #tabla pagos de servicios
 class Payments_Services(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),  # El pago está pendiente
+        ('upcoming', 'Próximo'),   # El pago está próximo
+        ('unpaid', 'No Pagado'),   # El pago no ha sido realizado
+        ('paid', 'Pagado'),        # El pago ha sido realizado
+    ]
+    
     name_service_payment = models.ForeignKey(Services, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Nombre del servicio")
     proof_payment = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Comprobante de pago")
     total_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
-    next_date_payment = models.DateField(blank=True, null=True, verbose_name="Proxima fecha de pago")     
-    #comments_payment = models.CharField(blank=True, null=True, max_length=300, default='Regular', verbose_name="Comentarios de pagos")
-    status_payment  = models.BooleanField(default=False, verbose_name="Estado de pago")  # Campo para rastrear modificaciones del estado
+    next_date_payment = models.DateField(blank=True, null=True, verbose_name="Próxima fecha de pago")
+    status_payment = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Estado de pago")
 
 
 #tablas para el modulo de equipos y herramientas--modulo 6 num.6

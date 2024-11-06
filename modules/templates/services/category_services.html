@@ -23,11 +23,15 @@
                 Categorias de servicios
             </div>
             <div class="">
+            {% if area == "compras" or tipo_user == "administrador" or tipo_user == "super usuario" %}
+                {% if create %} 
                     <button type="button" class="btn btn-sm btn-primary" onclick="add_category_services()" data-category-services="add-category"
                         title="Agregar Categorías">
                         <i class="fa-solid fa-plus"></i>
                     Agregar
-                </button>      
+                </button> 
+            {% endif %}
+        {% endif %}      
                 <button type="button" class="btn btn-sm btn-info-light"  id="refreshTableButton" data-category-services="refresh-table"
                     title="Refrescar tabla" data-refresh-table="table_refrendo">
                     <i class="fa-solid fa-arrows-rotate"></i>

@@ -123,7 +123,7 @@ function add_service() {
             title: "¡Error!",
             text: "Todos los campos son obligatorios.",
             icon: "error",
-            showConfirmButton: true
+            timer: 1500
         });
         return;
     }

@@ -230,11 +230,11 @@ function exportToExcel() {
 //validar 
 function validatePaymentLink(paymentId) {
     $.ajax({
-        url: '/get-proof-payment/' + paymentId + '/',  // Cambia esta URL según tu API
+        url: '/get-proof-payment/' + paymentId + '/',  
         method: 'GET',
         success: function(response) {
             if (response.success) {
-                // Actualizar el botón con el enlace correcto
+                // Actualizar el botón 
                 const row = $('#table-history-payments tbody tr').filter(function() {
                     return $(this).find('td').first().text() == paymentId; 
                 });
@@ -244,10 +244,9 @@ function validatePaymentLink(paymentId) {
                         <i class="fa-solid fa-eye"></i> Ver Comprobante
                     </a>
                 `;
-                row.find('td:eq(2)').html(linkHtml); // Actualiza el contenido de la celda
+                row.find('td:eq(2)').html(linkHtml); 
             } else {
                 console.error('El comprobante aún no está disponible.');
-                // Aquí puedes agregar lógica para manejar la situación en la que el comprobante no está disponible
             }
         },
         error: function() {

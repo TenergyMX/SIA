@@ -38,7 +38,12 @@ def category_services(request):
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
-    
+
+    #permisos para agregar categorias de servicios
+    context["area"] = context["area"]["name"].lower()
+    context["create"] = access["data"]["access"]["create"]
+    context["tipo_user"] = context["role"]["name"].lower
+
     if context["access"]["read"]:
         template = "services/category_services.html"
     else:
@@ -46,7 +51,8 @@ def category_services(request):
     return render(request, template , context) 
 
 
-#submodulo de categorias de servicios 
+
+#submodulo de servicios 
 @login_required
 def services(request):
     context = user_data(request)
@@ -59,10 +65,13 @@ def services(request):
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
+    
+    #permisos para agregar servicios
+    context["area"] = context["area"]["name"].lower()
+    context["create"] = access["data"]["access"]["create"]
+    context["tipo_user"] = context["role"]["name"].lower
 
 
-    # Llamar a la función para actualizar los estados de los pagos
-    update_payment_statuses()  # Actualiza los estados de los pagos
     
     if context["access"]["read"]:
         template = "services/services.html"
@@ -72,7 +81,7 @@ def services(request):
 
 
 
-#submodulo de categorias de servicios 
+#submodulo de dashboard de servicios 
 @login_required
 def dashboard_services(request):
     context = user_data(request)
@@ -107,20 +116,25 @@ def get_table_category_service(request):
             access = get_module_user_permissions(context, subModule_id)  # contiene el crud
             access = access["data"]["access"]
             area = context["area"]["name"]
+            editar = access["update"]
+            eliminar = access["delete"]
+            tipo_user = context["role"]["name"]
 
             datos = list(Services_Category.objects.values())
             for item in datos:
                 item["btn_action"] = ""
-                item["btn_action"] += (
-                    "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_category_services(this)' aria-label='info'>"
-                    "<i class='fa-solid fa-pen'></i>"
-                    "</button>\n"
-                )
-                item["btn_action"] += (
-                    "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_category_services(this)' aria-label='delete'>"
-                    "<i class='fa-solid fa-trash'></i>"
-                    "</button>"
-                )
+                if access["update"] is True and (area.lower() == "compras" or tipo_user.lower() in ["administrador", "super usuario"]):
+                    item["btn_action"] += (
+                        "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_category_services(this)' aria-label='info'>"
+                        "<i class='fa-solid fa-pen'></i>"
+                        "</button>\n"
+                    )
+                if access["delete"] is True and (area.lower() == "compras" or tipo_user.lower() in ["administrador", "super usuario"]):
+                    item["btn_action"] += (
+                        "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_category_services(this)' aria-label='delete'>"
+                        "<i class='fa-solid fa-trash'></i>"
+                        "</button>"
+                    )
 
         response["data"] = datos
         response["status"] = "success"
@@ -257,7 +271,12 @@ def get_table_services (request):
     context = user_data(request)
     isList = request.GET.get("isList", False)
     subModule_id = 33
-
+    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+    area = context["area"]["name"]
+    tipo_user = context["role"]["name"]
+    editar = access["update"]
+    eliminar = access["delete"]
+    agregar = access["create"]
     try:
         datos = list(Services.objects.select_related(
             'category_service', 'provider_service'
@@ -286,22 +305,24 @@ def get_table_services (request):
             item["btn_history"] = ""
             
             # Botón de historial
-            item["btn_history"] += (
-                "<button type='button' name='btn_history' class='btn btn-icon btn-sm btn-primary-light btn-btn' onclick='show_history_payments(this)' aria-label='info'>"
-                "<i class='fa-solid fa-eye'></i>"
-                "</button>\n"
-            )
-
-            item["btn_action"] += (
-                "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_services(this)' aria-label='info'>"
-                "<i class='fa-solid fa-pen'></i>"
-                "</button>\n"
-            )
-            item["btn_action"] += (
-                "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_services(this)' aria-label='delete'>"
-                "<i class='fa-solid fa-trash'></i>"
-                "</button>"
-            )     
+            if tipo_user.lower() in ["administrador", "super usuario"] or area.lower() == "compras":
+                item["btn_history"] += (
+                    "<button type='button' name='btn_history' class='btn btn-icon btn-sm btn-primary-light btn-btn' onclick='show_history_payments(this)' aria-label='info'>"
+                    "<i class='fa-solid fa-eye'></i>"
+                    "</button>\n"
+                )
+            if access["update"] is True and (area.lower() == "compras" or tipo_user.lower() in ["administrador", "super usuario"]):
+                item["btn_action"] += (
+                    "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_services(this)' aria-label='info'>"
+                    "<i class='fa-solid fa-pen'></i>"
+                    "</button>\n"
+                )
+            if access["delete"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+                item["btn_action"] += (
+                    "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_services(this)' aria-label='delete'>"
+                    "<i class='fa-solid fa-trash'></i>"
+                    "</button>"
+                )     
 
             # Formatear el periodo
             quantity = item.get("time_quantity_service", 0)
@@ -325,25 +346,6 @@ def get_table_services (request):
     return JsonResponse(response)
 
 
-#función para calcular la fecha de pago 
-def calculate_payment_date(start_date, quantity, unit):
-    # Si no se proporciona una fecha de inicio, usar la fecha actual del servidor
-    if not start_date:
-        start_date = timezone.now()
-    
-    if isinstance(start_date, str):
-        start_date = datetime.strptime(start_date, '%Y-%m-%d')
-
-    if unit == 'day':
-        return start_date + timedelta(days=quantity)
-    elif unit == 'month':
-        return start_date + relativedelta(months=quantity)
-    elif unit == 'year':
-        return start_date + relativedelta(years=quantity)
-    
-    return None
-
-
 # Vista para obtener las categorías de servicios
 @login_required
 def get_services_categories(request):
@@ -365,7 +367,96 @@ def get_services_providers(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
-#funcion para agregar servicios 
+
+# Función para calcular la fecha de pago
+def calculate_payment_date(start_date, quantity, unit):
+    if not start_date:
+        start_date = timezone.now()
+
+    if isinstance(start_date, str):
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+
+    if unit == 'day':
+        payment_date = start_date + timedelta(days=quantity)
+        return payment_date - timedelta(days=1)
+    elif unit == 'month':
+        return start_date + relativedelta(months=quantity)
+    elif unit == 'year':
+        return start_date + relativedelta(years=quantity)
+    
+    return None
+
+
+# Función para crear el registro de pago inicial
+def create_payment(service):
+    try:
+        if not Services.objects.filter(id=service.id).exists():
+            raise ValueError(f"El servicio con ID {service.id} no existe.")
+
+        # Obtener la fecha de pago inicial
+        start_date = service.start_date_service
+        next_payment_date = calculate_payment_date(start_date, 
+            service.time_quantity_service, service.time_unit_service)
+
+        # Crear un nuevo registro de pago con estado pendiente
+        Payments_Services.objects.create(
+            name_service_payment=service,
+            next_date_payment=next_payment_date,
+            total_payment=service.price_service,
+            status_payment=False  # Estado inicial como "pendiente"
+        )
+
+    except ValueError as ve:
+        raise ve  
+
+    except Exception as e:
+        # Manejo de errores generales
+        raise Exception(f'Error al crear el pago: {str(e)}')
+
+
+def update_payments_status(service):
+    today = datetime.now().date()
+    print("esto contiene today: ", today)
+    # Obtener todos los pagos asociados al servicio
+    payments = Payments_Services.objects.filter(name_service_payment=service)
+
+    for payment in payments:
+        # Si el pago está pendiente y la fecha de pago es dentro de 7 días, cambiar a "Próximo"
+        if payment.status_payment == 'pending' and payment.next_date_payment <= today + timedelta(days=7):
+            payment.status_payment = 'upcoming'  # Cambiar el estado a "Próximo"
+            payment.save()
+
+        # Si la fecha de pago ya pasó y el estado sigue siendo "Pendiente", cambiar a "No Pagado"
+        if payment.next_date_payment < today and payment.status_payment == 'pending':
+            payment.status_payment = 'unpaid'  # Cambiar el estado a "No Pagado"
+            payment.save()
+
+        # Si el pago ha sido realizado, cambiar el estado a "Pagado"
+        if payment.status_payment == 'pending' and payment.next_date_payment <= today and payment.proof_payment:
+            payment.status_payment = 'paid'  # Cambiar el estado a "Pagado"
+            payment.save()
+        
+        # Generar el siguiente pago si el estado es "Próximo" o "No Pagado"
+        if payment.status_payment in ['upcoming', 'unpaid']:
+            generate_next_payment(payment)
+
+
+# Función para generar el siguiente pago basado en el último
+def generate_next_payment(payment):
+    # generar el siguiente pago basándote en la fecha de pago y el periodo
+    next_payment_date = calculate_payment_date(payment.next_date_payment, 
+                                                payment.name_service_payment.time_quantity_service, 
+                                                payment.name_service_payment.time_unit_service)
+    
+    # Crear el siguiente pago con el estado "Pendiente"
+    Payments_Services.objects.create(
+        name_service_payment=payment.name_service_payment,
+        next_date_payment=next_payment_date,
+        total_payment=payment.total_payment,
+        status_payment='pending'  # Estado "Pendiente"
+    )
+
+# Función para agregar un servicio
 @csrf_protect
 @login_required
 def add_service(request):
@@ -381,7 +472,7 @@ def add_service(request):
             description_service = request.POST.get('description_service').strip()
             provider_service_id = request.POST.get('provider_service')
             start_date_service = request.POST.get('start_date_service')
-            time_quantity_service = int(request.POST.get('time_quantity_service'))  # Convertir a int
+            time_quantity_service = int(request.POST.get('time_quantity_service'))  
             time_unit_service = request.POST.get('time_unit_service')
             price_service = request.POST.get('price_service')
 
@@ -403,25 +494,31 @@ def add_service(request):
                 service = Services.objects.create(
                     company_id = company_id,
                     category_service=category_service,
-                    name_service = name_service,
-                    description_service = description_service,
-                    provider_service = provider_service,
-                    start_date_service = start_date_service,
-                    time_quantity_service = time_quantity_service,
-                    time_unit_service = time_unit_service,
-                    price_service = price_service,    
+                    name_service=name_service,
+                    description_service=description_service,
+                    provider_service=provider_service,
+                    start_date_service=start_date_service,
+                    time_quantity_service=time_quantity_service,
+                    time_unit_service=time_unit_service,
+                    price_service=price_service,    
                 )
 
-                # Generar las fechas de pago
+                # Generar el primer pago al registrar el servicio
                 create_payment(service)
             
-            return JsonResponse({'success': True, 'message': ' Servicio agregado correctamente!'})
+            return JsonResponse({'success': True, 'message': 'Servicio agregado correctamente!'})
         except ValidationError as e:
             return JsonResponse({'success': False, 'message': str(e)})
         except Exception as e:
             return JsonResponse({'success': False, 'message': 'Error inesperado: ' + str(e)})
 
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+
+
+
+
+
+
 
 
 # Función para editar los servicios
@@ -517,133 +614,47 @@ def delete_services(request):
 
 
 
-# Función para crear los registros de los pagos
-def create_payment(service):
-    try:
-        if not Services.objects.filter(id=service.id).exists():
-            raise ValueError(f"El servicio con ID {service.id} no existe.")
-
-        # Obtener la fecha de pago inicial
-        start_date = service.start_date_service
-        next_payment_date = calculate_payment_date(start_date, 
-            service.time_quantity_service, service.time_unit_service)
-
-        # Crear un nuevo registro de pago con estado pendiente
-        Payments_Services.objects.create(
-            name_service_payment=service,
-            next_date_payment=next_payment_date,
-            total_payment=service.price_service,
-            status_payment=False  # Estado inicial como "pendiente"
-        )
-
-    except ValueError as ve:
-        # Manejo de errores específicos
-        raise ve  # Se puede volver a lanzar o manejar según sea necesario
-
-    except Exception as e:
-        # Manejo de errores generales
-        raise Exception(f'Error al crear el pago: {str(e)}')
 
 
 
-#funcion para enviar alerta 7 dias antes de la fecha de pago y crear un nuevo registro de pago
-def check_and_create_payments():
-    try:
-        current_date = timezone.now().date()
-        pending_payments = Payments_Services.objects.filter(status_payment=False)
-
-        for payment in pending_payments:
-            if payment.next_date_payment <= current_date + timedelta(days=7):
-
-                send_alert(payment)
-
-                payment.status_payment = True  # Cambiar a "próximo"
-                payment.save()
-
-                # Crear nuevo pago para el próximo periodo
-                create_payment(payment.name_service_payment)
-                
-
-            elif payment.next_date_payment < current_date:
-                payment.status_payment = False  # Cambiar a "no pagado"
-                payment.save()
-
-    except Exception as e:
-        # Manejo de errores generales
-        raise Exception(f'Error al verificar y crear pagos: {str(e)}')
-
-#generar alerta de pago:
-
-def send_alert(payment):
-    # Implementa aquí el envío de alerta (correo, notificación, etc.)
-    print(f"Alerta: El pago para el servicio {payment.name_service_payment.name_service} es inminente.")
-
-
-
-
-
-#función para cambiar el estado de los pagos
-def update_payment_statuses():
-
-    try:
-        now = timezone.now().date()
-        payments = Payments_Services.objects.all()
-
-        for payment in payments:
-              # Imprimir información relevante antes de cambiar el estado
-            print(f'Pago ID: {payment.id}, Estado actual: {payment.status_payment}, '
-                  f'Fecha siguiente: {payment.next_date_payment}, Comprobante: {payment.proof_payment}')
-
-            if payment.next_date_payment < now:
-                if payment.proof_payment:  # Si hay comprobante subido
-                    payment.status_payment = True  # Cambiar a "pagado"
-                else:
-                    payment.status_payment = False  # Cambiar a "no pagado"
-            elif payment.next_date_payment <= now + timedelta(days=7):
-                payment.status_payment = True  # Cambiar a "próximo"
-            else:
-                payment.status_payment = False  # Asegúrate de resetear el estado si no aplica
-
-            payment.save()
-
-    except Exception as e:
-        print(f'Error al actualizar el estado de los pagos: {str(e)}')
-
-
-#funcion para subir el documento
+# Función para subir el documento de pago y actualizar el estado
 @login_required
-@csrf_exempt  
+@csrf_exempt
 def upload_payment_proof(request, payment_id):
     if request.method == 'POST' and request.FILES.get('proof_payment'):
         try:
+            # Obtener el pago asociado al ID
             payment = Payments_Services.objects.get(id=payment_id)
             load_file = request.FILES['proof_payment']
-           
+            
+            # Obtener datos relacionados al servicio
             company_id = payment.name_service_payment.company.id
             service_name = payment.name_service_payment.name_service.replace(' ', '_')
 
+            # Establecer la ruta donde se guardará el archivo
             folder_path = f"docs/{company_id}/services/proof_payment/{service_name}/"
-
-            #s3Path = f'docs/{company_id}/services/{id}/'
             fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, folder_path))
 
+            # Generar el nombre único para el archivo
             current_date = datetime.now().strftime('%Y%m%d')
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"comprobante_pago_{service_name}_{current_date}{extension}"
 
-            # Guardar el archivo
+            # Guardar el archivo en el sistema de archivos
             fs.save(new_name, load_file)
-            #s3Name = s3Path + new_name
 
-            # Actualizar el campo del comprobante de pago en el modelo
-            #upload_to_s3(load_file, bucket_name, s3Name)
-
+            # Actualizar la ruta del archivo en el modelo de pagos
             payment.proof_payment = os.path.join(folder_path, new_name)
-            payment.status_payment = True
+
+            # Cambiar el estado del pago a "Pagado"
+            payment.status_payment = 'paid'
             payment.save()
 
-            return JsonResponse({'success': True, 'message': 'Comprobante subido correctamente.'})
-        
+            # Llamar a la función de actualización de estado
+            update_payments_status(payment.name_service_payment)
+
+            return JsonResponse({'success': True, 'message': 'Comprobante subido correctamente y estado actualizado.'})
+
         except Payments_Services.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Pago no encontrado.'}, status=404)
         except Exception as e:
@@ -688,6 +699,8 @@ def get_proof_payment(request, payment_id):
         return JsonResponse({'success': False, 'message': 'Pago no encontrado.'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'}, status=500)
+
+
 
 
 def create_new_payment_for_service(service, new_price):

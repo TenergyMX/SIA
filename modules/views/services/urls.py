@@ -24,6 +24,9 @@ urlpatterns = [
     path("edit_services/", views.edit_services),
     path("add_service/", views.add_service),
     path("delete_services/", views.delete_services),
+    
+
+    path("update_payments_status/", views.update_payments_status),
 
     #Historial de pagos 
     path('get-payment-history/<int:service_id>/', views.get_payment_history),
@@ -32,6 +35,8 @@ urlpatterns = [
     path('get-proof-payment/<int:payment_id>/', views.get_proof_payment),
 
     path('dashboard_data/', views.dashboard_data),
+
+
 
 ]
 
