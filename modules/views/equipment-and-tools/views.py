@@ -310,7 +310,6 @@ def get_equipments_tools(request):
         ))
 
         modified_data_list = []
-
         for data in equipments:
             modified_data = data.copy()
 
@@ -508,7 +507,7 @@ def add_equipment_tools(request):
             )
             if not all([obj.company_id, obj.equipment_category, obj.equipment_name, obj.equipment_type, 
                     obj.equipment_brand, obj.equipment_description, obj.cost, obj.amount, 
-                    obj.equipment_area, obj.responsible_equipment, obj.equipment_location]):
+                    obj.equipment_area, obj.equipment_responsible, obj.equipment_location]):
                 return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
             obj.save()
             id = obj.id
@@ -541,7 +540,7 @@ def add_equipment_tools(request):
         return JsonResponse(response) 
       
 
-# Función para editar los registros de los equipos o herramientas
+# Función para editar los registros de los equipos
 @login_required
 @csrf_exempt
 def edit_equipments_tools(request):
@@ -741,11 +740,11 @@ def add_responsiva(request):
                     equipment_name=requested_amount,
                     responsible_equipment=responsible,
                     amount=amount,
-                    status_equipment='Solicitado',  # Establece el estado inicial
+                    status_equipment='Solicitado', 
                     fecha_inicio=fecha_inicio,
                     fecha_entrega=fecha_entrega_date,
                     times_requested_responsiva=times_requested_responsiva,
-                    signature_responsible=s3Name,  # Aquí se asigna el archivo de la firma
+                    signature_responsible=s3Name, 
                     comments=comments,
                 )
 
