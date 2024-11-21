@@ -1,0 +1,109 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Servicios 
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Servicios</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Servicios
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="w-100">
+    <div class="card custom-card">
+        <div class="card-header justify-content-between">
+            <div class="card-title">
+                Servicios
+            </div>
+            <div class="">
+            {% if area == "compras" or tipo_user == "administrador" or tipo_user == "super usuario" %}
+                {% if create %} 
+                    <button type="button" class="btn btn-sm btn-primary" onclick="add_services()" data-service="add-service"
+                        title="Agregar Categorías">
+                        <i class="fa-solid fa-plus"></i>
+                    Agregar
+                </button>
+            {% endif %}
+        {% endif %}       
+                <button type="button" class="btn btn-sm btn-info-light"  id="refreshTableButton" data-service="refresh-table"
+                    title="Refrescar tabla" data-refresh-table="table_refrendo">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    Recargar datos
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- tabla -->
+            <div class="table-responsive">
+                <table class="table table-bordered w-100" id="table_services">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Categoría del servicio</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Proveedor</th>
+                            <th>Fecha inicio</th>
+                            <th>Periodo</th>
+                            <th>Fecha de Pago</th>
+                            <th>Precio </th>
+                            <th>Historial</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot></tfoot>
+                </table>
+            </div>
+            <!-- end tabla -->
+        </div>
+    </div>
+
+
+    <section id="table-history-payments" style="display: none;">
+        <div class="info-details">
+            <div class="card">
+                <div class="card-body">
+                    <div id="history-content">
+                        {% include "services/cards/history_payments.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+</section>
+{% endblock %}
+
+
+
+
+{% load static %}
+
+{% block modals %}
+{% include "services/modals/mdl-crud-category-services.html" %}
+{% include "services/modals/mdl-crud-services.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/users/areas.js' %}"></script>
+<script src="{% static 'assets/js/users/providers.js' %}"></script>
+<script src="{% static 'assets/js/services/category_services.js' %}"></script>
+<script src="{% static 'assets/js/services/history_payments.js' %}"></script>
+<script src="{% static 'assets/js/services/services.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+{% endblock %}

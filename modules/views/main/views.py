@@ -48,6 +48,9 @@ def get_notifications(request):
     current_month = datetime.today().month
     roles_usuario = [1,2,3]
 
+    area = context["area"]["name"]
+    tipo_user = context["role"]["name"]
+
     access = get_user_access(context)
     access = access["data"]
 
@@ -56,11 +59,12 @@ def get_notifications(request):
         obj_vehicles = obj_vehicles.filter(responsible_id = context["user"]["id"])
 
 
+
     obj_responsivas = Equipment_Tools_Responsiva.objects.filter(
     responsible_equipment=context["user"]["id"]
     )
 
-        # Notificaciones de estado "Solicitado"
+    # Notificaciones de estado "Solicitado"
     for responsiva in obj_responsivas.filter(status_equipment='Solicitado'):
         response["data"].append({
             "alert": "warning",
@@ -80,6 +84,37 @@ def get_notifications(request):
             "link": f"/equipment/info/{responsiva.equipment_name.id}/"
         })    
     
+
+    # !   /-----------------------------------------------/
+    # !  /  SERVICIOS / PAGOS PENDIENTES Y NO PAGADOS
+    # ! /-----------------------------------------------/
+    if 33 in access and access[33]["read"]:  
+        obj_pagos_servicios = Payments_Services.objects.filter(name_service_payment__company_id=company_id)
+
+        # Filtrar por el rol del usuario
+        if context["role"]["id"] not in roles_usuario:
+            obj_pagos_servicios = obj_pagos_servicios.filter(name_service_payment__responsible_id=context["user"]["id"])
+
+        # Notificaciones para servicios con pago "proximo"
+        for pago in obj_pagos_servicios.filter(status_payment='upcoming'):
+            response["data"].append({
+                "alert": "warning",
+                "icon": "<i class=\"fa-solid fa-comment-dollar fs-18\"></i>",
+                "title": f"Pago próximo de servicio",
+                "text": f"El servicio '{pago.name_service_payment.name_service}' tiene un pago próximo.",
+                "link": f"/get_payment_history_notifications/{pago.name_service_payment.id}/"
+
+            })
+
+        # Notificaciones para servicios con pago "no pagado"
+        for pago in obj_pagos_servicios.filter(status_payment='unpaid'):
+            response["data"].append({
+                "alert": "danger",
+                "icon": "<i class=\"fa-sharp-duotone fa-solid fa-money-check-dollar fs-18\"></i>",
+                "title": f"Pago no realizado de servicio",
+                "text": f"El servicio '{pago.name_service_payment.name_service}' está en estado 'No Pagado'.",
+                "link": f"/get_payment_history_notifications/{pago.name_service_payment.id}/"
+            })
 
     # !   /-----------------------------------------------/
     # !  /  VEHICULOS   / INFO
@@ -254,6 +289,9 @@ def get_notifications(request):
                     })
         except Exception as e:
             print("Error: Vehiculos Verificacion")
+
+
+
     # !   /-----------------------------------------------/
     # !  /  VEHICULOS / SEGUROS
     # ! /-----------------------------------------------/
