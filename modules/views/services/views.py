@@ -21,7 +21,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from django.conf import settings
 import json, os
 from django.db.models import Sum
-
+import calendar
 
 
 # Llamar módulos y submódulos 
@@ -51,7 +51,6 @@ def category_services(request):
     return render(request, template , context) 
 
 
-
 #submodulo de servicios 
 @login_required
 def services(request):
@@ -78,7 +77,6 @@ def services(request):
     else:
         template = "error/access_denied.html"
     return render(request, template , context) 
-
 
 
 #submodulo de dashboard de servicios 
@@ -367,94 +365,119 @@ def get_services_providers(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
-
 # Función para calcular la fecha de pago
 def calculate_payment_date(start_date, quantity, unit):
-    if not start_date:
-        start_date = timezone.now()
 
-    if isinstance(start_date, str):
-        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+    try:
+        if not start_date:
+            start_date = timezone.now()
+            print("esto contiene mi fecha:", start_date)
 
-    if unit == 'day':
-        payment_date = start_date + timedelta(days=quantity)
-        return payment_date - timedelta(days=1)
-    elif unit == 'month':
-        return start_date + relativedelta(months=quantity)
-    elif unit == 'year':
-        return start_date + relativedelta(years=quantity)
-    
-    return None
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+
+        if unit == 'day':
+            payment_date = start_date + timedelta(days=quantity)
+            return payment_date  
+        elif unit == 'month':
+            return start_date + relativedelta(months=quantity)
+        elif unit == 'year':
+            return start_date + relativedelta(years=quantity)
+
+        return None
+    except Exception as e:
+        print(f"Error al calcular la fecha de pago: {str(e)}")
+        return None  
 
 
 # Función para crear el registro de pago inicial
 def create_payment(service):
+
     try:
-        if not Services.objects.filter(id=service.id).exists():
-            raise ValueError(f"El servicio con ID {service.id} no existe.")
+        today = timezone.now().date()
+        print("esta es mi fecha actual de hoy:", today)
+        next_payment_date = service.start_date_service  
 
-        # Obtener la fecha de pago inicial
-        start_date = service.start_date_service
-        next_payment_date = calculate_payment_date(start_date, 
-            service.time_quantity_service, service.time_unit_service)
-
-        # Crear un nuevo registro de pago con estado pendiente
-        Payments_Services.objects.create(
-            name_service_payment=service,
-            next_date_payment=next_payment_date,
-            total_payment=service.price_service,
-            status_payment=False  # Estado inicial como "pendiente"
+        # llamr a la función para calcular la fecha del primer pago
+        next_payment_date = calculate_payment_date(
+            service.start_date_service, 
+            service.time_quantity_service, 
+            service.time_unit_service
         )
 
-    except ValueError as ve:
-        raise ve  
-
+        # Crear el primer pago
+        payment = Payments_Services.objects.create(
+            name_service_payment=service,
+            total_payment=service.price_service, 
+            next_date_payment=next_payment_date,
+            status_payment='pending',  
+        )
+        print(f"Primer pago creado para el servicio {service.name_service}.")
     except Exception as e:
-        # Manejo de errores generales
-        raise Exception(f'Error al crear el pago: {str(e)}')
+        print(f"Error al crear el pago del servicio {service.name_service}: {str(e)}")
+        return None 
 
 
-def update_payments_status(service):
-    today = datetime.now().date()
-    print("esto contiene today: ", today)
-    # Obtener todos los pagos asociados al servicio
-    payments = Payments_Services.objects.filter(name_service_payment=service)
+# Función para actualizar el estado de los pagos
+def update_payment_status():
+    try:
+        today = timezone.now().date()
 
-    for payment in payments:
-        # Si el pago está pendiente y la fecha de pago es dentro de 7 días, cambiar a "Próximo"
-        if payment.status_payment == 'pending' and payment.next_date_payment <= today + timedelta(days=7):
-            payment.status_payment = 'upcoming'  # Cambiar el estado a "Próximo"
-            payment.save()
+        # Obtener los pagos con estado pendiente y cuya fecha de pago es mayor o igual a la fecha actual
+        payments = Payments_Services.objects.filter(status_payment='pending', next_date_payment__gte=today)
 
-        # Si la fecha de pago ya pasó y el estado sigue siendo "Pendiente", cambiar a "No Pagado"
-        if payment.next_date_payment < today and payment.status_payment == 'pending':
-            payment.status_payment = 'unpaid'  # Cambiar el estado a "No Pagado"
-            payment.save()
+        for payment in payments:
+            days = (payment.next_date_payment - today).days
+            service = payment.name_service_payment
+            quantity = service.time_quantity_service
+            unit = service.time_unit_service
 
-        # Si el pago ha sido realizado, cambiar el estado a "Pagado"
-        if payment.status_payment == 'pending' and payment.next_date_payment <= today and payment.proof_payment:
-            payment.status_payment = 'paid'  # Cambiar el estado a "Pagado"
-            payment.save()
-        
-        # Generar el siguiente pago si el estado es "Próximo" o "No Pagado"
-        if payment.status_payment in ['upcoming', 'unpaid']:
-            generate_next_payment(payment)
+            # Día: Actualizar pagos que estan en dias 
+            if unit == 'day' and days <= 1:
+                payment.status_payment = 'upcoming'
+                payment.save()
 
+                # Calcular la nueva fecha de pago
+                next_payment_date = calculate_payment_date(payment.next_date_payment, quantity, unit)
 
-# Función para generar el siguiente pago basado en el último
-def generate_next_payment(payment):
-    # generar el siguiente pago basándote en la fecha de pago y el periodo
-    next_payment_date = calculate_payment_date(payment.next_date_payment, 
-                                                payment.name_service_payment.time_quantity_service, 
-                                                payment.name_service_payment.time_unit_service)
-    
-    # Crear el siguiente pago con el estado "Pendiente"
-    Payments_Services.objects.create(
-        name_service_payment=payment.name_service_payment,
-        next_date_payment=next_payment_date,
-        total_payment=payment.total_payment,
-        status_payment='pending'  # Estado "Pendiente"
-    )
+                # Crear el siguiente pago
+                Payments_Services.objects.create(
+                    name_service_payment=service,
+                    total_payment=payment.total_payment,
+                    next_date_payment=next_payment_date,
+                    status_payment='pending',
+                )
+
+            # Mes o año: Actualizar pagos mensuales o anuales que deben estar cerca de su vencimiento
+            elif (unit in ['month', 'year']) and days <= 7:
+                payment.status_payment = 'upcoming'
+                payment.save()
+
+                # Calcular la nueva fecha de pago
+                next_payment_date = calculate_payment_date(payment.next_date_payment, quantity, unit)
+
+                # Crear el siguiente pago
+                Payments_Services.objects.create(
+                    name_service_payment=service,
+                    total_payment=payment.total_payment,
+                    next_date_payment=next_payment_date,
+                    status_payment='pending',
+                )
+
+        # revisar los pagos con estado "upcoming" para ver si la fecha ya pasó y no tienen comprobante
+        upcoming_payments = Payments_Services.objects.filter(status_payment='upcoming')
+
+        for payment in upcoming_payments:
+            # Si la fecha ya pasó y no tiene comprobante de pago, cambiar el estado a "unpaid"
+            if payment.next_date_payment < today and not payment.proof_payment:
+                print(f"Cambiando el estado del pago {payment.id} a 'unpaid' porque no se ha subido comprobante.")
+                payment.status_payment = 'unpaid'
+                payment.save()
+
+        print("Pagos actualizados correctamente.")
+    except Exception as e:
+        print(f"Error al actualizar los pagos: {str(e)}")
+
 
 # Función para agregar un servicio
 @csrf_protect
@@ -505,20 +528,19 @@ def add_service(request):
 
                 # Generar el primer pago al registrar el servicio
                 create_payment(service)
-            
+
+                # Actualizar los pagos
+                #update_payment_status()  
+
             return JsonResponse({'success': True, 'message': 'Servicio agregado correctamente!'})
         except ValidationError as e:
+            print(f"Error de validación: {str(e)}")
             return JsonResponse({'success': False, 'message': str(e)})
         except Exception as e:
+            print(f"Error inesperado al agregar el servicio: {str(e)}")
             return JsonResponse({'success': False, 'message': 'Error inesperado: ' + str(e)})
 
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
-
-
-
-
-
-
 
 
 # Función para editar los servicios
@@ -588,8 +610,6 @@ def edit_services(request):
     return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
 
 
-
-
 #funcion para eliminar servicios
 @login_required
 @csrf_exempt
@@ -613,11 +633,7 @@ def delete_services(request):
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
-
-
-
-
-# Función para subir el documento de pago y actualizar el estado
+# Función para subir el documento de pago y actualizar el estado 
 @login_required
 @csrf_exempt
 def upload_payment_proof(request, payment_id):
@@ -643,7 +659,7 @@ def upload_payment_proof(request, payment_id):
             # Guardar el archivo en el sistema de archivos
             fs.save(new_name, load_file)
 
-            # Actualizar la ruta del archivo en el modelo de pagos
+            # Actualizar la ruta del archivo en la tabla de pagos
             payment.proof_payment = os.path.join(folder_path, new_name)
 
             # Cambiar el estado del pago a "Pagado"
@@ -651,7 +667,7 @@ def upload_payment_proof(request, payment_id):
             payment.save()
 
             # Llamar a la función de actualización de estado
-            update_payments_status(payment.name_service_payment)
+            # update_payment_status()
 
             return JsonResponse({'success': True, 'message': 'Comprobante subido correctamente y estado actualizado.'})
 
@@ -663,12 +679,11 @@ def upload_payment_proof(request, payment_id):
     return JsonResponse({'success': False, 'message': 'Método no permitido.'}, status=405)
 
 
-
 #funcion de la tabla historial
 @login_required
 def get_payment_history(request, service_id):
     try:
-        payments = Payments_Services.objects.filter(name_service_payment_id=service_id).values(
+        payments = Payments_Services.objects.filter(name_service_payment_id=service_id).order_by('-next_date_payment').values(
             'id',
             'name_service_payment__name_service',
             'proof_payment',
@@ -701,8 +716,6 @@ def get_proof_payment(request, payment_id):
         return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'}, status=500)
 
 
-
-
 def create_new_payment_for_service(service, new_price):
     try:
         # Calcular la nueva fecha de pago
@@ -724,23 +737,195 @@ def create_new_payment_for_service(service, new_price):
         Payments_Services.objects.create(
             name_service_payment=service,
             next_date_payment=new_payment_date,
-            total_payment=new_price,  # Usar el nuevo precio
-            status_payment=False  # Estado inicial como "pendiente"
+            total_payment=new_price,  
+            status_payment='pending',
         )
     except Exception as e:
         raise Exception(f'Error al crear el nuevo pago: {str(e)}')
 
+#funcion para actulizar el estado de los pagos
+def update_payment_status_view(request):
+    try:
+        print("Iniciando la actualización de pagos...") 
+        update_payment_status()  
+        print("Pagos actualizados correctamente.") 
+        return JsonResponse({'status': 'success', 'message': 'Pagos actualizados correctamente en la pagina principal'})
+    except Exception as e:
+        print(f"Error al actualizar los pagos: {str(e)}")  
+        return JsonResponse({'status': 'error', 'message': f'Error al actualizar los pagos: {str(e)}'})
+
+#funcion para los contadores
+def get_dashboard_data(request):
+    try:
+        # Total de servicios
+        total_services = Services.objects.count()
+
+        # Total de egresos: 
+        total_egresos = Payments_Services.objects.filter(
+            status_payment='paid'  
+        ).aggregate(total=Sum('total_payment'))['total'] or 0.0
+
+        # Total de pagos no pagados
+        total_non_paid_payments = Payments_Services.objects.filter(
+            status_payment='unpaid'
+        ).count()
+
+        # Formatear la respuesta
+        response_data = {
+            "total_services": total_services,
+            "total_egresos": total_egresos,
+            "total_non_paid_payments": total_non_paid_payments
+        }
+
+        return JsonResponse({"status": "success", "data": response_data})
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+#Función para la grafica principal de egresos por categoria 
+def get_dashboard_grafica(request):
+    # categorías de servicios activas
+    categories = Services_Category.objects.filter(is_active_category=True)
+
+    # Lista para almacenar los datos de cada categoría
+    category_data = []
+
+    # Iterar y sumar los pagos pagados
+    for category in categories:
+        # Sumar los pagos "pagados" de cada categoría
+        total_payment = Payments_Services.objects.filter(
+            name_service_payment__category_service=category,
+            status_payment='paid'
+        ).aggregate(total=Sum('total_payment'))['total'] or 0
+        print(f"Total de pago para la categoría {category.name_category}: {total_payment}")
+
+        category_data.append({
+            'category': category.name_category,
+            'total_payment': total_payment
+        })
+
+    return JsonResponse({'status': 'success', 'data': category_data})
+
+
+# Función para obtener los servicios y egresos por categoría
+def get_services_by_category(request, category_id):
+    try:
+        services = Services.objects.filter(category_service_id=category_id)
+        
+        # Obtener los pagos "pagados" de los servicios filtrados
+        service_data = []
+        for service in services:
+            total_payment = Payments_Services.objects.filter(
+                name_service_payment=service,
+                status_payment='paid'
+            ).aggregate(total=Sum('total_payment'))['total'] or 0
+            service_data.append({
+                'service_name': service.name_service,
+                'total_payment': total_payment
+            })
+
+        return JsonResponse({'status': 'success', 'data': service_data})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+# Función para obtener los servicios y egresos por proveedor
+def get_services_by_provider(request, provider_id):
+    try:
+        # Obtener los servicios del proveedor seleccionado
+        services = Services.objects.filter(provider_service_id=provider_id)
+        
+        # Obtener los pagos "pagados" de los servicios filtrados
+        service_data = []
+        for service in services:
+            total_payment = Payments_Services.objects.filter(
+                name_service_payment=service,
+                status_payment='paid'
+            ).aggregate(total=Sum('total_payment'))['total'] or 0
+            service_data.append({
+                'service_name': service.name_service,
+                'total_payment': total_payment
+            })
+
+        return JsonResponse({'status': 'success', 'data': service_data})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+# Función para obtener los egresos por rango de fecha
+def get_services_by_date_range(request):
+    try:
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        payments = Payments_Services.objects.filter(
+            status_payment='paid',  
+            next_date_payment__range=[start_date, end_date]  
+        )
+
+       
+        service_data_dict = {}
+
+        for payment in payments:
+            service_name = payment.name_service_payment.name_service  
+            total_payment = payment.total_payment  
+
+            
+            if service_name in service_data_dict:
+                service_data_dict[service_name] += total_payment
+            else:
+                service_data_dict[service_name] = total_payment
+
+        service_data = [{'service_name': service, 'total_payment': total} for service, total in service_data_dict.items()]
+
+        # Retornar la respuesta en formato JSON
+        return JsonResponse({'status': 'success', 'data': service_data})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 
-def dashboard_data(request):
-    total_servicios = Services.objects.count()
-    total_egresos = Payments_Services.objects.aggregate(Sum('total_payment'))['total_payment__sum'] or 0
-    pagos_vencidos = Payments_Services.objects.filter(next_date_payment__lt=timezone.now(), status_payment=False).count()
 
-    data = {
-        'total_servicios': total_servicios,
-        'total_egresos': total_egresos,
-        'pagos_vencidos': pagos_vencidos,
-    }
-    return JsonResponse(data)
+# Vista para mostrar el historial de pagos desde una notificación
+@login_required
+def get_payment_history_notifications(request, service_id):
+    context = user_data(request)
+    module_id = 5
+    subModule_id = 33
+    request.session["last_module_id"] = module_id
+
+    access = get_module_user_permissions(context, subModule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+
+    print("esto contiene mi sidebar de servicios:", sidebar)
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+
+
+
+    try:
+        # Obtener los pagos asociados al servicio
+        payments = Payments_Services.objects.filter(name_service_payment_id=service_id).order_by('-next_date_payment').values(
+            'id',
+            'name_service_payment__name_service',
+            'proof_payment',
+            'total_payment',
+            'next_date_payment',
+            'status_payment'
+        )
+
+        for payment in payments:
+            if payment['proof_payment']:
+                # Documento
+                payment['proof_payment_url'] = settings.MEDIA_URL + payment['proof_payment']
+            else:
+                payment['proof_payment_url'] = None
+        return render(request, 'services/payment_details.html', {'payments': payments, 'sidebar': sidebar["data"]})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error al cargar los pagos: {str(e)}'}, status=500)

@@ -1,5 +1,6 @@
 $(document).ready(function() {
     table_services();
+    updatePaymentStatus();
 });
 
 function table_services() {
@@ -28,10 +29,12 @@ function table_services() {
                     return data;  
                 }
             },
-            { 
-                data: "btn_action",
+            {
+                data: 'btn_history',
                 render: function(data, type, row) {
-                    return data;  
+                    return `<button class="btn btn-primary btn-history" onclick="show_history_payments(this)">
+                                <i class="fa-solid fa-eye"></i> Ver historial
+                            </button>`;
                 }
             }
         ],
@@ -317,3 +320,24 @@ function delete_services(boton) {
     });
 }
 
+
+//función para actualizar estado de pago 
+function updatePaymentStatus() {
+    console.log("Se está solicitando la actualización de los pagos..."); 
+
+    $.ajax({
+        url: '/update_payment_status_view/', 
+        type: 'GET',  
+        dataType: 'json',  
+        success: function(response) {
+            if (response.status === 'success') {
+                console.log("Pagos actualizados correctamente:", response.message);
+            } else {
+                console.error("Error al actualizar los pagos:", response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Error en la solicitud AJAX:", error);
+        }
+    });
+}

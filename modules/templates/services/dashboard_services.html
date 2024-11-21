@@ -23,35 +23,163 @@
         </div>
         <div class="card-body">
             <div class="row text-center">
-                <div class="col">
-                    <div class="card border-primary mb-3">
+
+                <div class="col-sm-4 col-lg-4">
+                    <div class="card mb-0">
                         <div class="card-body">
-                            <i class="fas fa-cogs fa-3x text-primary"></i>
-                            <h5 class="card-title">Total de Servicios</h5>
-                            <p class="card-text" id="total-servicios">0</p>
+                            <div class="d-flex align-items-top">
+                                <div class="me-3">
+                                    <span class="avatar avatar-lg bg-info">
+                                        <i class="fa-regular fa-building-memo fa-x6"></i>
+                                    </span>
+                                </div>
+                                <div class="">
+                                    <p class="mb-1 text-muted">Total de Servicios </p>
+                                    <h5 id="servicesTotal" class="fw-semibold mb-0">Cargando...</h5>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col">
-                    <div class="card border-success mb-3">
+
+                <div class="col-sm-4 col-lg-4">
+                    <div class="card mb-0">
                         <div class="card-body">
-                            <i class="fas fa-money-bill-wave fa-3x text-success"></i>
-                            <h5 class="card-title">Total de Egresos</h5>
-                            <p class="card-text" id="total-egresos">0</p>
+                            <div class="d-flex align-items-top">
+                                <div class="me-3">
+                                    <span class="avatar avatar-lg bg-primary">
+                                        <i class="fa-solid fa-money-check-dollar-pen fa-x6"></i>
+                                    </span>
+                                </div>
+                                <div class="">
+                                    <p class="mb-1 text-muted">Total de Egresos</p>
+                                    <h5 id="egresosTotal" class="fw-semibold mb-0">Cargando...</h5>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col">
-                    <div class="card border-danger mb-3">
+
+                <div class="col-sm-4 col-lg-4">
+                    <div class="card mb-0">
                         <div class="card-body">
-                            <i class="fas fa-exclamation-circle fa-3x text-danger"></i>
-                            <h5 class="card-title">Pagos Vencidos</h5>
-                            <p class="card-text" id="pagos-vencidos">0</p>
+                            <div class="d-flex align-items-top">
+                                <div class="me-3">
+                                    <span class="avatar avatar-lg bg-danger">
+                                        <i class="fa-solid fa-file-invoice-dollar fa-x6"></i>
+                                    </span>
+                                </div>
+                                <div class="">
+                                    <p class="mb-1 text-muted">Total de pagos vencidos</p>
+                                    <h5 id="paymentsTotal" class="fw-semibold mb-0">Cargando...</h5>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
+
+        <div class="card-body">
+            <div class="row text-center">
+
+                <div class="col-sm-6 col-lg-6">
+                    <div class="card mb-0">
+                        <div class="card-body">
+                            <div>
+                                <h5>Gráfica principal de egresos por categoria</h5>
+                                <canvas id="graficaEgresos" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-6 col-lg-6">
+                    <div class="card mb-0">
+                        <div class="card-body">
+                            <div>
+                                <h5>Gráfica por filtros</h5>
+                            </div>
+                            <div class="d-flex flex-row">
+                                <div class="col-md-4 mb-2 me-2">
+                                    <label for="category">Categoría de servicio</label>
+                                    <select name="category" id="category" class="form-select" required>
+                                        <option value="" disabled selected>Seleccione una categoría</option>
+                                    </select>
+                                </div>
+
+                                
+                                <!-- Filtro Rango de Fecha -->
+                                <div class="col-md-4 mb-2 me-2">
+                                    <label for="date_service">Rango de fecha de servicio</label>
+                                    <div class="d-flex gap-2">
+                                        <div class="col-md-6">
+                                            <label for="start_date_service">Fecha de inicio</label>
+                                            <input type="date" id="start_date_service" name="start_date_service" class="form-control">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="end_date_service">Fecha de fin</label>
+                                            <input type="date" id="end_date_service" name="end_date_service" class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                
+
+                                <div class="col-md-4 mb-2 me-2">
+                                    <label for="provider_services">Proveedor de servicio</label>
+                                    <select name="provider_services" id="provider_services" class="form-select" required>
+                                        <option value="" disabled selected>Seleccione un proveedor</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfica de Egresos por Categoría-->
+                    <div id="graficaCategoria" class="col-sm-12 col-lg-12" style="display: none;">
+                        <div class="card mb-0">
+                            <div class="card-body">
+                                <div>
+                                    <h5>Gráfica de Egresos por Categoría</h5>
+                                    <canvas id="graficaEgresosCategoria" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfica de Egresos por periodo de fecha: dia, semana, mes, año-->
+                    <div id="graficaRangoFechaContainer" class="col-sm-12 col-lg-12" style="display: none;">
+                        <div class="card mb-0">
+                            <div class="card-body">
+                                <div>
+                                    <h5>Gráfica de Egresos por Rango de Fecha</h5>
+                                    <canvas id="graficaRangoFechaCanvas" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Gráfica de Egresos por Proveedor -->
+                    <div id="graficaProveedor" class="col-sm-12 col-lg-12" style="display: none;">
+                        <div class="card mb-0">
+                            <div class="card-body">
+                                <div>
+                                    <h5>Gráfica de Egresos por Proveedor</h5>
+                                    <canvas id="graficaEgresosProveedor" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                
+
+            </div>
+        </div>
+
     </div>
 </section>
 {% endblock %}
@@ -66,6 +194,8 @@
 {% endblock %}
 
 {% block scripts %}
+
+
 <script src="{% static 'assets/js/users/users.js' %}"></script>
 <script src="{% static 'assets/js/users/areas.js' %}"></script>
 <script src="{% static 'assets/js/users/providers.js' %}"></script>
@@ -74,5 +204,6 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 {% endblock %}

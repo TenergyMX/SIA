@@ -1,22 +1,34 @@
 $(document).ready(function() {
-    show_history_payments();
+
 });
 
+
+//Función para mostrar la tabla del historial de pagos de servicios 
 function show_history_payments(button) {
+    console.log('Botón presionado:', button);
     var row = $(button).closest('tr');
+    console.log("fila seleccionada:",row);
     var data = $('#table_services').DataTable().row(row).data();
-    var serviceId = data.id;                            
+    console.log("datos recuperados de la fila:",data); 
+    if (!data || !data.id) {
+        console.error('No se pudo obtener datos o el ID del servicio no está disponible.');
+        return;  // Termina la ejecución de la función si no hay datos válidos
+    }
+    var serviceId = data.id; 
+    console.log('ID del servicio:', serviceId);                           
 
     $.ajax({
-        url: '/get-payment-history/' + serviceId + '/',
+        url: '/get_payment_history/' + serviceId + '/',
         method: 'GET',
         success: function(response) {
+            console.log("Respuesta recibida:", response);
             var tbody = $('#table-history-payments tbody');
-            tbody.empty(); // Limpiar la tabla antes de llenarla
+            tbody.empty(); 
 
             if (response.length > 0) {
                 response.forEach(function(payment) {
                     var actionButton = '';
+                    
 
                     if (!payment.proof_payment) {
                         actionButton = `
@@ -32,7 +44,31 @@ function show_history_payments(button) {
                         `;
                     }
                     
-                    
+                     // Determinar el texto que se debe mostrar para el estado de pago
+                     var statusText = '';
+                     switch(payment.status_payment) {
+                         case 'pending':
+                             statusText = 'Pendiente';
+                             badgeClass = 'bg-outline-info'; 
+                             break;
+                         case 'upcoming':
+                             statusText = 'Próximo';
+                             badgeClass = 'bg-outline-warning';
+                             break; 
+                         case 'unpaid':
+                             statusText = 'No Pagado';
+                             badgeClass = 'bg-outline-danger';
+                             break;
+                         case 'paid':
+                             statusText = 'Pagado';
+                             badgeClass = 'bg-outline-success';
+                             break;
+                         default:
+                             statusText = 'Desconocido';
+                             badgeClass = 'bg-outline-secondary';
+                             break;
+                     }
+                     statusText = `<span class="badge ${badgeClass}">${statusText}</span>`;
 
                     tbody.append(
                         `<tr>
@@ -41,9 +77,10 @@ function show_history_payments(button) {
                             <td>${actionButton}</td>
                             <td>${payment.total_payment}</td>
                             <td>${payment.next_date_payment}</td>
-                            <td>${payment.status_payment ? 'Pagado' : 'Pendiente'}</td>
+                            <td>${statusText}</td>
                         </tr>`
                     );
+                    console.log("Botón de acción generado:", actionButton); 
                 });
             } else {
                 tbody.html('<tr><td colspan="6">No hay historial de pagos.</td></tr>');
@@ -61,7 +98,7 @@ function show_history_payments(button) {
 function uploadDocument(paymentId) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = 'application/pdf, image/*';  // Ajusta según los tipos de archivo permitidos
+    fileInput.accept = 'application/pdf, image/*'; 
 
     fileInput.onchange = function() {
         const file = fileInput.files[0];
@@ -96,7 +133,7 @@ function uploadDocument(paymentId) {
                         // Validar el enlace del comprobante después de un breve retraso
                         setTimeout(function() {
                             validatePaymentLink(paymentId);
-                        }, 2000); // Espera 2 segundos antes de verificar
+                        }, 2000); 
 
                     } else {
                         Swal.fire({
@@ -149,7 +186,8 @@ function validatePaymentLink(paymentId) {
                         <i class="fa-solid fa-eye"></i> Ver Comprobante
                     </a>
                 `;
-                row.find('td:eq(2)').html(linkHtml); // Actualiza el contenido de la celda
+                row.find('td:eq(2)').html(linkHtml); 
+                row.find('td:eq(5)').text('Pagado');
             } else {
                 console.error('El comprobante aún no está disponible.');
             }
@@ -227,30 +265,3 @@ function exportToExcel() {
 
 
 
-//validar 
-function validatePaymentLink(paymentId) {
-    $.ajax({
-        url: '/get-proof-payment/' + paymentId + '/',  
-        method: 'GET',
-        success: function(response) {
-            if (response.success) {
-                // Actualizar el botón 
-                const row = $('#table-history-payments tbody tr').filter(function() {
-                    return $(this).find('td').first().text() == paymentId; 
-                });
-
-                const linkHtml = `
-                    <a href="${response.proof_payment}" target="_blank" class="btn btn-info">
-                        <i class="fa-solid fa-eye"></i> Ver Comprobante
-                    </a>
-                `;
-                row.find('td:eq(2)').html(linkHtml); 
-            } else {
-                console.error('El comprobante aún no está disponible.');
-            }
-        },
-        error: function() {
-            console.error('Error al validar el enlace del comprobante.');
-        }
-    });
-}

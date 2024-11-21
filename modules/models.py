@@ -499,14 +499,14 @@ class Infrastructure_Review(models.Model):
     
 
 #tablas de datos para el modulo de servicios--modulo 5 
-#tabla categorias de servicios num.5 
+#tabla categorias de servicios submodulo num.32
 class Services_Category(models.Model):
     name_category = models.CharField(blank=True, null=True, max_length=100, unique=True, verbose_name="Nombre")
     short_name_category = models.CharField(blank=True, null=True, max_length=50, unique=True, verbose_name="Nombre Corto")
     is_active_category = models.BooleanField(default=True, verbose_name="¿Está Activo?")
     description_category = models.TextField(blank=True, null=True, verbose_name="Descripción")
 
-#tabla servicios 
+#tabla servicios submodulo num.33
 class Services(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     category_service = models.ForeignKey(Services_Category, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Categoría de servicios" )
@@ -522,7 +522,7 @@ class Services(models.Model):
     ], verbose_name="Unidad de Tiempo")
     price_service = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad de servicios')
 
-#tabla pagos de servicios
+#tabla pagos de servicios submodulo num.34
 class Payments_Services(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pendiente'),  # El pago está pendiente

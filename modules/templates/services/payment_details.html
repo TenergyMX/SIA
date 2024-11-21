@@ -1,0 +1,102 @@
+<!-- historial_pagos_notificaciones.html -->
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="card custom-card card-info">
+    <div class="card-header justify-content-between">
+        <div class="card-title">
+            Historial de Pagos del Servicio  {{ name_service }}
+        </div>
+        
+        <button type="button" class="btn btn-sm btn-success" onclick="exportToExcel()" title="Exportar a Excel">
+            <i class="fa-solid fa-file-excel"></i>
+            Exportar a Excel
+        </button>
+        
+        <div class="">
+            <button type="button" class="btn btn-icon btn-sm btn-primary" onclick="show_services_table()" title="Regresar">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button> 
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered w-100" id="table-history-payments">
+                <thead>
+                    <tr>
+                        <th>Id de pago</th>
+                        <th>Nombre del servicio</th>
+                        <th>Comprobante de Pago</th>
+                        <th>Costo total</th>
+                        <th>Fecha de pago</th>
+                        <th>Estado de pago</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.id }}</td>
+                        
+                    
+
+                        <td>{{ payment.name_service_payment__name_service }}</td>
+                        <td>
+                            {% if payment.proof_payment %}
+                                <a href="{{ payment.proof_payment_url }}" target="_blank" class="btn btn-info">
+                                    <i class="fa-solid fa-eye"></i> Ver Comprobante
+                                </a>
+                                
+                            {% else %}
+
+                                <button class="btn btn-primary" onclick="uploadDocument('{{ payment.id}}')">
+                                    <i class="fa-solid fa-upload"></i> Cargar Comprobante
+                                </button>
+                                
+                            {% endif %}
+                        </td>
+                        
+                        <td>{{ payment.total_payment }}</td>
+                        <td>{{ payment.next_date_payment }}</td>
+                        <td>
+                            {% if payment.status_payment == 'pending' %}
+                            <span class="badge bg-outline-info">Pendiente</span>
+                            {% elif payment.status_payment == 'upcoming' %}
+                            <span class="badge bg-outline-warning">Próximo</span>
+                            {% elif payment.status_payment == 'unpaid' %}
+                            <span class="badge bg-outline-danger">No Pagado</span>
+                            {% elif payment.status_payment == 'paid' %}
+                            <span class="badge bg-outline-success">Pagado</span>
+                            {% else %}
+                            <span class="badge bg-outline-secondary">Desconocido</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">No hay historial de pagos.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>   
+</div>
+{% endblock %}
+
+
+{% load static %} 
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/users/areas.js' %}"></script>
+<script src="{% static 'assets/js/users/providers.js' %}"></script>
+<script src="{% static 'assets/js/services/category_services.js' %}"></script>
+<script src="{% static 'assets/js/services/history_payments.js' %}"></script>
+<script src="{% static 'assets/js/services/services.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+{% endblock %}

@@ -19,18 +19,10 @@ services:
     volumes:
       - ./docs/:/app/docs/
       - ./staticfiles/:/app/staticfiles/
-<<<<<<< HEAD
       - ./users/migrations/:/app/users/migrations
       - ./modules/:/app/modules
-
-
 #     - ../pwa/:/manifest.json
 #     - ../pwa/service-worker.js:/service-worker.js
-=======
-      - ./modules/:/app/modules/
-      - ./modules/templates/:/var/www/html/
-
->>>>>>> origin/main
     networks:
       - nginxnet
       - dbnet

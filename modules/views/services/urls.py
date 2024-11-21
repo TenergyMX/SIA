@@ -26,17 +26,27 @@ urlpatterns = [
     path("delete_services/", views.delete_services),
     
 
-    path("update_payments_status/", views.update_payments_status),
+    path("update_payments_status/", views.update_payment_status),
 
     #Historial de pagos 
-    path('get-payment-history/<int:service_id>/', views.get_payment_history),
+    path('get_payment_history/<int:service_id>/', views.get_payment_history),
     path('upload-payment-proof/<int:payment_id>/', views.upload_payment_proof),
 
     path('get-proof-payment/<int:payment_id>/', views.get_proof_payment),
+    # Función para actualizar los pagos
+    path('update_payment_status_view/', views.update_payment_status_view),
+    #contadores
+    path('get_dashboard_data/', views.get_dashboard_data),
+    #Gráfica
+    path('get_dashboard_grafica/', views.get_dashboard_grafica),
 
-    path('dashboard_data/', views.dashboard_data),
+    path('get_services_by_category/<int:category_id>/', views.get_services_by_category),
+    path('get_services_by_provider/<int:provider_id>/', views.get_services_by_provider),
+
+    path('get_services_by_date_range/', views.get_services_by_date_range),
 
 
+    path('get_payment_history_notifications/<int:service_id>/', views.get_payment_history_notifications),
 
 ]
 
