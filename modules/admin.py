@@ -54,3 +54,5 @@ admin.site.register(Equipmets_Tools_locations)
 admin.site.register(Services_Category)
 admin.site.register(Services)
 admin.site.register(Payments_Services)
+
+admin.site.register(Plans)

@@ -1,0 +1,71 @@
+<div class="modal fade effect-scale" id="mdl-crud-plans" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_add_plan" onsubmit="add_plan(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar Plan</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="company_plan">Empresa </label>
+                        <select name="company_plan" id="company_plan" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una empresa</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="modules_company">Módulo </label>
+                        <select name="modules_company" id="modules_company" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un módulo</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="">Tipo de plan</label>
+                        <select name="type_plan" class="form-select">
+                            <option value="">seleciones un plan</option>
+                            <option value="basic">Básico</option>
+                            <option value="advanced">Avanzado</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                    </div>                    
+                    <div class="col-md-4">
+                        <label for="">Fecha de inicio</label>
+                        <input type="date" id="start_date_plan" name="start_date_plan" class="form-control" placeholder="Fecha de inicio">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Periodo (cantidad)</label>
+                        <input type="number" name="time_quantity_plan" class="form-control" placeholder="Cantidad. Ej. 1">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Periodo (Unidad)</label>
+                        <select name="time_unit_plan" class="form-select">
+                            <option value="day">Día(s)</option>
+                            <option value="month">Mes(s)</option>
+                            <option value="year">Año(s)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-none" id="active-field">
+                        <label for="status">Activo</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="0">NO</option>
+                            <option value="1">SI</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>

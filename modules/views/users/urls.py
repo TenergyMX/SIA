@@ -8,6 +8,8 @@ urlpatterns = [
     path("providers/", views.providers_views),
     path("areas/", views.areas_views),
 
+    path("plans/", views.plans_views),
+
     path("user/profile/", views.users_profile_view),
 
     # TODO ----- [ REQUEST ] -----
@@ -37,4 +39,12 @@ urlpatterns = [
     path("add_area/", views.add_area),
     path("get_areas/", views.get_areas),
     path("update_area/", views.update_area),
+
+    #------[Planes]--------
+    path("get_table_plans/", views.get_table_plans),
+    path("get_company_plan/", views.get_company_plan),
+    path("get_modules_plan/", views.get_modules_plan),
+    path("add_plan/", views.add_plan),
+    path("delete_plans/", views.delete_plans),
+    path("edit_plans/", views.edit_plans),
 ]

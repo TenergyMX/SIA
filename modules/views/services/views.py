@@ -33,6 +33,9 @@ def category_services(request):
     subModule_id = 32
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -59,6 +62,9 @@ def services(request):
     subModule_id = 33
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -86,6 +92,9 @@ def dashboard_services(request):
     module_id = 5
     subModule_id = 34
     request.session["last_module_id"] = module_id
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])

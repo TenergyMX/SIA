@@ -57,6 +57,9 @@ def computer_equipment_view(request):
     subModule_id = 13
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -74,6 +77,9 @@ def computer_system_details(request, equipment_id = None):
     context = user_data(request)
     module_id = 3
     subModule_id = 13
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     context["computerSystem_id"] = equipment_id
     access = get_module_user_permissions(context, subModule_id)
@@ -99,6 +105,9 @@ def computer_peripherals(request):
     module_id = 3
     subModule_id = 14
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -116,6 +125,9 @@ def computer_software(request):
     context = user_data(request)
     module_id = 3
     subModule_id = 15
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -136,6 +148,9 @@ def computer_equipment_audit_view(request):
     module_id = 3
     subModule_id = 16
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -153,6 +168,9 @@ def computer_equipment_maintenance_view(request):
     context = user_data(request)
     module_id = 3
     subModule_id = 17
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -172,6 +190,9 @@ def assigned_computer_equipment_view(request):
     module_id = 3
     subModule_id = 18
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -189,6 +210,9 @@ def computer_equipment_responsiva_view(request):
     context = user_data(request)
     module_id = 3
     subModule_id = 19
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -260,6 +284,9 @@ def computer_equipment_deliverie_view(request):
     context = user_data(request)
     module_id = 3
     subModule_id = 20
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])

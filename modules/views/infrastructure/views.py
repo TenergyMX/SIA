@@ -30,6 +30,9 @@ def infrastructure_category_view(request):
     subModule_id = 23
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -48,6 +51,9 @@ def infrastructure_item_view(request):
     module_id = 4
     subModule_id = 24
     request.session["last_module_id"] = module_id
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -68,6 +74,9 @@ def infrastructure_review_view(request):
     subModule_id = 24
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     

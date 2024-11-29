@@ -66,6 +66,9 @@ def vehicles(request):
     subModule_id = 4
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -87,6 +90,9 @@ def vehicles_details(request, vehicle_id = None):
     subModule_id = 4
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, subModule_id)
     permisos = get_user_access(context)
     sidebar = get_sidebar(context, [1, module_id])
@@ -108,6 +114,9 @@ def module_vehicle_tenencia(request):
     module_id = 2
     subModule_id = 5
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -125,6 +134,9 @@ def module_vehicle_refrendo(request):
     context = user_data(request)
     module_id = 2
     subModule_id = 6
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -145,6 +157,9 @@ def module_vehicle_verificacion(request):
     module_id = 2
     subModule_id = 7
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -164,6 +179,9 @@ def module_vehicle_responsiva(request):
     module_id = 2
     submodule_id = 8
 
+    if not check_user_access_to_module(request, module_id, submodule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -181,6 +199,9 @@ def module_vehicle_insurance(request):
     context = user_data(request)
     module_id = 2
     submodule_id = 9
+
+    if not check_user_access_to_module(request, module_id, submodule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -200,6 +221,9 @@ def module_vehicle_audit(request):
     module_id = 2
     submodule_id = 10
 
+    if not check_user_access_to_module(request, module_id, submodule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -217,6 +241,9 @@ def module_vehicle_maintenance(request):
     context = user_data(request)
     module_id = 2
     submodule_id = 11
+
+    if not check_user_access_to_module(request, module_id, submodule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -236,6 +263,9 @@ def vehicles_calendar_views(request):
     module_id = 2
     submodule_id = 21
 
+    if not check_user_access_to_module(request, module_id, submodule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -254,6 +284,9 @@ def vehicles_fuel_views(request):
     module_id = 2
     submodule_id = 22
 
+    if not check_user_access_to_module(request, module_id, submodule_id):
+        return render(request, "error/access_denied.html")
+    
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     

@@ -603,7 +603,26 @@ class Equipment_Tools_Responsiva(models.Model):
     status_modified = models.BooleanField(default=False, verbose_name="Estado modificado")  # Campo para rastrear modificaciones del estado
 
 
-
+#tabla de planes
+class Plans(models.Model):
+    STATUS_CHOICES = [
+        ('basic', 'Basico'), 
+        ('advanced', 'Avanzado'),  
+        ('premium', 'Premium'),   
+    ]
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
+    module = models.ForeignKey(Module, on_delete=models.CASCADE, blank=True, null=True,verbose_name="Módulos")
+    start_date_plan = models.DateField(blank=True, null=True, verbose_name="Fecha de inicio")
+    type_plan = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Tipo de plan")
+    status_payment_plan = models.BooleanField(default=False, verbose_name="Estado de pago") 
+    time_quantity_plan= models.PositiveIntegerField(blank=True, null=True, default=1, verbose_name="Cantidad de Tiempo")
+    time_unit_plan = models.CharField(max_length=50, blank=True, null=True, choices=[
+        ('day', 'Día(s)'),
+        ('month', 'Mes(es)'),
+        ('year', 'Año(s)')
+    ], verbose_name="Unidad de Tiempo")
+    end_date_plan = models.DateField(blank=True, null=True, verbose_name="Fecha de fin")
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo total')
 
 #agregar a admin.py para poder visualizarlos en el administrador 
 
