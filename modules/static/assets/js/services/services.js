@@ -23,12 +23,6 @@ function table_services() {
             { data: 'periodo' },
             { data: 'payment_date' },  // fecha_pago
             { data: 'price_service' },
-            { 
-                data: 'btn_history',//es para el boton de historial
-                render: function(data, type, row) {
-                    return data;  
-                }
-            },
             {
                 data: 'btn_history',
                 render: function(data, type, row) {
@@ -36,7 +30,13 @@ function table_services() {
                                 <i class="fa-solid fa-eye"></i> Ver historial
                             </button>`;
                 }
-            }
+            },
+            { 
+                data: "btn_action",
+                render: function(data, type, row) {
+                    return data;  
+                }
+            }
         ],
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
