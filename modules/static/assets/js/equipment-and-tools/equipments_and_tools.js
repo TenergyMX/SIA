@@ -125,6 +125,21 @@ function edit_category() {
     var form = $("#form_add_category_equip")[0];
     var formData = new FormData(form);
 
+        // Validar campos
+        var name = formData.get('name').trim();
+        var shortName = formData.get('short_name').trim();
+        var description = formData.get('description').trim();
+    
+        if (!name || !shortName || !description) {
+            Swal.fire({
+                title: "¡Error!",
+                text: "Todos los campos son obligatorios.",
+                icon: "error",
+                showConfirmButton: true
+            });
+            return;
+        }
+    
     $.ajax({
         url: "/edit_category/",
         type: "POST",

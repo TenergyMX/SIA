@@ -1,47 +1,45 @@
 [
     {
         "model": "users.submodule",
-        "pk": 29,
+        "pk": 32,
         "fields": {
             "is_active": true,
-            "short_name": "Categorias",
-            "name": "Categoria de Equipos y Herramientas",
+            "short_name": "Categorías",
+            "name": "Categorías de servicios",
             "description": null,
-            "module": 6,
-            "icon": "<i class=\"fa-solid fa-list side-menu__icon\"></i>",
-            "link": "/equipments_and_tools/",
+            "module": 5,
+            "icon": "<i class=\"<fa-sharp fa-solid fa-list side-menu__icon\"></i>",
+            "link": "/category_services/",
             "created_at": "2024-04-11T02:26:14.570Z",
             "superUserExclusive": false
         }
     },
-
     {
         "model": "users.submodule",
-        "pk": 30,
+        "pk": 33,
         "fields": {
             "is_active": true,
-            "short_name": "Equipos y Herramientas",
-            "name": "Categoria de Equipos y Herramientas",
+            "short_name": "Servicios",
+            "name": "Servicios",
             "description": null,
-            "module": 6,
-            "icon": "<i class=\"fa-solid fa-screwdriver-wrench side-menu__icon\"></i>",
-            "link": "/equipments_tools/",
+            "module": 5,
+            "icon": "<i class=\"fa-solid fa-envelopes-bulk side-menu__icon\"></i>",
+            "link": "/services/",
             "created_at": "2024-04-11T02:26:14.570Z",
             "superUserExclusive": false
         }
     },
-
     {
         "model": "users.submodule",
-        "pk": 31,
+        "pk": 34,
         "fields": {
             "is_active": true,
-            "short_name": "Responsivas",
-            "name": "Responsivas de Equipos y Herramientas",
+            "short_name": "Panel de servicios",
+            "name": "Panel de servicios",
             "description": null,
-            "module": 6,
-            "icon": "<i class=\"fa-solid fa-file side-menu__icon\"></i>",
-            "link": "/responsiva/",
+            "module": 5,
+            "icon": "<i class=\"fa-regular fa-chart-line side-menu__icon\"></i>",
+            "link": "/dashboard_services/",
             "created_at": "2024-04-11T02:26:14.570Z",
             "superUserExclusive": false
         }

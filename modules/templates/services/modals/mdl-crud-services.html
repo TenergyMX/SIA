@@ -1,0 +1,65 @@
+<div class="modal fade effect-scale" id="mdl-crud-services" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_services" onsubmit="add_service(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar servicio</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="category_service">Categoría de servicio</label>
+                        <select name="category_service" id="category_service" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una categoría</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="name_service">Nombre</label>
+                        <input type="text" id="name_service" name="name_service" class="form-control" placeholder="Nombre" minlength="3" required maxlength="50">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="description_service">Descripción</label>
+                        <input type="text" id="description_service" name="description_service" class="form-control" placeholder="Descripción" maxlength="255" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="provider_service">Proveedor de servicio</label>
+                        <select name="provider_service" id="provider_service" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un proveedor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Fecha de inicio</label>
+                        <input type="date" id="start_date_service" name="start_date_service" class="form-control" placeholder="Fecha de inicio">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="price_service">Precio</label>
+                        <input type="text" id="price_service" name="price_service" class="form-control" placeholder="Precio" maxlength="255" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Periodo (cantidad)</label>
+                        <input type="number" name="time_quantity_service" class="form-control" placeholder="Cantidad. Ej. 1">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Periodo (Unidad)</label>
+                        <select name="time_unit_service" class="form-select">
+                            <option value="day">Día(s)</option>
+                            <option value="month">Mes(s)</option>
+                            <option value="year">Año(s)</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

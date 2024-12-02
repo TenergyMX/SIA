@@ -57,5 +57,3 @@ urlpatterns = [
 
     #path("get_doc/", views.get_doc)
 ]
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
