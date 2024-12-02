@@ -12,6 +12,7 @@ from pathlib import Path
 from os.path import join, dirname
 from modules.models import *
 from users.models import *
+from modules.utils import * 
 from datetime import datetime, timedelta
 import json, os
 import requests
@@ -36,17 +37,13 @@ from dotenv import load_dotenv
 
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 
-dotenv_path = join(dirname(__file__), 'awsCred.env')
+dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
 
 # TODO --------------- [ VARIABLES ] ---------- 
 AUDITORIA_EQUIPOS_COMPUTO_POR_SEMANA = 2
-AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_SECRET_ACCESS_KEY')
-AWS_DEFAULT_REGION=os.environ.get('AWS_DEFAULT_REGION')
-AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
 
-ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
+AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
 
 
 # TODO --------------- [ VIEWS ] ----------
@@ -1095,7 +1092,8 @@ def add_computer_equipment_maintenance(request):
                 new_name = f"doc_{id}{extension}"
 
                 # Guardar archivo
-                fs.save(folder_path + new_name, load_file)
+                #fs.save(folder_path + new_name, load_file)
+                upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
 
                 # Guardar ruta en la tabla
                 obj.document = folder_path + new_name
@@ -1181,8 +1179,8 @@ def update_computer_equipment_maintenance(request):
         if "date" in dt and dt["date"]: obj.date = dt.get("date")
         # if "is_checked" in dt and dt["is_checked"]: obj.is_checked = dt.get("is_checked")
 
-        # obj.user_id = dt.get("user_id")
-        # obj.provider_id = dt.get("provider_id")
+        obj.user_id = dt.get("user_id")
+        obj.provider_id = dt.get("provider_id")
         obj.is_checked = is_checked
         obj.actions = actions
         obj.save()
@@ -1257,7 +1255,7 @@ def add_computer_equipment_responsiva(request):
                 #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)
-                new_name = f"doc_1{extension}"
+                new_name = f"Responsiva_1{extension}"
                 s3Name = folder_path + new_name
 
                 # Guardar archivo
@@ -1408,7 +1406,7 @@ def update_computer_equipment_responsiva(request):
                 #file_count = len(existing_files)
 
                 file_name, extension = os.path.splitext(load_file.name)
-                new_name = f"doc_1{extension}"
+                new_name = f"Responsiva_1{extension}"
                 s3name = folder_path + new_name
 
                 # Guardar archivo
@@ -1469,6 +1467,8 @@ def delete_computer_equipment_responsiva(request):
         response["message"] = "El objeto no existe"
         return JsonResponse(response)
     else:
+        print(obj.responsibility_letter)
+        delete_s3_object(AWS_BUCKET_NAME, str(obj.responsibility_letter))
         obj.delete()
     response["success"] = True
     response["status"] = "success"
@@ -1635,82 +1635,6 @@ def delete_computer_equipment_deliverie(request):
 # TODO ----- [ NEXT ] -----    
 
 # TODO --------------- [ HELPERS ] ----------
-def upload_to_s3(file_name, bucket_name, object_name=None):
-    """Upload a file to an S3 bucket.
-
-    :param file_name: File to upload
-    :param bucket_name: S3 bucket name
-    :param object_name: S3 object name. If not specified, file_name is used
-    :return: True if file was uploaded, else False
-    """
-    extension = file_name.name.split(".")[-1]
-    print(extension)
-
-    #print(file_name)
-    #print(f'EXTENSION del archivo: {extension.split(".")[-1]}')
-    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    if object_name is None:
-        object_name = file_name.name
-
-    try:
-        if isinstance(file_name, io.BytesIO):
-            print("The object is of type io.BytesIO")
-        else:
-            print("The object is NOT of type io.BytesIO")
-            validate_image(file_name)
-        #if extension != "zip":
-        s3.upload_fileobj(file_name, bucket_name, object_name)
-        print(f"File '{file_name}' uploaded to '{bucket_name}/{object_name}'")
-        return True
-    except FileNotFoundError:
-        print("The file was not found.")
-        return False
-    except NoCredentialsError:
-        print("Credentials not available.")
-        return False
-
-    
-def generate_presigned_url(bucket_name, object_name, expiration=3600):
-    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
-
-def validate_image(file):
-    # Check file size (e.g., max 5 MB)
-    if file.size > 10 * 1024 * 1024:
-        raise ValidationError("Image file is too large ( > 10 MB ).")
-    # Check content type (e.g., only allow PNG and JPEG)
-    if file.content_type not in ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']:
-        raise ValidationError("Only JPEG, PNG and PDF files are allowed.")
-
-def is_valid_file_type(file_name):
-    """Check if the file is of an allowed type based on extension."""
-    # Get the file extension
-    file_extension = mimetypes.guess_extension(file_name.content_type)
-    
-    if file_extension and file_extension.lower() in ALLOWED_FILE_EXTENSIONS:
-        return True
-    return False
-
-def delete_s3_object(bucket_name, object_name):
-    """Delete an object from an S3 bucket.
-
-    :param bucket_name: The name of the S3 bucket
-    :param object_name: The name (key) of the object to delete
-    :return: True if object was deleted, else False
-    """
-    # Initialize an S3 client
-    s3 = boto3.client('s3')
-    
-    try:
-        # Delete the object
-        response = s3.delete_object(Bucket=bucket_name, Key=object_name)
-        print(f"Object '{object_name}' deleted from bucket '{bucket_name}'.")
-        return True
-    except ClientError as e:
-        print(f"Error occurred while deleting object: {e}")
-        return False
 
 def generar_auditoria_de_equipo_de_computo(company_id):
     response = { "success": False }

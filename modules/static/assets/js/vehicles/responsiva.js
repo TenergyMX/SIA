@@ -87,6 +87,7 @@ class VehiclesResponsiva {
 
     init() {
         const self = this;
+        console.log("ENTRANDO A JAAAAASON");
 
         if (self.table) {
             self.tbl_responsiva = $(self.table.id).DataTable({
@@ -197,8 +198,8 @@ class VehiclesResponsiva {
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='update']").show();
 
-                    $('#mdl_crud_responsiva [name="vehicle_id"]').hide();
-                    $('#mdl_crud_responsiva [name="vehicle__name"]').show();
+                    $('#mdl_crud_responsiva [name="vehicle_id"]').show();
+                    $('#mdl_crud_responsiva [name="vehicle__name"]').hide();
 
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_responsiva.row(fila).data();
@@ -235,9 +236,16 @@ class VehiclesResponsiva {
                             "Sin responsable"
                     );
 
+                    // ! Actualizamos la info card
+                    if (self.vehicle && self.vehicle.infoCard) {
+                        self.vehicle.infoCard.vehicle.id = datos["vehicle_id"];
+                        self.vehicle.infoCard.ajax.reload();
+                        console.log(datos["vehicle_id"]);
+                    }
+
                     if (datos["image_path_exit_1"]) {
                         $("[alt='image_path_exit_1']")
-                            .attr("src", "/" + datos["image_path_exit_1"])
+                            .attr("src", datos["image_path_exit_1"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
@@ -246,7 +254,7 @@ class VehiclesResponsiva {
 
                     if (datos["image_path_exit_2"]) {
                         $("[alt='image_path_exit_2']")
-                            .attr("src", "/" + datos["image_path_exit_1"])
+                            .attr("src", datos["image_path_exit_1"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
@@ -255,7 +263,7 @@ class VehiclesResponsiva {
 
                     if (datos["image_path_entry_1"]) {
                         $("[alt='image_path_entry_1']")
-                            .attr("src", "/" + datos["image_path_entry_1"])
+                            .attr("src", datos["image_path_entry_1"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
@@ -264,7 +272,7 @@ class VehiclesResponsiva {
 
                     if (datos["image_path_entry_2"]) {
                         $("[alt='image_path_entry_2']")
-                            .attr("src", "/" + datos["image_path_entry_2"])
+                            .attr("src", datos["image_path_entry_2"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
@@ -272,16 +280,12 @@ class VehiclesResponsiva {
                     }
 
                     // firma
-                    $("[alt='firma']").attr("src", "/" + datos["signature"]);
+                    console.log(datos["signature"]);
+                    $("[alt='firma']").attr("src", datos["signature"]);
 
-                    // ! Actualizamos la info card
-                    if (self.vehicle && self.vehicle.infoCard) {
-                        self.vehicle.infoCard.vehicle.id = datos["vehicle_id"];
-                        self.vehicle.infoCard.ajax.reload();
-                    }
                     break;
                 default:
-                    console.log("Opcion dezconocida:" + option);
+                    console.log("Opcion desconocida:" + option);
             }
         });
 
@@ -290,7 +294,7 @@ class VehiclesResponsiva {
             var submit = $("button[type='submit']:focus", this).attr("name");
             var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_responsiva/";
             var datos = new FormData(this);
-
+            console.log("ENTRANDO A ADD 22222");
             if (submit == "add" && !self.input.signature.hasDrawing()) {
                 Swal.fire("Sin firma", "El responsable debe firmar", "warning");
                 return;
@@ -298,7 +302,7 @@ class VehiclesResponsiva {
 
             if (submit == "add") {
                 url = "/add_vehicle_responsiva/";
-
+                console.log("ENTRANDO A ADD");
                 self.input.signature
                     .getCanvasBlob()
                     .then((blob) => {
@@ -342,6 +346,7 @@ class VehiclesResponsiva {
                     })
                     .catch((error) => {});
             } else {
+                console.log("ENTRANDO A UPDATE");
                 url = "/update_vehicle_responsiva/";
 
                 $.ajax({

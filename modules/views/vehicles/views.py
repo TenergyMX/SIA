@@ -11,6 +11,7 @@ from modules.models import *
 from pathlib import Path
 from os.path import join, dirname
 from users.models import *
+from modules.utils import * 
 from datetime import datetime, timedelta
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
@@ -36,27 +37,17 @@ import zipfile
 import subprocess
 from django.views.decorators.csrf import csrf_exempt
 
-dotenv_path = join(dirname(dirname(__file__)), 'awsCred.env')
+dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
 
 # TODO --------------- [ VARIABLES ] ---------- 
 
 AUDITORIA_VEHICULAR_POR_MES = 2
-AWS_ACCESS_KEY_ID=os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_SECRET_ACCESS_KEY')
-AWS_DEFAULT_REGION=os.environ.get('AWS_DEFAULT_REGION')
 AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
 bucket_name=AWS_BUCKET_NAME
 
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
-#s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
-#s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-#boto3.set_stream_logger('')
-#s3 = boto3.client('s3')
-#session = boto3.session.Session(region_name='us-east-2')
-#s3client = session.client('s3', config= boto3.session.Config(signature_version='s3v4'))
 
 # TODO --------------- [ VIEWS ] --------------- 
 @login_required
@@ -268,82 +259,6 @@ def vehicles_fuel_views(request):
 
 # TODO --------------- [ HELPER ] ----------
 
-def upload_to_s3(file_name, bucket_name, object_name=None):
-    """Upload a file to an S3 bucket.
-
-    :param file_name: File to upload
-    :param bucket_name: S3 bucket name
-    :param object_name: S3 object name. If not specified, file_name is used
-    :return: True if file was uploaded, else False
-    """
-    extension = file_name.name.split(".")[-1]
-    print(extension)
-
-    #print(file_name)
-    #print(f'EXTENSION del archivo: {extension.split(".")[-1]}')
-    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    if object_name is None:
-        object_name = file_name.name
-
-    try:
-        if isinstance(file_name, io.BytesIO):
-            print("The object is of type io.BytesIO")
-        else:
-            print("The object is NOT of type io.BytesIO")
-            validate_image(file_name)
-        #if extension != "zip":
-        s3.upload_fileobj(file_name, bucket_name, object_name)
-        print(f"File '{file_name}' uploaded to '{bucket_name}/{object_name}'")
-        return True
-    except FileNotFoundError:
-        print("The file was not found.")
-        return False
-    except NoCredentialsError:
-        print("Credentials not available.")
-        return False
-
-    
-def generate_presigned_url(bucket_name, object_name, expiration=3600):
-    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
-
-def validate_image(file):
-    # Check file size (e.g., max 5 MB)
-    if file.size > 10 * 1024 * 1024:
-        raise ValidationError("Image file is too large ( > 10 MB ).")
-    # Check content type (e.g., only allow PNG and JPEG)
-    if file.content_type not in ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']:
-        raise ValidationError("Only JPEG, PNG and PDF files are allowed.")
-
-def is_valid_file_type(file_name):
-    """Check if the file is of an allowed type based on extension."""
-    # Get the file extension
-    file_extension = mimetypes.guess_extension(file_name.content_type)
-    
-    if file_extension and file_extension.lower() in ALLOWED_FILE_EXTENSIONS:
-        return True
-    return False
-
-def delete_s3_object(bucket_name, object_name):
-    """Delete an object from an S3 bucket.
-
-    :param bucket_name: The name of the S3 bucket
-    :param object_name: The name (key) of the object to delete
-    :return: True if object was deleted, else False
-    """
-    # Initialize an S3 client
-    s3 = boto3.client('s3')
-    
-    try:
-        # Delete the object
-        response = s3.delete_object(Bucket=bucket_name, Key=object_name)
-        print(f"Object '{object_name}' deleted from bucket '{bucket_name}'.")
-        return True
-    except ClientError as e:
-        print(f"Error occurred while deleting object: {e}")
-        return False
 
 # TODO --------------- [ REQUEST ] ----------
 
@@ -618,6 +533,7 @@ def delete_vehicle_info(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
+        delete_s3_object(AWS_BUCKET_NAME, str(obj.image_path))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -786,6 +702,7 @@ def delete_vehicle_tenencia(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
+        delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -950,10 +867,10 @@ def delete_vehicle_refrendo(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
+        delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
-
 
 
 def add_vehicle_verificacion(request):
@@ -1120,7 +1037,7 @@ def add_vehicle_responsiva(request):
     response = {"success": False}
     context = user_data(request)
     dt = request.POST
-
+    print("entrando a alta de responsiva")
     vehicle_id = dt.get("vehicle_id")
 
     try:
@@ -1165,7 +1082,7 @@ def add_vehicle_responsiva(request):
 #                for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
 #                    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"signature.{item}")
 #                    if os.path.exists(old_file_path): os.remove(old_file_path)
-                
+#             
                 new_name = f"signature{extension}"
                 s3Name = folder_path + new_name
                 #fs.save(folder_path + new_name, load_file)
@@ -1174,36 +1091,38 @@ def add_vehicle_responsiva(request):
                 upload_to_s3(load_file, bucket_name, s3Name)
                 obj.save()
         if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
-            load_file = request.FILES['image_path_exit_1']
+            load_file = request.FILES.get('image_path_exit_1')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
 
             # Eliminar el archivo anterior con el mismo nombre
-            for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-                old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
-                if os.path.exists(old_file_path): os.remove(old_file_path)
+            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
+            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
+            #    if os.path.exists(old_file_path): os.remove(old_file_path)
             
             new_name = f"salida_1{extension}"
-            fs.save(folder_path + new_name, load_file)
+            #fs.save(folder_path + new_name, load_file)
 
             obj.image_path_exit_1 = folder_path + new_name
+            upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
         if 'image_path_exit_2' in request.FILES and request.FILES['image_path_exit_2']:
-            load_file = request.FILES['image_path_exit_2']
+            load_file = request.FILES.get('image_path_exit_2')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
 
             # Eliminar el archivo anterior con el mismo nombre
-            for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-                old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_2.{item}")
-                if os.path.exists(old_file_path): os.remove(old_file_path)
+            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
+            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_2.{item}")
+            #    if os.path.exists(old_file_path): os.remove(old_file_path)
             
             new_name = f"salida_2{extension}"
-            fs.save(folder_path + new_name, load_file)
+            #fs.save(folder_path + new_name, load_file)
 
             obj.image_path_exit_2 = folder_path + new_name
+            upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
         
         response["id"] = obj.id
@@ -1230,9 +1149,40 @@ def get_vehicle_responsiva(request):
         "signature", "destination", "trip_purpose"
     )
 
+    modified_data_list = []
+
+    for data in lista:
+        modified_data = data.copy()
+
+        file_path1 = data.get('image_path_exit_1')
+        print(f'FOTO1: {file_path1}')
+        imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
+        modified_image_path_exit_1 = imagePath1
+        
+        modified_data['image_path_exit_1'] = modified_image_path_exit_1
+        modified_data_list.append(modified_data)
+
+        file_path2 = data.get('image_path_exit_2')
+        imagePath2 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path2))
+        modified_image_path_exit_2 = imagePath2
+        
+        modified_data['image_path_exit_2'] = modified_image_path_exit_2
+        modified_data_list.append(modified_data)
+
+        signature = data.get('signature')
+        sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
+        modified_sign = sign
+        
+        modified_data['signature'] = modified_sign
+        print(modified_sign)
+        modified_data_list.append(modified_data)
+
+        print(f'ENTRADAAA: {data.get("image_path_entry_1")}')
+        print(f'FIRMAAAAA: {data.get("signature")}')
+
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
-    for item in lista:
+    for item in modified_data_list:
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-responsiva=\"show-info-details\" title=\"Mostrar info\">
             <i class="fa-solid fa-eye"></i>
         </button>\n"""
@@ -1240,7 +1190,7 @@ def get_vehicle_responsiva(request):
             item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-responsiva=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>"""
-    response["data"] = list(lista)
+    response["data"] = list(modified_data_list)
     response["success"] = True
     return JsonResponse(response)
 
@@ -1261,6 +1211,52 @@ def get_vehicles_responsiva(request):
         "signature", "destination", "trip_purpose"
     )
 
+    modified_data_list = []
+
+    for data in lista:
+        modified_data = data.copy()
+
+        file_path1 = data.get('image_path_exit_1')
+        print(f'FOTO1: {file_path1}')
+        imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
+        modified_image_path_exit_1 = imagePath1
+        
+        modified_data['image_path_exit_1'] = modified_image_path_exit_1
+        modified_data_list.append(modified_data)
+
+        file_path2 = data.get('image_path_exit_2')
+        imagePath2 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path2))
+        modified_image_path_exit_2 = imagePath2
+        
+        modified_data['image_path_exit_2'] = modified_image_path_exit_2
+        modified_data_list.append(modified_data)
+
+        signature = data.get('signature')
+        sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
+        modified_sign = sign
+        
+        modified_data['signature'] = modified_sign
+        print(modified_sign)
+        modified_data_list.append(modified_data)
+
+        print(f'ENTRADAAA: {data.get("image_path_entry_1")}')
+        print(f'FIRMAAAAA: {data.get("signature")}')
+
+        file_path3 = data.get('image_path_entry_1')
+        print(f'FOTO DE ENTRADA {file_path3}')
+        # imagePath3 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path3))
+        # modified_image_path_exit_3 = imagePath3
+        
+        # modified_data['image_path_entry_1'] = modified_image_path_exit_3
+        # modified_data_list.append(modified_data)
+
+        # file_path4 = data.get('image_path_entry_2')
+        # imagePath4 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path4))
+        # modified_image_path_exit_4 = imagePath4
+        
+        # modified_data['image_path_entry_2'] = modified_image_path_exit_4
+        # modified_data_list.append(modified_data)
+
     if context["role"]["id"] == 1:
         """"""
     elif context["role"]["id"] in [1,2]:
@@ -1270,8 +1266,10 @@ def get_vehicles_responsiva(request):
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
+    #print(modified_data)
 
-    for item in lista:
+    for item in modified_data_list:
+        #item["btn_action"] = ""
         check = item["final_mileage"] and item["end_date"]
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-responsiva=\"show-info-details\" title=\"Mostrar info\">
             <i class="fa-solid fa-eye"></i>
@@ -1284,8 +1282,10 @@ def get_vehicles_responsiva(request):
             item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-responsiva=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>"""
-    response["data"] = list(lista)
+    response["data"] = list(modified_data_list)
     response["success"] = True
+    print('INICIO DE JSON RESPONSE')
+    print(response)
     return JsonResponse(response)
 
 def update_vehicle_responsiva(request):
@@ -1344,21 +1344,42 @@ def update_vehicle_responsiva(request):
                 obj_vehicle.mileage = dt.get("final_mileage")
             obj_vehicle.save()
 
-        if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
-            load_file = request.FILES['image_path_exit_1']
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{registro}/"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+        print("GUARDAR IMAGEN")
+        if 'image_path_entry_1' in request.FILES and request.FILES['image_path_entry_1']:
+            load_file = request.FILES.get('image_path_entry_1')
+            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
+            #folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{registro}/"
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
 
             # Eliminar el archivo anterior con el mismo nombre
-            for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-                old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
-                if os.path.exists(old_file_path): os.remove(old_file_path)
+            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
+            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
+            #    if os.path.exists(old_file_path): os.remove(old_file_path)
             
-            new_name = f"salida_1{extension}"
-            fs.save(folder_path + new_name, load_file)
+            new_name = f"entrada_1{extension}"
+            #fs.save(folder_path + new_name, load_file)
 
-            obj.image_path_exit_1 = folder_path + new_name
+            obj.image_path_entry_1 = folder_path + new_name
+            upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
+            obj.save()
+        if 'image_path_entry_2' in request.FILES and request.FILES['image_path_entry_2']:
+            load_file = request.FILES.get('image_path_entry_2')
+            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
+            #folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{registro}/"
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            file_name, extension = os.path.splitext(load_file.name)
+
+            # Eliminar el archivo anterior con el mismo nombre
+            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
+            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
+            #    if os.path.exists(old_file_path): os.remove(old_file_path)
+            
+            new_name = f"entrada_2{extension}"
+            #fs.save(folder_path + new_name, load_file)
+
+            obj.image_path_entry_2 = folder_path + new_name
+            upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
         response["status"] = "success"
     except Exception as e:
@@ -1381,6 +1402,7 @@ def delete_vehicle_responsiva(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
+        #delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -1552,6 +1574,7 @@ def delete_vehicle_insurance(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
+        delete_s3_object(AWS_BUCKET_NAME, str(obj.doc))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -2101,6 +2124,7 @@ def delete_vehicle_maintenance(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
+        delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -2207,19 +2231,20 @@ def add_vehicle_fuel(request):
             id = obj.id
 
             if 'payment_receipt' in request.FILES and request.FILES['payment_receipt']:
-                load_file = request.FILES['payment_receipt']
+                load_file = request.FILES.get('payment_receipt')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)                
                 new_name = f"payment_receipt_{id}{extension}"
 
                 # Eliminar archivos anteriores usando glob
-                old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"payment_receipt{id}.*"))
-                for old_file_path in old_files:
-                    if os.path.exists(old_file_path):
-                        os.remove(old_file_path)
-                fs.save(folder_path + new_name, load_file)
+                #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"payment_receipt{id}.*"))
+                #for old_file_path in old_files:
+                #    if os.path.exists(old_file_path):
+                #        os.remove(old_file_path)
+                #fs.save(folder_path + new_name, load_file)
+                upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
                 obj.payment_receipt = folder_path + new_name
                 obj.save()
 
@@ -2339,9 +2364,9 @@ def update_vehicle_fuel(request):
             id = obj.id
 
             if 'payment_receipt' in request.FILES and request.FILES['payment_receipt']:
-                load_file = request.FILES['payment_receipt']
+                load_file = request.FILES.get('payment_receipt')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
-                fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)                
                 new_name = f"payment_receipt_{id}{extension}"
@@ -2351,7 +2376,8 @@ def update_vehicle_fuel(request):
                 for old_file_path in old_files:
                     if os.path.exists(old_file_path):
                         os.remove(old_file_path)
-                fs.save(folder_path + new_name, load_file)
+                #fs.save(folder_path + new_name, load_file)
+                upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
                 obj.payment_receipt = folder_path + new_name
                 obj.save()
 
@@ -2378,6 +2404,7 @@ def delete_vehicle_fuel(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
+        delete_s3_object(AWS_BUCKET_NAME, str(obj.payment_receipt))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
