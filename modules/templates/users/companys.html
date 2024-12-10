@@ -24,13 +24,13 @@
                     </div>
                     <div class="">
                         {% if access.create %}
-                        <button type="button" class="btn btn-sm btn-primary"
-                            data-user="add-user" title="Agregar usuario">
-                            <i class="fa-solid fa-plus"></i>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="add_companys()" data-companys="add-company"
+                                title="Agregar empresa">
+                                <i class="fa-solid fa-plus"></i>
                             Agregar
                         </button>
                         {% endif %}
-                        <button type="button" class="btn btn-icon btn-sm btn-info-light" data-user="refresh-table" title="Refrescar tabla" data-refresh-table>
+                        <button type="button" class="btn btn-icon btn-sm btn-info-light" data-companys="refresh-table" title="Refrescar tabla" data-refresh-table>
                             <i class="fa-solid fa-arrows-rotate"></i>
                         </button>
                     </div>
@@ -53,10 +53,19 @@
 
 {% load static %}
 
-{% block modals %} {% endblock %}
+{% block modals %} 
+    {% include "users/modals/mdl_crud_companys.html" %}
+{% endblock %}
 
 {% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/users/areas.js' %}"></script>
+<script src="{% static 'assets/js/users/providers.js' %}"></script>
 <script src="{% static 'assets/js/users/companys.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     const empresas = new Company({
         table: { id: "#table_companys" }
