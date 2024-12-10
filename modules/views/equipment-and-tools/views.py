@@ -45,6 +45,9 @@ def equipments_and_tools(request):
     subModule_id = 29
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
 
@@ -73,6 +76,9 @@ def equipments_tools(request):
     subModule_id = 30
     request.session["last_module_id"] = module_id
 
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
+
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -98,6 +104,9 @@ def responsiva(request):
     module_id = 6
     subModule_id = 31
     request.session["last_module_id"] = module_id
+
+    if not check_user_access_to_module(request, module_id, subModule_id):
+        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])

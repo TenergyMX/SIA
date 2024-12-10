@@ -19,6 +19,7 @@ from io import BytesIO
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
 from django.core.exceptions import ValidationError
+from modules.models import *
 
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 
@@ -261,3 +262,41 @@ def delete_s3_object(bucket_name, object_name):
     except ClientError as e:
         print(f"Error occurred while deleting object: {e}")
         return False
+    
+    
+def check_user_access_to_module(request, module_id, submodule_id):
+    context = user_data(request)
+    print("Esto contiene el context:", context)
+
+    user_company = context["company"]["id"]
+    name_company = context["company"]["name"]
+    print("Esta es la compañía del usuario:", user_company)
+    print("Este es el nombre de la compañía del usuario:", name_company)
+
+    if not user_company:
+        return False
+
+    try:
+        active_plans = Plans.objects.filter(company=user_company, status_payment_plan=True)
+
+        if not active_plans.exists():
+            return False
+
+        has_access_to_module = active_plans.filter(module__id=module_id).exists()
+
+        if not has_access_to_module:
+            print(f"La empresa '{name_company}' no tiene acceso al módulo con ID {module_id}")
+            return False
+
+        print(f"Los módulos para la empresa '{name_company}' con el ID {user_company} son:")
+        for plan in active_plans:
+            print(f"- {plan.module.name}")  
+
+    except Plans.DoesNotExist:
+        return False
+
+    access = get_module_user_permissions(context, submodule_id)
+    if not access["data"]["access"]["read"]:
+        return False
+
+    return True

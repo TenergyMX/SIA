@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, HttpResponse
 from django.db.models import F, Q, Value, Max, Sum, CharField, BooleanField
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings
 from modules.models import *
@@ -14,6 +15,12 @@ import requests
 import random
 from decimal import Decimal
 from modules.utils import *
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
+from django.shortcuts import render, get_object_or_404
+from django.views.decorators.csrf import csrf_protect
+from django.utils.dateparse import parse_date
+
 
 # TODO --------------- [ VIEWS ] --------------- 
 @login_required
@@ -107,6 +114,27 @@ def users_profile_view(request):
     context["sidebar"] = sidebar["data"]
 
     return render(request, 'users/profile.html', context)
+
+
+#planes 
+def plans_views(request):
+    context = user_data(request)
+    module_id = 3
+    subModule_id = 3
+    last_module_id = request.session.get("last_module_id", 2)
+
+    access = get_module_user_permissions(context, subModule_id)
+    sidebar = get_sidebar(context, [1, last_module_id])
+
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+
+
+    if context["access"]["read"]:
+        template = "users/plans.html"
+    else:
+        template = "error/access_denied.html"
+    return render(request, template, context)
 
 # TODO --------------- [ REQUEST ] ---------------
 
@@ -588,6 +616,7 @@ def update_area(request):
         response["error"] = {"message": str(e)}
     return JsonResponse(response)
 
+<<<<<<< HEAD
 # Función para la tabla de empresas (Company)
 def get_companys(request):
     response = {"success": False, "message": "Sin procesar"}
@@ -745,6 +774,307 @@ def edit_company(request):
 #funcion para eliminar las empresas
 @login_required
 def delete_company(request):
+=======
+
+
+#-------------PLANES 
+
+#funcíon para la tabla de planes 
+def get_table_plans(request):
+    response = {"status": "error", "message": "Sin procesar"}
+    context = user_data(request)
+    subModule_id = 0
+    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+    area = context["area"]["name"]
+    tipo_user = context["role"]["name"]
+    editar = access["update"]
+    eliminar = access["delete"]
+    agregar = access["create"]
+    
+    try:
+        # Obtener los datos de los planes 
+        datos = list(Plans.objects.select_related(
+            'company', 'module'
+        ).values(
+            "id", 
+            "company__id", 
+            "company__name",  
+            "module__id", 
+            "module__name",  
+            "type_plan", 
+            "start_date_plan",
+            "end_date_plan",
+            "total", 
+            "status_payment_plan",
+            "time_quantity_plan",  
+            "time_unit_plan" 
+        ))
+
+        # Mapa de traducción para unidades de tiempo
+        time_unit_translation = {
+            'day': ('día', 'días'),
+            'month': ('mes', 'meses'),
+            'year': ('año', 'años')
+        }
+
+        plan_type_translation = {
+            'basic': 'Básico',
+            'advanced': 'Avanzado',
+            'premium': 'Premium',
+            
+        }
+
+        # Procesar cada plan
+        for item in datos:
+            item["type_plan"] = plan_type_translation.get(item["type_plan"], item["type_plan"])
+            item["status_payment_plan"] = "Activo" if item["status_payment_plan"] else "Inactivo"
+            item["btn_action"] = ""
+            item["btn_action"] += (
+                "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_plan(this)' aria-label='info'>"
+                "<i class='fa-solid fa-pen'></i>"
+                "</button>\n"
+            )
+            item["btn_action"] += (
+                "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_plan(this)' aria-label='delete'>"
+                "<i class='fa-solid fa-trash'></i>"
+                "</button>"
+            )     
+            
+            # Formatear el periodo
+            quantity = item.get("time_quantity_plan", 0)
+            unit = item.get("time_unit_plan", "")
+            if unit in time_unit_translation:
+                unit_display = time_unit_translation[unit][0] if quantity == 1 else time_unit_translation[unit][1]
+                item["periodo"] = f"{quantity} {unit_display}"
+
+            # Calcular la fecha de pago
+            #payment_date = calculate_payment_date(item.get("start_date_plan"), quantity, unit)
+            #item["payment_date"] = payment_date.strftime('%Y-%m-%d') if payment_date else "N/A"
+
+        # Respuesta exitosa con los datos procesados
+        response["data"] = datos
+        response["status"] = "success"
+        response["message"] = "Datos cargados exitosamente"
+    
+    except Exception as e:
+        response["status"] = "error"
+        response["message"] = str(e)
+
+    # Para depuración
+    print("esto contiene mi response")
+    print(response)
+
+    return JsonResponse(response)
+
+# Función para calcular la fecha de pago
+def calculate_payment_date(start_date, quantity, unit):
+
+    try:
+        if not start_date:
+            start_date = timezone.now()
+            print("esto contiene mi fecha:", start_date)
+
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+
+        if unit == 'day':
+            payment_date = start_date + timedelta(days=quantity)
+            return payment_date  
+        elif unit == 'month':
+            return start_date + relativedelta(months=quantity)
+        elif unit == 'year':
+            return start_date + relativedelta(years=quantity)
+
+        return None
+    except Exception as e:
+        print(f"Error al calcular la fecha de pago: {str(e)}")
+        return None  
+
+
+
+# Funcion para obtener los nombres de las empresas
+@login_required
+def get_company_plan(request):
+    try:
+        empresas = Company.objects.values('id', 'name')  
+        data = list(empresas)
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+# Funcion para obtener los módulos
+@login_required
+def get_modules_plan(request):
+    try:
+        # Obtén todos los módulos disponibles
+        modules = Module.objects.values('id', 'name')
+        data = list(modules)
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+# Función para agregar un plan
+
+def add_plan(request):
+    print("Datos recibidos:")
+    print(request.POST)
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        company_id = request.POST.get('company_plan')
+        module_company = request.POST.get('modules_company')
+        type_plan = request.POST.get('type_plan')
+        start_date_plan = request.POST.get('start_date_plan')
+        time_quantity_plan = request.POST.get('time_quantity_plan')
+        time_unit_plan = request.POST.get('time_unit_plan')
+        status_payment_plan = True
+
+        # Validar campos requeridos
+        if not all([company_id, module_company, type_plan, start_date_plan, time_quantity_plan, time_unit_plan]):
+            return JsonResponse({"success": False, "message": "Todos los campos son obligatorios."})
+
+        try:
+            # Obtener la empresa
+            company = Company.objects.get(id=company_id)
+
+            # Comprobar si la empresa ya tiene el módulo asignado
+            for module_id in module_company:
+                module = Module.objects.get(id=module_id)
+                # Verificar si este módulo ya está asignado a la empresa
+                if Plans.objects.filter(company=company, module=module).exists():
+                    return JsonResponse({"success": False, "message": f"El módulo {module.name} ya está asignado a esta empresa."})
+
+            # Asignar el costo del plan basado en el tipo de plan
+            if type_plan == 'basic':
+                total_cost = 399
+            elif type_plan == 'advanced':
+                total_cost = 999
+            elif type_plan == 'premium':
+                total_cost = 1299
+            else:
+                return JsonResponse({"success": False, "message": "Tipo de plan no válido."})
+
+            # Calcular la fecha de finalización usando la función 'calculate_payment_date'
+            start_date = parse_date(start_date_plan)
+            if not start_date:
+                return JsonResponse({"success": False, "message": "Fecha de inicio no válida."})
+
+            # Llamar a la función para calcular la fecha de pago (finalización)
+            end_date = calculate_payment_date(start_date, int(time_quantity_plan), time_unit_plan)
+            if not end_date:
+                return JsonResponse({"success": False, "message": "Error al calcular la fecha de finalización."})
+
+            # Crear el plan
+            plan = Plans(
+                company=company,
+                module=module,
+                type_plan=type_plan,
+                start_date_plan=start_date,
+                end_date_plan=end_date,
+                time_unit_plan=time_unit_plan,
+                time_quantity_plan=time_quantity_plan,
+                total=total_cost,
+                status_payment_plan=status_payment_plan,
+                #status_payment_plan=True,
+            )
+            plan.save()
+
+            return JsonResponse({"success": True, "message": "Plan agregado con éxito."})
+        except Company.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Empresa no encontrada."})
+        except Module.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Módulos no encontrados."})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)})
+
+    return JsonResponse({"success": False, "message": "Método no permitido."})
+
+# Función para editar un plan
+@csrf_exempt
+def edit_plans(request):
+    print("la funcion para editar esta siendo llamada")
+    context = user_data(request)
+    try:
+        if request.method == 'POST':
+            # Obtener los datos enviados por el formulario
+            _id = request.POST.get('id')  
+            company_id = request.POST.get('company_plan') 
+            module_company = request.POST.getlist('modules_company') 
+            type_plan = request.POST.get('type_plan')
+            start_date_plan = request.POST.get('start_date_plan')
+            time_quantity_plan = request.POST.get('time_quantity_plan')
+            time_unit_plan = request.POST.get('time_unit_plan')
+            status_payment_plan = request.POST.get('status')  # Activo o Inactivo
+
+            print(f"Datos del formulario recibidos: {request.POST}")
+
+            # Validar campos requeridos
+            if not all([_id, company_id, module_company, type_plan, start_date_plan, time_quantity_plan, time_unit_plan, status_payment_plan ]):
+                return JsonResponse({"success": False, "message": "Todos los campos son obligatorios."})
+
+            try:
+                # Obtener el plan que se va a editar
+                plan = Plans.objects.get(id=_id)
+
+                # Verificar si los módulos ya están asignados a la empresa
+                for module_id in module_company:
+                    module = Module.objects.get(id=module_id)
+                    if Plans.objects.filter(company_id=company_id, module=module).exclude(id=_id).exists():
+                        return JsonResponse({"success": False, "message": f"El módulo {module.name} ya está asignado a esta empresa."})
+
+                # Asignar el costo del plan basado en el tipo de plan
+                if type_plan == 'basic':
+                    total_cost = 399
+                elif type_plan == 'advanced':
+                    total_cost = 999
+                elif type_plan == 'premium':
+                    total_cost = 1299
+                else:
+                    return JsonResponse({"success": False, "message": "Tipo de plan no válido."})
+
+                # Calcular la fecha de finalización usando la función 'calculate_payment_date'
+                start_date = parse_date(start_date_plan)
+                if not start_date:
+                    return JsonResponse({"success": False, "message": "Fecha de inicio no válida."})
+
+                end_date = calculate_payment_date(start_date, int(time_quantity_plan), time_unit_plan)
+                if not end_date:
+                    return JsonResponse({"success": False, "message": "Error al calcular la fecha de finalización."})
+
+                # Actualizar los campos del plan
+                plan.company_id = company_id
+                plan.module_id = module_company[0]  
+                plan.start_date_plan = start_date
+                plan.end_date_plan = end_date
+                plan.time_quantity_plan = time_quantity_plan
+                plan.time_unit_plan = time_unit_plan
+                plan.status_payment_plan = bool(int(status_payment_plan)) 
+                plan.total = total_cost
+                plan.type_plan = type_plan
+
+                print(f"Datos del plan a guardar: {plan}")
+                plan.save()
+
+                return JsonResponse({"success": True, "message": "Plan editado con éxito.", "data": {"id": plan.id,"status_payment_plan": "Activo" if plan.status_payment_plan else "Inactivo", "end_date_plan": plan.end_date_plan
+                }})
+
+            except Module.DoesNotExist:
+                return JsonResponse({"success": False, "message": "Módulo no encontrado."})
+            except Company.DoesNotExist:
+                return JsonResponse({"success": False, "message": "Empresa no encontrada."})
+            except Exception as e:
+                return JsonResponse({"success": False, "message": f"Error interno: {str(e)}"})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "message": f"Error interno del servidor: {str(e)}"}, status=500)
+
+    return JsonResponse({"success": False, "message": "Método no permitido."})
+
+
+#funcion para eliminar planes
+@login_required
+def delete_plans(request):
+>>>>>>> origin/plans
     if request.method == 'POST':
         form = request.POST
         _id = form.get('id')
@@ -753,6 +1083,7 @@ def delete_company(request):
             return JsonResponse({'success': False, 'message': 'No ID provided'})
 
         try:
+<<<<<<< HEAD
             category = Company.objects.get(id=_id)
         except Company.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Category not found'})
@@ -760,6 +1091,15 @@ def delete_company(request):
         category.delete()
 
         return JsonResponse({'success': True, 'message': 'Categoría eliminada correctamente!'})
+=======
+            plans = Plans.objects.get(id=_id)
+        except Plans.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Plan not found'})
+
+        plans.delete()
+
+        return JsonResponse({'success': True, 'message': 'Plan eliminado correctamente!'})
+>>>>>>> origin/plans
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
