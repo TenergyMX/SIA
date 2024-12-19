@@ -1,7 +1,7 @@
 services:
   db:
     container_name: database
-    build: ./postgres/.
+    image: postgres:16
     ports:
       - "5432:5432"
     volumes:

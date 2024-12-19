@@ -1707,8 +1707,8 @@ def get_vehicles_audit(request):
         lista = lista.filter(vehicle__company_id = context["company"]["id"])
     else:
         lista = lista.filter(vehicle__responsible_id = context["user"]["id"])
-    if not context["role"]["id"] in [1,2]:
-        lista = lista.exclude(visible=False)
+    if not context["role"]["id"] in [1,2,3]:
+        lista = lista.exclude(is_visible=False)
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
