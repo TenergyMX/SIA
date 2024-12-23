@@ -15,10 +15,10 @@ urlpatterns = [
     # TODO ----- [ REQUEST ] -----
 
     # TODO ----- [ Empresas ] -----
-    path("add-company/", views.get_companys),
-    path("get-companys/", views.get_companys),
-    path("update-company/", views.get_companys),
-    path("delete-company/", views.get_companys),
+    path("add_company/", views.add_company),
+    path("get_companys/", views.get_companys),
+    path("edit_company/", views.edit_company),
+    path("delete_company/", views.delete_company),
 
     # TODO ----- [ Usuarios ] -----
     path("add_user_with_access/", views.add_user_with_access),

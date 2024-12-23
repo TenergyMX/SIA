@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.conf import settings
 from modules.models import *
 from users.models import *
+from modules.utils import * 
 from datetime import datetime, timedelta
 import json, os
 import requests
@@ -114,7 +115,6 @@ def users_profile_view(request):
 
     return render(request, 'users/profile.html', context)
 
-
 #planes 
 def plans_views(request):
     context = user_data(request)
@@ -205,11 +205,16 @@ def get_user_with_access(request):
 # Obtener a todos los usuarios con acceso
 def get_users_with_access(request):
     context = user_data(request)
+    print("esto contiene el context de permisos de usuarios:", context)
     response = {"success": False}
     dt = request.GET
     module_id = 1
     subModule_id = 2
     isList = dt.get("isList", False)
+    user_role_id = context["role"]["id"]
+    name_role_id = context["role"]["name"]
+    print("Este es el rol del usuario: ", user_role_id)
+    print("Este es el nombre del rol del usuario: ", name_role_id)
 
     lista = User_Access.objects.values(
         "id",
@@ -218,7 +223,13 @@ def get_users_with_access(request):
         "company_id", "company__name",
         "area_id", "area__code", "area__name",
     )
-    
+    # Verificar el rol del usuario actual
+    if user_role_id == 1:  
+        pass  # No se filtra
+    # Si el rol es administrador (rol 2)
+    elif user_role_id == 2:  # 
+        lista = lista.filter(company_id=context["company"]["id"])
+
     if isList:
         lista = lista.filter(
             company_id = context["company"]["id"]
@@ -394,22 +405,6 @@ def update_userPermissions(request):
     response["success"] = True
     return JsonResponse(response)
 
-
-def get_companys(request):
-    response = {"success": False}
-    dt = request.GET
-    isList = dt.get("isList", False)
-
-    lista = Company.objects.values()
-
-    if isList:
-        lista = lista.values("id", "name")
-
-    response["data"] = list(lista)
-    response["success"] = True
-    return JsonResponse(response)
-
-
 def add_provider(request):
     response = {"success": False}
     context = user_data(request)
@@ -528,8 +523,6 @@ def delete_provider(request):
     response["success"] = True
     return JsonResponse(response)
 
-
-
 def add_area(request):
     response = {"success": False}
     context = user_data(request)
@@ -632,7 +625,6 @@ def update_area(request):
 
 
 #-------------PLANES 
-
 #funcíon para la tabla de planes 
 def get_table_plans(request):
     response = {"status": "error", "message": "Sin procesar"}
@@ -744,8 +736,6 @@ def calculate_payment_date(start_date, quantity, unit):
         print(f"Error al calcular la fecha de pago: {str(e)}")
         return None  
 
-
-
 # Funcion para obtener los nombres de las empresas
 @login_required
 def get_company_plan(request):
@@ -767,9 +757,7 @@ def get_modules_plan(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
-
 # Función para agregar un plan
-
 def add_plan(request):
     print("Datos recibidos:")
     print(request.POST)
@@ -924,7 +912,6 @@ def edit_plans(request):
 
     return JsonResponse({"success": False, "message": "Método no permitido."})
 
-
 #funcion para eliminar planes
 @login_required
 def delete_plans(request):
@@ -943,6 +930,210 @@ def delete_plans(request):
         plans.delete()
 
         return JsonResponse({'success': True, 'message': 'Plan eliminado correctamente!'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+# Función para la tabla de empresas (Company)
+def get_companys(request):
+    response = {"success": False, "message": "Sin procesar"}
+    try:
+        isList = request.GET.get("isList", False)
+        
+        # Obtener los datos de las compañías
+        if isList:
+            lista = Company.objects.values("id", "name", "address")
+        else:
+            lista = Company.objects.values()
+
+            for item in lista:
+                item["btn_action"] = (
+                    "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_companys(this)' aria-label='edit'>"
+                    "<i class='fa-solid fa-pen'></i>"
+                    "</button>\n"
+                    "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_company(this)' aria-label='delete'>"
+                    "<i class='fa-solid fa-trash'></i>"
+                    "</button>"
+                )
+
+        # Preparar la respuesta con los datos de las empresas
+        response["data"] = list(lista)
+        response["success"] = True
+        response["message"] = "Datos cargados exitosamente"
+    
+    except Exception as e:
+        response["message"] = str(e)
+
+    # Devolver la respuesta en formato JSON
+    return JsonResponse(response)
+
+#funcion para agregar empresas
+@login_required
+def add_company(request):
+    context = user_data(request)
+
+    if request.method == 'POST':
+        try:
+            name_company = request.POST.get('name').strip()
+            addres_company = request.POST.get('address')
+            # Validaciones
+            if not name_company or not addres_company:
+                return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+            # Verificar duplicados (sin importar mayúsculas o minúsculas)
+            if Company.objects.filter(
+                name__iexact=name_company
+            ).exists():
+                return JsonResponse({'success': False, 'message': 'El nombre de la empresa ya existe.'})
+            # Crear una nueva empresa
+            with transaction.atomic():
+                company = Company.objects.create(
+                    name=name_company,
+                    address=addres_company,
+                )
+
+                # Crear el usuario administrador
+                username = f"admin_{name_company.replace(' ', '_').lower()}"  # Nombre de usuario
+                email = f"{username}@gmail.com"  
+
+                user = User.objects.create_user(
+                    username=username,
+                    password='123456', 
+                    email=email,
+                    first_name=f"Admin {name_company}",
+                    last_name=''
+                )
+            
+                # Asignar el rol de "Administrador" a este usuario
+                role = Role.objects.get(name="Administrador")  
+                
+                # Verificar o crear el área "Sistemas" para esta empresa
+                area_sistemas, created = Area.objects.get_or_create(
+                    company_id=company.id,
+                    name="Sistemas",
+                    defaults={
+                        'code': "SI",
+                        'description': "Área de Sistemas",
+                        'is_active': True
+                    }
+                )
+
+                # Crear el acceso del usuario
+                user_access = User_Access.objects.create(
+                    user_id=user.id,
+                    role_id=role.id,  
+                    company_id=company.id, 
+                    area_id=area_sistemas.id
+                )
+
+                # Agregar las áreas "Sistemas", "Compras" y "Almacén"
+                areas = [
+                    {"name": "Compras", "code": "CO"},
+                    {"name": "Almacén", "code": "AL"}
+                ]
+                for area_data in areas:
+                    Area.objects.get_or_create(
+                        company_id=company.id,
+                        name=area_data['name'],
+                        defaults={
+                            'code': area_data['code'],
+                            'description': f"Área de {area_data['name']}",
+                            'is_active': True
+                        }
+                    )
+
+                active_plans = Plans.objects.filter(company=company, status_payment_plan=True)
+                if active_plans.exists():
+                    for plan in active_plans:
+                        module = plan.module
+                        User_Access.objects.create(
+                            user_id=user.id,
+                            company_id=company.id,
+                            module_id=module.id,
+                            role_id=role.id
+                        )
+
+            #permisos de administrador
+            #user.is_staff = True  
+                user.save()
+
+            return JsonResponse({'success': True, 'message': 'Empresa, administrador y areas agregado correctamente!'})
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': 'Error inesperado: ' + str(e)})
+    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+
+# Función para editar las empresas 
+def edit_company(request):
+    context = user_data(request)
+    company_id = context["company"]["id"]
+    try:
+        if request.method == 'POST':
+            _id = request.POST.get('id')
+            name_company = request.POST.get('name').strip()
+            address_company = request.POST.get('address').strip()
+
+            # Validaciones
+            if not all([_id, name_company, address_company]):
+                return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+
+            company = Company.objects.get(id=_id)
+
+            # Verificar si el nombre de la empresa cambió
+            name_changed = company.name != name_company
+            
+            # Verificar duplicados (sin importar mayúsculas o minúsculas)
+            if Company.objects.filter(name__iexact=name_company).exclude(id=_id).exists():
+                return JsonResponse({'success': False, 'message': 'El nombre de la empresa ya existe.'})
+
+            # actualizar los campos de la empresa 
+            company.name = name_company
+            company.address = address_company
+            company.save()
+
+            # Si el nombre de la empresa cambió, actualizar el nombre del usuario administrador
+            if name_changed:
+                # Obtener el usuario administrador 
+                user_access = User_Access.objects.get(company_id=_id, role__name="Administrador")
+                admin_user = user_access.user
+                
+                # Actualizar el nombre del usuario administrador
+                admin_user.username = f"admin_{name_company.replace(' ', '_').lower()}"
+                admin_user.first_name = f"Admin {name_company}"
+                admin_user.email = f"{admin_user.username}@gmail.com"  # Actualizar email si es necesario
+                admin_user.save()
+
+
+            return JsonResponse({'success': True, 'message': 'Empresa editado correctamente!'})
+
+    except Services.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Empresa no encontrado'}, status=404)
+
+    except ValueError as ve:
+        return JsonResponse({'success': False, 'message': f'Error de valor: {str(ve)}'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error interno del servidor: {str(e)}'}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
+
+#funcion para eliminar las empresas
+@login_required
+def delete_company(request):
+    if request.method == 'POST':
+        form = request.POST
+        _id = form.get('id')
+
+        if not _id:
+            return JsonResponse({'success': False, 'message': 'No ID provided'})
+
+        try:
+            category = Company.objects.get(id=_id)
+        except Company.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Category not found'})
+
+        category.delete()
+
+        return JsonResponse({'success': True, 'message': 'Empresa eliminada correctamente!'})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 

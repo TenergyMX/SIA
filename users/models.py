@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 # Create your models here.
 
@@ -23,11 +24,11 @@ class Company(models.Model):
     
 class Area(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
-    code = models.CharField(max_length=10, unique=True, blank=True, null=True, verbose_name="Código del Área", help_text="Código único para identificar el área")
+    code = models.CharField(max_length=10, blank=True, null=True, verbose_name="Código del Área", help_text="Código único para identificar el área")
     name = models.CharField(max_length=64, verbose_name="Nombre del Área")
     description = models.TextField(blank=True, null=True, verbose_name="Descripción del Área")
     is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Fecha de Creación")
 
     class Meta:
         verbose_name = "Área"

@@ -32,7 +32,8 @@ COPY . .
 
 ARG PIP_INDEX_URL
 
-RUN pip install --no-cache-dir -r requirements.txt
+# RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --default-timeout=1000 -r requirements.txt
 
 #RUN aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.0 --asset core.tar.gz \core.tar.gz
 
