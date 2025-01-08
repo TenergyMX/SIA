@@ -501,6 +501,7 @@ class Infrastructure_Review(models.Model):
 #tablas para el modulo de equipos y herramientas--
 #tabla categorias
 class Equipement_category(models.Model):
+    empresa = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre")
     short_name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre Corto")
     is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
@@ -512,12 +513,14 @@ class Equipement_category(models.Model):
         # Convertir a minúsculas para validación insensible a mayúsculas y minúsculas
         name_lower = self.name.lower() if self.name else None
         short_name_lower = self.short_name.lower() if self.short_name else None
+        #Validación del nombre de la empresa 
+        if name_lower and Equipement_category.objects.exclude(pk=self.pk).filter(empresa=self.empresa, name__iexact=name_lower).exists():
+            raise ValidationError({'name': 'El nombre ya existe en la base de datos para esta empresa. Ingresa un nombre diferente.'})
 
-        if Equipement_category.objects.exclude(pk=self.pk).filter(name__iexact=name_lower).exists():
-            raise ValidationError({'name': 'El nombre ya existe en la base de datos. Ingresa un nombre diferente.'})
+        # Validación del nombre corto por empresa
+        if short_name_lower and Equipement_category.objects.exclude(pk=self.pk).filter(empresa=self.empresa, short_name__iexact=short_name_lower).exists():
+            raise ValidationError({'short_name': 'El nombre corto ya existe en la base de datos para esta empresa. Ingresa un nombre corto diferente.'})
 
-        if Equipement_category.objects.exclude(pk=self.pk).filter(short_name__iexact=short_name_lower).exists():
-            raise ValidationError({'short_name': 'El nombre corto ya existe en la base de datos. Ingresa un nombre corto diferente.'})
 
     def save(self, *args, **kwargs):
         self.full_clean()  # Llamar al método clean() antes de guardar
