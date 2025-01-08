@@ -117,14 +117,17 @@ def users_profile_view(request):
 
 #planes 
 def plans_views(request):
+    if not request.user.is_superuser:
+        return render(request, "error/access_denied.html")
+                      
     context = user_data(request)
     module_id = 3
     subModule_id = 3
-    last_module_id = request.session.get("last_module_id", 2)
-
+    last_module_id = request.session.get("last_module_id", 3)
+    print("esto contiene el last module id:", last_module_id)
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, last_module_id])
-
+    print("esto contiene el sidebar:", sidebar)
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
@@ -975,29 +978,36 @@ def add_company(request):
         try:
             name_company = request.POST.get('name').strip()
             addres_company = request.POST.get('address')
+            email_user = request.POST.get('email_company').strip()
             # Validaciones
-            if not name_company or not addres_company:
+            if not name_company or not addres_company or not email_user:
                 return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
             # Verificar duplicados (sin importar mayúsculas o minúsculas)
             if Company.objects.filter(
                 name__iexact=name_company
             ).exists():
                 return JsonResponse({'success': False, 'message': 'El nombre de la empresa ya existe.'})
+            
+            if User.objects.filter(email__iexact=email_user).exists():
+                return JsonResponse({'success': False, 'message': 'El correo electrónico ya está en uso.'})
+
             # Crear una nueva empresa
             with transaction.atomic():
                 company = Company.objects.create(
                     name=name_company,
                     address=addres_company,
+
                 )
 
                 # Crear el usuario administrador
                 username = f"admin_{name_company.replace(' ', '_').lower()}"  # Nombre de usuario
-                email = f"{username}@gmail.com"  
+                #email = f"{username}@gmail.com"  
 
                 user = User.objects.create_user(
                     username=username,
                     password='123456', 
-                    email=email,
+                    email=email_user,
+                    #email='',
                     first_name=f"Admin {name_company}",
                     last_name=''
                 )
