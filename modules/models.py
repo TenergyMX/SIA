@@ -501,8 +501,9 @@ class Infrastructure_Review(models.Model):
 #tablas de datos para el modulo de servicios--modulo 5 
 #tabla categorias de servicios submodulo num.32
 class Services_Category(models.Model):
-    name_category = models.CharField(blank=True, null=True, max_length=100, unique=True, verbose_name="Nombre")
-    short_name_category = models.CharField(blank=True, null=True, max_length=50, unique=True, verbose_name="Nombre Corto")
+    empresa = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
+    name_category = models.CharField(blank=True, null=True, max_length=100, verbose_name="Nombre")
+    short_name_category = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre Corto")
     is_active_category = models.BooleanField(default=True, verbose_name="¿Está Activo?")
     description_category = models.TextField(blank=True, null=True, verbose_name="Descripción")
 

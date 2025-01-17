@@ -8,6 +8,7 @@ urlpatterns = [
     path("category_services/", views.category_services),
     path("services/", views.services),
     path("dashboard_services/", views.dashboard_services),
+    path("payments_history/", views.payments_history),
 
     #tablas
     path("get_table_category_service/", views.get_table_category_service),
@@ -47,6 +48,11 @@ urlpatterns = [
 
 
     path('get_payment_history_notifications/<int:service_id>/', views.get_payment_history_notifications),
+
+
+    #Gráfica de historial de pagos 
+    path('get_services_categories_payments/', views.get_services_categories_payments),
+    path('get_payment_history_grafic/', views.get_payment_history_grafic),
 
 ]
 
