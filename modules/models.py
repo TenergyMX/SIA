@@ -439,8 +439,9 @@ class Vehicle_fuel(models.Model):
 # Todo ----- [ 3ro ] -----
     
 class Infrastructure_Category(models.Model):
-    name = models.CharField(blank=True, null=True, max_length=128, unique=True, verbose_name="Nombre")
-    short_name = models.CharField(blank=True, null=True, max_length=48, unique=True, verbose_name="Nombre Corto")
+    empresa = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
+    name = models.CharField(blank=True, null=True, max_length=128, verbose_name="Nombre")
+    short_name = models.CharField(blank=True, null=True, max_length=48, verbose_name="Nombre Corto")
     is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
     description = models.TextField(blank=True, null=True, verbose_name="Descripción")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")

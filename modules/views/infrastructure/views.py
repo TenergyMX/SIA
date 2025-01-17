@@ -89,8 +89,8 @@ def get_infrastructure_categorys(request):
     dt = request.GET
     subModule_id = 23
     isList = dt.get("isList", False)
-
-    datos = Infrastructure_Category.objects.values()
+    company_id = context["company"]["id"]
+    datos = Infrastructure_Category.objects.filter(empresa__id=company_id).distinct().values()
 
     if isList:
         datos = datos.values("id", "name", "short_name")
@@ -502,17 +502,20 @@ def add_infrastructure_category(request):
     company_id = context["company"]["id"]
     is_active = dt.get("is_active", True)
     
-    # Filter ignoring case sensitivity
+    # Validar que no exista ni el nombre ni el nombre corto de manera insensible a mayúsculas y minúsculas
     existing_category = Infrastructure_Category.objects.filter(
-        Q(name__iexact=dt.get("name")) or Q(short_name__iexact=dt.get("short_name"))
+        Q(name__iexact=dt.get("name"), empresa__id=company_id) |
+        Q(short_name__iexact=dt.get("short_name"), empresa__id=company_id)
     ).first()
+
     
     if existing_category:
-        response["message"] = "El registro ya existe."
+        response["message"] = "El nombre o nombre corto ya para esta empresa."
         return JsonResponse(response)
     
     try:
         obj = Infrastructure_Category(
+            empresa_id=company_id,
             name=dt.get("name"),
             short_name=dt.get("short_name"),
             description=dt.get("description"),
@@ -539,11 +542,22 @@ def update_infrastructure_category(request):
 
     try:
         # Obtener el objeto de infraestructura existente
+        
         obj = Infrastructure_Category.objects.get(id = id)
+        
+        existing_category = Infrastructure_Category.objects.filter(
+            Q(name__iexact=dt.get("name"), empresa__id=company_id) |
+            Q(short_name__iexact=dt.get("short_name"), empresa__id=company_id)
+        ).exclude(id=id).first()
+
+        if existing_category:
+            response["message"] = "El nombre o el nombre corto ya existen en esta empresa."
+            return JsonResponse(response)
         
         # Actualizar los campos del objeto
         obj.category_id = category_id
         obj.name = dt.get("name")
+        obj.short_name = dt.get("short_name")  
         obj.quantity = dt.get("quantity")
         obj.description = dt.get("description")
         obj.is_active = is_active
