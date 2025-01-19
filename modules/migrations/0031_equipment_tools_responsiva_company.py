@@ -54,26 +54,6 @@ class Migration(migrations.Migration):
                 ('empresa', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa')),
             ],
         ),
-        migrations.AlterField(
-            model_name='infrastructure_category',
-            name='name',
-            field=models.CharField(blank=True, max_length=128, null=True, verbose_name='Nombre'),
-        ),
-        migrations.AlterField(
-            model_name='infrastructure_category',
-            name='short_name',
-            field=models.CharField(blank=True, max_length=48, null=True, verbose_name='Nombre Corto'),
-        ),
-        migrations.AddField(
-            model_name='equipement_category',
-            name='empresa',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
-        ),
-        migrations.AddField(
-            model_name='infrastructure_category',
-            name='empresa',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
-        ),
         migrations.CreateModel(
             name='Plans',
             fields=[
