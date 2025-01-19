@@ -143,38 +143,51 @@ def get_equipments_tools_categorys(request):
     isList = request.GET.get("isList", False)
     subModule_id = 29
 
-    if isList:
-        datos = list(Equipement_category.objects.values("id", "name", "short_name"))
-    else:
-        access = get_module_user_permissions(context, subModule_id)#contiene el crud
-        access = access["data"]["access"]
-        area = context["area"]["name"]
-        editar = access["update"]
-        eliminar = access["delete"]
-        tipo_user = context["role"]["name"]
+    try:
+        empresa_id = context["company"]["id"]
+        if not empresa_id:
+            response["message"] = "No se encontró la empresa asociada al usuario"
+            return JsonResponse(response, status=400)
+
+        if isList:
+            datos = list(Equipement_category.objects.filter(
+                        empresa__id=empresa_id
+                    ).distinct().values("id", "name", "short_name"))
+        else:
+            access = get_module_user_permissions(context, subModule_id)#contiene el crud
+            access = access["data"]["access"]
+            area = context["area"]["name"]
+            editar = access["update"]
+            eliminar = access["delete"]
+            tipo_user = context["role"]["name"]
    
 
-        datos = list(Equipement_category.objects.values())
-        for item in datos:
-            item["btn_action"] = ""
-            if access["update"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
-                item["btn_action"] += (
-                    "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_category_category(this)' aria-label='info'>"
-                    "<i class='fa-solid fa-pen'></i>"
-                    "</button>\n"
-                )
-            if access["delete"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
-                item["btn_action"] += (
-                    "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_category(this)' aria-label='delete'>"
-                    "<i class='fa-solid fa-trash'></i>"
-                    "</button>"
-                )
+            datos = list(Equipement_category.objects.filter(
+                        empresa__id=empresa_id
+                    ).distinct().values())
+            for item in datos:
+                item["btn_action"] = ""
+                if access["update"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+                    item["btn_action"] += (
+                        "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_category_category(this)' aria-label='info'>"
+                        "<i class='fa-solid fa-pen'></i>"
+                        "</button>\n"
+                    )
+                if access["delete"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+                    item["btn_action"] += (
+                        "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_category(this)' aria-label='delete'>"
+                        "<i class='fa-solid fa-trash'></i>"
+                        "</button>"
+                    )
 
-    response["data"] = datos
-    response["status"] = "success"
-    response["message"] = "Datos cargados exitosamente"
-    return JsonResponse(response)
-
+        response["data"] = datos
+        response["status"] = "success"
+        response["message"] = "Datos cargados exitosamente"
+        return JsonResponse(response)
+    except Exception as e:
+        response["message"] = f"Error: {str(e)}"
+        return JsonResponse(response, status=500)
+    
 #funcion para agregar las categorias 
 @csrf_protect
 @login_required
@@ -188,8 +201,7 @@ def add_equipment_category(request):
     create = access["create"]
     tipo_user = context["role"]["name"]
 
-   
-
+    empresa_id = context["company"]["id"]
     if request.method == 'POST':
         try:
             name = request.POST.get('name')
@@ -197,12 +209,15 @@ def add_equipment_category(request):
             description = request.POST.get('description')
             is_active = request.POST.get('is_active') == '1'
 
+            empresa = Company.objects.get(pk=empresa_id)
+
             if not name or not short_name:
                 raise ValidationError("Nombre y nombre corto son obligatorios.")
-
+            
             # Crear una nueva categoría
             with transaction.atomic():
                 Equipement_category.objects.create(
+                    empresa=empresa,
                     name=name,
                     short_name=short_name,
                     description=description,
@@ -284,22 +299,22 @@ def get_equipments_tools(request):
     response = {"status": "error", "message": "Sin procesar"}
     context = user_data(request)
     subModule_id = 30
-    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
-    print("esto contiene mi access:", access)
-    area = context["area"]["name"]
-    tipo_user = context["role"]["name"]
-    editar = access["update"]
-    eliminar = access["delete"]
-    agregar = access["create"]
-    leer = access["read"]
-    print("Permiso de crear, es el siguinete:", access["create"])
-    print("Tipo de usuario:", tipo_user)
-    print("Área del usuario:", area)
 
     try:
+
+        access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+        area = context["area"]["name"]
+        tipo_user = context["role"]["name"]
+        company_id = context["company"]["id"]
+
+        editar = access["update"]
+        eliminar = access["delete"]
+        agregar = access["create"]
+        leer = access["read"]
+
         equipments = list(Equipment_Tools.objects.select_related(
             'equipment_category', 'equipment_area', 'equipment_responsible', 'equipment_location'
-        ).values(
+        ).filter(company_id=company_id).values(
             'id',
             'equipment_category__id',
             'equipment_category__name',
@@ -323,12 +338,13 @@ def get_equipments_tools(request):
             modified_data = data.copy()
 
             file_path = data.get('equipment_technical_sheet')
-            technical_sheet = generate_presigned_url(AWS_BUCKET_NAME, file_path)
-            modified_path = technical_sheet
-        
-        modified_data['responsibility_letter'] = modified_path
-        modified_data_list.append(modified_data)
-
+            if file_path:
+                technical_sheet = generate_presigned_url(AWS_BUCKET_NAME, file_path)
+                modified_path = technical_sheet
+            else:
+                modified_path = None
+            modified_data['responsibility_letter'] = modified_path
+            modified_data_list.append(modified_data)
        
         for item in equipments:
             item["btn_action"] = ""
@@ -346,21 +362,15 @@ def get_equipments_tools(request):
                     "<i class='fa-solid fa-trash'></i>"
                     "</button> "
                 )
+            
+            # Botón Agregar Responsiva (visible para todos)
             if access["create"] is True:
-                if tipo_user.lower() in ["administrador", "super usuario"] or area.lower() == "almacen":
-                    item["btn_action"] += (
-                        "<button type='button' class='btn btn-icon btn-sm btn-info-light add-responsiva-btn' "
-                        "onclick='modal_responsiva(this)' aria-label='responsiva'>"
-                        "<i class='fa-solid fa-file-circle-plus'></i>"
-                        "</button>"
-                    )
-                elif not (area.lower() == "almacen"):
-                    item["btn_action"] += (
-                        "<button type='button' class='btn btn-icon btn-sm btn-info-light add-responsiva-btn' "
-                        "onclick='modal_responsiva(this)' aria-label='responsiva'>"
-                        "<i class='fa-solid fa-file-circle-plus'></i>"
-                        "</button>"
-                    )
+                item["btn_action"] += (
+                    "<button type='button' class='btn btn-icon btn-sm btn-info-light add-responsiva-btn' "
+                    "onclick='modal_responsiva(this)' aria-label='responsiva'>"
+                    "<i class='fa-solid fa-file-circle-plus'></i>"
+                    "</button>"
+                )
 
             if access["read"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
                 item["btn_action"] += (
@@ -381,18 +391,39 @@ def get_equipments_tools(request):
 
 # Vista para obtener las categorías de equipos
 @login_required
+@csrf_exempt
 def get_equipment_categories(request):
-    if request.method == 'GET':
-        categories = Equipement_category.objects.filter(is_active=True).values('id', 'name')
-        return JsonResponse({'data': list(categories)}, safe=False)
-    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]  
+
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+
+        # Obtener las categorías de equipo asociadas a la empresa y activas
+        categories = Equipement_category.objects.filter(
+            empresa_id=company_id, is_active=True
+        ).values('id', 'name') 
+        data = list(categories)
+
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
 
 # Funcion para obtener los nombres de los usuarios que ya han sido cargados para agregar un equipo 
 @login_required
 @csrf_exempt
 def get_responsible_users(request):
     try:
-        users = User.objects.values('id', 'username')  
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+        
+        users = User.objects.filter(
+            id__in=User_Access.objects.filter(company_id=company_id).values('user_id')
+        ).distinct().values('id', 'username')  
         data = list(users)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
@@ -403,7 +434,12 @@ def get_responsible_users(request):
 @csrf_exempt
 def get_equipment_areas(request):
     try:
-        areas = Area.objects.values('id', 'name')  
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+        
+        areas = Area.objects.filter(company_id=company_id).distinct().values('id', 'name')  
         data = list(areas)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
@@ -414,7 +450,15 @@ def get_equipment_areas(request):
 @csrf_exempt
 def get_locations(request):
     try:
-        ubicaciones = Equipmets_Tools_locations.objects.values('id', 'location_name')  
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+
+        ubicaciones = Equipmets_Tools_locations.objects.filter(
+            location_company_id=company_id
+        ).values('id', 'location_name')  
         data = list(ubicaciones)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
@@ -491,11 +535,10 @@ def add_equipment_tools(request):
 
     if request.method == 'POST':
         equipment_name = request.POST.get('equipment_name')
-
+        
         # Check if equipment_name already exists
-        if Equipment_Tools.objects.filter(equipment_name=equipment_name).exists():
-            # Handle the case where the equipment_name already exists
-            return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra en la base de datos, ingresa otro diferente.'})
+        if Equipment_Tools.objects.filter(equipment_name__iexact=equipment_name, company_id=company_id).exists():
+            return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra regristado para esta empresa, ingresa otro diferente.'})
         
         try:
 
@@ -547,16 +590,18 @@ def add_equipment_tools(request):
             response["status"] = "error"
             response["message"] = str(e)
         return JsonResponse(response) 
-      
-
-# Función para editar los registros de los equipos
+    
+#el nombre y siempre lo marca como el nombre ya existe, y solo quiero modificar la cantidad
+# Función para editar los registros de los equipos o herramientas
 @login_required
 @csrf_exempt
 def edit_equipments_tools(request):
+    context = user_data(request)
+    company_id = context["company"]["id"]
     if request.method == 'POST':
         _id = request.POST.get('id')
         equipment_category_id = request.POST.get('equipment_category')
-        equipment_name = request.POST.get('equipment_name')
+        equipment_name = request.POST.get('equipment_name').strip()
         equipment_type = request.POST.get('equipment_type')
         equipment_brand = request.POST.get('equipment_brand')
         equipment_description = request.POST.get('equipment_description')
@@ -567,9 +612,9 @@ def edit_equipments_tools(request):
         equipment_location = request.POST.get('equipment_location')
         equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
 
-        # Validar que el nombre del equipo no esté en uso por otro equipo
-        if Equipment_Tools.objects.exclude(pk=_id).filter(equipment_name__iexact=equipment_name).exists():
-            return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra en la base de datos, ingresa otro diferente.'})
+        # Validar que el nombre del equipo no esté en uso por otro equipo dentro de la misma empresa, 
+        if Equipment_Tools.objects.filter(equipment_name__iexact=equipment_name, company_id=company_id).exclude(id=_id).exists():
+            return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra registrado para esta empresa, ingresa otro diferente.'})
 
         try:
             equipment_tool = Equipment_Tools.objects.get(id=_id)
@@ -632,8 +677,6 @@ def delete_equipment_tool(request):
 @csrf_exempt  
 def add_responsiva(request):
     context = user_data(request)
-    print("esto contiene tu comtext:")
-    print(context)
     module_id = 6
     subModule_id = 31
     request.session["last_module_id"] = module_id
@@ -645,13 +688,8 @@ def add_responsiva(request):
 
     tipo_user = context["role"]["name"].lower()
     company_id = context["company"]["id"]
-    #print(company_id)
-    
-    print("este es el rol de usuario con el que cuenta")
-    print(tipo_user)
+
     user_name = context["user"]["username"].lower()
-    print("este es el nombre del usuario con el que cuenta")
-    print(user_name)
 
     if request.method == 'POST':
         # Extraer datos del formulario
@@ -661,12 +699,7 @@ def add_responsiva(request):
         fecha_entrega = request.POST.get('fecha_entrega')
         times_requested_responsiva = request.POST.get('times_requested_responsiva')
         comments = request.POST.get('comments', '')
-
-        print(f"Fecha de entrega recibida: {fecha_entrega}") 
-
     
-        print(f"Datos recibidos a traves del formulario: {request.POST}")  
-
         if not fecha_entrega or not isinstance(fecha_entrega, str):
             return JsonResponse({'success': False, 'message': 'Fecha de entrega no proporcionada.'})
         try:
@@ -678,8 +711,6 @@ def add_responsiva(request):
         fecha_inicio_str = request.POST.get('fecha_inicio', '')
         fecha_inicio = parse_date(fecha_inicio_str) if fecha_inicio_str else datetime.now().date()
 
-        print(f"Fecha de inicio: {fecha_inicio}, Fecha de entrega: {fecha_entrega_date}") 
-
         # Verificar que la fecha de entrega sea mayor a la fecha de inicio
         if fecha_entrega_date <= fecha_inicio:
             return JsonResponse({'success': False, 'message': 'La fecha de entrega debe ser mayor a la fecha de inicio.'})
@@ -687,7 +718,7 @@ def add_responsiva(request):
         try:
             with transaction.atomic():
                 # Obtener el equipo solicitado
-                requested_amount = Equipment_Tools.objects.get(equipment_name=equipment_name)
+                requested_amount = Equipment_Tools.objects.filter(equipment_name=equipment_name, company_id=company_id).first()
                 
                 # Verificar la cantidad disponible
                 available_amount = float(requested_amount.amount)
@@ -778,6 +809,7 @@ def add_responsiva(request):
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
 
 
+
 def render_to_pdf(template_src, context_dict):
     template = get_template(template_src)
     html = template.render(context_dict)
@@ -800,11 +832,18 @@ def get_responsible_user(request):
 
     try:
         context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+        
         area = context["area"]["name"].lower()
         tipo_user = context["role"]["name"].lower()
 
         if tipo_user in ['administrador', 'super usuario'] or area == 'almacen':
-            users = User.objects.values('id', 'username')  
+            users = User.objects.filter(
+                id__in=User_Access.objects.filter(company_id=company_id).values('user_id')
+            ).distinct().values('id', 'username')
+
         else:
             users = User.objects.filter(id=request.user.id).values('id', 'username')
 
@@ -825,6 +864,9 @@ def get_responsiva(request):
     access = access["data"]["access"]
     area = context["area"]["name"].lower()
     tipo_user = context["role"]["name"].lower()
+    company_id = context["company"]["id"] 
+
+    company_name = context["company"]["name"].lower()
     editar = access["update"]
     create = access["create"]
     user_name = context["user"]["username"].lower()
@@ -835,6 +877,8 @@ def get_responsiva(request):
 
             responsiva = list(Equipment_Tools_Responsiva.objects.select_related(
                 'equipment_name', 'responsible_equipment'
+            ).filter(
+                company_id=company_id,
             ).values(
                 'id', 
                 'equipment_name__equipment_name',  # nombre del equipo
