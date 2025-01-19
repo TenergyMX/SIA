@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('users', '0001_initial'),
-        ('modules', '0034_alter_services_category_name_category_and_more'),
+        ('modules', '0035_payments_services_status_payment'),
     ]
 
     operations = [
