@@ -69,4 +69,9 @@ class Migration(migrations.Migration):
             name='empresa',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
         ),
+        migrations.AddField(
+            model_name='infrastructure_category',
+            name='empresa',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
+        ),
     ]
