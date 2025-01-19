@@ -239,7 +239,13 @@ function graficaEgresosCategoria(categoryId) {
             if (response.status === 'success') {
                 var serviceNames = [];
                 var payments = [];
+                var categoryName = response.data && response.data.name_category ? response.data.name_category : 'Categoría desconocida';
+
+                console.log("este es el nombre de la categoria:", categoryName);
                 
+
+                $('#categoryNameTitle').text('Gráfica de Servicios por Categoría: ' + categoryName);
+
                 response.data.forEach(function(item) {
                     serviceNames.push(item.service_name);
                     payments.push(Number(item.total_payment));
@@ -248,12 +254,15 @@ function graficaEgresosCategoria(categoryId) {
 
                 // Crear la gráfica 
                 var ctx = document.getElementById('graficaEgresosCategoria').getContext('2d');
+                if (typeof graficaEgresosCategoriaInstance !== 'undefined'&& graficaEgresosCategoriaInstance !== null) {
+                    graficaEgresosCategoriaInstance.destroy(); 
+                }
                 graficaEgresosCategoriaInstance = new Chart(ctx, {
                     type: 'bar',  
                     data: {
                         labels: serviceNames,  
                         datasets: [{
-                            label: 'Egresos por Servicio',
+                            label: 'Egresos de Servicios por Categoría',
                             data: payments, 
                             backgroundColor: '#a5c334', 
                             borderColor: '#28a745',
@@ -297,13 +306,32 @@ function graficaEgresosProveedor(providerId) {
             if (response.status === 'success') {
                 var serviceNames = [];
                 var payments = [];
+                
 
+                // Obtener el nombre del proveedor
+                var providerName = response.provider_name;
+                console.log("esto contiene el response", response);
+
+                console.log("proveedor seleccionado:", providerName);
+
+                if (providerName) {
+                    // Actualizar el título de la gráfica con el nombre del proveedor
+                    $('#proveedor').text('Gráfica de Servicios del proveedor: ' + providerName);
+                } else {
+                    console.error("No se encontró el nombre del proveedor.");
+                }
+
+                
                 response.data.forEach(function(item) {
                     serviceNames.push(item.service_name);
                     payments.push(Number(item.total_payment));
                 });
                 
+                
                 var ctx = document.getElementById('graficaEgresosProveedor').getContext('2d');
+                if (typeof graficaEgresosProveedorInstance !== 'undefined' && graficaEgresosProveedorInstance !== null) {
+                    graficaEgresosProveedorInstance.destroy(); 
+                }
                 graficaEgresosProveedorInstance = new Chart(ctx, {
                     type: 'bar',  
                     data: {

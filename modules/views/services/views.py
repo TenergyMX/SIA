@@ -20,9 +20,9 @@ from django.utils import timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.conf import settings
 import json, os
-from django.db.models import Sum
 import calendar
-
+from django.db.models import Sum, F
+from django.db.models.functions import ExtractMonth, ExtractYear
 
 # Llamar módulos y submódulos 
 #submodulo de categorias de servicios 
@@ -108,17 +108,43 @@ def dashboard_services(request):
         template = "error/access_denied.html"
     return render(request, template , context) 
 
+#submodulo de historial depagos de servicios 
+@login_required
+def payments_history(request):
+    context = user_data(request)
+    module_id = 5
+    subModule_id = 35
+    request.session["last_module_id"] = module_id
+
+    access = get_module_user_permissions(context, subModule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+    
+    if context["access"]["read"]:
+        template = "services/payments_history.html"
+    else:
+        template = "error/access_denied.html"
+    return render(request, template , context) 
 
 # Función para la tabla categorias de servicios
 def get_table_category_service(request):
     response = {"status": "error", "message": "Sin procesar"}
     try:
         context = user_data(request)
+        company_id = context.get("company", {}).get("id")
         isList = request.GET.get("isList", False)
         subModule_id = 32
 
+        if not company_id:
+            response["message"] = "No se encontró una empresa asociada al usuario"
+            return JsonResponse(response, status=400)
+        
         if isList:
-            datos = list(Services_Category.objects.values("id", "name_category", "short_name_category"))
+            datos = list(Services_Category.objects.filter(
+                    empresa=company_id 
+                ).distinct().values("id", "name_category", "short_name_category"))
         else:
             access = get_module_user_permissions(context, subModule_id)  # contiene el crud
             access = access["data"]["access"]
@@ -127,7 +153,9 @@ def get_table_category_service(request):
             eliminar = access["delete"]
             tipo_user = context["role"]["name"]
 
-            datos = list(Services_Category.objects.values())
+            datos = list(Services_Category.objects.filter(
+                    empresa=company_id
+                ).distinct().values())
             for item in datos:
                 item["btn_action"] = ""
                 if access["update"] is True and (area.lower() == "compras" or tipo_user.lower() in ["administrador", "super usuario"]):
@@ -159,9 +187,10 @@ def add_category(request):
     context = user_data(request)
     subModule_id = 32
     access = get_module_user_permissions(context, subModule_id)  
-
+    
     if request.method == 'POST':
         try:
+            company_id = context["company"]["id"]
             name_category = request.POST.get('name').strip()
             short_name_category = request.POST.get('short_name').strip()
             description_category = request.POST.get('description').strip()
@@ -171,21 +200,21 @@ def add_category(request):
             if not name_category or not short_name_category or not description_category:
                 return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
 
-            # Verificar duplicados (sin importar mayúsculas o minúsculas)
+# Verificar duplicados (sin importar mayúsculas o minúsculas)
             if Services_Category.objects.filter(
-                name_category__iexact=name_category
+                name_category__iexact=name_category, empresa_id=company_id
             ).exists():
                 return JsonResponse({'success': False, 'message': 'El nombre de la categoría ya existe.'})
 
             if Services_Category.objects.filter(
-                short_name_category__iexact=short_name_category
+                short_name_category__iexact=short_name_category, empresa_id=company_id
             ).exists():
                 return JsonResponse({'success': False, 'message': 'El nombre corto de la categoría ya existe.'})
-
 
             # Crear una nueva categoría
             with transaction.atomic():
                 Services_Category.objects.create(
+                    empresa_id=company_id,
                     name_category=name_category,
                     short_name_category=short_name_category,
                     description_category=description_category,
@@ -205,8 +234,10 @@ def add_category(request):
 @csrf_protect
 @login_required
 def edit_category_services(request):
+    context = user_data(request)
     if request.method == 'POST':
         try:
+            company_id = context["company"]["id"]
             _id = request.POST.get('id')
             name_category = request.POST.get('name').strip()
             short_name_category = request.POST.get('short_name').strip()
@@ -222,12 +253,12 @@ def edit_category_services(request):
 
             # Verificar duplicados 
             if Services_Category.objects.filter(
-                name_category__iexact=name_category
+                name_category__iexact=name_category, empresa=company_id
             ).exclude(id=_id).exists():
                 return JsonResponse({'success': False, 'message': 'El nombre de la categoría ya existe.'})
 
             if Services_Category.objects.filter(
-                short_name_category__iexact=short_name_category
+                short_name_category__iexact=short_name_category, empresa=company_id
             ).exclude(id=_id).exists():
                 return JsonResponse({'success': False, 'message': 'El nombre corto de la categoría ya existe.'})
 
@@ -278,6 +309,7 @@ def get_table_services (request):
     context = user_data(request)
     isList = request.GET.get("isList", False)
     subModule_id = 33
+    company_id = context["company"]["id"] 
     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
     area = context["area"]["name"]
     tipo_user = context["role"]["name"]
@@ -285,7 +317,10 @@ def get_table_services (request):
     eliminar = access["delete"]
     agregar = access["create"]
     try:
-        datos = list(Services.objects.select_related(
+        company_id = context["company"]["id"] 
+        datos = list(Services.objects.filter(
+            company_id=company_id
+        ).select_related(
             'category_service', 'provider_service'
         ).values(
             "id", 
@@ -356,10 +391,21 @@ def get_table_services (request):
 # Vista para obtener las categorías de servicios
 @login_required
 def get_services_categories(request):
-    if request.method == 'GET':
-        categories = Services_Category.objects.filter(is_active_category=True).values('id', 'name_category')
-        return JsonResponse({'data': list(categories)}, safe=False)
-    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]  
+
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+    # Obtener las categorías de equipo asociadas a la empresa y activas
+        categories = Services_Category.objects.filter(
+            empresa_id=company_id, is_active_category=True
+        ).values('id', 'name_category') 
+        data = list(categories)
+
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 # Funcion para obtener los nombres de los proveedores
@@ -367,7 +413,16 @@ def get_services_categories(request):
 @csrf_exempt
 def get_services_providers(request):
     try:
-        provedores = Provider.objects.values('id', 'name')  
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        print("este es el id de la compañia: ", company_id)
+        company_name = context["company"]["name"]
+        print("este es el nombre de la compañia de servicios: ", company_name)
+
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+        
+        provedores = Provider.objects.filter(company_id=company_id).distinct().values('id', 'name')  
         data = list(provedores)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
@@ -514,8 +569,8 @@ def add_service(request):
                 return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
 
             # Verificar duplicados (sin importar mayúsculas o minúsculas)
-            if Services.objects.filter(name_service__iexact=name_service).exists():
-                return JsonResponse({'success': False, 'message': 'El nombre del servicio ya existe.'})
+            if Services.objects.filter(name_service__iexact=name_service, company_id=company_id).exists():
+                return JsonResponse({'success': False, 'message': 'El nombre del servicio ya existe para esta empresa, ingresa uno diferente.'})
 
             # Obtener objetos relacionados
             category_service = get_object_or_404(Services_Category, id=category_service_id)
@@ -551,7 +606,6 @@ def add_service(request):
 
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
 
-
 # Función para editar los servicios
 def edit_services(request):
     context = user_data(request)
@@ -580,8 +634,8 @@ def edit_services(request):
 
             
             # Verificar duplicados (sin importar mayúsculas o minúsculas)
-            if Services.objects.filter(name_service__iexact=name_service).exclude(id=_id).exists():
-                return JsonResponse({'success': False, 'message': 'El nombre del servicio ya existe.'})
+            if Services.objects.filter(name_service__iexact=name_service, company_id=company_id).exclude(id=_id).exists():
+                return JsonResponse({'success': False, 'message': 'El nombre del servicio ya existe para esta empresa, ingresa uno diferente.'})
 
            # Guardar el precio antiguo para compararlo
             old_price = services.price_service
@@ -766,17 +820,24 @@ def update_payment_status_view(request):
 #funcion para los contadores
 def get_dashboard_data(request):
     try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({"status": "error", "message": "No se encontró la empresa asociada al usuario"}, status=400)
+
         # Total de servicios
-        total_services = Services.objects.count()
+        total_services = Services.objects.filter(company_id=company_id).count()
 
         # Total de egresos: 
         total_egresos = Payments_Services.objects.filter(
-            status_payment='paid'  
+            status_payment='paid', 
+            name_service_payment__company_id=company_id
         ).aggregate(total=Sum('total_payment'))['total'] or 0.0
 
         # Total de pagos no pagados
         total_non_paid_payments = Payments_Services.objects.filter(
-            status_payment='unpaid'
+            status_payment='unpaid',
+            name_service_payment__company_id=company_id 
         ).count()
 
         # Formatear la respuesta
@@ -794,33 +855,55 @@ def get_dashboard_data(request):
 
 #Función para la grafica principal de egresos por categoria 
 def get_dashboard_grafica(request):
-    # categorías de servicios activas
-    categories = Services_Category.objects.filter(is_active_category=True)
+    try:
+        # Obtener el contexto del usuario
+        context = user_data(request)
+        company_id = context["company"]["id"]
 
-    # Lista para almacenar los datos de cada categoría
-    category_data = []
+        # Verificar company
+        if not company_id:
+            return JsonResponse({"status": "error", "message": "No se encontró la empresa asociada al usuario"}, status=400)
 
-    # Iterar y sumar los pagos pagados
-    for category in categories:
-        # Sumar los pagos "pagados" de cada categoría
-        total_payment = Payments_Services.objects.filter(
-            name_service_payment__category_service=category,
-            status_payment='paid'
-        ).aggregate(total=Sum('total_payment'))['total'] or 0
-        print(f"Total de pago para la categoría {category.name_category}: {total_payment}")
+        # categorías de servicios activas
+        categories = Services_Category.objects.filter(
+            is_active_category=True,
+            services__company_id=company_id
+        ).distinct()
 
-        category_data.append({
-            'category': category.name_category,
-            'total_payment': total_payment
-        })
+        # Lista para almacenar los datos de cada categoría
+        category_data = []
 
-    return JsonResponse({'status': 'success', 'data': category_data})
+        # Iterar y sumar los pagos pagados
+        for category in categories:
+            # Sumar los pagos "pagados" de cada categoría
+            total_payment = Payments_Services.objects.filter(
+                name_service_payment__category_service=category,
+                name_service_payment__company_id=company_id, 
+                status_payment='paid'
+            ).aggregate(total=Sum('total_payment'))['total'] or 0
+            print(f"Total de pago para la categoría {category.name_category}: {total_payment}")
 
+            category_data.append({
+                'category': category.name_category,
+                'total_payment': total_payment
+            })
+
+        return JsonResponse({'status': 'success', 'data': category_data})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    
 
 # Función para obtener los servicios y egresos por categoría
 def get_services_by_category(request, category_id):
     try:
-        services = Services.objects.filter(category_service_id=category_id)
+
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({"status": "error", "message": "No se encontró la empresa asociada al usuario"}, status=400)
+
+        services = Services.objects.filter(category_service_id=category_id, company_id=company_id)
         
         # Obtener los pagos "pagados" de los servicios filtrados
         service_data = []
@@ -838,13 +921,19 @@ def get_services_by_category(request, category_id):
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
 
 # Función para obtener los servicios y egresos por proveedor
 def get_services_by_provider(request, provider_id):
     try:
         # Obtener los servicios del proveedor seleccionado
-        services = Services.objects.filter(provider_service_id=provider_id)
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        provider = Provider.objects.get(id=provider_id) 
+
+        services = Services.objects.filter(provider_service_id=provider_id, company_id=company_id)
         
         # Obtener los pagos "pagados" de los servicios filtrados
         service_data = []
@@ -858,10 +947,11 @@ def get_services_by_provider(request, provider_id):
                 'total_payment': total_payment
             })
 
-        return JsonResponse({'status': 'success', 'data': service_data})
+        return JsonResponse({'status': 'success', 'data': service_data, 'provider_name': provider.name})
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
 
 # Función para obtener los egresos por rango de fecha
@@ -870,9 +960,16 @@ def get_services_by_date_range(request):
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
 
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({"status": "error", "message": "No se encontró la empresa asociada al usuario"}, status=400)
+
         payments = Payments_Services.objects.filter(
             status_payment='paid',  
-            next_date_payment__range=[start_date, end_date]  
+            next_date_payment__range=[start_date, end_date],
+            name_service_payment__company_id=company_id
         )
 
        
@@ -895,8 +992,6 @@ def get_services_by_date_range(request):
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
 
 
 # Vista para mostrar el historial de pagos desde una notificación
@@ -938,3 +1033,85 @@ def get_payment_history_notifications(request, service_id):
 
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error al cargar los pagos: {str(e)}'}, status=500)
+
+
+# Vista para obtener las categorías de servicios para la grafica del historial de pagos 
+@login_required
+def get_services_categories_payments(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]  
+
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+    # Obtener las categorías de equipo asociadas a la empresa y activas
+        categories = Services_Category.objects.filter(
+            empresa_id=company_id, is_active_category=True
+        ).values('id', 'name_category') 
+        data = list(categories)
+        print("Categories Data:", data)
+
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+#Función para la gráfica del historial de egresos por categoria
+@login_required
+def get_payment_history_grafic(request):
+    try:
+        category_id = request.GET.get('category_id')
+        start_month = request.GET.get('start_month')
+        end_month = request.GET.get('end_month')
+
+        
+        # Validar que el ID sea un número
+        try:
+            category_id = int(category_id)
+        except ValueError:
+            return JsonResponse({'success': False, 'message': 'ID de categoría inválido'}, status=400)
+
+        # Validar fechas
+        try:
+            start_date = datetime.strptime(start_month, '%Y-%m')
+            end_date = datetime.strptime(end_month, '%Y-%m')
+        except ValueError:
+            return JsonResponse({'success': False, 'message': 'Formato de fechas inválido'}, status=400)
+
+        # Verificar si la categoría existe
+        if not Services_Category.objects.filter(id=category_id).exists():
+            return JsonResponse({'success': False, 'message': 'La categoría no existe'}, status=404)
+
+        # Obtener los servicios relacionados con la categoría
+        services_ids = Services.objects.filter(category_service_id=category_id).values_list('id', flat=True)
+
+        if not services_ids:
+            return JsonResponse({'success': False, 'message': 'No hay servicios asociados a esta categoría'}, status=404)
+
+        # Consultar pagos agrupados por mes y año
+        payments = Payments_Services.objects.filter(
+            name_service_payment_id__in=services_ids,
+            next_date_payment__gte=start_date,
+            next_date_payment__lte=end_date,
+            status_payment='paid'
+        ).annotate(
+            year=ExtractYear('next_date_payment'),
+            month=ExtractMonth('next_date_payment')
+        ).values(
+            'year', 'month'
+        ).annotate(
+            total_payments=Sum('total_payment')
+        ).order_by('year', 'month')
+
+        
+        # Preparar datos para la respuesta con nombres de meses
+        months = [
+            f"{calendar.month_name[payment['month']]} {payment['year']}" 
+            for payment in payments
+        ]
+        totals = [payment['total_payments'] for payment in payments]
+
+        return JsonResponse({'success': True, 'months': months, 'total_payments': totals})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error interno: {str(e)}'}, status=500)
