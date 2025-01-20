@@ -51,7 +51,6 @@ class Migration(migrations.Migration):
                 ('short_name_category', models.CharField(blank=True, max_length=50, null=True, verbose_name='Nombre Corto')),
                 ('is_active_category', models.BooleanField(default=True, verbose_name='¿Está Activo?')),
                 ('description_category', models.TextField(blank=True, null=True, verbose_name='Descripción')),
-                ('empresa', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa')),
             ],
         ),
         migrations.CreateModel(
