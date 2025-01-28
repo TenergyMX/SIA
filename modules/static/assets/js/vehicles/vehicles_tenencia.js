@@ -4,9 +4,29 @@ class VehiclesTenencia {
 
         const self = this;
         const defaultOptions = {
-            data: {},
+            infoCard: {
+                id: null,
+                vehicle: {
+                    id: null,
+                },
+                ajax: {
+                    url: function () {
+                        return "/get_vehicles_tenencia/";
+                    },
+                    data: function () {
+                        return {
+                            vehicle_id: defaultOptions.info.id || defaultOptions.info.vehicle_id,
+                        };
+                    },
+                    reload: function () {},
+                },
+            },
+
             table: {
                 id: "#table_tenencia",
+                vehicle: {
+                    id: null,
+                },
                 ajax: {
                     url: "/get_vehicles_tenencia/",
                     dataSrc: "data",
@@ -20,18 +40,24 @@ class VehiclesTenencia {
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
-            vehicle: { data: { id: null } },
+            vehicle: { 
+                data: { id: null },
+            },
         };
 
-        self.data = defaultOptions.data;
+
+        if (options.infoCard) {
+            self.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
+        }
 
         if (options.table) {
             self.table = { ...defaultOptions.table, ...options.table };
 
-            if (self.vehicle && self.vehicle.data.id) {
-                self.table.ajax.url = "/get_vehicle_refrendo/";
-                self.table.ajax.data = { vehicle_id: self.table.vehicle.id };
-                self.vehicle.data = { vehicle_id: self.table.vehicle.id };
+            if (self.table.vehicle.id) {
+                self.table.ajax.url = "/get_vehicle_tenencia/";
+                self.table.ajax.data = {
+                    vehicle_id: self.table.vehicle.id,
+                };
 
                 // Buscar el índice del elemento que quieres eliminar
                 let indexToRemove = self.table.columns.findIndex(function (column) {

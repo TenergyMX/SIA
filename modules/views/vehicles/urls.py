@@ -60,7 +60,7 @@ urlpatterns = [
     # TODO ----- [ Seguro / Polisa ] -----
     path("add_vehicle_insurance/", views.add_vehicle_insurance),
     path("get_vehicle_insurance/", views.get_vehicle_insurance),
-    path("get_vehicles_insurance/", views.get_vehicle_insurance),
+    path("get_vehicles_insurance/", views.get_vehicles_insurance),
     path("update_vehicle_insurance/", views.update_vehicle_insurance),
     path("delete_vehicle_insurance/", views.delete_vehicle_insurance),
 

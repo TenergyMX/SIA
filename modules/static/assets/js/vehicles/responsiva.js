@@ -59,10 +59,11 @@ class VehiclesResponsiva {
 
         if (options.table) {
             self.table = { ...defaultOptions.table, ...options.table };
+            
 
             if (self.table.vehicle.id) {
                 self.table.ajax.url = "/get_vehicle_responsiva/";
-                self.vehicle.data = {
+                self.table.ajax.data = {
                     vehicle_id: self.table.vehicle.id,
                 };
 
