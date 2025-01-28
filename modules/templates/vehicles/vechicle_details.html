@@ -368,7 +368,13 @@
 <script src="{% static 'assets/js/vehicles/vehicles_tenencia.js' %}"></script>
 <script>
     const tenencia = new VehiclesTenencia({
-        table: { id: "#table_tenencia" },
+        table: { 
+            id:'#table_tenencia',
+            vehicle: {
+                id:vehicle_id,
+                name: "Auto"
+            }
+        },
         vehicle: vehiculo
     });
 </script>
@@ -379,7 +385,13 @@
 <script src="{% static 'assets/js/vehicles/vehicles_refrendo.js' %}"></script>
 <script>
     const refrendo = new VehiclesRefrendo({
-        table: {id:'#table_refrendo'},
+        table: {
+            id:'#table_refrendo',
+            vehicle: {
+                id:vehicle_id,
+                name: "Auto"
+            }
+        },
         vehicle: vehiculo
     });
 </script>
@@ -390,7 +402,13 @@
 <script src="{% static 'assets/js/vehicles/vehicles_verificacion.js' %}"></script>
 <script>
     const verificaciones = new VehiclesVerificacion({
-        table: { id: '#table_verificacion' },
+        table: { 
+            id: '#table_verificacion',
+            vehicle: { 
+                id:vehicle_id,
+                name: "Auto"
+            }
+        },
         vehicle: vehiculo
     });
 </script>
@@ -402,9 +420,15 @@
 <script>
     var canvas_signature = new CanvasDrawing("canvas-signature");
     const responsivas = new VehiclesResponsiva({
-        table: {},
+        table: {
+            id:'#table_responsiva',
+            vehicle: {
+                id:vehicle_id,
+                name: "Auto"
+            }
+        },
         vehicle: vehiculo
-    });
+    });
 </script>
 {% endif %}
 
@@ -413,7 +437,13 @@
 <script src="{% static 'assets/js/vehicles/vehicles_insurance.js' %}"></script>
 <script>
     const seguros = new VehiclesInsurance({
-        table: { id: "#table_insurance" },
+        table: {
+            id: '#table_insurance',
+            vehicle: {
+                id:vehicle_id,
+                name: "Auto"
+            }
+        },
         vehicle: vehiculo
     });
 </script>
@@ -424,7 +454,13 @@
 <script src="{% static 'assets/js/vehicles/audit.js' %}"></script>
 <script>    
     const auditorias = new VehiclesAudit({
-        table: { id: '#table_audit' },
+        table: { 
+            id: '#table_audit',
+            vehicle: { 
+                id:vehicle_id,
+                name: "Auto"
+            }
+        },
         vehicle: vehiculo,
     });
 </script>

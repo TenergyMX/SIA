@@ -40,7 +40,7 @@ class VehiclesAudit {
                     vehicle_id: self.table.vehicle.id,
                 };
 
-                // Buscar el índice del elemento que quieres eliminar
+                // Buscar el índice del elemento que quieres eliminar//
                 let indexToRemove = self.table.columns.findIndex(function (column) {
                     return column.title === "Vehiculo" && column.data === "vehicle__name";
                 });

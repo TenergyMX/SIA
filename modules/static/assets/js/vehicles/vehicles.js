@@ -335,10 +335,13 @@ class Vehicles {
             var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_info/";
             var datos = new FormData(this);
             var files = self.input.pond.getFiles();
-
-            if (files.length !== 0) {
-                var fileInput = self.input.pond.getFiles()[0].file;
-                datos.set("cover-image", fileInput, fileInput.name);
+            if (files.length > 0) {
+                var fileInput = files[0].file;
+                if (fileInput && fileInput instanceof File) {
+                    datos.set("cover-image", fileInput, fileInput.name);
+                } else {
+                    console.error("No se ha podido obtener un archivo válido.");
+                }
             }
 
             $.ajax({
