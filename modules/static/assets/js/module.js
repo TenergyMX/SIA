@@ -114,9 +114,14 @@ function deleteItem(_url, _data) {
 
 // Obtener las notificaciones
 function getNotifications() {
+    var currentUrl = window.location.pathname;
+    
     $.ajax({
         type: "GET",
         url: "/get-notifications/",
+        data: {
+            url: currentUrl,
+        },
         success: function (response) {
             var contenedor = $("#header-notification-scroll .simplebar-content");
             contenedor.html(null);
