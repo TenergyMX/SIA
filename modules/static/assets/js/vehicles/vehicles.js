@@ -48,6 +48,19 @@ class Vehicles {
                     
                 },
                 columns: [
+
+                    {
+                        title: "Alerta",
+                        data: "alert",
+                        className: "toggleable",
+                        render: function (data, type, row) {
+                            if (data) {
+                                return '<i class="fa-solid fa-bell fa-shake" style="color:rgb(255, 174, 0)"></i>';
+                            }
+                            return "";
+                        },
+                    },
+
                     { title: "Nombre", data: "name", className: "toggleable" },
                     { title: "Marca", data: "brand", className: "toggleable" },
                     { title: "Modelo", data: "model", className: "toggleable" },
@@ -105,6 +118,18 @@ class Vehicles {
                     },
                     beforeSend: function () {},
                     success: function (response) {
+                        console.log("esta es la respuesta ", response);
+                        if (response.alert && response.alert.missing_tables) {
+                            const missingTables = response.alert.missing_tables;
+                            missingTables.forEach(function (table) {
+                                console.log("Tabla faltante:", table);
+                                $(`#v-${table} .alert-icon`).html(
+                                    '<i class="fa-regular fa-circle-exclamation" style="color:rgb(255, 174, 0);"></i>'
+                                );
+                            });
+                        } else {
+                            console.error("La respuesta no tiene la estructura esperada.");
+                        }
                         // console.log(response["imgPath"]);
                         var card = $(".card-vehicle-info");
 
