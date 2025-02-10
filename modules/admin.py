@@ -12,6 +12,7 @@ admin.site.register(Vehicle_Audit)
 admin.site.register(Vehicle_Maintenance)
 admin.site.register(Vehicle_fuel)
 
+
 admin.site.register(ComputerSystem)
 admin.site.register(ComputerPeripheral)
 admin.site.register(Software)

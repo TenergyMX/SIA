@@ -36,6 +36,12 @@ from modules.utils import * # Esto es un helpers
 import zipfile
 import subprocess
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render, get_object_or_404
+
+
+from django.core.files.base import ContentFile
+import qrcode
+
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
@@ -2728,6 +2734,76 @@ def delete_vehicle_verificacion(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
+
+
+#función para generar el código qr
+def generate_qr(request, qr_type, vehicle_id):
+    context = user_data(request)
+    company_id = context["company"]["id"]
+    print(f"Recibida solicitud para generar QR de tipo {qr_type} para el vehículo {vehicle_id}")  
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+     
+    # Contenido
+    if qr_type == 'info':
+        qr_content = f"Vehicle Info: {vehicle.name}, {vehicle.plate}, {vehicle.brand}, {vehicle.model}"
+    elif qr_type == 'access':
+        qr_content = f"Vehicle Access: {vehicle.name}, {vehicle.plate}"
+    else:
+        print(f"Tipo de QR no válido: {qr_type}")  
+        return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
+    
+    # Generar el QR
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_content)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill='black', back_color='white')
+    
+    # Guardar la imagen 
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    
+    # Guardar el QR 
+    if qr_type == 'info':
+        vehicle.qr_info.save(f'qr_info_{vehicle_id}.png', ContentFile(buffer.getvalue()), save=True)
+        qr_url = vehicle.qr_info.url
+    elif qr_type == 'access':
+        vehicle.qr_access.save(f'qr_access_{vehicle_id}.png', ContentFile(buffer.getvalue()), save=True)
+        qr_url = vehicle.qr_access.url
+    
+    print(f"QR generado correctamente: {qr_url}") 
+    return JsonResponse({'status': 'success', 'qr_url': qr_url})
+
+def delete_qr(request, qr_type, vehicle_id):
+    print(f"Recibida solicitud para eliminar QR de tipo {qr_type} para el vehículo {vehicle_id}")  
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+    
+    if qr_type == 'info' and vehicle.qr_info:
+        vehicle.qr_info.delete()
+        vehicle.save()
+    elif qr_type == 'access' and vehicle.qr_access:
+        vehicle.qr_access.delete()
+        vehicle.save()
+    else:
+        print(f"Tipo de QR no válido o no existe: {qr_type}")  
+        return JsonResponse({'status': 'error', 'message': 'Invalid QR type or QR does not exist'}, status=400)
+    
+    print(f"QR eliminado correctamente: {qr_type}")  
+    return JsonResponse({'status': 'success'})
+
+
+
+
+
+
+
+
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

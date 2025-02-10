@@ -23,6 +23,9 @@ class Vehicle(models.Model):
     policy_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Número de póliza") # Número de polisa
     mileage = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)   # Kilometraje
     insurance_company = models.CharField(max_length=100, blank=True, null=True)             # Aseguradora
+    qr_info = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
+    qr_access = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
+
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,
         blank=True, null=True,
@@ -173,7 +176,7 @@ class Vehicle_Maintenance(models.Model):
     class Meta:
         verbose_name = 'Mantenimiento de Vehículo'
         verbose_name_plural = 'Mantenimiento de Vehículos'
-    
+
 
 # Todo ----- [2] [ EQUIPOS DE COMPUTO ] -----
 

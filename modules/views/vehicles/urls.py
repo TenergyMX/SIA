@@ -88,4 +88,8 @@ urlpatterns = [
     path("add_maintenance_option/", views.add_vehicle_maintenance),
     path("add_option/", views.add_option),
     path("obtener_opciones/", views.obtener_opciones),
+
+
+    path('generate_qr/<str:qr_type>/<int:vehicle_id>/', views.generate_qr, name='generate_qr'),
+    path('delete_qr/<str:qr_type>/<int:vehicle_id>/', views.delete_qr, name='delete_qr'),
 ]
