@@ -75,12 +75,13 @@
                                         </button>
                                     </li>
                                     {% endif %}
-
+                                    {% if permiso.12.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-qr" data-bs-toggle="tab" data-bs-target="#v-qr-pane" type="button" role="tab" aria-controls="v-qr-pane" aria-selected="false">
                                             Códigos QR <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
+                                    {% endif %}
                                   
 
                                 </ul>
@@ -317,6 +318,11 @@
                                                                 <i class="fa-solid fa-trash me-1"></i>
                                                                 Eliminar
                                                             </button>
+                                                            <button type="button" class="btn btn-success btn-sm" data-vehicle-qr="download-qrinfo" style="display: none;">
+                                                                <i class="fa-solid fa-download me-1"></i>
+                                                                Descargar
+                                                            </button>
+                                                            
                                                         </div>
                                                     </div>
                                                 </div>
@@ -339,6 +345,10 @@
                                                             <button type="button" class="btn btn-danger btn-sm" data-vehicle-qr="delete-qraccess">
                                                                 <i class="fa-solid fa-trash me-1"></i>
                                                                 Eliminar
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm" data-vehicle-qr="download-qraccess" style="display: none;">
+                                                                <i class="fa-solid fa-download me-1"></i>
+                                                                Descargar
                                                             </button>
                                                         </div>
                                                     </div>

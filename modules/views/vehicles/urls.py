@@ -92,4 +92,5 @@ urlpatterns = [
 
     path('generate_qr/<str:qr_type>/<int:vehicle_id>/', views.generate_qr, name='generate_qr'),
     path('delete_qr/<str:qr_type>/<int:vehicle_id>/', views.delete_qr, name='delete_qr'),
+
 ]

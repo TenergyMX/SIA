@@ -19951,6 +19951,15 @@ a.link-underline-dark {
   backface-visibility: hidden;
 }
 
+
+#qr-info-container img,
+#qr-access-container img {
+    max-width: 100%;
+    height: auto; /* Para que no deforme la imagen */
+    display: block;
+    margin: auto;
+    width:15rem;
+}
 /* End:: Icon Link */
 
 /*# sourceMappingURL=styles.css.map */

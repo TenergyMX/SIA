@@ -41,7 +41,7 @@ from django.shortcuts import render, get_object_or_404
 
 from django.core.files.base import ContentFile
 import qrcode
-
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
@@ -433,7 +433,8 @@ def alertas(vehicle_id, detailed=False):
         ("insurance", Vehicle_Insurance, "vehicle_id"),  # Usa vehicle_id
         ("audit", Vehicle_Audit, "vehicle_id"),  # Usa vehicle_id
         ("maintenance", Vehicle_Maintenance, "vehicle_id"),  # Usa vehicle_id
-        ("responsiva", Vehicle_Responsive, "vehicle_id")
+        ("responsiva", Vehicle_Responsive, "vehicle_id"),
+        ("qr", Vehicle, "id")
     ]
     
     missing_tables = []
@@ -547,6 +548,17 @@ def alertas(vehicle_id, detailed=False):
                 
                 if 0 <= diferencia_dias <= 30:
                     missing_tables.append(table_name)
+
+        if table_name == "qr":
+            qrs = table.objects.filter(**filter_kwargs).first()
+
+            if qrs:
+                qr_informacion = qrs.qr_info
+                qr_accesso = qrs.qr_access  
+                
+                if not qr_informacion or not qr_accesso:
+                    missing_tables.append(table_name)
+            
 
     if detailed:
         return {
@@ -2736,18 +2748,28 @@ def delete_vehicle_verificacion(request):
     return JsonResponse(response)
 
 
+
 #función para generar el código qr
 def generate_qr(request, qr_type, vehicle_id):
     context = user_data(request)
     company_id = context["company"]["id"]
-    print(f"Recibida solicitud para generar QR de tipo {qr_type} para el vehículo {vehicle_id}")  
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+    # Verificar si el QR ya ha sido generado
+    if qr_type == "consulta":
+        qr_url_info = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_info)) if vehicle.qr_info else None
+        qr_url_access = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_access)) if vehicle.qr_access else None
+        
+        return JsonResponse({
+            'status': 'generados',
+            'qr_url_info': qr_url_info,
+            'qr_url_access': qr_url_access
+        })
      
     # Contenido
     if qr_type == 'info':
-        qr_content = f"Vehicle Info: {vehicle.name}, {vehicle.plate}, {vehicle.brand}, {vehicle.model}"
+        qr_content = f"Vehicle Info: {vehicle.name}"
     elif qr_type == 'access':
-        qr_content = f"Vehicle Access: {vehicle.name}, {vehicle.plate}"
+        qr_content = f"Vehicle Access: {vehicle.name}"
     else:
         print(f"Tipo de QR no válido: {qr_type}")  
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
@@ -2764,45 +2786,51 @@ def generate_qr(request, qr_type, vehicle_id):
     
     img = qr.make_image(fill='black', back_color='white')
     
-    # Guardar la imagen 
+    # Guardar la imagen en un buffer
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
+    # Convertir el buffer en un ContentFile y darle un nombre
+    # content_file = ContentFile(buffer.read())
+    # content_file.name = f"qr_{vehicle_id}.png"  # Establecer un nombre para el archivo
     
-    # Guardar el QR 
+    # Definir la ruta del archivo en S3
+    s3Path = f'docs/{company_id}/vehicle/{vehicle_id}/qr/'
     if qr_type == 'info':
-        vehicle.qr_info.save(f'qr_info_{vehicle_id}.png', ContentFile(buffer.getvalue()), save=True)
-        qr_url = vehicle.qr_info.url
+        s3Name = f"qr_info_{vehicle_id}.png"
+        vehicle.qr_info = s3Path+s3Name
     elif qr_type == 'access':
-        vehicle.qr_access.save(f'qr_access_{vehicle_id}.png', ContentFile(buffer.getvalue()), save=True)
-        qr_url = vehicle.qr_access.url
+        s3Name = f"qr_access_{vehicle_id}.png"
+        vehicle.qr_access = s3Path+s3Name 
     
+    # Crear un InMemoryUploadedFile con content_type
+    img = InMemoryUploadedFile(
+        buffer, None, s3Name, 'image/png', buffer.getbuffer().nbytes, None
+    )
+    # Subir el archivo a S3 y obtener la URL
+    upload_to_s3(img, AWS_BUCKET_NAME, s3Path + s3Name)
+        
+    vehicle.save()  # Asegurarse de guardar los cambios en el modelo
+    qr_url = generate_presigned_url(AWS_BUCKET_NAME, str(s3Path + s3Name))
     print(f"QR generado correctamente: {qr_url}") 
     return JsonResponse({'status': 'success', 'qr_url': qr_url})
 
 def delete_qr(request, qr_type, vehicle_id):
     print(f"Recibida solicitud para eliminar QR de tipo {qr_type} para el vehículo {vehicle_id}")  
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
-    
+    url = ""
     if qr_type == 'info' and vehicle.qr_info:
+        url = str(vehicle.qr_info)
         vehicle.qr_info.delete()
-        vehicle.save()
     elif qr_type == 'access' and vehicle.qr_access:
+        url = str(vehicle.qr_access)
         vehicle.qr_access.delete()
-        vehicle.save()
     else:
         print(f"Tipo de QR no válido o no existe: {qr_type}")  
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type or QR does not exist'}, status=400)
-    
+    delete_s3_object(AWS_BUCKET_NAME, url)
     print(f"QR eliminado correctamente: {qr_type}")  
-    return JsonResponse({'status': 'success'})
-
-
-
-
-
-
-
+    return JsonResponse({'status':'success'})
 
 
 # TODO --------------- [ END ] ----------
