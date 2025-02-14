@@ -97,4 +97,8 @@ urlpatterns = [
     path("vehicles/responsiva/<str:qr>/<int:vehicle_id>", views.module_vehicle_responsiva),
     path("validar_vehicle_en_sa/", views.validar_vehicle_en_sa),
 
+    #conductores
+ 
+
+
 ]

@@ -262,6 +262,25 @@ def vehicles_fuel_views(request):
         template = "error/access_denied.html"
     return render(request, template, context)
 
+
+@login_required
+def get_table_vehicles_driver(request):
+    context = user_data(request)
+    module_id = 2
+    submodule_id = 36
+
+    access = get_module_user_permissions(context, submodule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+
+    if context["access"]["read"]:
+        template = "vehicles/vehicles_driver.html"
+    else:
+        template = "error/access_denied.html"
+    return render(request, template, context)
+
 # TODO --------------- [ HELPER ] ----------
 
 
@@ -538,16 +557,12 @@ def alertas(vehicle_id, detailed=False):
         return bool(missing_tables) 
 
 
-    
-
-
 def get_vehicles_info(request):
     response = {"success": False, "data": []}
     context = user_data(request)
     dt = request.GET
     isList = dt.get("isList", False)
     subModule_id = 4
-
     
     data = Vehicle.objects.order_by('name').values(
         "id", "is_active", "image_path", "name", "state",
@@ -561,7 +576,6 @@ def get_vehicles_info(request):
     )
 
     data = data.filter(company_id = context["company"]["id"])
-
 
     if (context["role"]["id"] == 4):
         data = data.filter(
@@ -603,7 +617,6 @@ def update_vehicle_info(request):
     dt = request.POST
     company_id = request.session.get('company').get('id')
     id = dt.get("id", None)
-
 
     if not id:
         response["error"] = {"message": "No se proporcionó un ID de vehículo válido"}

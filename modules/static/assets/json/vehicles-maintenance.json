@@ -198,6 +198,14 @@
                 {
                     "id": 47,
                     "descripcion": "BALANCEO"
+                },
+                {
+                    "id": 48,
+                    "descripcion": "OPCION E"
+                },
+                {
+                    "id": 49,
+                    "descripcion": "OPCION E"
                 }
             ]
         },
