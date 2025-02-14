@@ -50,7 +50,7 @@
                                     {% if permiso.8.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-responsiva" data-bs-toggle="tab" data-bs-target="#v-responsiva-pane" type="button" role="tab" aria-controls="v-responsiva-pane" aria-selected="false">
-                                            Responsiva <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                            Entradas y Salidas <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
                                     {% endif %}
@@ -265,13 +265,13 @@
                                         <div class="info">
                                             <div class="mb-3">
                                                 {% if permiso.11.create %}
-                                                <button type="button" class="btn btn-primary" data-vehicle-maintenance="add-item"
+                                                <button type="button" class="btn btn-primary" data-sia-vehicle-maintenance="add-item"
                                                     title="Agregar Seguro">
                                                     <i class="fa-solid fa-plus me-1"></i>
                                                     Agregar
                                                 </button>
                                                 {% endif %}
-                                                <button type="button" class="btn btn-primary" data-vehicle-maintenance="refresh-table"
+                                                <button type="button" class="btn btn-primary" data-sia-vehicle-maintenance="refresh-table"
                                                     title="Refrescar tabla">
                                                     <i class="fa-solid fa-arrows-rotate me-1"></i>
                                                     Refrescar tabla
@@ -286,7 +286,7 @@
                                         </div>
                                         <div class="info-details" style="display: none;">
                                             <div class="mb-3">
-                                                <button type="button" class="btn btn-info btn-sm" data-vehicle-maintenance="show-info">
+                                                <button type="button" class="btn btn-info btn-sm" data-sia-vehicle-maintenance="show-info">
                                                     <i class="fa-solid fa-arrow-left me-1"></i>
                                                     Regresar
                                                 </button>
@@ -318,7 +318,7 @@
                                                                 <i class="fa-solid fa-trash me-1"></i>
                                                                 Eliminar
                                                             </button>
-                                                            <button type="button" class="btn btn-success btn-sm" data-vehicle-qr="download-qrinfo" style="display: none;">
+                                                            <button type="button" class="btn btn-success btn-sm" data-vehicle-qr="descargar-qr-info" style="display: none;">
                                                                 <i class="fa-solid fa-download me-1"></i>
                                                                 Descargar
                                                             </button>
@@ -346,7 +346,8 @@
                                                                 <i class="fa-solid fa-trash me-1"></i>
                                                                 Eliminar
                                                             </button>
-                                                            <button type="button" class="btn btn-success btn-sm" data-vehicle-qr="download-qraccess" style="display: none;">
+                                                            <button type="button" class="btn btn-success btn-sm" data-vehicle-qr="descargar-qr-access" style="display: none;">
+                                                                <a href=""></a>
                                                                 <i class="fa-solid fa-download me-1"></i>
                                                                 Descargar
                                                             </button>

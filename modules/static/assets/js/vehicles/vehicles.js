@@ -149,7 +149,7 @@ class Vehicles {
                         self.data.vehicle_id = response["data"]["id"] || null;
                         self.data.vehicle__name = response["data"]["name"] || null;
                         self.data.vehicle__plate = response["data"]["plate"] || null;
-                        self.data.key = "Goku eta vaina e seria";
+                        self.data.key = " ";
                     },
                     error: function (xhr, status, error) {},
                 });

@@ -59,7 +59,6 @@ class VehiclesResponsiva {
 
         if (options.table) {
             self.table = { ...defaultOptions.table, ...options.table };
-            
 
             if (self.table.vehicle.id) {
                 self.table.ajax.url = "/get_vehicle_responsiva/";
@@ -88,6 +87,12 @@ class VehiclesResponsiva {
 
     init() {
         const self = this;
+
+        // Obtener la parte de la URL que contiene "qr/15"
+        const pathParts = window.location.pathname.split("/");
+
+        // Buscar el valor después de "qr"
+        const qr = pathParts[pathParts.indexOf("qr") + 1];
 
         if (self.table) {
             self.tbl_responsiva = $(self.table.id).DataTable({
@@ -121,6 +126,74 @@ class VehiclesResponsiva {
         }
 
         self.setupEventHandlers();
+        // Si qr está presente en la URL, mostrar el modal automáticamente
+        if (qr) {
+            setTimeout(function () {
+                self.openResponsivaModal(qr);
+            }, 100); // Retrasa la ejecución 5 segundos
+        }
+    }
+
+    openResponsivaModal(id_vehicle) {
+        const self = this;
+        var obj_modal = $("#mdl_crud_responsiva");
+        obj_modal.find("form")[0].reset();
+        obj_modal.modal("show");
+
+        console.log("información del registro");
+        $.ajax({
+            url: "/validar_vehicle_en_sa/", // Cambia esta URL por la ruta de tu servidor que va a manejar la solicitud
+            type: "POST",
+            data: {
+                id_vehicle: id_vehicle, // Enviamos la variable qr
+                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(), // Asegúrate de incluir el token CSRF si estás usando Django
+            },
+            success: function (response) {
+                var status = response.status;
+                console.log(response);
+                if (status == "SALIDA") {
+                    obj_modal.find(".modal-header").html("Registrar salida");
+                    obj_modal.find(".final").hide().find(":input").prop("disabled", true);
+                    obj_modal.find(".inicial").show().find(":input").prop("disabled", false);
+                    if (response.fecha_actual) {
+                        $("input[name='start_date']").val(response.fecha_actual);
+                    }
+                    obj_modal.find("[name='initial_mileage']").val(response.km_final || null);
+                    obj_modal.find("[name='initial_fuel']").val(response.gasolina_final || null);
+                    obj_modal.find("[type='submit']").hide();
+                    obj_modal.find("[name='add']").show();
+                } else if (status == "ENTRADA") {
+                    obj_modal.find(".modal-header").html("Registrar entrada");
+                    obj_modal.find(".inicial").hide().find(":input").prop("disabled", true);
+                    obj_modal.find(".final").show().find(":input").prop("disabled", false);
+                    obj_modal.find("[name='id']").val(response.id_register || null);
+                    if (response.fecha_actual) {
+                        $("input[name='end_date']").val(response.fecha_actual);
+                    }
+                    obj_modal.find("[type='submit']").hide();
+                    obj_modal.find("[name='update']").show();
+                    setTimeout(function () {
+                        $('select[name="responsible_id"]').val(response.id_responsable || null);
+                    }, 500);
+                    console.log(id_vehicle);
+                    console.log(response.id_register);
+                    console.log(response.id_responsable);
+                }
+            },
+            error: function (xhr, status, error) {
+                // Maneja el error si la solicitud falla
+                console.log("Error en la solicitud AJAX:", error);
+            },
+        });
+
+        console.log(self.vehicle.data.vehicle_id);
+        setTimeout(function () {
+            $('select[name="vehicle_id"]').val(id_vehicle);
+        }, 500);
+        // obj_modal.find("[name='vehicle_id']").val(qr || null);
+        // obj_modal.find("[name='vehicle_name']").val(self.vehicle.data.vehicle_name || null);
+
+        //
     }
 
     setupEventHandlers() {
@@ -205,10 +278,10 @@ class VehiclesResponsiva {
                     var datos = self.tbl_responsiva.row(fila).data();
 
                     $.each(datos, function (index, value) {
-                        var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
+                        var isFileInput = obj_modal.find([name='${index}']).is(":file");
 
                         if (!isFileInput) {
-                            obj_modal.find(`[name='${index}']`).val(value);
+                            obj_modal.find([name='${index}']).val(value);
                         }
                     });
 
@@ -253,27 +326,27 @@ class VehiclesResponsiva {
                     } else {
                         $("[alt='image_path_exit_2']").closest(".card").addClass("placeholder");
                     }
-
+                    // # cargar funcion completa
                     if (datos["image_path_entry_1"]) {
                         $("[alt='image_path_entry_1']")
-                            .attr("src", "/" + datos["image_path_entry_1"])
+                            .attr("src", datos["image_path_entry_1"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
                         $("[alt='image_path_entry_1']").closest(".card").addClass("placeholder");
                     }
-
+                    // # cargar funcion completa
                     if (datos["image_path_entry_2"]) {
                         $("[alt='image_path_entry_2']")
-                            .attr("src", "/" + datos["image_path_entry_2"])
+                            .attr("src", datos["image_path_entry_2"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
                         $("[alt='image_path_entry_2']").closest(".card").addClass("placeholder");
                     }
-
+                    // # cargar funcion completa
                     // firma
-                    $("[alt='firma']").attr("src", "/" + datos["signature"]);
+                    $("[alt='firma']").attr("src", datos["signature"]);
 
                     // ! Actualizamos la info card
                     if (self.vehicle && self.vehicle.infoCard) {
@@ -377,6 +450,6 @@ class VehiclesResponsiva {
                 });
             }
             // end
-        });
-    }
+        });
+    }
 }

@@ -32,15 +32,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         qrInfoContainer.appendChild(qrImage);
                         $('button[data-vehicle-qr="delete-qrinfo"]').show();
                         $('button[data-vehicle-qr="qr-info"]').hide();
-                        $('button[data-vehicle-qr="download-qrinfo"]').show();  
-                        $('button[data-vehicle-qr="download-qrinfo"]').attr("data-qr-url", data.qr_url); 
+                        $('button[data-vehicle-qr="descargar-qr-info"]').show();  
                     } else if (type === "access") {
                         qrAccessContainer.innerHTML = "";
                         qrAccessContainer.appendChild(qrImage);
                         $('button[data-vehicle-qr="delete-qraccess"]').show();
                         $('button[data-vehicle-qr="qr-access"]').hide();
-                        $('button[data-vehicle-qr="download-qraccess"]').show();  // Mostrar botón de descarga
-                        $('button[data-vehicle-qr="download-qraccess"]').attr("data-qr-url", data.qr_url);
+                        $('button[data-vehicle-qr="descargar-qr-access"]').show();  // Mostrar botón de descarga
                     }
                     console.log(`QR generado correctamente: ${data.qr_url}`);
                 } else if (data.status == "generados") {
@@ -51,9 +49,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         qrInfoContainer.innerHTML = "";
                         qrInfoContainer.appendChild(qrImage_info);
                         $('button[data-vehicle-qr="delete-qrinfo"]').show();
-                        $('button[data-vehicle-qr="download-qrinfo"]').show();
+                        $('button[data-vehicle-qr="descargar-qr-info"]').show();
                     } else {
-                        $('button[data-vehicle-qr="download-qrinfo"]').hide();
+                        $('button[data-vehicle-qr="dscargar-qr-info"]').hide();
                         $('button[data-vehicle-qr="qr-info"]').show();
                         
 
@@ -65,10 +63,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         qrAccessContainer.innerHTML = "";
                         qrAccessContainer.appendChild(qrImage_access);
                         $('button[data-vehicle-qr="delete-qraccess"]').show();
-                        $('button[data-vehicle-qr="download-qraccess"]').show();
+                        $('button[data-vehicle-qr="descargar-qr-access"]').show();
 
                     } else {
-                        $('button[data-vehicle-qr="download-qraccess"]').hide();
+                        $('button[data-vehicle-qr="descargar-qr-access"]').hide();
                         $('button[data-vehicle-qr="qr-access"]').show();
 
                     }
@@ -80,6 +78,38 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Error al generar el QR:", error);
             });
     }
+
+    function descargar_qr(tipo) {
+        var tipo_qr = tipo;
+        $.ajax({
+            type: "GET",
+            url: "/descargar_qr/",
+            data: {
+                tipo_qr: tipo_qr,
+                id_vehicle: vehicle_id  
+            },
+            success: function(data) {
+                var url_vehicle = data.url_vehicle;  
+                if (url_vehicle) {
+                    var a = document.createElement("a");
+                    a.href = url_vehicle;
+                    a.download = url_vehicle.substring(url_vehicle.lastIndexOf("/") + 1); 
+                    console.log( url_vehicle.substring(url_vehicle.lastIndexOf("/") + 1));
+                    a.style.display = 'none'; 
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);  
+                } else {
+                    console.error("Received an invalid or empty URL from the server.");
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("An error occurred while trying to download the QR: ", status, error);
+            }
+        });
+    }
+    
+    
 
     // Función para eliminar QR
     function deleteQR(vehicleId, type) {
@@ -100,12 +130,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (type === "info") {
                         qrInfoContainer.innerHTML = "";
                         $('button[data-vehicle-qr="delete-qrinfo"]').hide();
-                        $('button[data-vehicle-qr="download-qrinfo"]').hide();  
+                        $('button[data-vehicle-qr="descargar-qr-info"]').hide();  
                         $('button[data-vehicle-qr="qr-info"]').show();
                     } else if (type === "access") {
                         qrAccessContainer.innerHTML = "";
                         $('button[data-vehicle-qr="delete-qraccess"]').hide();
-                        $('button[data-vehicle-qr="download-qraccess"]').hide();
+                        $('button[data-vehicle-qr="descargar-qr-access"]').hide();
                         $('button[data-vehicle-qr="qr-access"]').show();
                     }
                     console.log(`QR eliminado correctamente: ${type}`);
@@ -123,7 +153,9 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Botón 'Generar QR de información' clickeado");
         generateQR(vehicle_id, "info");
     });
-
+    document.querySelector('[data-vehicle-qr="descargar-qr-info"]').addEventListener("click", function () {
+        descargar_qr("info");
+    });
     // Botón para eliminar QR de información
     document
         .querySelector('[data-vehicle-qr="delete-qrinfo"]')
@@ -137,6 +169,9 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Botón 'Generar QR de acceso' clickeado");
         generateQR(vehicle_id, "access");
     });
+    document.querySelector('[data-vehicle-qr="descargar-qr-access"]').addEventListener("click", function () {
+        descargar_qr("access");
+    });
 
     // Botón para eliminar QR de acceso
     document
@@ -145,18 +180,6 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log("Botón 'Eliminar QR de acceso' clickeado");
             deleteQR(vehicle_id, "access");
      });
-
-// Función para manejar la descarga de los Qr
-document.querySelectorAll('[data-vehicle-qr^="download-qr"]').forEach((button) => {
-    button.addEventListener("click", function () {
-        const qrUrl = this.getAttribute("data-qr-url");  
-        const a = document.createElement("a");
-        a.href = qrUrl;
-        a.download = qrUrl.split('/').pop();  
-        a.click();  
-    });
 });
 
 
-
-});

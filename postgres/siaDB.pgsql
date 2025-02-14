@@ -2351,10 +2351,10 @@ COPY public.users_submodule (id, is_active, short_name, name, description, icon,
 1	t	Empresas	Empresas	\N	<i class="fa-solid fa-users-gear side-menu__icon"></i>	/companys/	2024-04-08 22:21:06.351+00	t	1
 2	t	Usuarios	Usuarios	---	<i class="fa-solid fa-users-gear side-menu__icon"></i>	/users/	2024-04-09 20:50:42.691+00	f	1
 3	t	Proveedor	Proveedores	Buscar...	<i class="fa-solid fa-user-headset side-menu__icon"></i>	/providers/	2024-04-11 02:26:14.57+00	f	1
-4	t	Vehículos	Informacion	---	<i class="fa-solid fa-circle-info side-menu__icon"></i>	/vehicles/	2024-05-07 16:16:49.5+00	f	2
+4	t	Vehículos	Informacion	---	<i class="fa-solid fa-car-bus side-menu__icon"></i>	/vehicles/	2024-05-07 16:16:49.5+00	f	2
 5	t	Tenencia	Tenencia	\N	<i class="fa-solid fa-id-card-clip side-menu__icon"></i>	/vehicles/tenencia/	2024-05-07 19:42:05.441+00	f	2
 6	t	Refrendo	Refrendo	\N	<i class="fa-solid fa-id-card-clip side-menu__icon"></i>	/vehicles/refrendo/	2024-05-07 19:42:29.547+00	f	2
-7	t	Verificacion	Verificacion	\N	<i class="fa-solid fa-car-bus side-menu__icon"></i>	/vehicles/verificacion/	2024-05-07 19:42:57.634+00	f	2
+7	t	Verificacion	Verificacion	\N	<i class="fa-solid fa-circle-info side-menu__icon"></i>	/vehicles/verificacion/	2024-05-07 19:42:57.634+00	f	2
 8	t   Entradas y salidas	Responsiva	\N	<i class="fa-solid fa-car side-menu__icon"></i>	/vehicles/responsiva/	2024-05-07 19:43:44.7+00	f	2
 9	t	Seguro	Seguro	\N	<i class="fa-solid fa-car-burst side-menu__icon"></i>	/vehicles/insurance/	2024-05-07 19:44:08.857+00	f	2
 11	t	Mantenimiento	Mantenimiento	\N	<i class="fa-solid fa-car-wrench side-menu__icon"></i>	/vehicles/maintenance/	2024-05-07 19:45:08.561+00	f	2
