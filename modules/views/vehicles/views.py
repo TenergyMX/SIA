@@ -79,6 +79,8 @@ def vehicles(request):
 def vehicles_details(request, vehicle_id = None):
     context = user_data(request)
     context["vehicle"] = {"id": vehicle_id}
+    if vehicle_id is not None:
+        context["vehicle_name"] = Vehicle.objects.get(id = vehicle_id).name
     module_id = 2
     subModule_id = 4
     request.session["last_module_id"] = module_id
@@ -267,6 +269,136 @@ def vehicles_fuel_views(request):
 
 # TODO --------------- [ REQUEST ] ----------
 
+
+def get_vehicle_maintenance_kilometer(request):
+    dt = request.GET.get
+    response = {"success":True}
+    obj = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo_id=dt("id")).order_by("-kilometer").values("id", "kilometer")
+    for item in obj:
+        id = str(item["id"])
+        item["kilometer"] = str(item["kilometer"])+" km"
+        item["acciones"] = f"<div class='row justify-content-center'>"
+        item["acciones"] += f"<button type='submit' name='update' data-vehiculo-id='{id}' class='btn btn-primary w-auto mx-2 btn-sm'><i class='fa-solid fa-pencil'></i></button>"
+        item["acciones"] += f"<button type='submit' name='delete' data-vehiculo-id='{id}' class='btn btn-danger w-auto mx-2 btn-sm'><i class='fa-solid fa-trash-can'></i></button></div>"
+    response["data"] = list(obj)
+    return JsonResponse(response)
+
+def update_vehicle_kilometer(request):
+    #VERIFIED SESSION USER 
+    context = user_data(request)
+    response = {"success":False}
+    dt = request.POST.get
+
+    company_id = context["company"]["id"]
+
+    if not company_id:
+        response["success"] = False
+        response["status"] = "waring"
+        response["message"] = {"message" : "Tu usuario no cuenta con empresa asignada"}
+        return JsonResponse(response)
+    #PREPARE THE UPDATE
+    try:
+        obj = Vehicle_Maintenance_Kilometer.objects.get(id = dt("id"))
+        flag = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = obj.vehiculo, kilometer = dt("kilometer")).count() == 0
+
+        if flag:
+            Vehicle_Maintenance_Kilometer.objects.filter(id = dt("id")).update(kilometer = dt("kilometer"))
+            response["success"] = True
+            response["status"] = "success"
+            response["message"] = "Kilometraje Cambiado"
+        else:
+            response["success"] = False
+            response["error"] = {"message" : "Kilometraje establecido anteriormente"}
+        
+    except Exception as e:
+        response["success"] = False
+        response["error"] = {"message": str(e)}
+    return JsonResponse(response)
+
+def delete_vehicle_kilometer(request):
+    #VERIFIED SESSION USER 
+    context = user_data(request)
+    response = {"success":False}
+    dt = request.POST.get
+
+    company_id = context["company"]["id"]
+
+    if not company_id:
+        response["success"] = False
+        response["status"] = "waring"
+        response["message"] = {"message" : "Tu usuario no cuenta con empresa asignada"}
+        return JsonResponse(response)
+    
+    #PREPARE THE DELETE
+    try:
+        obj = Vehicle_Maintenance_Kilometer.objects.get(id = dt("id"))
+        obj.delete()
+        response["success"] = True
+        response["status"] = "success"
+        response["message"] = "Kilometraje eliminado" 
+    except Exception as e:
+        response["success"] = False
+        response["error"] = {"message": str(e)}
+    return JsonResponse(response)
+
+def add_vehicle_kilometer(request):
+    #VERIFIED SESSION USER 
+    context = user_data(request)
+    response = {"success":False}
+    dt = request.POST.get
+
+    company_id = context["company"]["id"]
+
+    if not company_id:
+        response["success"] = False
+        response["status"] = "waring"
+        response["message"] = {"message" : "Tu usuario no cuenta con empresa asignada"}
+        return JsonResponse(response)
+    
+    #PREPARE THE CREATE
+    try:
+        #GET VEHICLE
+        vehicle = Vehicle.objects.get(id = dt("id"))
+
+        #SET THE CONDICIONAL
+        flag = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = vehicle) 
+
+        obj = Vehicle_Maintenance_Kilometer(
+            vehiculo = vehicle,
+            kilometer = dt("kilometer")
+        )
+        #IF NOT REGISTER, CREATE THE FIRTS WITHOUT COMPLAINS
+        if flag.count() == 0:  
+            obj.save()
+            id = obj.id
+            response["success"] = True
+            response["status"] = "success"
+            response["message"] = "Kilometraje establecido para mantenimiento"
+            response["id"] = id
+            
+        #CHECK IF THE REGISTER IS GTH THE LAST
+        elif flag.filter(kilometer = dt("kilometer")).count() == 0:
+            last_obj = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = vehicle).order_by("-kilometer").first()
+            if last_obj.kilometer < float(dt("kilometer")):
+                obj.save()
+                id = obj.id
+                response["success"] = True
+                response["status"] = "success"
+                response["message"] = "Kilometraje establecido para mantenimiento"
+                response["id"] = id
+            else:
+                response["success"] = False
+                response["error"] = {"message" : "Kilometraje debe ser ingresado de manera incremental"}
+        else:
+            response["success"] = False
+            response["error"] = {"message" : "Kilometraje establecido anteriormente"}
+
+    except Exception as e:
+        response["success"] = False
+        response["error"] = {"message": str(e)}
+        return JsonResponse(response)
+    
+    return JsonResponse(response)
 def add_vehicle_info(request):
     context = user_data(request)
     response = {"success": False}
@@ -277,7 +409,7 @@ def add_vehicle_info(request):
     if not company_id:
         response["success"] = False
         response["status"] = "warning"
-        response["message"] = {"message": "Tu usuario con cuenta con empresa asignada"}
+        response["message"] = {"message": "Tu usuario no cuenta con empresa asignada"}
         return JsonResponse(response)
 
     try:
@@ -1175,10 +1307,10 @@ def add_vehicle_responsiva(request):
     dt = request.POST
     vehicle_id = dt.get("vehicle_id")
 
+    #CONDITIONAL KILOMETER REGISTER GREATER THEN THE KILOMETER VEHICLE
     try:
         obj_vehicle = Vehicle.objects.get(id = vehicle_id)
         company_id = obj_vehicle.company.id
-
         # Verificamos que el kilometraje sea coerente
         mileage = Decimal(dt.get("initial_mileage")) if dt.get("initial_mileage") else None
         if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
@@ -1191,8 +1323,17 @@ def add_vehicle_responsiva(request):
         return JsonResponse(response)
 
 
-    try:
+    try:#TODO CONTINUE
         with transaction.atomic():
+
+            flag = check_vehicle_kilometer(request, obj_vehicle, dt.get("initial_mileage"), dt.get("start_date"))
+            if isinstance(flag, JsonResponse):
+                data_flag = json.loads(flag.content.decode('utf-8')).get
+                if data_flag("status") == "error":
+                    return flag
+                elif data_flag("status") == "warning":
+                    response["warning"] = {"message" : data_flag("message")}
+            
             obj = Vehicle_Responsive(
                 vehicle_id = dt.get("vehicle_id"),
                 responsible_id = dt.get("responsible_id"),
@@ -1203,9 +1344,10 @@ def add_vehicle_responsiva(request):
                 start_date = dt.get("start_date")
             )
             obj.save()
-
             obj_vehicle.mileage = dt.get("initial_mileage")
             obj_vehicle.save()
+            
+            
 
             if 'signature' in request.FILES and request.FILES['signature']:
                 load_file = request.FILES.get('signature')
@@ -1260,12 +1402,13 @@ def add_vehicle_responsiva(request):
             upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
         
+        if "warning" in response:
+            return JsonResponse(response)
         response["id"] = obj.id
         response["success"] = True
     except Exception as e:
         response["success"] = False
         response["error"] = {"message": str(e)}
-    response["success"] = True
     return JsonResponse(response)
     
 # caargar funcion completa
@@ -1277,7 +1420,7 @@ def get_vehicle_responsiva(request):
     subModule_id = 8
 
     lista = Vehicle_Responsive.objects.filter(vehicle_id = vehicle_id).values(
-        "id", "vehicle_id", "vehicle__name", "responsible_id", "responsible__first_name", "responsible__last_name",
+        "id", "vehicle__id", "vehicle__name", "responsible__id", "responsible__first_name", "responsible__last_name",
         "image_path_entry_1", "image_path_entry_2", "image_path_exit_1", "image_path_exit_2",
         "initial_mileage", "final_mileage",
         "initial_fuel", "final_fuel",
@@ -1291,12 +1434,12 @@ def get_vehicle_responsiva(request):
         modified_data = data.copy()
 
         file_path1 = data.get('image_path_exit_1')
-        if file_path1:
-            imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
-            modified_image_path_exit_1 = imagePath1
-            
-            modified_data['image_path_exit_1'] = modified_image_path_exit_1
-            modified_data_list.append(modified_data)
+        print(f'FOTO1: {file_path1}')
+        imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
+        modified_image_path_exit_1 = imagePath1
+        
+        modified_data['image_path_exit_1'] = modified_image_path_exit_1
+        modified_data_list.append(modified_data)
 
         file_path2 = data.get('image_path_exit_2')
         if file_path2:
@@ -1307,12 +1450,12 @@ def get_vehicle_responsiva(request):
             modified_data_list.append(modified_data)
 
         signature = data.get('signature')
-        if signature:
-            sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
-            modified_sign = sign
-            
-            modified_data['signature'] = modified_sign
-            modified_data_list.append(modified_data)
+        sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
+        modified_sign = sign
+        
+        modified_data['signature'] = modified_sign
+        print(modified_sign)
+        modified_data_list.append(modified_data)
 
 
     access = get_module_user_permissions(context, subModule_id)
@@ -1368,12 +1511,12 @@ def get_vehicles_responsiva(request):
             modified_data_list.append(modified_data)
 
         signature = data.get('signature')
-        if signature:
-            sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
-            modified_sign = sign
-            
-            modified_data['signature'] = modified_sign
-            modified_data_list.append(modified_data)
+        sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
+        modified_sign = sign
+        
+        modified_data['signature'] = modified_sign
+        print(modified_sign)
+        modified_data_list.append(modified_data)
 
         file_path3 = data.get('image_path_entry_1')
         # imagePath3 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path3))
@@ -1424,11 +1567,13 @@ def update_vehicle_responsiva(request):
     id = dt.get("id", None)
     registro = dt.get("registro", "entrada")
 
+    #CONDITIONAL RESPONSIVE ID WAS SEND IT
     if id is None or id == "":
         response["status"] = "warning"
         response["error"] = "No se proporcionó un ID válido para actualizar."
         return JsonResponse(response)
     
+    #CONDITIONAL RESPONSIVA EXISTS IN DB
     try:
         obj = Vehicle_Responsive.objects.get(id=id)
     except Vehicle_Responsive.DoesNotExist:
@@ -1439,9 +1584,9 @@ def update_vehicle_responsiva(request):
     company_id = obj.vehicle.company.id
     vehicle_id = obj.vehicle.id
 
+    #CONDITIONAL FINAL_MILEAGE IS GTE INITIAL_MILEAGE 
     try:
         obj_vehicle = Vehicle.objects.get(id = vehicle_id)
-
         if dt.get("final_mileage", None):
             initial_mileage = Decimal(obj.initial_mileage)
             final_mileage = Decimal(dt["final_mileage"])
@@ -1454,7 +1599,6 @@ def update_vehicle_responsiva(request):
                 response["status"] = "warning"
                 response["message"] = "El kilometraje del vehículo es mayor que el valor proporcionado."
                 return JsonResponse(response)
-
     except Vehicle.DoesNotExist:
         response["status"] = "error"
         response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
@@ -1462,10 +1606,20 @@ def update_vehicle_responsiva(request):
 
     try:
         with transaction.atomic():
+            #UPDATE INFORMATION MISSING
             obj.final_fuel = dt.get("final_fuel")
             obj.final_mileage = dt.get("final_mileage")
             obj.end_date = dt.get("end_date")
             obj.save()
+
+            flag = check_vehicle_kilometer(request, obj_vehicle, dt.get("final_mileage"), dt.get("end_date"))
+            if isinstance(flag, JsonResponse):
+                data_flag = json.loads(flag.content.decode('utf-8')).get
+                print(data_flag("status"))
+                if data_flag("status") == "error":
+                    return flag
+                elif data_flag("status") == "warning":
+                    response["warning"] = {"message" : data_flag("message")}
 
             if registro == "salida":
                 obj_vehicle.mileage = dt.get("initial_mileage")
@@ -1478,18 +1632,8 @@ def update_vehicle_responsiva(request):
 
             load_file = request.FILES.get('image_path_entry_1')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            #folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{registro}/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
-
-            # Eliminar el archivo anterior con el mismo nombre
-            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
-            #    if os.path.exists(old_file_path): os.remove(old_file_path)
-            
             new_name = f"entrada_1{extension}"
-            #fs.save(folder_path + new_name, load_file)
-
             obj.image_path_entry_1 = folder_path + new_name
             upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
@@ -1498,18 +1642,8 @@ def update_vehicle_responsiva(request):
 
             load_file = request.FILES.get('image_path_entry_2')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            #folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{registro}/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
-
-            # Eliminar el archivo anterior con el mismo nombre
-            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
-            #    if os.path.exists(old_file_path): os.remove(old_file_path)
-            
             new_name = f"entrada_2{extension}"
-            #fs.save(folder_path + new_name, load_file)
-
             obj.image_path_entry_2 = folder_path + new_name
             upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
@@ -1539,8 +1673,6 @@ def delete_vehicle_responsiva(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
-
-
 
 def add_vehicle_insurance(request):
     response = {"success": False, "data": []}
@@ -2252,6 +2384,7 @@ def update_vehicle_maintenance(request):
             obj.time = dt.get("time")
         if dt.get("general_note"):
             obj.general_notes = dt.get("general_note", None)
+        obj.status = "PROGRAMADO"
         obj.actions = actions
         obj.save()
         
@@ -2770,6 +2903,61 @@ def delete_qr(request, qr_type, vehicle_id):
         vehicle.qr_access.delete()
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type or QR does not exist'}, status=400)
+    
+    print(f"QR eliminado correctamente: {qr_type}")  
+    return JsonResponse({'status': 'success'})
+
+# TODO ----- [ INTERNAL FUNCTIONS ] -----
+#@obj_vehicle = QuerySet Vehicle
+#@kilometer = Decimal
+#@date_set = DateTime
+def check_vehicle_kilometer(request, obj_vehicle = None, kilometer = None, date_set = None):
+    response = {"status": "success"}
+    # TODO -- MAINTENANCE KILOMETER --
+    obj_maintenance_kilometer = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = obj_vehicle)
+    #CONDITIONAL MAINTENANCE KILOMETER FOR THAT VEHICLE EXISTS
+    if obj_maintenance_kilometer.count() == 0:
+        response["status"] = "error"
+        response["error"] = {"message" : f"Kilometraje para mantenimiento no asigando, por favor registre el kilometraje de manera manual"}
+    else:# TODO CONTINUE
+        next_maintenance = obj_maintenance_kilometer.filter(kilometer__gte = kilometer).order_by("kilometer")
+
+        #CONDITIONAL CHECKS IS EXIST MAINTENANCE KILOMETER IN MODELS
+        if next_maintenance.count() == 0:
+            response["status"] = "error"
+            response["error"] = {"message" : f"El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."}
+            return JsonResponse(response)
+        
+        #CONDITIONAL CHECKS IT'S MAINTENANCES STILL IN NEW
+        flag_new = Vehicle_Maintenance.objects.filter(vehicle = obj_vehicle, status = "NUEVO", type = "preventivo").count() != 0
+        if flag_new:
+            response["status"] = "warning"
+            response["message"] = "Aún no se ha agendado la revisión del vehículo"
+
+        #CONDITIONAL CHECK THE NEXT KILOMETER DIFF LESS THEN 200
+        flag = next_maintenance.first().kilometer - Decimal(kilometer)
+        if flag <= 200:#TODO CONTINUE
+            response["status"] = "warning"
+            if flag_new:
+                status = "NUEVO"
+                km = next_maintenance.first().kilometer
+                response["message"] = f"El kilometraje está cerca de alcanzar los {km} km, se recomienda agendar una revisión."
+            else:
+                status = "ALERTA"
+                response["message"] = "Aún no se ha agendado la revisión del vehículo"
+            
+            newDate = datetime.strptime(date_set, "%Y-%m-%dT%H:%M").date()
+            newDate = newDate + timedelta(days=14)
+            km = next_maintenance.first().kilometer
+            obj_maintenance = Vehicle_Maintenance(
+                vehicle = obj_vehicle,
+                type = "preventivo",
+                status = status,
+                date = newDate,
+                general_notes = f"Vehiculo cerca de los {km} km, necesario programar revisión"
+            )
+            obj_maintenance.save()
+    return JsonResponse(response)
     delete_s3_object(AWS_BUCKET_NAME, url)
     return JsonResponse({'status':'success'})
 

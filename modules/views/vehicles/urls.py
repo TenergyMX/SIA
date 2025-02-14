@@ -77,6 +77,10 @@ urlpatterns = [
     path("get_vehicles_maintenance/", views.get_vehicles_maintenance),
     path("update_vehicle_maintenance/", views.update_vehicle_maintenance),
     path("delete_vehicle_maintenance/", views.delete_vehicle_maintenance),
+    path("add_vehicle_kilometer/", views.add_vehicle_kilometer),
+    path("delete_vehicle_kilometer/", views.delete_vehicle_kilometer),
+    path("update_vehicle_kilometer/", views.update_vehicle_kilometer),
+    path("get_vehicle_maintenance_kilometer/", views.get_vehicle_maintenance_kilometer),
 
     path("get-vehicles-calendar/", views.get_vehicles_calendar),
 
