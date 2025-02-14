@@ -54,7 +54,16 @@ class Vehicle(models.Model):
     def __str__(self):
         owner_name = self.owner.username if self.owner else "Sin propietario"
         return f"{self.brand} {self.model} ({self.plate}) - {owner_name}"
-    
+
+class Vehicle_Maintenance_Kilometer(models.Model):
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
+    kilometer = models.DecimalField(max_digits=7, decimal_places=2)
+    status = models.CharField(max_length=50, null=True, default="current")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vehiculo} - Mantenimiento en {self.kilometer} Km"
+
 class Vehicle_Tenencia(models.Model):
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     monto = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -168,6 +177,7 @@ class Vehicle_Maintenance(models.Model):
     actions = models.TextField(blank=True, null=True)
     comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de pago o de matenimiento")
     is_checked = models.BooleanField(default=False)
+    status = models.CharField(max_length=255, null=False, default="blank")
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

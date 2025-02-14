@@ -95,6 +95,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!--Modulo de tenencia-->
                                     <div class="tab-pane fade p-0 border-0" id="v-tenencia-pane" role="tabpanel" aria-labelledby="v-tenencia" tabindex="0">
                                         <div class="mb-3">
                                             {% if permiso.5.create %}
@@ -260,6 +261,7 @@
                                             {% include "vehicles/cards/audit_info.html" %}
                                         </div>
                                     </div>
+                                    <!--Contenido te tabla mantenimiento para vehiculos-->
                                     <div class="tab-pane fade p-0 border-0" id="v-maintenance-pane" role="tabpanel" aria-labelledby="maintenance-tab" tabindex="0">
                                         <div class="info">
                                             <div class="mb-3">
@@ -275,6 +277,12 @@
                                                     <i class="fa-solid fa-arrows-rotate me-1"></i>
                                                     Refrescar tabla
                                                 </button>
+                                                {% if permiso.11.create %}
+                                                    <button type="button" class="btn btn-primary" data-vehicle-maintenance="add-vehicle-kl">
+                                                        <i class="fa-solid fa-plus me-1"></i>
+                                                        Agregar Kilometraje
+                                                    </button>
+                                                {% endif %}
                                             </div>
                                             <div class="table-responsive">
                                                 <table class="table table-bordered w-100" id="table_maintenance">
@@ -387,6 +395,7 @@
     {% include "vehicles/modals/mdl_crud_insurance.html" %}
     {% include "vehicles/modals/mdl_crud_audit.html" %}
     {% include "vehicles/modals/mdl_crud_maintenance.html" %}
+    {% include "vehicles/modals/mdl_crud_maintenance_kilometer.html" %}
 
 {% endblock %}
 
@@ -410,8 +419,8 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
-<script src="{% static 'assets/js/users.js' %}"></script>
-<script src="{% static 'assets/js/providers.js' %}"></script>
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/users/providers.js' %}"></script>
 <script src="{% static 'assets/js/vehicles/vehicles.js' %}"></script>
 <script src="{% static 'assets/js/canvasDrawing.js' %}"></script>
 
