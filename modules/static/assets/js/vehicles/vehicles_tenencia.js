@@ -127,7 +127,7 @@ class VehiclesTenencia {
                 case "add-item":
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Registrar maintenanceoria vehicular");
+                    obj_modal.find(".modal-header").html("Registrar mantenimiento vehicular");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
                     obj_modal.find('[name="actions[]"]').trigger("change");

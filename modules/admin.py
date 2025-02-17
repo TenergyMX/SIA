@@ -11,6 +11,7 @@ admin.site.register(Vehicle_Insurance)
 admin.site.register(Vehicle_Audit)
 admin.site.register(Vehicle_Maintenance)
 admin.site.register(Vehicle_fuel)
+admin.site.register(Vehicle_Maintenance_Kilometer)
 
 admin.site.register(ComputerSystem)
 admin.site.register(ComputerPeripheral)

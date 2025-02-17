@@ -29,52 +29,61 @@
                                     {% if permiso.5.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-tenencia" data-bs-toggle="tab" data-bs-target="#v-tenencia-pane" type="button" role="tab" aria-controls="v-tenencia-pane" aria-selected="true">
-                                            Tenencia
+                                            Tenencia <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
                                     {% endif %}
                                     {% if permiso.6.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-refrendo" data-bs-toggle="tab" data-bs-target="#v-refrendo-pane" type="button" role="tab" aria-controls="v-refrendo-pane" aria-selected="false">
-                                            Refrendo
+                                            Refrendo <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
                                     {% endif %}
                                     {% if permiso.7.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-verificacion" data-bs-toggle="tab" data-bs-target="#v-verificacion-pane" type="button" role="tab" aria-controls="v-verificacion-pane" aria-selected="false">
-                                            Verificación
+                                            Verificación <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
                                     {% endif %}
                                     {% if permiso.8.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-responsiva" data-bs-toggle="tab" data-bs-target="#v-responsiva-pane" type="button" role="tab" aria-controls="v-responsiva-pane" aria-selected="false">
-                                            Responsiva
+                                            Entradas y Salidas <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
                                     {% endif %}
                                     {% if permiso.9.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-insurance" data-bs-toggle="tab" data-bs-target="#v-insurance-pane" type="button" role="tab" aria-controls="v-insurance-pane" aria-selected="false">
-                                            Seguro
+                                            Seguro <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
                                     {% endif %}
                                     {% if permiso.10.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-audit" data-bs-toggle="tab" data-bs-target="#v-audit-pane" type="button" role="tab" aria-controls="v-audit-pane" aria-selected="false">
-                                            Auditoria
+                                            Auditoria <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
                                     {% endif %}
                                     {% if permiso.11.read %}
                                     <li class="nav-item" role="presentation" style="display: none;">
                                         <button class="nav-link" id="v-maintenance" data-bs-toggle="tab" data-bs-target="#v-maintenance-pane" type="button" role="tab" aria-controls="v-maintenance-pane" aria-selected="false">
-                                            Mantenimiento
+                                            Mantenimiento <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
                                     {% endif %}
+                                    {% if permiso.12.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-qr" data-bs-toggle="tab" data-bs-target="#v-qr-pane" type="button" role="tab" aria-controls="v-qr-pane" aria-selected="false">
+                                            Códigos QR <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                  
+
                                 </ul>
                             </div>
                             <!-- contenido tab -->
@@ -87,6 +96,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!--Modulo de tenencia-->
                                     <div class="tab-pane fade p-0 border-0" id="v-tenencia-pane" role="tabpanel" aria-labelledby="v-tenencia" tabindex="0">
                                         <div class="mb-3">
                                             {% if permiso.5.create %}
@@ -252,21 +262,28 @@
                                             {% include "vehicles/cards/audit_info.html" %}
                                         </div>
                                     </div>
+                                    <!--Contenido te tabla mantenimiento para vehiculos-->
                                     <div class="tab-pane fade p-0 border-0" id="v-maintenance-pane" role="tabpanel" aria-labelledby="maintenance-tab" tabindex="0">
                                         <div class="info">
                                             <div class="mb-3">
                                                 {% if permiso.11.create %}
-                                                <button type="button" class="btn btn-primary" data-vehicle-maintenance="add-item"
+                                                <button type="button" class="btn btn-primary" data-sia-vehicle-maintenance="add-item"
                                                     title="Agregar Seguro">
                                                     <i class="fa-solid fa-plus me-1"></i>
                                                     Agregar
                                                 </button>
                                                 {% endif %}
-                                                <button type="button" class="btn btn-primary" data-vehicle-maintenance="refresh-table"
+                                                <button type="button" class="btn btn-primary" data-sia-vehicle-maintenance="refresh-table"
                                                     title="Refrescar tabla">
                                                     <i class="fa-solid fa-arrows-rotate me-1"></i>
                                                     Refrescar tabla
                                                 </button>
+                                                {% if permiso.11.create %}
+                                                    <button type="button" class="btn btn-primary" data-vehicle-maintenance="add-vehicle-kl">
+                                                        <i class="fa-solid fa-plus me-1"></i>
+                                                        Agregar Kilometraje
+                                                    </button>
+                                                {% endif %}
                                             </div>
                                             <div class="table-responsive">
                                                 <table class="table table-bordered w-100" id="table_maintenance">
@@ -277,7 +294,7 @@
                                         </div>
                                         <div class="info-details" style="display: none;">
                                             <div class="mb-3">
-                                                <button type="button" class="btn btn-info btn-sm" data-vehicle-maintenance="show-info">
+                                                <button type="button" class="btn btn-info btn-sm" data-sia-vehicle-maintenance="show-info">
                                                     <i class="fa-solid fa-arrow-left me-1"></i>
                                                     Regresar
                                                 </button>
@@ -285,6 +302,71 @@
                                             {% include "vehicles/cards/maintenance_info.html" %}
                                         </div>
                                     </div>
+
+                                    <div class="tab-pane fade p-0 border-0" id="v-qr-pane" role="tabpanel" aria-labelledby="v-qr" tabindex="0">
+                                        <div class="mb-3">
+                                            
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="card custom-card">
+                                                    <div class="card-header">
+                                                        <h5 class="card-title">QR de Información</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="qr-info-container">
+                                                            <!-- Aquí se mostrará el QR de información -->
+                                                        </div>
+                                                        <div class="mt-3">
+                                                            <button type="button" class="btn btn-warning btn-sm" data-vehicle-qr="qr-info">
+                                                                <i class="fa-solid fa-pencil me-1"></i>
+                                                                Generar
+                                                            </button>
+                                                            <button type="button" class="btn btn-danger btn-sm" data-vehicle-qr="delete-qrinfo">
+                                                                <i class="fa-solid fa-trash me-1"></i>
+                                                                Eliminar
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm" data-vehicle-qr="descargar-qr-info" style="display: none;">
+                                                                <i class="fa-solid fa-download me-1"></i>
+                                                                Descargar
+                                                            </button>
+                                                            
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="card custom-card">
+                                                    <div class="card-header">
+                                                        <h5 class="card-title">QR de Entradas y Salidas</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="qr-access-container">
+                                                            <!-- Aquí se mostrará el QR de entradas y salidas -->
+                                                        </div>
+                                                        <div class="mt-3">
+                                                            <button type="button" class="btn btn-warning btn-sm" data-vehicle-qr="qr-access">
+                                                                <i class="fa-solid fa-pencil me-1"></i>
+                                                                Generar
+                                                            </button>
+                                                            <button type="button" class="btn btn-danger btn-sm" data-vehicle-qr="delete-qraccess">
+                                                                <i class="fa-solid fa-trash me-1"></i>
+                                                                Eliminar
+                                                            </button>
+                                                            <button type="button" class="btn btn-success btn-sm" data-vehicle-qr="descargar-qr-access" style="display: none;">
+                                                                <a href=""></a>
+                                                                <i class="fa-solid fa-download me-1"></i>
+                                                                Descargar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -315,6 +397,8 @@
 {% load static %}
 
 {% block modals %}
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
     {% include "vehicles/modals/mdl_crud_tenencia.html" %}
     {% include "vehicles/modals/mdl_crud_refrendo.html" %}
     {% include "vehicles/modals/mdl_crud_verificacion.html" %}
@@ -322,6 +406,9 @@
     {% include "vehicles/modals/mdl_crud_insurance.html" %}
     {% include "vehicles/modals/mdl_crud_audit.html" %}
     {% include "vehicles/modals/mdl_crud_maintenance.html" %}
+    {% include "vehicles/modals/mdl_crud_maintenance_kilometer.html" %}
+    {% include "vehicles/modals/mdl_crud_option_maintenance.html" %}
+
 {% endblock %}
 
 {% block offcanvas %}
@@ -344,10 +431,12 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
-<script src="{% static 'assets/js/users.js' %}"></script>
-<script src="{% static 'assets/js/providers.js' %}"></script>
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/users/providers.js' %}"></script>
 <script src="{% static 'assets/js/vehicles/vehicles.js' %}"></script>
 <script src="{% static 'assets/js/canvasDrawing.js' %}"></script>
+
+<script src="{% static 'assets/js/vehicles/qr.js' %}"></script>
 <script>
     const vehiculo = new Vehicles({
         infoCard: {

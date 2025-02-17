@@ -12,7 +12,7 @@ from pathlib import Path
 from os.path import join, dirname
 from users.models import *
 from modules.utils import * 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
 from django.core.exceptions import ValidationError
@@ -36,6 +36,13 @@ from modules.utils import * # Esto es un helpers
 import zipfile
 import subprocess
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render, get_object_or_404
+
+
+from django.core.files.base import ContentFile
+import qrcode
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db.models import Q
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
@@ -65,8 +72,7 @@ def vehicles(request):
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
-    print('Estos son los permisos')
-    print(access)
+
     if context["access"]["read"]:
         template = "vehicles/vechicles.html"
     else:
@@ -77,6 +83,8 @@ def vehicles(request):
 def vehicles_details(request, vehicle_id = None):
     context = user_data(request)
     context["vehicle"] = {"id": vehicle_id}
+    if vehicle_id is not None:
+        context["vehicle_name"] = Vehicle.objects.get(id = vehicle_id).name
     module_id = 2
     subModule_id = 4
     request.session["last_module_id"] = module_id
@@ -165,7 +173,7 @@ def module_vehicle_verificacion(request):
     return render(request, template, context)
 
 @login_required
-def module_vehicle_responsiva(request):
+def module_vehicle_responsiva(request, qr="", vehicle_id = 0):
     context = user_data(request)
     module_id = 2
     submodule_id = 8
@@ -184,7 +192,7 @@ def module_vehicle_responsiva(request):
     else:
         template = "error/access_denied.html"
     return render(request, template, context)
-
+    
 @login_required
 def module_vehicle_insurance(request):
     context = user_data(request)
@@ -295,6 +303,136 @@ def vehicles_fuel_views(request):
 
 # TODO --------------- [ REQUEST ] ----------
 
+
+def get_vehicle_maintenance_kilometer(request):
+    dt = request.GET.get
+    response = {"success":True}
+    obj = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo_id=dt("id")).order_by("-kilometer").values("id", "kilometer")
+    for item in obj:
+        id = str(item["id"])
+        item["kilometer"] = str(item["kilometer"])+" km"
+        item["acciones"] = f"<div class='row justify-content-center'>"
+        item["acciones"] += f"<button type='submit' name='update' data-vehiculo-id='{id}' class='btn btn-primary w-auto mx-2 btn-sm'><i class='fa-solid fa-pencil'></i></button>"
+        item["acciones"] += f"<button type='submit' name='delete' data-vehiculo-id='{id}' class='btn btn-danger w-auto mx-2 btn-sm'><i class='fa-solid fa-trash-can'></i></button></div>"
+    response["data"] = list(obj)
+    return JsonResponse(response)
+
+def update_vehicle_kilometer(request):
+    #VERIFIED SESSION USER 
+    context = user_data(request)
+    response = {"success":False}
+    dt = request.POST.get
+
+    company_id = context["company"]["id"]
+
+    if not company_id:
+        response["success"] = False
+        response["status"] = "waring"
+        response["message"] = {"message" : "Tu usuario no cuenta con empresa asignada"}
+        return JsonResponse(response)
+    #PREPARE THE UPDATE
+    try:
+        obj = Vehicle_Maintenance_Kilometer.objects.get(id = dt("id"))
+        flag = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = obj.vehiculo, kilometer = dt("kilometer")).count() == 0
+
+        if flag:
+            Vehicle_Maintenance_Kilometer.objects.filter(id = dt("id")).update(kilometer = dt("kilometer"))
+            response["success"] = True
+            response["status"] = "success"
+            response["message"] = "Kilometraje Cambiado"
+        else:
+            response["success"] = False
+            response["error"] = {"message" : "Kilometraje establecido anteriormente"}
+        
+    except Exception as e:
+        response["success"] = False
+        response["error"] = {"message": str(e)}
+    return JsonResponse(response)
+
+def delete_vehicle_kilometer(request):
+    #VERIFIED SESSION USER 
+    context = user_data(request)
+    response = {"success":False}
+    dt = request.POST.get
+
+    company_id = context["company"]["id"]
+
+    if not company_id:
+        response["success"] = False
+        response["status"] = "waring"
+        response["message"] = {"message" : "Tu usuario no cuenta con empresa asignada"}
+        return JsonResponse(response)
+    
+    #PREPARE THE DELETE
+    try:
+        obj = Vehicle_Maintenance_Kilometer.objects.get(id = dt("id"))
+        obj.delete()
+        response["success"] = True
+        response["status"] = "success"
+        response["message"] = "Kilometraje eliminado" 
+    except Exception as e:
+        response["success"] = False
+        response["error"] = {"message": str(e)}
+    return JsonResponse(response)
+
+def add_vehicle_kilometer(request):
+    #VERIFIED SESSION USER 
+    context = user_data(request)
+    response = {"success":False}
+    dt = request.POST.get
+
+    company_id = context["company"]["id"]
+
+    if not company_id:
+        response["success"] = False
+        response["status"] = "waring"
+        response["message"] = {"message" : "Tu usuario no cuenta con empresa asignada"}
+        return JsonResponse(response)
+    
+    #PREPARE THE CREATE
+    try:
+        #GET VEHICLE
+        vehicle = Vehicle.objects.get(id = dt("id"))
+
+        #SET THE CONDICIONAL
+        flag = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = vehicle) 
+
+        obj = Vehicle_Maintenance_Kilometer(
+            vehiculo = vehicle,
+            kilometer = dt("kilometer")
+        )
+        #IF NOT REGISTER, CREATE THE FIRTS WITHOUT COMPLAINS
+        if flag.count() == 0:  
+            obj.save()
+            id = obj.id
+            response["success"] = True
+            response["status"] = "success"
+            response["message"] = "Kilometraje establecido para mantenimiento"
+            response["id"] = id
+            
+        #CHECK IF THE REGISTER IS GTH THE LAST
+        elif flag.filter(kilometer = dt("kilometer")).count() == 0:
+            last_obj = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = vehicle).order_by("-kilometer").first()
+            if last_obj.kilometer < float(dt("kilometer")):
+                obj.save()
+                id = obj.id
+                response["success"] = True
+                response["status"] = "success"
+                response["message"] = "Kilometraje establecido para mantenimiento"
+                response["id"] = id
+            else:
+                response["success"] = False
+                response["error"] = {"message" : "Kilometraje debe ser ingresado de manera incremental"}
+        else:
+            response["success"] = False
+            response["error"] = {"message" : "Kilometraje establecido anteriormente"}
+
+    except Exception as e:
+        response["success"] = False
+        response["error"] = {"message": str(e)}
+        return JsonResponse(response)
+    
+    return JsonResponse(response)
 def add_vehicle_info(request):
     context = user_data(request)
     response = {"success": False}
@@ -305,7 +443,7 @@ def add_vehicle_info(request):
     if not company_id:
         response["success"] = False
         response["status"] = "warning"
-        response["message"] = {"message": "Tu usuario con cuenta con empresa asignada"}
+        response["message"] = {"message": "Tu usuario no cuenta con empresa asignada"}
         return JsonResponse(response)
 
     try:
@@ -347,12 +485,6 @@ def add_vehicle_info(request):
             #imageTemp = fs.save(folder_path + new_name, load_file)
             #localPath = folder_path + new_name
             s3Name = s3Path + new_name
-            #print(f"nombre del bucket {bucket_name}")
-            #print(f"nombre del folder {load_file.name}")
-            #print(f"nombre del archivo {load_file}")
-            #print(f"access key {AWS_ACCESS_KEY_ID}")
-            #print(f"aws region {AWS_DEFAULT_REGION}")
-            #print(f"secret access key {AWS_SECRET_ACCESS_KEY}")
             
             upload_to_s3(load_file, bucket_name, s3Name)
     
@@ -371,7 +503,6 @@ def add_vehicle_info(request):
     # Crear auditoria
     try:
         vehiculos = Vehicle.objects.filter(company_id=1).order_by('id')
-
         num_vehiculos = vehiculos.count()
         num_auditorias = Vehicle_Audit.objects.filter(
             vehicle__company_id = 1,
@@ -429,15 +560,149 @@ def get_vehicle_info(request):
         "vehicle_type", "year", "image_path"
     )[0]
     tempImgPath = generate_presigned_url(bucket_name, data["image_path"])
-    print(f'database route{data["image_path"]}')
     data["image_path"] = tempImgPath
-    print(f'S3 rute{tempImgPath}')
-    print(f'S3 rute{tempImgPath}')
     
     response["data"] = data
     response["success"] = True
     response["imgPath"] = tempImgPath
+    response["alert"] = alertas(vehicle_id, detailed=True)
     return JsonResponse(response)
+
+
+def alertas(vehicle_id, detailed=False):
+    """
+    Verifica si el vehículo tiene registros en las tablas relacionadas.
+    
+    Parámetros:
+    - vehicle_id: ID del vehículo a verificar.
+    - detailed: Si es True, devuelve un diccionario con 'alert' y 'missing_tables'.
+               Si es False, devuelve solo un booleano (True si hay alerta, False si no).
+    
+    Devuelve:
+    - Si detailed=True: {"alert": bool, "missing_tables": list}
+    - Si detailed=False: bool
+    """
+    tables = [
+        ("tenencia", Vehicle_Tenencia, "vehiculo_id"),  # Usa vehiculo_id
+        ("refrendo", Vehicle_Refrendo, "vehiculo_id"),  # Usa vehiculo_id
+        ("verificacion", Vehicle_Verificacion, "vehiculo_id"),  # Usa vehiculo_id
+        ("insurance", Vehicle_Insurance, "vehicle_id"),  # Usa vehicle_id
+        ("audit", Vehicle_Audit, "vehicle_id"),  # Usa vehicle_id
+        ("maintenance", Vehicle_Maintenance, "vehicle_id"),  # Usa vehicle_id
+        ("responsiva", Vehicle_Responsive, "vehicle_id"),
+        ("qr", Vehicle, "id")
+    ]
+    
+    missing_tables = []
+    
+    for table_name, table, field_name in tables:
+        filter_kwargs = {field_name: vehicle_id}  # Crear el filtro dinámicamente
+        if not table.objects.filter(**filter_kwargs).exists():
+            if table_name != "maintenance":
+                missing_tables.append(table_name)
+    
+        if table_name == "insurance":
+            ultimo_seguro = table.objects.filter(**filter_kwargs).order_by('-end_date').first()  
+            
+            if ultimo_seguro:
+                fecha_vencimiento = ultimo_seguro.end_date 
+                fecha_actual = datetime.now().date()
+                
+                diferencia_dias = (fecha_vencimiento - fecha_actual).days
+                
+                if 0 <= diferencia_dias <= 30:
+                    missing_tables.append(table_name)
+
+        if table_name == "tenencia":
+            ultima_tenencia = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
+            
+            if ultima_tenencia:
+                fecha_pago = ultima_tenencia.fecha_pago 
+                fecha_actual = datetime.now().date()
+                
+                diferencia_dias = (fecha_pago - fecha_actual).days
+                
+                if 0 <= diferencia_dias <= 30:
+                    missing_tables.append(table_name)
+
+        if table_name == "refrendo":
+            ultimo_refrendo = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
+            
+            if ultimo_refrendo:
+                fecha_pago = ultimo_refrendo.fecha_pago 
+                fecha_actual = datetime.now().date()
+                
+                diferencia_dias = (fecha_pago - fecha_actual).days
+                
+                if 0 <= diferencia_dias <= 30:
+                    missing_tables.append(table_name)
+
+        if table_name == "verificacion":
+            ultima_verificacion = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
+            
+            if ultima_verificacion:
+                fecha_pago = ultima_verificacion.fecha_pago 
+                fecha_actual = datetime.now().date()
+                
+                diferencia_dias = (fecha_pago - fecha_actual).days
+                
+                if 0 <= diferencia_dias <= 30:
+                    missing_tables.append(table_name)
+
+        # if table_name == "responsiva":
+        #     ultima_responsiva = table.objects.filter(**filter_kwargs).order_by('-end_date').first() 
+            
+        #     if ultima_responsiva:
+        #         fecha_final = ultima_responsiva.end_date 
+        #         fecha_actual = datetime.now().date()
+                
+        #         diferencia_dias = (fecha_final - fecha_actual).days
+                
+        #         if 0 <= diferencia_dias <= 30:
+        #             missing_tables.append(table_name)`
+
+        if table_name == "audit":
+            ultima_auditoria = table.objects.filter(**filter_kwargs).order_by('-audit_date').first()
+            
+            if ultima_auditoria:
+                fecha_auditoria = ultima_auditoria.audit_date.date()  # Asegurar que sea solo la fecha
+                fecha_actual = datetime.now().date()
+                
+                diferencia_dias = (fecha_actual - fecha_auditoria).days  # Invertido para obtener diferencia positiva
+                
+                if diferencia_dias > 30:  # Si han pasado más de 30 días
+                    missing_tables.append(table_name)
+
+        if table_name == "maintenance":
+            ultimo_mantenimiento = table.objects.filter(**filter_kwargs).order_by('-date').first()  
+            
+            if ultimo_mantenimiento:
+                if ultimo_mantenimiento.status in ["NUEVO", "ALERTA"]:
+                    missing_tables.append(table_name)
+
+
+        if table_name == "qr":
+            qrs = table.objects.filter(**filter_kwargs).first()
+
+            if qrs:
+                qr_informacion = qrs.qr_info
+                qr_accesso = qrs.qr_access  
+                
+                if not qr_informacion or not qr_accesso:
+                    missing_tables.append(table_name)
+            
+
+    if detailed:
+        return {
+            "alert": bool(missing_tables),  
+            "missing_tables": missing_tables  
+        }
+    else:
+        return bool(missing_tables) 
+
+
+    
+
 
 def get_vehicles_info(request):
     response = {"success": False, "data": []}
@@ -446,6 +711,7 @@ def get_vehicles_info(request):
     isList = dt.get("isList", False)
     subModule_id = 4
 
+    
     data = Vehicle.objects.order_by('name').values(
         "id", "is_active", "image_path", "name", "state",
         "company_id", "company__name", "plate", "model",
@@ -459,6 +725,7 @@ def get_vehicles_info(request):
 
     data = data.filter(company_id = context["company"]["id"])
 
+
     if (context["role"]["id"] == 4):
         data = data.filter(
             Q(responsible_id = context["user"]["id"]) |
@@ -471,11 +738,11 @@ def get_vehicles_info(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in data:
-            #item["image_path"] = "/" + item["image_path"]
+            vehicle_id = item["id"]
+            item["alert"] = alertas(vehicle_id)
+            
             tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
             item["image_path"] = tempImgPath
-            #print(item["image_path"])
-            #print(generate_presigned_url(bucket_name, item["image_path"]))
             item["btn_action"] = f"""
             <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
                 <i class="fa-solid fa-eye"></i>
@@ -499,8 +766,7 @@ def update_vehicle_info(request):
     dt = request.POST
     company_id = request.session.get('company').get('id')
     id = dt.get("id", None)
-    print("esta es la informacion del vechiculo para actualizar")
-    print(dt)
+
 
     if not id:
         response["error"] = {"message": "No se proporcionó un ID de vehículo válido"}
@@ -726,8 +992,7 @@ def delete_vehicle_tenencia(request):
     response = {"success": False, "data": []}
     dt = request.POST
     id = dt.get("id", None)
-    print("este es el id: ")
-    print(id)
+
     if id == None:
         response["error"] = {"message": "Proporcione un id valido"}
         return JsonResponse(response)
@@ -980,7 +1245,6 @@ def get_vehicle_verificacion(request):
                 <i class="fa-solid fa-trash"></i>
             </button>"""
     response["data"] = list(lista)
-    print("estas son las verificaciones del vehiculo:", lista)
     response["success"] = True
     return JsonResponse(response)
 
@@ -1067,17 +1331,17 @@ def update_vehicle_verificacion(request):
 
 
 
+# cargar funcion completa
 def add_vehicle_responsiva(request):
     response = {"success": False}
     context = user_data(request)
     dt = request.POST
-    print("entrando a alta de responsiva")
     vehicle_id = dt.get("vehicle_id")
 
+    #CONDITIONAL KILOMETER REGISTER GREATER THEN THE KILOMETER VEHICLE
     try:
         obj_vehicle = Vehicle.objects.get(id = vehicle_id)
         company_id = obj_vehicle.company.id
-
         # Verificamos que el kilometraje sea coerente
         mileage = Decimal(dt.get("initial_mileage")) if dt.get("initial_mileage") else None
         if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
@@ -1090,8 +1354,17 @@ def add_vehicle_responsiva(request):
         return JsonResponse(response)
 
 
-    try:
+    try:#TODO CONTINUE
         with transaction.atomic():
+
+            flag = check_vehicle_kilometer(request, obj_vehicle, dt.get("initial_mileage"), dt.get("start_date"))
+            if isinstance(flag, JsonResponse):
+                data_flag = json.loads(flag.content.decode('utf-8')).get
+                if data_flag("status") == "error":
+                    return flag
+                elif data_flag("status") == "warning":
+                    response["warning"] = {"message" : data_flag("message")}
+            
             obj = Vehicle_Responsive(
                 vehicle_id = dt.get("vehicle_id"),
                 responsible_id = dt.get("responsible_id"),
@@ -1102,9 +1375,10 @@ def add_vehicle_responsiva(request):
                 start_date = dt.get("start_date")
             )
             obj.save()
-
             obj_vehicle.mileage = dt.get("initial_mileage")
             obj_vehicle.save()
+            
+            
 
             if 'signature' in request.FILES and request.FILES['signature']:
                 load_file = request.FILES.get('signature')
@@ -1159,14 +1433,16 @@ def add_vehicle_responsiva(request):
             upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
         
+        if "warning" in response:
+            return JsonResponse(response)
         response["id"] = obj.id
         response["success"] = True
     except Exception as e:
         response["success"] = False
         response["error"] = {"message": str(e)}
-    response["success"] = True
     return JsonResponse(response)
-
+    
+# caargar funcion completa
 def get_vehicle_responsiva(request):
     context = user_data(request)
     response = {"success": False, "data": []}
@@ -1175,13 +1451,13 @@ def get_vehicle_responsiva(request):
     subModule_id = 8
 
     lista = Vehicle_Responsive.objects.filter(vehicle_id = vehicle_id).values(
-        "id", "vehicle_id", "vehicle__name", "responsible_id", "responsible__first_name", "responsible__last_name",
+        "id", "vehicle__id", "vehicle__name", "responsible__id", "responsible__first_name", "responsible__last_name",
         "image_path_entry_1", "image_path_entry_2", "image_path_exit_1", "image_path_exit_2",
         "initial_mileage", "final_mileage",
         "initial_fuel", "final_fuel",
         "start_date", "end_date",
         "signature", "destination", "trip_purpose"
-    )
+    ).order_by("-id")
 
     modified_data_list = []
 
@@ -1189,19 +1465,20 @@ def get_vehicle_responsiva(request):
         modified_data = data.copy()
 
         file_path1 = data.get('image_path_exit_1')
-        print(f'FOTO1: {file_path1}')
-        imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
-        modified_image_path_exit_1 = imagePath1
-        
-        modified_data['image_path_exit_1'] = modified_image_path_exit_1
-        modified_data_list.append(modified_data)
+        if file_path1:
+            imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
+            modified_image_path_exit_1 = imagePath1
+            
+            modified_data['image_path_exit_1'] = modified_image_path_exit_1
+            modified_data_list.append(modified_data)
 
         file_path2 = data.get('image_path_exit_2')
-        imagePath2 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path2))
-        modified_image_path_exit_2 = imagePath2
-        
-        modified_data['image_path_exit_2'] = modified_image_path_exit_2
-        modified_data_list.append(modified_data)
+        if file_path2:
+            imagePath2 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path2))
+            modified_image_path_exit_2 = imagePath2
+            
+            modified_data['image_path_exit_2'] = modified_image_path_exit_2
+            modified_data_list.append(modified_data)
 
         signature = data.get('signature')
         sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
@@ -1211,8 +1488,6 @@ def get_vehicle_responsiva(request):
         print(modified_sign)
         modified_data_list.append(modified_data)
 
-        print(f'ENTRADAAA: {data.get("image_path_entry_1")}')
-        print(f'FIRMAAAAA: {data.get("signature")}')
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
@@ -1243,7 +1518,7 @@ def get_vehicles_responsiva(request):
         "initial_fuel", "final_fuel",
         "start_date", "end_date",
         "signature", "destination", "trip_purpose"
-    )
+    ).order_by("-id")
 
     modified_data_list = []
 
@@ -1251,19 +1526,20 @@ def get_vehicles_responsiva(request):
         modified_data = data.copy()
 
         file_path1 = data.get('image_path_exit_1')
-        print(f'FOTO1: {file_path1}')
-        imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
-        modified_image_path_exit_1 = imagePath1
+        if file_path1:
+            imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
+            modified_image_path_exit_1 = imagePath1
         
-        modified_data['image_path_exit_1'] = modified_image_path_exit_1
-        modified_data_list.append(modified_data)
-
+            modified_data['image_path_exit_1'] = modified_image_path_exit_1
+            modified_data_list.append(modified_data)
+        
         file_path2 = data.get('image_path_exit_2')
-        imagePath2 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path2))
-        modified_image_path_exit_2 = imagePath2
-        
-        modified_data['image_path_exit_2'] = modified_image_path_exit_2
-        modified_data_list.append(modified_data)
+        if file_path2:
+            imagePath2 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path2))
+            modified_image_path_exit_2 = imagePath2
+            
+            modified_data['image_path_exit_2'] = modified_image_path_exit_2
+            modified_data_list.append(modified_data)
 
         signature = data.get('signature')
         sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
@@ -1273,11 +1549,7 @@ def get_vehicles_responsiva(request):
         print(modified_sign)
         modified_data_list.append(modified_data)
 
-        print(f'ENTRADAAA: {data.get("image_path_entry_1")}')
-        print(f'FIRMAAAAA: {data.get("signature")}')
-
         file_path3 = data.get('image_path_entry_1')
-        print(f'FOTO DE ENTRADA {file_path3}')
         # imagePath3 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path3))
         # modified_image_path_exit_3 = imagePath3
         
@@ -1300,7 +1572,6 @@ def get_vehicles_responsiva(request):
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
-    #print(modified_data)
 
     for item in modified_data_list:
         #item["btn_action"] = ""
@@ -1318,8 +1589,6 @@ def get_vehicles_responsiva(request):
             </button>"""
     response["data"] = list(modified_data_list)
     response["success"] = True
-    print('INICIO DE JSON RESPONSE')
-    print(response)
     return JsonResponse(response)
 
 def update_vehicle_responsiva(request):
@@ -1329,11 +1598,13 @@ def update_vehicle_responsiva(request):
     id = dt.get("id", None)
     registro = dt.get("registro", "entrada")
 
+    #CONDITIONAL RESPONSIVE ID WAS SEND IT
     if id is None or id == "":
         response["status"] = "warning"
         response["error"] = "No se proporcionó un ID válido para actualizar."
         return JsonResponse(response)
     
+    #CONDITIONAL RESPONSIVA EXISTS IN DB
     try:
         obj = Vehicle_Responsive.objects.get(id=id)
     except Vehicle_Responsive.DoesNotExist:
@@ -1344,9 +1615,9 @@ def update_vehicle_responsiva(request):
     company_id = obj.vehicle.company.id
     vehicle_id = obj.vehicle.id
 
+    #CONDITIONAL FINAL_MILEAGE IS GTE INITIAL_MILEAGE 
     try:
         obj_vehicle = Vehicle.objects.get(id = vehicle_id)
-
         if dt.get("final_mileage", None):
             initial_mileage = Decimal(obj.initial_mileage)
             final_mileage = Decimal(dt["final_mileage"])
@@ -1359,7 +1630,6 @@ def update_vehicle_responsiva(request):
                 response["status"] = "warning"
                 response["message"] = "El kilometraje del vehículo es mayor que el valor proporcionado."
                 return JsonResponse(response)
-
     except Vehicle.DoesNotExist:
         response["status"] = "error"
         response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
@@ -1367,10 +1637,20 @@ def update_vehicle_responsiva(request):
 
     try:
         with transaction.atomic():
+            #UPDATE INFORMATION MISSING
             obj.final_fuel = dt.get("final_fuel")
             obj.final_mileage = dt.get("final_mileage")
             obj.end_date = dt.get("end_date")
             obj.save()
+
+            flag = check_vehicle_kilometer(request, obj_vehicle, dt.get("final_mileage"), dt.get("end_date"))
+            if isinstance(flag, JsonResponse):
+                data_flag = json.loads(flag.content.decode('utf-8')).get
+                print(data_flag("status"))
+                if data_flag("status") == "error":
+                    return flag
+                elif data_flag("status") == "warning":
+                    response["warning"] = {"message" : data_flag("message")}
 
             if registro == "salida":
                 obj_vehicle.mileage = dt.get("initial_mileage")
@@ -1378,44 +1658,28 @@ def update_vehicle_responsiva(request):
                 obj_vehicle.mileage = dt.get("final_mileage")
             obj_vehicle.save()
 
-        print("GUARDAR IMAGEN")
-        if 'image_path_entry_1' in request.FILES and request.FILES['image_path_entry_1']:
+        load_file_1 = request.FILES.get('image_path_entry_1')
+        if load_file_1:
+
             load_file = request.FILES.get('image_path_entry_1')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            #folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{registro}/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
-
-            # Eliminar el archivo anterior con el mismo nombre
-            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
-            #    if os.path.exists(old_file_path): os.remove(old_file_path)
-            
             new_name = f"entrada_1{extension}"
-            #fs.save(folder_path + new_name, load_file)
-
             obj.image_path_entry_1 = folder_path + new_name
             upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
-        if 'image_path_entry_2' in request.FILES and request.FILES['image_path_entry_2']:
+        load_file_2 = request.FILES.get('image_path_entry_2')
+        if load_file_2:
+
             load_file = request.FILES.get('image_path_entry_2')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            #folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{registro}/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
-
-            # Eliminar el archivo anterior con el mismo nombre
-            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
-            #    if os.path.exists(old_file_path): os.remove(old_file_path)
-            
             new_name = f"entrada_2{extension}"
-            #fs.save(folder_path + new_name, load_file)
-
             obj.image_path_entry_2 = folder_path + new_name
             upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
         response["status"] = "success"
+        response["success"] = True
     except Exception as e:
         response["status"] = "success"
         response["message"] = str(e)
@@ -1440,8 +1704,6 @@ def delete_vehicle_responsiva(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
-
-
 
 def add_vehicle_insurance(request):
     response = {"success": False, "data": []}
@@ -1521,8 +1783,6 @@ def add_vehicle_insurance(request):
                 #zip_buffer.name = new_name
                 
                 upload_to_s3(load_file, bucket_name, s3Name)
-
-                print("upload succed")
 
                 obj.save()
 
@@ -1804,11 +2064,6 @@ def get_vehicles_audit(request):
     response["success"] = True
     return JsonResponse(response)
 
-from django.http import JsonResponse
-from django.db.models import Q
-import random
-from datetime import datetime, timedelta
-
 def update_vehicle_audit(request):
     response = {"success": False}
     dt = request.POST
@@ -2043,7 +2298,7 @@ def get_vehicle_maintenance(request):
                 <i class="fa-solid fa-pen"></i>
             </button>\n"""
         if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-maintenance=\"delete-item\">
+            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-sia-vehicle-maintenance=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>\n"""
 
@@ -2102,8 +2357,6 @@ def update_vehicle_maintenance(request):
 
     context = user_data(request)
     tipo_user = context["role"]["name"].lower()
-    print("este es el tipo de usuario:")
-    print(tipo_user)
 
     if not id:
         response["error"] = {"message": "No se proporcionó un ID válido"}
@@ -2157,6 +2410,7 @@ def update_vehicle_maintenance(request):
             obj.time = dt.get("time")
         if dt.get("general_note"):
             obj.general_notes = dt.get("general_note", None)
+        obj.status = "PROGRAMADO"
         obj.actions = actions
         obj.save()
         
@@ -2184,6 +2438,7 @@ def update_vehicle_maintenance(request):
 
         response["status"] = "success"
         response["message"] = "Exito"
+        response["success"] = "success"
     except Exception as e:
         response["status"] = "error"
         response["message"] = str(e)
@@ -2204,7 +2459,8 @@ def delete_vehicle_maintenance(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
-        delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante))
+        if obj.comprobante:
+            delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -2495,31 +2751,23 @@ def delete_vehicle_fuel(request):
 def add_option(request):
     if request.method == 'POST':
         try:
-            print('Recibiendo petición POST')
             
             # Cargar datos del cuerpo del request
             data = json.loads(request.body)
-            print(f'Datos recibidos: {data}')
             
             option_name = data.get('option_maintenance_name', '').strip()
             maintenance_type = data.get('maintenance_type', '').strip()
 
             if not option_name or not maintenance_type:
-                print('Datos faltantes en el request')
                 return JsonResponse({'status': 'error', 'message': 'Faltan datos necesarios'}, status=400)
-
-            print(f"Se va a agregar la opción: {option_name}")
-            print(f"Tipo de mantenimiento: {maintenance_type}")
 
             # Definir la ruta del archivo JSON
             directorio_actual = os.path.dirname(os.path.abspath(__file__))
             directorio_json = os.path.join(directorio_actual, '..', '..', 'static', 'assets', 'json', 'vehicles-maintenance.json')
-            print(f"Ruta del archivo JSON: {directorio_json}")
 
             # Cargar el JSON desde el archivo
             with open(directorio_json, 'r') as file:
                 json_data = json.load(file)
-                print('JSON cargado correctamente')
 
             # Función para agregar un nuevo ítem
             def agregar_item(json_data, tipo_mantenimiento, nueva_descripcion):
@@ -2539,33 +2787,25 @@ def add_option(request):
             data_actualizada = agregar_item(json_data, maintenance_type, option_name)
 
             if data_actualizada:
-                print('Datos actualizados, guardando el archivo')
                 # Guardar el JSON actualizado
                 with open(directorio_json, 'w') as file:
                     json.dump(data_actualizada, file, indent=4)
 
                 # Ejecutar python manage.py collectstatic
                 try:
-                    print('Ejecutando collectstatic...')
                     subprocess.run(['python', 'manage.py', 'collectstatic', '--noinput'], check=True)
-                    print('Collectstatic ejecutado correctamente')
                 except subprocess.CalledProcessError as e:
-                    print(f'Error al ejecutar collectstatic: {e}')
                     return JsonResponse({'status': 'error', 'message': 'Error al ejecutar collectstatic'}, status=500)
 
                 return JsonResponse({'status': 'success', 'message': 'Mantenimiento agregado correctamente'})
             else:
-                print('Tipo de mantenimiento no encontrado')
                 return JsonResponse({'status': 'error', 'message': 'Tipo de mantenimiento no encontrado'}, status=400)
             
         except json.JSONDecodeError:
-            print('Error al decodificar el JSON')
             return JsonResponse({'status': 'error', 'message': 'Error en el formato de JSON'}, status=400)
         except Exception as e:
-            print(f'Error interno: {str(e)}')
             return JsonResponse({'status': 'error', 'message': f'Error interno: {str(e)}'}, status=500)
 
-    print('Método no permitido')
     return JsonResponse({'status': 'error', 'message': 'Método no permitido'},status=405)
 
 
@@ -2576,8 +2816,6 @@ def obtener_opciones(request):
     try:
         with open(directorio_json, 'r') as file:
             json_data = json.load(file)
-            print("este es el json")
-            print(json_data)
 
         opciones = []
         for mantenimiento in json_data['data']:
@@ -2609,6 +2847,198 @@ def delete_vehicle_verificacion(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
+
+
+#función para generar el código qr
+def generate_qr(request, qr_type, vehicle_id):
+    context = user_data(request)
+    company_id = context["company"]["id"]
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+
+    # Obtener la URL base dinámicamente
+    # protocol = 'https' if request.is_secure() else 'http' 
+    # host = request.get_host()  
+    # BASE_URL = f"{protocol}://{host}"  
+
+    # Verificar si el QR ya ha sido generado
+    if qr_type == "consulta":
+        qr_url_info = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_info)) if vehicle.qr_info else None
+        qr_url_access = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_access)) if vehicle.qr_access else None
+        
+        return JsonResponse({
+            'status': 'generados',
+            'qr_url_info': qr_url_info,
+            'qr_url_access': qr_url_access
+        })
+     
+    # Contenido
+    if qr_type == 'info':
+        qr_content = f"http://sia-tenergy.com/vehicles/info/{vehicle_id}/"
+    elif qr_type == 'access':
+        qr_content = f"http://sia-tenergy.com/vehicles/responsiva/qr/{vehicle_id}"
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
+    
+    # Generar el QR
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_content)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill='black', back_color='white')
+    
+    # Guardar la imagen en un buffer
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    # Convertir el buffer en un ContentFile y darle un nombre
+    # content_file = ContentFile(buffer.read())
+    # content_file.name = f"qr_{vehicle_id}.png"  # Establecer un nombre para el archivo
+    
+    # Definir la ruta del archivo en S3
+    s3Path = f'docs/{company_id}/vehicle/{vehicle_id}/qr/'
+    if qr_type == 'info':
+        s3Name = f"qr_info{vehicle_id}.png"
+        vehicle.qr_info = s3Path+s3Name
+    elif qr_type == 'access':
+        s3Name = f"qr_access_{vehicle_id}.png"
+        vehicle.qr_access = s3Path+s3Name 
+    
+    # Crear un InMemoryUploadedFile con content_type
+    img = InMemoryUploadedFile(
+        buffer, None, s3Name, 'image/png', buffer.getbuffer().nbytes, None
+    )
+    # Subir el archivo a S3 y obtener la URL
+    upload_to_s3(img, AWS_BUCKET_NAME, s3Path + s3Name)
+        
+    vehicle.save()  # Asegurarse de guardar los cambios en el modelo
+    qr_url = generate_presigned_url(AWS_BUCKET_NAME, str(s3Path + s3Name))
+    return JsonResponse({'status': 'success', 'qr_url': qr_url})
+
+#funcion para eliminar el qr
+def delete_qr(request, qr_type, vehicle_id):
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+    url = ""
+    if qr_type == 'info' and vehicle.qr_info:
+        url = str(vehicle.qr_info)
+        vehicle.qr_info.delete()
+    elif qr_type == 'access' and vehicle.qr_access:
+        url = str(vehicle.qr_access)
+        vehicle.qr_access.delete()
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid QR type or QR does not exist'}, status=400)
+    
+    delete_s3_object(AWS_BUCKET_NAME, url)
+    return JsonResponse({'status':'success'}) 
+
+# TODO ----- [ INTERNAL FUNCTIONS ] -----
+#@obj_vehicle = QuerySet Vehicle
+#@kilometer = Decimal
+#@date_set = DateTime
+def check_vehicle_kilometer(request, obj_vehicle = None, kilometer = None, date_set = None):
+    response = {"status": "success"}
+    # TODO -- MAINTENANCE KILOMETER --
+    obj_maintenance_kilometer = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = obj_vehicle)
+    #CONDITIONAL MAINTENANCE KILOMETER FOR THAT VEHICLE EXISTS
+    if obj_maintenance_kilometer.count() == 0:
+        response["status"] = "error"
+        response["error"] = {"message" : f"Kilometraje para mantenimiento no asigando, por favor registre el kilometraje de manera manual"}
+    else:# TODO CONTINUE
+        next_maintenance = obj_maintenance_kilometer.filter(kilometer__gte = kilometer).order_by("kilometer")
+
+        #CONDITIONAL CHECKS IS EXIST MAINTENANCE KILOMETER IN MODELS
+        if next_maintenance.count() == 0:
+            response["status"] = "error"
+            response["error"] = {"message" : f"El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."}
+            return JsonResponse(response)
+        
+        #CONDITIONAL CHECKS IT'S MAINTENANCES STILL IN NEW
+        flag_new = Vehicle_Maintenance.objects.filter(vehicle = obj_vehicle,  status__in=["ALERTA"], type = "preventivo").count() == 0
+        if not flag_new:
+            response["status"] = "warning"
+            response["message"] = "Aún no se ha agendado la revisión del mantenimiento para este vehículo"
+
+        #CONDITIONAL CHECK THE NEXT KILOMETER DIFF LESS THEN 200
+        flag = next_maintenance.first().kilometer - Decimal(kilometer)
+        if flag <= 200:#TODO CONTINUA
+            response["status"] = "warning"
+            if flag_new:
+                status = "NUEVO"
+                km = next_maintenance.first().kilometer
+                response["message"] = f"El kilometraje está cerca de alcanzar los {km} km, se recomienda agendar una revisión."
+            else:
+                status = "ALERTA"
+                response["message"] = "Aún no se ha agendado la revisión del mantenimiento para este vehículo"
+            
+            newDate = datetime.strptime(date_set, "%Y-%m-%dT%H:%M").date()
+            newDate = newDate + timedelta(days=14)
+            km = next_maintenance.first().kilometer
+            obj_maintenance = Vehicle_Maintenance(
+                vehicle = obj_vehicle,
+                type = "preventivo",
+                status = status,
+                date = newDate,
+                general_notes = f"Vehiculo cerca de los {km} km, necesario programar revisión"
+            )
+            obj_maintenance.save()
+    return JsonResponse(response)
+
+
+#funcion para descargar el qr
+def descargar_qr(request):
+    id_vehicle = request.GET.get("id_vehicle")
+    tipo_qr = request.GET.get("tipo_qr")
+
+    vehicle = Vehicle.objects.filter(id=id_vehicle).first()
+    if vehicle:
+        if tipo_qr == "info":
+            url_vehicle = vehicle.qr_info.url[1:]
+        elif tipo_qr == "access":
+            url_vehicle = vehicle.qr_access.url[1:]
+        url_s3 = generate_presigned_url(AWS_BUCKET_NAME, str(url_vehicle))
+        return JsonResponse({'url_vehicle':url_s3})
+    else:
+        return JsonResponse({'error': 'Vehicle not found'}, status=404)
+
+
+def validar_vehicle_en_sa(request):
+    dt = request.POST
+    id_vehicle = dt.get("id_vehicle", None)
+    
+    responsiva = Vehicle_Responsive.objects.filter(vehicle_id=id_vehicle).order_by("-start_date").first() 
+    fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")  # Obtiene la fecha y hora actual
+
+    if responsiva:  # Verifica que haya un registro
+        if responsiva.end_date:  # Verifica si el campo end_date tiene un valor
+            km_final = responsiva.final_mileage
+            gasolina_final = responsiva.final_fuel
+            return JsonResponse({
+                "success": "Todo bien",
+                "status": "SALIDA",
+                "km_final":km_final,
+                "gasolina_final" : gasolina_final,
+                "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
+            })
+        else:
+            registro = responsiva.id
+            responsable = responsiva.responsible.id
+            return JsonResponse({
+                "success": "Todo bien",
+                "status": "ENTRADA",
+                "id_register": registro,
+                "id_responsable": responsable,
+                "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
+            })            
+    else:
+        return JsonResponse({
+            "success": "Todo bien",
+            "status": "SALIDA",
+            "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
+        })
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

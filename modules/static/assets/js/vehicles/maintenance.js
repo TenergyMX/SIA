@@ -126,6 +126,7 @@ class VehiclesMaintenance {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
                 },
             });
+
             delete self.table;
         }
 
@@ -149,6 +150,102 @@ class VehiclesMaintenance {
         const self = this;
         var obj_modal = $("#mdl_crud_maintenance");
         var obj_modal_option = $("#mdl-crud-option-maintenance");
+
+        var table_kilometer = $("#table_maintenance_kilometer").DataTable({
+            ajax: {
+                url: "/get_vehicle_maintenance_kilometer/",
+                dataSrc: "data",
+                data: {
+                    id: vehicle_id,
+                },
+            },
+            columns: [
+                { data: "kilometer", title: "Kilometraje", orderable: false },
+                { data: "acciones", title: "Acciones", orderable: false },
+            ],
+            order: [],
+            language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+            },
+        });
+
+        var obj_modal_kilometer = $("#mdl_crud_maintenance_kilometer");
+        $(document).on("click", "[data-vehicle-maintenance]", function (e) {
+            var obj = $(this);
+            var option = obj.data("vehicle-maintenance");
+            switch (option) {
+                case "add-vehicle-kl":
+                    obj_modal_kilometer.modal("show");
+                    break;
+                default:
+                    console.log(`opción desconocida ${option}`);
+                    break;
+            }
+        });
+
+        obj_modal_kilometer.find("form").on("submit", function (e) {
+            e.preventDefault();
+            var submit = $("button[type='submit']:focus", this).attr("name");
+            var datos = new FormData(this);
+            var id = vehicle_id;
+            var url = "/add_vehicle_kilometer/";
+
+            if (submit == "delete") {
+                id = $("button[type='submit']:focus", this).attr("data-vehiculo-id");
+                url = "/delete_vehicle_kilometer/";
+                datos.append("id", id);
+                deleteItem(url, datos)
+                    .then((message) => {
+                        Swal.fire("Exito", message, "success");
+                        table_kilometer.ajax.reload();
+                    })
+                    .catch((error) => {
+                        Swal.fire("Error", error, "error");
+                    });
+                return;
+            }
+
+            if (submit == "update") {
+                var id = $("button[type='submit']:focus", this).attr("data-vehiculo-id");
+                var url = "/update_vehicle_kilometer/";
+            }
+
+            if (submit == "add") {
+            }
+
+            datos.append("id", id);
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: datos,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    table_kilometer.ajax.reload();
+                    if (!response.success && response.error) {
+                        Swal.fire("Error", response.error["message"], "error");
+                        return;
+                    } else if (!response.success && response.warning) {
+                        Swal.fire("Advertencia", response.warning["message"], "warning");
+                        return;
+                    } else if (!response.success) {
+                        console.log(response);
+                        Swal.fire("Error", "Ocurrio un error inesperado", "error");
+                        return;
+                    }
+                    Swal.fire("Exito", "Se han guardado los cambios con exito", "success");
+                    $("#mdl_crud_maintenance_kilometer").find("form")[0].reset();
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire(
+                        "Error del servidor",
+                        "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
+                        "error"
+                    );
+                },
+            });
+        });
+
         $(document).on("click", "[data-sia-vehicle-maintenance]", function (e) {
             var obj = $(this);
             var option = obj.data("sia-vehicle-maintenance");
@@ -342,100 +439,102 @@ class VehiclesMaintenance {
             var optionsHTML = "";
             select.empty();
             optionsHTML = `<option value="Nuevo" id="btn-save-new-option">Nuevo</option>`;
-            
+
             // Agregar las opciones correspondientes
             $.each(self.dataMaintenance[tipo], function (index, value) {
                 optionsHTML += `<option value="${value["descripcion"]}">${value["descripcion"]}</option>`;
             });
             console.log(tipo);
             select.html(optionsHTML);
-        
+
             // Si estás usando select2, actualiza select2 después de cambiar las opciones
             select.select2({
                 search: true,
                 closeOnSelect: false,
             });
         });
-        
+
         // Detectar si seleccionan "Nuevo" y abrir el modal
         obj_modal.on("change", "[name='actions[]']", function () {
             var selectedOption = $(this).val();
             console.log(selectedOption);
-            
+
             if (selectedOption.includes("Nuevo")) {
                 // Abrir el modal para agregar un nuevo tipo
-                $('#mdl-crud-option-maintenance').modal('show');
-                $("#mdl-crud-option-maintenance").css("z-index","1056");
+                $("#mdl-crud-option-maintenance").modal("show");
+                $("#mdl-crud-option-maintenance").css("z-index", "1056");
 
-                
                 // Al hacer submit del modal, agregar la nueva opción
-                obj_modal_option.find("form").off("submit").on("submit", function (e) {
-                    e.preventDefault();
-                    
-                    var optionName = $('#option_maintenance_name').val(); // Obtiene el valor del input
-                    var maintenanceType = $('select[name="type"]').val(); // Obtiene el tipo de mantenimiento
-                    
-                    if (optionName) {
-                        $.ajax({
-                            url: '/add_option/',
-                            method: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({ 
-                                option_maintenance_name: optionName,
-                                maintenance_type: maintenanceType 
-                            }),
-                            success: function(data) {
-                                // Agregar la nueva opción al array de seleccionados
-                                var select = obj_modal.find("[name='actions[]']");
-                                var selectedOptions = select.val() || [];
-                                selectedOptions = selectedOptions.filter(function (value) {
-                                    return value !== "Nuevo"; // Filtrar "Nuevo" del array
-                                });
-                                selectedOptions.push(optionName); // Agregar la nueva opción
-                                
-                                // Actualizar el select con la nueva opción
-                                select.append(`<option value="${optionName}">${optionName}</option>`);
-                                select.val(selectedOptions).trigger("change");
-        
-                                // Actualizar select2
-                                select.select2({
-                                    search: true,
-                                    closeOnSelect: false,
-                                });
-        
-                                // Cerrar el modal y limpiar el campo de la nueva opción
-                                $('#mdl-crud-option-maintenance').modal('hide');
-                                $('#option_maintenance_name').val('');
-        
-                                Swal.fire({
-                                    title: "¡Éxito!",
-                                    text: "La descripción ha sido agregada correctamente",
-                                    icon: "success",
-                                    timer: 1500
-                                });
-                            },
-                            error: function(xhr) {
-                                console.error("Error:", xhr.responseJSON.message);
-                                Swal.fire({
-                                    title: "Error",
-                                    text: xhr.responseJSON.message,
-                                    icon: "error",
-                                    timer: 1500
-                                });
-                            }
-                        });
-                    } else {
-                        alert("Por favor ingresa un nombre válido para la nueva opción.");
-                    }
-                });
-            
+                obj_modal_option
+                    .find("form")
+                    .off("submit")
+                    .on("submit", function (e) {
+                        e.preventDefault();
+
+                        var optionName = $("#option_maintenance_name").val(); // Obtiene el valor del input
+                        var maintenanceType = $('select[name="type"]').val(); // Obtiene el tipo de mantenimiento
+
+                        if (optionName) {
+                            $.ajax({
+                                url: "/add_option/",
+                                method: "POST",
+                                contentType: "application/json",
+                                data: JSON.stringify({
+                                    option_maintenance_name: optionName,
+                                    maintenance_type: maintenanceType,
+                                }),
+                                success: function (data) {
+                                    // Agregar la nueva opción al array de seleccionados
+                                    var select = obj_modal.find("[name='actions[]']");
+                                    var selectedOptions = select.val() || [];
+                                    selectedOptions = selectedOptions.filter(function (value) {
+                                        return value !== "Nuevo"; // Filtrar "Nuevo" del array
+                                    });
+                                    selectedOptions.push(optionName); // Agregar la nueva opción
+
+                                    // Actualizar el select con la nueva opción
+                                    select.append(
+                                        `<option value="${optionName}">${optionName}</option>`
+                                    );
+                                    select.val(selectedOptions).trigger("change");
+
+                                    // Actualizar select2
+                                    select.select2({
+                                        search: true,
+                                        closeOnSelect: false,
+                                    });
+
+                                    // Cerrar el modal y limpiar el campo de la nueva opción
+                                    $("#mdl-crud-option-maintenance").modal("hide");
+                                    $("#option_maintenance_name").val("");
+
+                                    Swal.fire({
+                                        title: "¡Éxito!",
+                                        text: "La descripción ha sido agregada correctamente",
+                                        icon: "success",
+                                        timer: 1500,
+                                    });
+                                },
+                                error: function (xhr) {
+                                    console.error("Error:", xhr.responseJSON.message);
+                                    Swal.fire({
+                                        title: "Error",
+                                        text: xhr.responseJSON.message,
+                                        icon: "error",
+                                        timer: 1500,
+                                    });
+                                },
+                            });
+                        } else {
+                            alert("Por favor ingresa un nombre válido para la nueva opción.");
+                        }
+                    });
             }
         });
-        
 
-        $('#cerrar').on('click', function(e) {
+        $("#cerrar").on("click", function (e) {
             e.preventDefault();
-            $('#option_maintenance_name').val('');  // Limpiar el valor del input
+            $("#option_maintenance_name").val(""); // Limpiar el valor del input
         });
 
         obj_modal.find("[name='actions[]']").on("select2:open", function () {
@@ -571,67 +670,59 @@ class VehiclesMaintenance {
     }
 }
 
-
 function add_option() {
-    var optionName = $('#option_maintenance_name').val(); // Obtiene el valor del input
+    var optionName = $("#option_maintenance_name").val(); // Obtiene el valor del input
     var maintenanceType = $('select[name="type"]').val(); // Obtiene el tipo de mantenimiento
 
     $.ajax({
-        url: '/add_option/',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ 
+        url: "/add_option/",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
             option_maintenance_name: optionName,
-            maintenance_type: maintenanceType 
+            maintenance_type: maintenanceType,
         }),
-        success: function(data) {
+        success: function (data) {
             console.log(data.message);
-            
-            $('#mdl-crud-option-maintenance').modal('hide'); 
+
+            $("#mdl-crud-option-maintenance").modal("hide");
 
             // Limpiar solo el campo de la nueva opción
-            $('#option_maintenance_name').val('');
+            $("#option_maintenance_name").val("");
 
             Swal.fire({
                 title: "¡Éxito!",
                 text: "La descripción ha sido agregada correctamente",
                 icon: "success",
-                timer: 1500
+                timer: 1500,
             });
         },
-        error: function(xhr) {
+        error: function (xhr) {
             console.error("Error:", xhr.responseJSON.message);
             Swal.fire({
                 title: "Error",
                 text: xhr.responseJSON.message,
                 icon: "error",
-                timer: 1500
+                timer: 1500,
             });
-        }
+        },
     });
 }
 
 function actualizarLista() {
     $.ajax({
-        url: '/obtener_opciones/', 
-        method: 'GET',
-        success: function(data) {
-            var selectField = $('#select-field');
-            selectField.empty(); 
+        url: "/obtener_opciones/",
+        method: "GET",
+        success: function (data) {
+            var selectField = $("#select-field");
+            selectField.empty();
 
-            data.forEach(opcion => {
+            data.forEach((opcion) => {
                 selectField.append(`<option value="${opcion.id}">${opcion.descripcion}</option>`);
             });
         },
-        error: function(xhr) {
+        error: function (xhr) {
             console.error("Error al cargar las opciones:", xhr);
-        }
+        },
     });
 }
-
-
-
-
-
-
-

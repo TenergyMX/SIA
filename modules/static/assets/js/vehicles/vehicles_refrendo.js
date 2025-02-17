@@ -142,7 +142,7 @@ class VehiclesRefrendo {
 
                     obj_modal.find("[name='vehicle_id']").val(self.vehicle.data.vehicle_id || null);
                     obj_modal
-                        .find("[name='vehicle__name']")
+                        .find("[name='vehiculo__name']")
                         .val(self.vehicle.data.vehicle__name || null)
                         .prop("readonly", true);
                     break;

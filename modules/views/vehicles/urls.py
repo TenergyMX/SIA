@@ -77,6 +77,10 @@ urlpatterns = [
     path("get_vehicles_maintenance/", views.get_vehicles_maintenance),
     path("update_vehicle_maintenance/", views.update_vehicle_maintenance),
     path("delete_vehicle_maintenance/", views.delete_vehicle_maintenance),
+    path("add_vehicle_kilometer/", views.add_vehicle_kilometer),
+    path("delete_vehicle_kilometer/", views.delete_vehicle_kilometer),
+    path("update_vehicle_kilometer/", views.update_vehicle_kilometer),
+    path("get_vehicle_maintenance_kilometer/", views.get_vehicle_maintenance_kilometer),
 
     path("get-vehicles-calendar/", views.get_vehicles_calendar),
 
@@ -88,4 +92,13 @@ urlpatterns = [
     path("add_maintenance_option/", views.add_vehicle_maintenance),
     path("add_option/", views.add_option),
     path("obtener_opciones/", views.obtener_opciones),
+
+
+    path('generate_qr/<str:qr_type>/<int:vehicle_id>/', views.generate_qr, name='generate_qr'),
+    path('delete_qr/<str:qr_type>/<int:vehicle_id>/', views.delete_qr, name='delete_qr'),
+    path('descargar_qr/', views.descargar_qr),
+
+    path("vehicles/responsiva/<str:qr>/<int:vehicle_id>", views.module_vehicle_responsiva),
+    path("validar_vehicle_en_sa/", views.validar_vehicle_en_sa),
+
 ]
