@@ -278,10 +278,10 @@ class VehiclesResponsiva {
                     var datos = self.tbl_responsiva.row(fila).data();
 
                     $.each(datos, function (index, value) {
-                        var isFileInput = obj_modal.find([name='${index}']).is(":file");
+                        var isFileInput = obj_modal.find([(name = "${index}")]).is(":file");
 
                         if (!isFileInput) {
-                            obj_modal.find([name='${index}']).val(value);
+                            obj_modal.find([(name = "${index}")]).val(value);
                         }
                     });
 
@@ -385,22 +385,23 @@ class VehiclesResponsiva {
                             processData: false,
                             contentType: false,
                             success: function (response) {
+                                console.log(response);
                                 if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
                                     return;
-                                } else if (!response.success && response.warning) {
+                                } else if (response.warning) {
                                     Swal.fire(
                                         "Advertencia",
                                         response.warning["message"],
                                         "warning"
                                     );
-                                    return;
                                 } else if (!response.success) {
                                     console.log(response);
                                     Swal.fire("Error", "Ocurrio un error inesperado", "error");
                                     return;
+                                } else {
+                                    Swal.fire("Exito", "Salida Registrada", "success");
                                 }
-                                Swal.fire("Exito", "Salida Registrada", "success");
                                 obj_modal.modal("hide");
                                 self.tbl_responsiva.ajax.reload();
                                 self.input.signature.clearCanvas();
@@ -425,18 +426,19 @@ class VehiclesResponsiva {
                     processData: false,
                     contentType: false,
                     success: function (response) {
+                        console.log(response);
                         if (!response.success && response.error) {
                             Swal.fire("Error", response.error["message"], "error");
                             return;
-                        } else if (!response.success && response.warning) {
+                        } else if (response.warning) {
                             Swal.fire("Advertencia", response.warning["message"], "warning");
-                            return;
                         } else if (!response.success) {
                             console.log(response);
                             Swal.fire("Error", "Ocurrio un error inesperado", "error");
                             return;
+                        } else {
+                            Swal.fire("Exito", "Entrada Registrada", "success");
                         }
-                        Swal.fire("Exito", "Entrada Registrada", "success");
                         obj_modal.modal("hide");
                         self.tbl_responsiva.ajax.reload();
                     },
@@ -450,6 +452,6 @@ class VehiclesResponsiva {
                 });
             }
             // end
-        });
-    }
+        });
+    }
 }

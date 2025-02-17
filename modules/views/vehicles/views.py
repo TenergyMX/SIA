@@ -42,6 +42,7 @@ from django.shortcuts import render, get_object_or_404
 from django.core.files.base import ContentFile
 import qrcode
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db.models import Q
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
@@ -564,7 +565,8 @@ def alertas(vehicle_id, detailed=False):
     for table_name, table, field_name in tables:
         filter_kwargs = {field_name: vehicle_id}  # Crear el filtro dinámicamente
         if not table.objects.filter(**filter_kwargs).exists():
-            missing_tables.append(table_name)
+            if table_name != "maintenance":
+                missing_tables.append(table_name)
     
         if table_name == "insurance":
             ultimo_seguro = table.objects.filter(**filter_kwargs).order_by('-end_date').first()  
@@ -627,28 +629,24 @@ def alertas(vehicle_id, detailed=False):
         #             missing_tables.append(table_name)`
 
         if table_name == "audit":
-            ultima_auditoria = table.objects.filter(**filter_kwargs).order_by('-audit_date').first()  
+            ultima_auditoria = table.objects.filter(**filter_kwargs).order_by('-audit_date').first()
             
             if ultima_auditoria:
-                fecha_auditoria = ultima_auditoria.audit_date 
+                fecha_auditoria = ultima_auditoria.audit_date.date()  # Asegurar que sea solo la fecha
                 fecha_actual = datetime.now().date()
                 
-                diferencia_dias = (fecha_auditoria - fecha_actual).days
+                diferencia_dias = (fecha_actual - fecha_auditoria).days  # Invertido para obtener diferencia positiva
                 
-                if 0 <= diferencia_dias <= 30:
+                if diferencia_dias > 30:  # Si han pasado más de 30 días
                     missing_tables.append(table_name)
 
         if table_name == "maintenance":
             ultimo_mantenimiento = table.objects.filter(**filter_kwargs).order_by('-date').first()  
             
             if ultimo_mantenimiento:
-                fecha_mantenimiento = ultimo_mantenimiento.date 
-                fecha_actual = datetime.now().date()
-                
-                diferencia_dias = (fecha_mantenimiento - fecha_actual).days
-                
-                if 0 <= diferencia_dias <= 30:
+                if ultimo_mantenimiento.status in ["NUEVO", "ALERTA"]:
                     missing_tables.append(table_name)
+
 
         if table_name == "qr":
             qrs = table.objects.filter(**filter_kwargs).first()
@@ -1426,7 +1424,7 @@ def get_vehicle_responsiva(request):
         "initial_fuel", "final_fuel",
         "start_date", "end_date",
         "signature", "destination", "trip_purpose"
-    )
+    ).order_by("-id")
 
     modified_data_list = []
 
@@ -1434,12 +1432,12 @@ def get_vehicle_responsiva(request):
         modified_data = data.copy()
 
         file_path1 = data.get('image_path_exit_1')
-        print(f'FOTO1: {file_path1}')
-        imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
-        modified_image_path_exit_1 = imagePath1
-        
-        modified_data['image_path_exit_1'] = modified_image_path_exit_1
-        modified_data_list.append(modified_data)
+        if file_path1:
+            imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
+            modified_image_path_exit_1 = imagePath1
+            
+            modified_data['image_path_exit_1'] = modified_image_path_exit_1
+            modified_data_list.append(modified_data)
 
         file_path2 = data.get('image_path_exit_2')
         if file_path2:
@@ -1487,7 +1485,7 @@ def get_vehicles_responsiva(request):
         "initial_fuel", "final_fuel",
         "start_date", "end_date",
         "signature", "destination", "trip_purpose"
-    )
+    ).order_by("-id")
 
     modified_data_list = []
 
@@ -2033,11 +2031,6 @@ def get_vehicles_audit(request):
     response["success"] = True
     return JsonResponse(response)
 
-from django.http import JsonResponse
-from django.db.models import Q
-import random
-from datetime import datetime, timedelta
-
 def update_vehicle_audit(request):
     response = {"success": False}
     dt = request.POST
@@ -2272,7 +2265,7 @@ def get_vehicle_maintenance(request):
                 <i class="fa-solid fa-pen"></i>
             </button>\n"""
         if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-maintenance=\"delete-item\">
+            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-sia-vehicle-maintenance=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>\n"""
 
@@ -2412,6 +2405,7 @@ def update_vehicle_maintenance(request):
 
         response["status"] = "success"
         response["message"] = "Exito"
+        response["success"] = "success"
     except Exception as e:
         response["status"] = "error"
         response["message"] = str(e)
@@ -2432,7 +2426,8 @@ def delete_vehicle_maintenance(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
-        delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante))
+        if obj.comprobante:
+            delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -2904,8 +2899,8 @@ def delete_qr(request, qr_type, vehicle_id):
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type or QR does not exist'}, status=400)
     
-    print(f"QR eliminado correctamente: {qr_type}")  
-    return JsonResponse({'status': 'success'})
+    delete_s3_object(AWS_BUCKET_NAME, url)
+    return JsonResponse({'status':'success'}) 
 
 # TODO ----- [ INTERNAL FUNCTIONS ] -----
 #@obj_vehicle = QuerySet Vehicle
@@ -2929,14 +2924,14 @@ def check_vehicle_kilometer(request, obj_vehicle = None, kilometer = None, date_
             return JsonResponse(response)
         
         #CONDITIONAL CHECKS IT'S MAINTENANCES STILL IN NEW
-        flag_new = Vehicle_Maintenance.objects.filter(vehicle = obj_vehicle, status = "NUEVO", type = "preventivo").count() != 0
-        if flag_new:
+        flag_new = Vehicle_Maintenance.objects.filter(vehicle = obj_vehicle,  status__in=["ALERTA"], type = "preventivo").count() == 0
+        if not flag_new:
             response["status"] = "warning"
-            response["message"] = "Aún no se ha agendado la revisión del vehículo"
+            response["message"] = "Aún no se ha agendado la revisión del mantenimiento para este vehículo"
 
         #CONDITIONAL CHECK THE NEXT KILOMETER DIFF LESS THEN 200
         flag = next_maintenance.first().kilometer - Decimal(kilometer)
-        if flag <= 200:#TODO CONTINUE
+        if flag <= 200:#TODO CONTINUA
             response["status"] = "warning"
             if flag_new:
                 status = "NUEVO"
@@ -2944,7 +2939,7 @@ def check_vehicle_kilometer(request, obj_vehicle = None, kilometer = None, date_
                 response["message"] = f"El kilometraje está cerca de alcanzar los {km} km, se recomienda agendar una revisión."
             else:
                 status = "ALERTA"
-                response["message"] = "Aún no se ha agendado la revisión del vehículo"
+                response["message"] = "Aún no se ha agendado la revisión del mantenimiento para este vehículo"
             
             newDate = datetime.strptime(date_set, "%Y-%m-%dT%H:%M").date()
             newDate = newDate + timedelta(days=14)
@@ -2958,8 +2953,7 @@ def check_vehicle_kilometer(request, obj_vehicle = None, kilometer = None, date_
             )
             obj_maintenance.save()
     return JsonResponse(response)
-    delete_s3_object(AWS_BUCKET_NAME, url)
-    return JsonResponse({'status':'success'})
+
 
 #funcion para descargar el qr
 def descargar_qr(request):

@@ -126,6 +126,7 @@ class VehiclesMaintenance {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
                 },
             });
+
             delete self.table;
         }
 
@@ -149,10 +150,100 @@ class VehiclesMaintenance {
         const self = this;
         var obj_modal = $("#mdl_crud_maintenance");
         var obj_modal_option = $("#mdl-crud-option-maintenance");
+
+        var table_kilometer = $("#table_maintenance_kilometer").DataTable({
+            ajax: {
+                url: "/get_vehicle_maintenance_kilometer/",
+                dataSrc: "data",
+                data: {
+                    id: vehicle_id,
+                },
+            },
+            columns: [
+                { data: "kilometer", title: "Kilometraje", orderable: false },
+                { data: "acciones", title: "Acciones", orderable: false },
+            ],
+            order: [],
+            language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+            },
+        });
+
+        var obj_modal_kilometer = $("#mdl_crud_maintenance_kilometer");
         $(document).on("click", "[data-vehicle-maintenance]", function (e) {
             var obj = $(this);
-            var option = obj.data("data-vehicle-maintenance");
-            console.log(option);
+            var option = obj.data("vehicle-maintenance");
+            switch (option) {
+                case "add-vehicle-kl":
+                    obj_modal_kilometer.modal("show");
+                    break;
+                default:
+                    console.log(`opción desconocida ${option}`);
+                    break;
+            }
+        });
+
+        obj_modal_kilometer.find("form").on("submit", function (e) {
+            e.preventDefault();
+            var submit = $("button[type='submit']:focus", this).attr("name");
+            var datos = new FormData(this);
+            var id = vehicle_id;
+            var url = "/add_vehicle_kilometer/";
+
+            if (submit == "delete") {
+                id = $("button[type='submit']:focus", this).attr("data-vehiculo-id");
+                url = "/delete_vehicle_kilometer/";
+                datos.append("id", id);
+                deleteItem(url, datos)
+                    .then((message) => {
+                        Swal.fire("Exito", message, "success");
+                        table_kilometer.ajax.reload();
+                    })
+                    .catch((error) => {
+                        Swal.fire("Error", error, "error");
+                    });
+                return;
+            }
+
+            if (submit == "update") {
+                var id = $("button[type='submit']:focus", this).attr("data-vehiculo-id");
+                var url = "/update_vehicle_kilometer/";
+            }
+
+            if (submit == "add") {
+            }
+
+            datos.append("id", id);
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: datos,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    table_kilometer.ajax.reload();
+                    if (!response.success && response.error) {
+                        Swal.fire("Error", response.error["message"], "error");
+                        return;
+                    } else if (!response.success && response.warning) {
+                        Swal.fire("Advertencia", response.warning["message"], "warning");
+                        return;
+                    } else if (!response.success) {
+                        console.log(response);
+                        Swal.fire("Error", "Ocurrio un error inesperado", "error");
+                        return;
+                    }
+                    Swal.fire("Exito", "Se han guardado los cambios con exito", "success");
+                    $("#mdl_crud_maintenance_kilometer").find("form")[0].reset();
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire(
+                        "Error del servidor",
+                        "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
+                        "error"
+                    );
+                },
+            });
         });
 
         $(document).on("click", "[data-sia-vehicle-maintenance]", function (e) {
