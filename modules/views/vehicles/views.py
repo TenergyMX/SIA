@@ -690,8 +690,6 @@ def alertas(vehicle_id, detailed=False):
                 
                 if not qr_informacion or not qr_accesso:
                     missing_tables.append(table_name)
-            
-
     if detailed:
         return {
             "alert": bool(missing_tables),  
@@ -701,9 +699,6 @@ def alertas(vehicle_id, detailed=False):
         return bool(missing_tables) 
 
 
-    
-
-
 def get_vehicles_info(request):
     response = {"success": False, "data": []}
     context = user_data(request)
@@ -711,7 +706,6 @@ def get_vehicles_info(request):
     isList = dt.get("isList", False)
     subModule_id = 4
 
-    
     data = Vehicle.objects.order_by('name').values(
         "id", "is_active", "image_path", "name", "state",
         "company_id", "company__name", "plate", "model",
@@ -740,9 +734,11 @@ def get_vehicles_info(request):
         for item in data:
             vehicle_id = item["id"]
             item["alert"] = alertas(vehicle_id)
-            
-            tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
-            item["image_path"] = tempImgPath
+            if item["image_path"]:
+                tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
+                item["image_path"] = tempImgPath
+            else:
+                item["image_path"] = None
             item["btn_action"] = f"""
             <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
                 <i class="fa-solid fa-eye"></i>
