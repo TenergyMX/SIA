@@ -32,4 +32,9 @@ class Migration(migrations.Migration):
             name='short_name',
             field=models.CharField(blank=True, max_length=48, null=True, verbose_name='Nombre Corto'),
         ),
+        migrations.AddField(
+            model_name='services_category',
+            name='empresa',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
+        ),
     ]
