@@ -98,7 +98,11 @@ urlpatterns = [
     path("validar_vehicle_en_sa/", views.validar_vehicle_en_sa),
 
     #conductores
- 
-
+    path("driver_vehicles/", views.driver_vehicles),
+    path("get_table_vehicles_driver/", views.get_table_vehicles_driver),
+    path("get_users/", views.get_users),
+    path("add_driver/", views.add_driver),
+    path("delete_driver/", views.delete_driver),
+    path("get_drivers/", views.get_drivers),
 
 ]

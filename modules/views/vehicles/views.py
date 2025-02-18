@@ -42,6 +42,8 @@ from django.shortcuts import render, get_object_or_404
 from django.core.files.base import ContentFile
 import qrcode
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db.models import F, Value
+from django.db.models.functions import Concat
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
@@ -264,7 +266,7 @@ def vehicles_fuel_views(request):
 
 
 @login_required
-def get_table_vehicles_driver(request):
+def driver_vehicles(request):
     context = user_data(request)
     module_id = 2
     submodule_id = 36
@@ -2802,7 +2804,6 @@ def descargar_qr(request):
     else:
         return JsonResponse({'error': 'Vehicle not found'}, status=404)
 
-
 def validar_vehicle_en_sa(request):
     dt = request.POST
     id_vehicle = dt.get("id_vehicle", None)
@@ -2837,6 +2838,179 @@ def validar_vehicle_en_sa(request):
             "status": "SALIDA",
             "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
         })
+
+# Función para la tabla conductores
+def get_table_vehicles_driver(request):
+    response = {"status": "error", "message": "Sin procesar"}
+    try:
+        context = user_data(request)
+        isList = request.GET.get("isList", False)
+        subModule_id = 36
+
+        if isList:
+            datos = list(Vehicle_Driver.objects.select_related('name_driver').annotate(
+                driver_name=Concat(F('name_driver__username'), Value(' '), F('name_driver__last_name'))  
+            ).values("id", "company", "driver_name", "image_path"))  
+        else:
+            access = get_module_user_permissions(context, subModule_id)  
+            access = access["data"]["access"]
+            area = context["area"]["name"]
+            company_id = context["company"]["id"]
+            editar = access["update"]
+            eliminar = access["delete"]
+            tipo_user = context["role"]["name"]
+
+            datos = list(Vehicle_Driver.objects.select_related('name_driver').annotate(
+                driver_name=Concat(F('name_driver__username'), Value(' '), F('name_driver__last_name'))  
+            ).filter(company_id=company_id).values("id", "company", "driver_name", "number_phone", "address", "image_path"))
+
+            for item in datos:
+
+                item["btn_action"] = ""
+                item["btn_action"] = f"""
+                <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
+                    <i class="fa-solid fa-eye"></i>
+                </a>\n
+                """
+                item["btn_action"] += (
+                    "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_drivers(this)' aria-label='info'>"
+                    "<i class='fa-solid fa-pen'></i>"
+                    "</button>\n"
+                )
+                item["btn_action"] += (
+                    "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_driver(this)' aria-label='delete'>"
+                    "<i class='fa-solid fa-trash'></i>"
+                    "</button>"
+                )
+
+        response["data"] = datos
+        response["status"] = "success"
+        response["message"] = "Datos cargados exitosamente"
+    except Exception as e:
+        response["message"] = str(e)
+
+    return JsonResponse(response)
+
+# Funcion para obtener los nombres de los usuarios que ya han sido cargados para agregar un equipo 
+@login_required
+@csrf_exempt
+def get_users(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+        
+        users = User.objects.filter(
+            id__in=User_Access.objects.filter(company_id=company_id).values('user_id')
+        ).distinct().values('id', 'username', 'last_name')  
+        data = list(users)
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    
+def add_driver(request):
+    context = user_data(request)
+    subModule_id = 36
+    response = {"success": False}
+    dt = request.POST
+    access = get_module_user_permissions(context, subModule_id)  
+    company_id = context["company"]["id"]
+
+    if request.method == 'POST':
+        print("esta es la informacion del formulario:", dt)
+        name_driver = request.POST.get('driver_vehicle').strip()
+        number_phone = request.POST.get('number_phone')
+        address = request.POST.get('address')  
+        img = request.FILES.get('driver_image') 
+
+        if not name_driver or not number_phone or not address:
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+
+        try:
+            with transaction.atomic():
+                
+                # Crear el conductor sin la imagen inicialmente
+                driver = Vehicle_Driver.objects.create(
+                    company_id=company_id,
+                    name_driver_id=name_driver,
+                    number_phone=number_phone,
+                    address=address,
+                )
+
+                # Si hay imagen, procesarla
+                if img:
+                    # Generar la ruta de la imagen
+                    s3Path = f'docs/{company_id}/vehicle/conductor/{name_driver}/'
+                    # Obtener el nombre y extensión
+                    file_name, extension = os.path.splitext(img.name)
+                    # Nuevo nombre de la imagen
+                    new_name = f"conductor_{name_driver}{extension}"
+                    # Unir la ruta y el nombre
+                    S3name = s3Path + new_name
+                    # Subir archivo a S3 (asegúrate de tener configurada la función upload_to_s3)
+                    upload_to_s3(img, bucket_name, S3name)
+
+                    # Guardar la ruta en el modelo
+                    driver.image_path = S3name
+                    driver.save()
+                    print("si lo guardo")
+
+            return JsonResponse({'success': True, 'message': 'Conductor agregado correctamente!'})
+        
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': 'Error inesperado: ' + str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+
+
+
+def get_drivers(request):
+    driver_id = request.GET.get('id')
+    print("este es el id del registro ", driver_id)
+    if driver_id:
+        try:
+            driver = Vehicle_Driver.objects.get(id=driver_id)
+            print("el id es ", driver)
+            return JsonResponse({
+                "success": True,
+                "data": {
+                    "id": driver.id,
+                    "driver_id": driver.name_driver.id,
+                    "driver_username": driver.name_driver.username,  # Asegúrate de incluir el nombre del conductor
+                    "number_phone": driver.number_phone,
+                    "address": driver.address,
+                    #"driver_image": driver.driver_image.url if driver.driver_image else None
+                }
+            })
+        except Vehicle_Driver.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Conductor no encontrado."}, status=404)
+    return JsonResponse({"success": False, "message": "ID no proporcionado."}, status=400)
+
+
+#funcion para eliminar conductores
+@login_required
+@csrf_exempt
+def delete_driver(request):
+    if request.method == 'POST':
+        form = request.POST
+        _id = form.get('id')
+
+        if not _id:
+            return JsonResponse({'success': False, 'message': 'No ID provided'})
+
+        try:
+            driver = Vehicle_Driver.objects.get(id=_id)
+        except Vehicle_Driver.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Category not found'})
+
+        driver.delete()
+
+        return JsonResponse({'success': True, 'message': 'Conductor eliminado correctamente!'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

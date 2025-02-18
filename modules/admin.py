@@ -55,3 +55,8 @@ admin.site.register(Equipmets_Tools_locations)
 admin.site.register(Services_Category)
 admin.site.register(Services)
 admin.site.register(Payments_Services)
+
+#tabla de consuctores de vehiculos 
+admin.site.register(Vehicle_Driver)
+admin.site.register(Licences_Driver)
+admin.site.register(Multas)

@@ -1,70 +1,46 @@
 <div class="modal fade effect-scale" id="mdl_crud_vehicle_driver" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-fullscreen-lg-down">
-        <form name="" class="modal-content">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="form_add_driver" class="modal-content" id="form_add_driver" onsubmit="add_driver(); return false" method="POST">
             <div class="modal-header">
                 <h1 class="modal-title fs-5">Agregar</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
             <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
                 <div class="row g-3">
-                    <div class="col-12 d-none">
-                        {% csrf_token %}
-                        <input type="hidden" name="id" value="0">
-                    </div>
                     <div class="col-md-4">
-                        <label for="">Vehiculo</label>
-                        <select name="vehicle_id" class="form-select"></select>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="">Fecha</label>
-                        <input type="date" name="date" class="form-control">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="">Tipo de combustible</label>
-                        <select name="fuel_type" class="form-select">
-                            <option value="Gasolina">Gasolina</option>
-                            <option value="Diésel">Diésel</option>
-                            <option value="Gas natural para auto">
-                                Gas natural para auto
-                            </option>
-                            <option value="Electricidad">
-                                Electricidad
-                            </option>
-                            <option value="Etanol para auto">
-                                Etanol para auto
-                            </option>
+                        <label for="driver_vehicle">Nombre del conductor</label>
+                        <select name="driver_vehicle" id="driver_vehicle" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un usuario</option>
                         </select>
+                    </div><div class="col-md-4">
+                        <label for="number_phone">Número de teléfono</label>
+                        <input type="text" id="number_phone" name="number_phone" class="form-control" placeholder="Número teléfono" maxlength="15" required>
                     </div>
                     <div class="col-md-4">
-                        <label for="">Combustible (Litros)</label>
-                        <div class="input-group">
-                            <input type="number" name="fuel" class="form-control" step="0.01" placeholder="Combustuble (Litros)">
-                            <span class="input-group-text" title="Litros">L.</span>
-                        </div>
-                        
+                        <label for="address">Dirección</label>
+                        <input type="text" id="address" name="address" class="form-control" placeholder="Dirección" maxlength="255" required>
                     </div>
+                    
                     <div class="col-md-4">
-                        <label for="">Costo (MXN)</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" name="cost" class="form-control" step="0.01" placeholder="Costo u importe">
-                        </div>
+                        <label for="driver_image">Imagen del conductor</label>
+                        <input type="file" id="driver_image" name="driver_image" class="form-control" accept="image/*" required>
                     </div>
-                    <div class="col-md-12">
-                        <label for="">Comprobante de pago</label>
-                        <input type="file" name="payment_receipt" class="form-control" placeholder="Comprobante de pago">
+                    <div class="col-md-12 text-center mb-2">
+                        <picture>
+                            <img id="image_preview" src="" alt="Imagen del conductor" class="img-fluid" style="max-height: 200px; display: none;">
+                        </picture>
                     </div>
+                    
                 </div>
             </div>
+
             <div class="modal-footer">
-                <button type="submit" name="add" class="btn btn-primary">
-                    <i class="fa-solid fa-plus me-1"></i>
-                    Agregar
-                </button>
-                <button type="submit" name="update" class="btn btn-primary">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>
-                    Guardar
-                </button>
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </form>
