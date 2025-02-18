@@ -568,8 +568,8 @@ def get_vehicle_info(request):
     response["alert"] = alertas(vehicle_id, detailed=True)
     return JsonResponse(response)
 
-
 def alertas(vehicle_id, detailed=False):
+    print("entramos a las alertas del vechiculo: ", vehicle_id)
     """
     Verifica si el vehículo tiene registros en las tablas relacionadas.
     
@@ -583,12 +583,12 @@ def alertas(vehicle_id, detailed=False):
     - Si detailed=False: bool
     """
     tables = [
-        ("tenencia", Vehicle_Tenencia, "vehiculo_id"),  # Usa vehiculo_id
-        ("refrendo", Vehicle_Refrendo, "vehiculo_id"),  # Usa vehiculo_id
-        ("verificacion", Vehicle_Verificacion, "vehiculo_id"),  # Usa vehiculo_id
-        ("insurance", Vehicle_Insurance, "vehicle_id"),  # Usa vehicle_id
-        ("audit", Vehicle_Audit, "vehicle_id"),  # Usa vehicle_id
-        ("maintenance", Vehicle_Maintenance, "vehicle_id"),  # Usa vehicle_id
+        ("tenencia", Vehicle_Tenencia, "vehiculo_id"),
+        ("refrendo", Vehicle_Refrendo, "vehiculo_id"),
+        ("verificacion", Vehicle_Verificacion, "vehiculo_id"),
+        ("insurance", Vehicle_Insurance, "vehicle_id"),
+        ("audit", Vehicle_Audit, "vehicle_id"),
+        ("maintenance", Vehicle_Maintenance, "vehicle_id"),
         ("responsiva", Vehicle_Responsive, "vehicle_id"),
         ("qr", Vehicle, "id")
     ]
@@ -596,108 +596,120 @@ def alertas(vehicle_id, detailed=False):
     missing_tables = []
     
     for table_name, table, field_name in tables:
-        filter_kwargs = {field_name: vehicle_id}  # Crear el filtro dinámicamente
-        if not table.objects.filter(**filter_kwargs).exists():
-            if table_name != "maintenance":
-                missing_tables.append(table_name)
-    
-        if table_name == "insurance":
-            ultimo_seguro = table.objects.filter(**filter_kwargs).order_by('-end_date').first()  
-            
-            if ultimo_seguro:
-                fecha_vencimiento = ultimo_seguro.end_date 
-                fecha_actual = datetime.now().date()
-                
-                diferencia_dias = (fecha_vencimiento - fecha_actual).days
-                
-                if 0 <= diferencia_dias <= 30:
+        try:
+            filter_kwargs = {field_name: vehicle_id}
+            if not table.objects.filter(**filter_kwargs).exists():
+                if table_name != "maintenance":
                     missing_tables.append(table_name)
+        except Exception as e:
+            print(f"Error checking table {table_name}: {e}")
+
+        if table_name == "insurance":
+            try:
+                print("tabla de insurance")
+                ultimo_seguro = table.objects.filter(**filter_kwargs).order_by('-end_date').first()  
+                
+                if ultimo_seguro:
+                    fecha_vencimiento = ultimo_seguro.end_date 
+                    fecha_actual = datetime.now().date()
+                    diferencia_dias = (fecha_vencimiento - fecha_actual).days
+                
+                    if 0 <= diferencia_dias <= 30:
+                        missing_tables.append(table_name)
+            except Exception as e:
+                print(f"Error checking insurance table: {e}")
 
         if table_name == "tenencia":
-            ultima_tenencia = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
-            
-            if ultima_tenencia:
-                fecha_pago = ultima_tenencia.fecha_pago 
-                fecha_actual = datetime.now().date()
+            try:
+                print("tabla de tenencia")
+                ultima_tenencia = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
                 
-                diferencia_dias = (fecha_pago - fecha_actual).days
+                if ultima_tenencia:
+                    fecha_pago = ultima_tenencia.fecha_pago 
+                    fecha_actual = datetime.now().date()
+                    diferencia_dias = (fecha_pago - fecha_actual).days
                 
-                if 0 <= diferencia_dias <= 30:
-                    missing_tables.append(table_name)
+                    if 0 <= diferencia_dias <= 30:
+                        missing_tables.append(table_name)
+            except Exception as e:
+                print(f"Error checking tenencia table: {e}")
 
         if table_name == "refrendo":
-            ultimo_refrendo = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
-            
-            if ultimo_refrendo:
-                fecha_pago = ultimo_refrendo.fecha_pago 
-                fecha_actual = datetime.now().date()
+            try:
+                print("tabla de refrendo")
+                ultimo_refrendo = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
                 
-                diferencia_dias = (fecha_pago - fecha_actual).days
+                if ultimo_refrendo:
+                    fecha_pago = ultimo_refrendo.fecha_pago 
+                    fecha_actual = datetime.now().date()
+                    diferencia_dias = (fecha_pago - fecha_actual).days
                 
-                if 0 <= diferencia_dias <= 30:
-                    missing_tables.append(table_name)
+                    if 0 <= diferencia_dias <= 30:
+                        missing_tables.append(table_name)
+            except Exception as e:
+                print(f"Error checking refrendo table: {e}")
 
         if table_name == "verificacion":
-            ultima_verificacion = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
-            
-            if ultima_verificacion:
-                fecha_pago = ultima_verificacion.fecha_pago 
-                fecha_actual = datetime.now().date()
+            try:
+                print("tabla de verificaciones")
+                ultima_verificacion = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
                 
-                diferencia_dias = (fecha_pago - fecha_actual).days
+                if ultima_verificacion:
+                    fecha_pago = ultima_verificacion.fecha_pago 
+                    fecha_actual = datetime.now().date()
+                    diferencia_dias = (fecha_pago - fecha_actual).days
                 
-                if 0 <= diferencia_dias <= 30:
-                    missing_tables.append(table_name)
-
-        # if table_name == "responsiva":
-        #     ultima_responsiva = table.objects.filter(**filter_kwargs).order_by('-end_date').first() 
-            
-        #     if ultima_responsiva:
-        #         fecha_final = ultima_responsiva.end_date 
-        #         fecha_actual = datetime.now().date()
-                
-        #         diferencia_dias = (fecha_final - fecha_actual).days
-                
-        #         if 0 <= diferencia_dias <= 30:
-        #             missing_tables.append(table_name)`
+                    if 0 <= diferencia_dias <= 30:
+                        missing_tables.append(table_name)
+            except Exception as e:
+                print(f"Error checking verificacion table: {e}")
 
         if table_name == "audit":
-            ultima_auditoria = table.objects.filter(**filter_kwargs).order_by('-audit_date').first()
-            
-            if ultima_auditoria:
-                fecha_auditoria = ultima_auditoria.audit_date.date()  # Asegurar que sea solo la fecha
-                fecha_actual = datetime.now().date()
+            try:
+                print("tabla de audit")
+                ultima_auditoria = table.objects.filter(**filter_kwargs).order_by('-audit_date').first()
                 
-                diferencia_dias = (fecha_actual - fecha_auditoria).days  # Invertido para obtener diferencia positiva
-                
-                if diferencia_dias > 30:  # Si han pasado más de 30 días
-                    missing_tables.append(table_name)
+                if ultima_auditoria:
+                    fecha_auditoria = ultima_auditoria.audit_date.date()
+                    fecha_actual = datetime.now().date()
+                    diferencia_dias = (fecha_actual - fecha_auditoria).days
+                    
+                    if diferencia_dias > 30:
+                        missing_tables.append(table_name)
+            except Exception as e:
+                print(f"Error checking audit table: {e}")
 
         if table_name == "maintenance":
-            ultimo_mantenimiento = table.objects.filter(**filter_kwargs).order_by('-date').first()  
-            
-            if ultimo_mantenimiento:
-                if ultimo_mantenimiento.status in ["NUEVO", "ALERTA"]:
-                    missing_tables.append(table_name)
-
+            try:
+                print("tabla de maintenance")
+                ultimo_mantenimiento = table.objects.filter(**filter_kwargs).order_by('-date').first()  
+                
+                if ultimo_mantenimiento:
+                    if ultimo_mantenimiento.status in ["NUEVO", "ALERTA"]:
+                        missing_tables.append(table_name)
+            except Exception as e:
+                print(f"Error checking maintenance table: {e}")
 
         if table_name == "qr":
-            qrs = table.objects.filter(**filter_kwargs).first()
-
-            if qrs:
-                qr_informacion = qrs.qr_info
-                qr_accesso = qrs.qr_access  
-                
-                if not qr_informacion or not qr_accesso:
-                    missing_tables.append(table_name)
+            try:
+                print("tabla de qr")
+                qrs = table.objects.filter(**filter_kwargs).first()
+                if qrs:
+                    qr_informacion = qrs.qr_info
+                    qr_accesso = qrs.qr_access  
+                    
+                    if not qr_informacion or not qr_accesso:
+                        missing_tables.append(table_name)
+            except Exception as e:
+                print(f"Error checking qr table: {e}")
+    
     if detailed:
         return {
             "alert": bool(missing_tables),  
             "missing_tables": missing_tables  
         }
     else:
-        return bool(missing_tables) 
-
+        return bool(missing_tables)
 
 def get_vehicles_info(request):
     response = {"success": False, "data": []}
@@ -705,56 +717,81 @@ def get_vehicles_info(request):
     dt = request.GET
     isList = dt.get("isList", False)
     subModule_id = 4
-
-    data = Vehicle.objects.order_by('name').values(
-        "id", "is_active", "image_path", "name", "state",
-        "company_id", "company__name", "plate", "model",
-        "year", "serial_number", "brand", "color", "vehicle_type", "validity", "mileage",
-        "insurance_company", "responsible_id",
-        "responsible_id", "responsible__first_name", "responsible__last_name",
-        "owner_id", "owner__first_name",
-        "transmission_type",
-        "policy_number"
-    )
-
-    data = data.filter(company_id = context["company"]["id"])
-
-
-    if (context["role"]["id"] == 4):
-        data = data.filter(
-            Q(responsible_id = context["user"]["id"]) |
-            Q(owner_id = context["user"]["id"])
+    print("1")
+    
+    try:
+        data = Vehicle.objects.order_by('name').values(
+            "id", "is_active", "image_path", "name", "state",
+            "company_id", "company__name", "plate", "model",
+            "year", "serial_number", "brand", "color", "vehicle_type", "validity", "mileage",
+            "insurance_company", "responsible_id",
+            "responsible_id", "responsible__first_name", "responsible__last_name",
+            "owner_id", "owner__first_name",
+            "transmission_type",
+            "policy_number"
         )
+        print("2")
+        data = data.filter(company_id=context["company"]["id"])
 
-    if isList:
-        data = data.values("id", "name", "plate")
-    else:
-        access = get_module_user_permissions(context, subModule_id)
-        access = access["data"]["access"]
-        for item in data:
-            vehicle_id = item["id"]
-            item["alert"] = alertas(vehicle_id)
-            if item["image_path"]:
-                tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
-                item["image_path"] = tempImgPath
-            else:
-                item["image_path"] = None
-            item["btn_action"] = f"""
-            <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
-                <i class="fa-solid fa-eye"></i>
-            </a>\n
-            """
-            if access["update"]:
-                item["btn_action"] += """<button class=\"btn btn-primary btn-sm mb-1\" data-vehicle-info=\"update-item\">
-                    <i class="fa-solid fa-pen"></i>
-                </button>\n"""
-            if access["delete"]:
-                item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-info=\"delete-item\">
-                    <i class="fa-solid fa-trash"></i>
-                </button>"""
-    response["recordsTotal"] = data.count()
-    response["data"] = list(data)
-    response["success"] = True
+        if context["role"]["id"] == 4:
+            data = data.filter(
+                Q(responsible_id=context["user"]["id"]) |
+                Q(owner_id=context["user"]["id"])
+            )
+        print("3")
+        
+        if isList:
+            print("4")
+            data = data.values("id", "name", "plate")
+        else:
+            print("5")
+            access = get_module_user_permissions(context, subModule_id)
+            access = access["data"]["access"]
+            print("6")
+            for item in data:
+                try:
+                    print("este es el for, veamos en que id se detiene ", item["id"])
+                    print()
+                    vehicle_id = item["id"]
+                    item["alert"] = alertas(vehicle_id)
+                    print("regresamos de alertas del vechiculo ", vehicle_id)
+                    
+                    if item["image_path"]:
+                        print("tenemos imagen")
+                        tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
+                        item["image_path"] = tempImgPath
+                    else:
+                        print("no tenemos imagen")
+                        item["image_path"] = None
+                    
+                    item["btn_action"] = f"""
+                    <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
+                        <i class="fa-solid fa-eye"></i>
+                    </a>\n
+                    """
+                    
+                    if access["update"]:
+                        print("permisos de editar")
+                        item["btn_action"] += """<button class=\"btn btn-primary btn-sm mb-1\" data-vehicle-info=\"update-item\">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>\n"""
+                    
+                    if access["delete"]:
+                        print("permisos de eliminar")
+                        item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-info=\"delete-item\">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>"""
+                except Exception as e:
+                    print(f"Error processing vehicle with ID {item['id']}: {e}")
+        
+        response["recordsTotal"] = data.count()
+        print("despue de contar")
+        response["data"] = list(data)
+        print("despues de hacer lista")
+        response["success"] = True
+    except Exception as e:
+        print(f"Error fetching vehicles info: {e}")
+    
     return JsonResponse(response)
 
 def update_vehicle_info(request):
