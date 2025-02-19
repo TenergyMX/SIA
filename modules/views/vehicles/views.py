@@ -569,7 +569,6 @@ def get_vehicle_info(request):
     return JsonResponse(response)
 
 def alertas(vehicle_id, detailed=False):
-    print("entramos a las alertas del vechiculo: ", vehicle_id)
     """
     Verifica si el vehículo tiene registros en las tablas relacionadas.
     
@@ -589,7 +588,6 @@ def alertas(vehicle_id, detailed=False):
         ("insurance", Vehicle_Insurance, "vehicle_id"),
         ("audit", Vehicle_Audit, "vehicle_id"),
         ("maintenance", Vehicle_Maintenance, "vehicle_id"),
-        ("responsiva", Vehicle_Responsive, "vehicle_id"),
         ("qr", Vehicle, "id")
     ]
     
@@ -606,7 +604,6 @@ def alertas(vehicle_id, detailed=False):
 
         if table_name == "insurance":
             try:
-                print("tabla de insurance")
                 ultimo_seguro = table.objects.filter(**filter_kwargs).order_by('-end_date').first()  
                 
                 if ultimo_seguro:
@@ -621,7 +618,6 @@ def alertas(vehicle_id, detailed=False):
 
         if table_name == "tenencia":
             try:
-                print("tabla de tenencia")
                 ultima_tenencia = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
                 
                 if ultima_tenencia:
@@ -636,7 +632,6 @@ def alertas(vehicle_id, detailed=False):
 
         if table_name == "refrendo":
             try:
-                print("tabla de refrendo")
                 ultimo_refrendo = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
                 
                 if ultimo_refrendo:
@@ -651,7 +646,6 @@ def alertas(vehicle_id, detailed=False):
 
         if table_name == "verificacion":
             try:
-                print("tabla de verificaciones")
                 ultima_verificacion = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
                 
                 if ultima_verificacion:
@@ -666,7 +660,6 @@ def alertas(vehicle_id, detailed=False):
 
         if table_name == "audit":
             try:
-                print("tabla de audit")
                 ultima_auditoria = table.objects.filter(**filter_kwargs).order_by('-audit_date').first()
                 
                 if ultima_auditoria:
@@ -681,7 +674,6 @@ def alertas(vehicle_id, detailed=False):
 
         if table_name == "maintenance":
             try:
-                print("tabla de maintenance")
                 ultimo_mantenimiento = table.objects.filter(**filter_kwargs).order_by('-date').first()  
                 
                 if ultimo_mantenimiento:
@@ -692,7 +684,6 @@ def alertas(vehicle_id, detailed=False):
 
         if table_name == "qr":
             try:
-                print("tabla de qr")
                 qrs = table.objects.filter(**filter_kwargs).first()
                 if qrs:
                     qr_informacion = qrs.qr_info
@@ -716,9 +707,7 @@ def get_vehicles_info(request):
     context = user_data(request)
     dt = request.GET
     isList = dt.get("isList", False)
-    subModule_id = 4
-    print("1")
-    
+    subModule_id = 4    
     try:
         data = Vehicle.objects.order_by('name').values(
             "id", "is_active", "image_path", "name", "state",
@@ -730,7 +719,6 @@ def get_vehicles_info(request):
             "transmission_type",
             "policy_number"
         )
-        print("2")
         data = data.filter(company_id=context["company"]["id"])
 
         if context["role"]["id"] == 4:
@@ -738,30 +726,21 @@ def get_vehicles_info(request):
                 Q(responsible_id=context["user"]["id"]) |
                 Q(owner_id=context["user"]["id"])
             )
-        print("3")
         
         if isList:
-            print("4")
             data = data.values("id", "name", "plate")
         else:
-            print("5")
             access = get_module_user_permissions(context, subModule_id)
             access = access["data"]["access"]
-            print("6")
             for item in data:
                 try:
-                    print("este es el for, veamos en que id se detiene ", item["id"])
-                    print()
                     vehicle_id = item["id"]
                     item["alert"] = alertas(vehicle_id)
-                    print("regresamos de alertas del vechiculo ", vehicle_id)
                     
                     if item["image_path"]:
-                        print("tenemos imagen")
                         tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
                         item["image_path"] = tempImgPath
                     else:
-                        print("no tenemos imagen")
                         item["image_path"] = None
                     
                     item["btn_action"] = f"""
@@ -771,13 +750,11 @@ def get_vehicles_info(request):
                     """
                     
                     if access["update"]:
-                        print("permisos de editar")
                         item["btn_action"] += """<button class=\"btn btn-primary btn-sm mb-1\" data-vehicle-info=\"update-item\">
                             <i class="fa-solid fa-pen"></i>
                         </button>\n"""
                     
                     if access["delete"]:
-                        print("permisos de eliminar")
                         item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-info=\"delete-item\">
                             <i class="fa-solid fa-trash"></i>
                         </button>"""
@@ -785,9 +762,7 @@ def get_vehicles_info(request):
                     print(f"Error processing vehicle with ID {item['id']}: {e}")
         
         response["recordsTotal"] = data.count()
-        print("despue de contar")
         response["data"] = list(data)
-        print("despues de hacer lista")
         response["success"] = True
     except Exception as e:
         print(f"Error fetching vehicles info: {e}")
@@ -1518,7 +1493,6 @@ def get_vehicle_responsiva(request):
         modified_sign = sign
         
         modified_data['signature'] = modified_sign
-        print(modified_sign)
         modified_data_list.append(modified_data)
 
 
@@ -1579,7 +1553,6 @@ def get_vehicles_responsiva(request):
         modified_sign = sign
         
         modified_data['signature'] = modified_sign
-        print(modified_sign)
         modified_data_list.append(modified_data)
 
         file_path3 = data.get('image_path_entry_1')
@@ -1679,7 +1652,6 @@ def update_vehicle_responsiva(request):
             flag = check_vehicle_kilometer(request, obj_vehicle, dt.get("final_mileage"), dt.get("end_date"))
             if isinstance(flag, JsonResponse):
                 data_flag = json.loads(flag.content.decode('utf-8')).get
-                print(data_flag("status"))
                 if data_flag("status") == "error":
                     return flag
                 elif data_flag("status") == "warning":
@@ -2017,7 +1989,8 @@ def get_vehicle_audit(request):
         "check_exterior", "notes_exterior",
         "notes_tires", "check_tires",
         "check_fuel_level",
-        "general_notes"
+        "general_notes",
+        "is_visible"
     )
 
     if context["role"]["id"] in [1,2,3]:
@@ -2025,7 +1998,7 @@ def get_vehicle_audit(request):
     else:
         lista = lista.filter(vehicle__responsible_id = context["user"]["id"])
     if not context["role"]["id"] in [1,2]:
-        lista = lista.exclude(visible=False)
+        lista = lista.exclude(is_visible=False)
 
 
     access = get_module_user_permissions(context, subModule_id)
