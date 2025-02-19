@@ -15,9 +15,24 @@ from users.models import *
 from modules.utils import *
 import requests
 
+# TODO -- EMAIL --
+from django.core.mail import send_mail
+
+
 # TODO --------------- [ VIEWS ] ---------- 
 def home_view(request):
     context = {}
+    if request.user.is_authenticated:
+        context["user"] = request.user
+
+    #CONDITIONAL TO SEND EMAIL
+    if request.method == "POST":
+        form = request.POST.get
+        asunto = f'Correo enviado por {form("email")}'
+        message = f'{form("name")}, de la empresa {form("name_company")}: {form("message")}'
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [settings.EMAIL_HOST_USER]
+        send_mail(asunto, message, from_email, recipient_list)
     return render(request, "home/index.html", context)
 
 def error_404_view(request, exception):
