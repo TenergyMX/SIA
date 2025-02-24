@@ -44,6 +44,10 @@ import qrcode
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db.models import Q
 
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+
+
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
 
@@ -2942,6 +2946,45 @@ def delete_qr(request, qr_type, vehicle_id):
     return JsonResponse({'status':'success'}) 
 
 # TODO ----- [ INTERNAL FUNCTIONS ] -----
+#@subject = CharField
+#@to = ArrayList
+#Vehicle = QuerySet
+def sendEmail_UpdateKilometer(request, subject, to_send, vehicle):
+    from_send = settings.EMAIL_HOST_USER
+    text_content = f'Mensage Generado por plataforma: Mensage Generado por plataforma'
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            body {{ background-color: #FFFAFA; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: Arial, sans-serif; }}
+            .container {{ background-color: #A5C334; padding: 36px; border-radius: 18px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); text-align: center; width: 80%; max-width: 600px; }}
+            img {{ max-width: 150px; margin-bottom: 20px; }}
+            h2 {{ color: #333333; }}
+            p {{ color: #555555; line-height: 1.5; }}
+            strong {{ color: #000000; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <img src="https://sia-tenergy.com/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
+            <h2>{vehicle.name}</h2>
+            <p>Responsable del vehiculo: {vehicle.responsible.username}</p>
+            <p>El vehículo está próximo a alcanzar el kilometraje para su revisión, por lo que es necesario programar el mantenimiento correspondiente</p>
+        </div>
+    </body>
+    </html>
+    """
+    #AGREGANDO LOS CORREOS DEL ENCARGADO DEL VEHICULO Y DEL RESPONSABLE DE ALMACEN
+    to_send.append(vehicle.responsible.email)
+    qsUser = User_Access.objects.filter(company__id = request.session["company"]["id"], area__company__id = request.session["company"]["id"],
+    area__name = 'Almacén', role__name = "Encargado").first()
+    #if qsUser:
+    #    to_send.append(qsUser.user.email)
+    email = EmailMultiAlternatives(subject, text_content, from_send, to_send)
+    email.attach_alternative(html_content, "text/html")
+    email.send()
+
+
 #@obj_vehicle = QuerySet Vehicle
 #@kilometer = Decimal
 #@date_set = DateTime
@@ -2991,6 +3034,7 @@ def check_vehicle_kilometer(request, obj_vehicle = None, kilometer = None, date_
                 general_notes = f"Vehiculo cerca de los {km} km, necesario programar revisión"
             )
             obj_maintenance.save()
+            sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
     return JsonResponse(response)
 
 
