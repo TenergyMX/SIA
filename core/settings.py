@@ -149,12 +149,6 @@ USE_TZ = True
 STATIC_ROOT = os.path.join(CORE_DIR, 'staticfiles')
 STATIC_URL = '/staticfiles/'
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-    os.path.join(CORE_DIR, 'modules/static')
-    
-]
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'tenergy.com.mx'
 EMAIL_PORT = 465
@@ -162,6 +156,14 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = 'sia@tenergy.com.mx'
 EMAIL_HOST_PASSWORD = 'Energia2025#Ten'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+    os.path.join(CORE_DIR, 'modules/static')
+    
+]
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

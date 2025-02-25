@@ -17,9 +17,87 @@ import requests
 from django.urls import resolve
 from unidecode import unidecode
 
+# TODO -- EMAIL --
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+
+
 # TODO --------------- [ VIEWS ] ---------- 
 def home_view(request):
     context = {}
+    if request.user.is_authenticated:
+        context["user"] = request.user
+
+    #CONDITIONAL TO SEND EMAIL
+    if request.method == "POST":
+        form = request.POST
+        asunto = f'Correo enviado por {form.get("email", "sin correo")}'
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [settings.EMAIL_HOST_USER]
+
+        #body-text
+        text_content = f'{form.get("name", "Nombre no proporcionado")}, de la empresa {form.get("name_company", "Empresa no especificada")}: {form.get("message", "Sin mensaje")}'
+
+        #html
+        html_content = f"""
+        <html>
+        <head>
+            <style>
+            body {{
+                background-color: #FFFAFA;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                font-family: Arial, sans-serif;
+            }}
+            .container {{
+                background-color: #A5C334;
+                padding: 36px;
+                border-radius: 18px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                width: 80%;
+                max-width: 600px;
+            }}
+            img {{
+                max-width: 150px;
+                margin-bottom: 20px;
+            }}
+            h2 {{
+                color: #333333;
+            }}
+            p {{
+                color: #555555;
+                line-height: 1.5;
+            }}
+            strong {{
+                color: #000000;
+            }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+            <img src="https://sia-tenergy.com/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
+            <h2>Nuevo mensaje de {form.get("name", "Nombre no proporcionado")}</h2>
+            <p><strong>Empresa:</strong> {form.get("name_company", "Empresa no especificada")}</p>
+            <p><strong>Correo:</strong> {form.get("email", "sin correo")}</p>
+            <p><strong>Mensaje:</strong></p>
+            <p>{form.get("message", "Sin mensaje")}</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        context["sendEmail"] = True
+
+
+        # Crear el email
+        email = EmailMultiAlternatives(asunto, text_content, from_email, recipient_list)
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+
     return render(request, "home/index.html", context)
 
 def error_404_view(request, exception):

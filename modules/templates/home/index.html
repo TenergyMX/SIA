@@ -1,762 +1,302 @@
 {% load static %}
 <!DOCTYPE html>
-<html
-    lang="en"
-    dir="ltr"
-    data-nav-layout="horizontal"
-    data-nav-style="menu-click"
-    data-menu-position="fixed"
-    data-theme-mode="light"
-    data-toggled="close"
->
+<html lang="en">
 <head>
-    {% include "ynex/utils/head.html" %}
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel/slick/slick.css"/>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel/slick/slick-theme.css"/>
-    <link rel="manifest" href="manifest.json">
-    <!-- Add to homescreen for Chrome on Android -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Sistema de Infraestructura Y Activos">
-    <!-- Add to homescreen for Safari on iOS -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Sistema de Infraestructura Y Activos">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="/static/assets/imgages/brand-logos/maskable/icon-120x120.png" sizes="120x120">
-    <link rel="apple-touch-icon" href="/static/assets/imgages/brand-logos/maskable/icon-180x180.png" sizes="180x180">
-    <link rel="apple-touch-icon" href="/static/assets/imgages/brand-logos/maskable/icon-256x256.png" sizes="256x256">
-    <link rel="apple-touch-icon" href="/static/assets/imgages/brand-logos/maskable/icon-512x512.png" sizes="512x512">
-    <link rel="apple-touch-icon" href="/static/assets/imgages/brand-logos/maskable/icon-1024x1024.png" sizes="1024x1024">
-    <link href="{% static 'assets/images/splash/splash-1242x2208.png' %}" rel="apple-touch-startup-image">
-    <!-- Tile for Win8 -->
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/static/assets/imgages/brand-logos/regular/icon-512x512.png">
-    <script type="text/javascript">
-        // Initialize the service worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js', {
-                scope: '/'
-            }).then(function (registration) {
-                // Registration was successful
-                console.log('django-pwa: ServiceWorker registration successful with scope: ', registration.scope);
-            }, function (err) {
-                // registration failed :(
-                console.log('django-pwa: ServiceWorker registration failed: ', err);
-            });
-        }
-    </script>
-    <title>Inicio</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>SIA</title>
+    <link rel="stylesheet" type="text/css" href="static/assets/css/landing.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
-<body class="landing-body">
-    <div class="landing-page-wrapper">
-        <header class="app-header">
-            <div class="main-header-container container-fluid">
-                <div class="header-content-left">
-                    <div class="header-element">
-                        <div class="horizontal-logo">
-                            <a href="/" class="header-logo" aria-label="Logo">
-                                <img src="" alt="logo" class="toggle-logo" loading="lazy">
-                                <img src="" alt="logo" class="toggle-logo" loading="lazy">
-                            </a>
-                        </div>
-                    </div>
-                    <div class="header-element">
-                        <button aria-label="Hide Sidebar" class="sidemenu-toggle header-link animated-arrow hor-toggle horizontal-navtoggle border-0 bg-transparent" data-bs-toggle="sidebar">
-                            <span></span>
-                        </button>
-                    </div>
-                </div>
-                <div class="header-content-center"></div>
-                <div class="header-content-right">
-                    <div class="header-element align-items-center"></div>
-                </div>
-            </div>
-        </header>
-
-        <aside class="app-sidebar sticky" id="sidebar">
-            <div class="container-xl">
-                <div class="main-sidebar">
-                    <nav class="main-menu-container nav nav-pills sub-open">
-                        <div class="landing-logo-container">
-                            <div class="horizontal-logo">
-                                <a href="/" class="header-logo" aria-label="index">
-                                    <img src="{% static 'assets/images/brand-logos/logo.png' %}" alt="" class="desktop-logo">
-                                    <img src="{% static 'assets/images/brand-logos/logo.png' %}" alt="" class="desktop-white">
-                                </a>
-                            </div>
-                        </div>
-                        <div class="slide-left d-none" id="slide-left"></div>
-                        <ul class="main-menu">
-                            <li class="slide">
-                                <a class="side-menu__item" href="#home">
-                                    <span class="side-menu__label">Inicio</span>
-                                </a>
-                            </li>
-                            <li class="slide">
-                                <a class="side-menu__item" href="#pricing">
-                                    <span class="side-menu__label">Planes</span>
-                                </a>
-                            </li>
-                            <li class="slide">
-                                <a class="side-menu__item" href="#contact">
-                                    <span class="side-menu__label">Contacto</span>
-                                </a>
-                            </li>
-                            <li class="slide">
-                                <a class="side-menu__item" href="/vehicles/">
-                                    <span class="side-menu__label">Inicio de sesión</span>
-                                </a>
-                            </li>
-                        </ul>
-                        <div class="slide-right d-none" id="slide-right"></div>
-                        <div class="d-none">
-                            <div class="btn-list d-lg-flex d-none mt-lg-2 mt-xl-0 mt-0">
-                                <a href="#" class="btn btn-wave btn-primary">
-                                    Login
-                                </a>
-                                <button
-                                    class="btn btn-wave btn-icon btn-light switcher-icon"
-                                    data-bs-toggle="offcanvas"
-                                    data-bs-target="#switcher-canvas"
-                                    aria-label="button"
-                                >
-                                    <i class="fa-solid fa-gear fa-spin"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </nav>
-                </div>
-            </div>
-        </aside>
-
-        <div class="main-content landing-main px-0">
-            <div class="landing-banner landing-banner-1" id="home">
-                <section class="section">
-                    <div class="container main-banner-container pb-lg-0">
-                        <div class="row">
-                            <div class="col-xxl-7 col-xl-7 col-lg-7 col-md-8">
-                                <div class="py-lg-5">
-                                    <div class="mb-3">
-                                        <h5 class="fw-semibold text-fixed-white op-9"></h5>
-                                    </div>
-                                    <p class="landing-banner-heading mb-3">
-                                        SISTEMA DE INFRAESTRUCTURA Y ACTIVOS
-                                    </p>
-                                    <div class="fs-16 mb-5 text-fixed-white op-7">
-                                        SIA - Explora todas las posibilidades que ofrece nuestro sistema y transforma la manera en que gestionas tus activos.
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-xxl-5 col-xl-5 col-lg-5 col-md-4">
-                                <div class="text-end landing-main-image landing-heading-img">
-                                    <img src="/static/assets/images/media/landing/1.png" alt="" class="img-fluid">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-            <!-- Modulos -->
-            <section class="section" id="login">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-12 text-center">
-                            <p class="fs-12 fw-semibold text-success mb-1">
-                                <span class="landing-section-heading">MODULOS</span>
-                            </p>
-                            <h3 class="fw-semibold mb-2">
-                                Modulos SIA - Tenergy
-                            </h3>
-                            <p class="text-muted fs-15 mb-5 fw-normal">
-                                Control total sobre tu infraestructura y activos.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div
-                                class="card custom-card module-card wow fadeInUp reveal revealleft active border"
-                                data-wow-delay="0.1s"
-                            >
-                                <div class="card-body">
-                                    <div class="counter-body-2">
-                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
-                                            <a href="/computers-equipment/" class="counter-icon hexagon" aria-label="Equipos de computo">
-                                                <i class="fa-solid fa-computer text-white"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="text-left counter-body">
-                                        <h4 class="fw-bold">Equipo de Computo</h4>
-                                        <p class="mb-0">Optimiza la administración de tus equipos de cómputo con un seguimiento detallado.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div
-                                class="card custom-card module-card wow fadeInUp reveal revealleft active border"
-                                data-wow-delay="0.1s"
-                            >
-                                <div class="card-body">
-                                    <div class="counter-body-2">
-                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
-                                            <a href="/infrastructure/" class="counter-icon hexagon" aria-label="Infraestructura">
-                                                <i class="fa-sharp fa-solid fa-list-tree text-white"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="text-left counter-body">
-                                        <h4 class="fw-bold">Infraestructura</h4>
-                                        <p class="mb-0">Administra tu infraestructura con herramientas que permiten un monitoreo constante.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div
-                                class="card custom-card module-card wow fadeInUp reveal revealleft active border"
-                                data-wow-delay="0.1s"
-                            >
-                                <div class="card-body">
-                                    <div class="counter-body-2">
-                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
-                                            <a href="/vehicles/" class="counter-icon hexagon" aria-label="Vehículos">
-                                                <i class="fa-solid fa-car-side text-white"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="text-left counter-body">
-                                        <h4 class="fw-bold">Vehículos</h4>
-                                        <p class="mb-0">Controla el uso, el mantenimiento y el estado de cada unidad, asegurando operaciones seguras.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div
-                                class="card custom-card module-card wow fadeInUp reveal revealleft active border"
-                                data-wow-delay="0.1s"
-                            >
-                                <div class="card-body">
-                                    <div class="counter-body-2">
-                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
-                                            <a href="/equipments_and_tools/" class="counter-icon hexagon" aria-label="Equipo y Herramientas">
-                                                <i class="fa-solid fa-screwdriver-wrench text-white"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="text-left counter-body">
-                                        <h4 class="fw-bold">Equipos y Herramientas</h4>
-                                        <p class="mb-0">Mantén un inventario actualizado de tus equipos y herramientas, facilitando su acceso y uso eficiente.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 offset-sm-3">
-                            <div
-                                class="card custom-card module-card wow fadeInUp reveal revealleft active border"
-                                data-wow-delay="0.1s"
-                            >
-                                <div class="card-body">
-                                    <div class="counter-body-2">
-                                        <div class="bg-img mb-2 text-left hexagon-wrapper">
-                                            <a href="/category_services/" class="counter-icon hexagon" aria-label="Servicios">
-                                                <i class="fa-solid fa-envelopes-bulk text-white"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="text-left counter-body">
-                                        <h4 class="fw-bold">Servicios</h4>
-                                        <p class="mb-0">Lleva un registro detallado de los pagos realizados por tus servicios, facilitando el seguimiento y la gestión de tus egresos de manera oportuna. 
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                    </div>
-                </div>
-            </section>
-            <!-- anuncio -->
-            <section class="section bg-banner-2 text-fixed-white py-0">
-                <div class="container">
-                    <div class="row align-items-center justify-content-center">
-                        <div class="col-md-5 col-xl-4 text-center mt-4 d-lg-block d-none">
-                            <img src="{% static 'assets/images/media/jobs-landing/8.png' %}" alt="image" loading="lazy" class="img-fluid" style="max-width: 350px; width: 100%; height: 100%; object-fit: contain;">
-                        </div>
-                        <div class="col-md-7 col-xl-8">
-                            <div class="my-4">
-                                <h2 class="fw-semibold mb-3 text-fixed-white">
-                                    ¡Optimiza la gestión de tus activos!
-                                </h2>
-                                <p class="mb-4 fs-15 op-8 fw-normal">
-                                    Gestiona de manera eficiente tus vehículos, equipos de cómputo y otros activos con nuestro sistema de gestión. Controla el mantenimiento, seguimiento y ubicación de cada activo de manera fácil y segura. ¡Descubre cómo nuestro sistema puede simplificar tu trabajo hoy mismo!
-                                </p>
-                                <a href="#contact" class="btn btn-light btn-lg">
-                                    Contactar
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <!-- Mision -->
-            <section class="section" id="">
-                <div class="container text-center">
-                    <!-- Usamos h2 para el título principal de la sección -->
-                    <p class="fs-12 fw-semibold text-success mb-1">
-                        <span class="landing-section-heading">
-                            Nuestra misión
-                        </span>
-                    </p>
-                    <h2 class="fw-semibold mb-2">Misión</h2>
-                    <div class="row justify-content-center">
-                        <div class="col-xl-7">
-                            <p class="text-muted fs-15 mb-3 fw-normal">
-                                En nuestra plataforma, nos dedicamos a simplificar la administración integral de tus vehículos, equipos de cómputo, infraestructura, servicios y herramientas. Nuestra misión es proporcionarte una herramienta poderosa, intuitiva y accesible que te permita optimizar la gestión de tus recursos, mejorando la eficiencia y reduciendo costos.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="row justify-content-between align-items-center mx-0">
-                        <div class="col-xxl-5 col-xl-5 col-lg-5 customize-image text-center">
-                            <div class="text-lg-end">
-                                <img src="{% static 'assets/images/media/landing/3.png' %}" alt="" class="img-fluid" loading="lazy">
-                            </div>
-                        </div>
-                        <div class="col-xxl-6 col-xl-6 col-lg-6 pt-5 pb-0 px-lg-2 px-5 text-start">
-                            <h3 class="text-lg-start fw-semibold mb-0">Ofrecemos</h3>
-                            <p></p>
-                            <div class="row">
-                                <div class="col-12 col-md-12">
-                                    <div class="d-flex">
-                                        <span>
-                                            <i class="fa-sharp fa-solid fa-badge-check text-primary fs-18"></i>
-                                        </span>
-                                        <div class="ms-2">
-                                            <h6 class="fw-semibold mb-0">
-                                                Controlar el Mantenimiento
-                                            </h6>
-                                            <p class="text-muted">
-                                                Mantén tus activos en las mejores condiciones con alertas y registros de mantenimiento.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex">
-                                        <span>
-                                            <i class="fa-sharp fa-solid fa-badge-check text-primary fs-18"></i>
-                                        </span>
-                                        <div class="ms-2">
-                                            <h6 class="fw-semibold mb-0">
-                                                Seguimiento del uso de activos
-                                            </h6>
-                                            <p class="text-muted">
-                                                Monitorea el estado de cada activo para una mejor gestión y seguridad del mismo.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex">
-                                        <span>
-                                            <i class="fa-sharp fa-solid fa-badge-check text-primary fs-18"></i>
-                                        </span>
-                                        <div class="ms-2">
-                                            <h6 class="fw-semibold mb-0">
-                                                Gestión Centralizada
-                                            </h6>
-                                            <p class="text-muted">
-                                                Accede a toda la información de tus activos desde una plataforma centralizada y segura, simplificando tus tareas diarias.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Planes -->
-            <div class="section section-bg" id="pricing">
-                <div class="container text-center">
-                    <p class="fs-12 fw-semibold text-success mb-1">
-                        <span class="landing-section-heading">PLANES</span>
-                    </p>
-                    <h3 class="fw-semibold mb-2">
-                        ENCUENTRE EL
-                        <span class="text-primary">PLAN PERFECTO</span>
-                        PARA SU NEGOCIO.
-                    </h3>
-                    <div class="mt-5"></div>
-                    <div class="row d-flex align-items-center justify-content-center text-start">
-                        <div class="col-md-8 col-lg-4 col-xl-4">
-                            <div class="card p-3 pricing-card reveal revealrotate active">
-                                <div class="card-header d-block text-justified pt-2">
-                                    <p class="fs-18 fw-semibold mb-1">Basico</p>
-                                    <p class="text-justify fw-semibold mb-1">
-                                        <span class="fs-30 me-2">$</span>
-                                        <span class="fs-30 me-1">399</span>
-                                        <span class="fs-25">
-                                            <span class="op-0-5 text-muted text-20">/</span>
-                                            Año
-                                        </span>
-                                    </p>
-                                    <p class="fs-13 mb-1">
-                                        Copyright 2024 TENERGY
-                                    </p>
-                                </div>
-                                <div class="card-body py-2">
-                                    <ul class="list-group list-group-flush">
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Control de permisos de usuario
-                                        </li>
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Gestión de activos
-                                        </li>
-                                        <li class="list-group-item text-muted">
-                                            <i class="fa-regular fa-circle-xmark fs-16 text-primary me-2"></i>
-                                            Recuperar contraseña (email)
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-8 col-lg-4 col-xl-4">
-                            <div class="card p-3 pricing-card reveal revealrotate active">
-                                <div class="card-header d-block text-justified pt-2">
-                                    <p class="fs-18 fw-semibold mb-1">Avanzado</p>
-                                    <p class="text-justify fw-semibold mb-1">
-                                        <span class="fs-30 me-2">$</span>
-                                        <span class="fs-30 me-1">999</span>
-                                        <span class="fs-25">
-                                            <span class="op-0-5 text-muted text-20">/</span>
-                                            Año
-                                        </span>
-                                    </p>
-                                    <p class="fs-13 mb-1">
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                                        Iure quos debitis aliquam .
-                                    </p>
-                                </div>
-                                <div class="card-body py-2">
-                                    <ul class="list-group list-group-flush">
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Control de permisos de usuario
-                                        </li>
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Gestión de activos
-                                        </li>
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Recuperar contraseña (email)
-                                        </li>
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Notificaciones por correo
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-8 col-lg-4 col-xl-4">
-                            <div class="card p-3 pricing-card reveal revealrotate active pricing-offer overflow-hidden">
-                                <span class="pricing-offer-details shadow">
-                                    <span class="fw-semibold"></span>
-                                    <span class="fs-10 op-8 ms-1"></span>
-                                </span>
-                                <div class="card-header d-block text-justified pt-2">
-                                    <p class="fs-18 fw-semibold mb-1">Premium</p>
-                                    <p class="text-justify fw-semibold mb-1">
-                                        <span class="fs-30 me-2">$</span>
-                                        <span class="fs-30 me-1">1,299</span>
-                                        <span class="fs-25">
-                                            <span class="op-0-5 text-muted text-20">/</span>
-                                            Año
-                                        </span>
-                                    </p>
-                                    <p class="fs-13 mb-1">
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                                        Iure quos debitis aliquam .
-                                    </p>
-                                </div>
-                                <div class="card-body py-2">
-                                    <ul class="list-group list-group-flush">
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Control de permisos de usuario
-                                        </li>
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Gestión de activos
-                                        </li>
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Recuperar contraseña (email)
-                                        </li>
-                                        <li class="list-group-item">
-                                            <i class="fa-regular fa-badge-check fs-16 text-primary me-2"></i>
-                                            Notificaciones por correo
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Preguntas -->
-            <section class="section">
-                <div class="container text-center">
-                    <h3 class="fw-semibold mb-2">Preguntas frecuentes</h3>
-                    <div class="row justify-content-center">
-                        <div class="col-xl-7">
-                            <p class="text-muted fs-15 mb-5 fw-normal">
-                                Hemos compartido algunas de las preguntas más frecuentes para ayudarle.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="row gy-2">
-                        <div class="col-lg-6">
-                            <div class="accordion accordion-customicon1 accordion-primary accordions-items-seperate">
-                                <div class="accordion-item">
-                                    <h2
-                                        class="accordion-header"
-                                        id="headingcustomicon1One"
-                                    >
-                                        <button
-                                            class="accordion-button"
-                                            type="button"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#collapsecustomicon1One"
-                                            aria-expanded="true"
-                                            aria-controls="collapsecustomicon1One"
-                                            aria-label="button"
-                                        >
-                                            ¿Cuáles son las opciones de suscripción disponibles?
-                                        </button>
-                                    </h2>
-                                    <div
-                                        id="collapsecustomicon1One"
-                                        class="accordion-collapse collapse show"
-                                        aria-labelledby="headingcustomicon1One"
-                                        data-bs-parent="#accordionFAQ1"
-                                    >
-                                        <div class="accordion-body">
-                                            <strong>Ofrecemos diferentes planes de suscripción</strong>
-                                            que se adaptan a tus necesidades, desde opciones básicas hasta paquetes premium con funcionalidades avanzadas. Puedes consultar los detalles en la sección "PLANES" de nuestra página.
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2
-                                        class="accordion-header"
-                                        id="headingcustomicon1Two"
-                                    >
-                                        <button
-                                            class="accordion-button collapsed"
-                                            type="button"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#collapsecustomicon1Two"
-                                            aria-expanded="false"
-                                            aria-controls="collapsecustomicon1Two"
-                                            aria-label="button"
-                                        >
-                                            ¿Qué soporte recibiré una vez que compre el sistema?
-                                        </button>
-                                    </h2>
-                                    <div
-                                        id="collapsecustomicon1Two"
-                                        class="accordion-collapse collapse"
-                                        aria-labelledby="headingcustomicon1Two"
-                                        data-bs-parent="#accordionFAQ1"
-                                    >
-                                        <div class="accordion-body">
-                                            <strong>
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <img
-                                src="https://png.pngtree.com/png-clipart/20230821/original/pngtree-faq-or-frequently-asked-questions-for-website-picture-image_8148166.png"
-                                alt="image"
-                                class="img-fluid"
-                                loading="lazy"
-                            >
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <!-- Testimonios -->
-            <section class="section bg-banner">
-                <div class="container text-center">
-                    <p class="fs-12 fw-semibold text-success mb-1">
-                        <span class="landing-section-heading">TESTIMONIOS</span>
-                    </p>
-                    <h3 class="fw-semibold mb-2 text-fixed-white">
-                        Nunca dejamos de alcanzar las expectativas.
-                    </h3>
-                    <div class="row justify-content-center">
-                        <div class="col-xl-7">
-                            <p class="text-white fs-15 mb-5 fw-normal">
-                                Algunas de las reseñas que dieron nuestros clientes nos motivan a trabajar en proyectos futuros.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="testimonial-carousel">
-                        <div class="swiper-slide">
-                            <div class="row">
-                                <div class="col-xl-8 col-md-12 d-block mx-auto">
-                                    <div class="testimonia">
-                                        <p class="text-white-80">
-                                            <i class="fa-solid fa-quote-left fs-20"></i>
-                                            ¡Estoy impresionado por la increíble estructura y diseño de esta página web! La navegación es suave y eficiente, y la disposición de los elementos es intuitiva. Además, la optimización para dispositivos móviles es excelente, lo que hace que la experiencia del usuario sea perfecta en cualquier pantalla. ¡Un gran trabajo por parte del equipo de diseño!
-                                        </p>
-                                        <div class="testimonia-data">
-                                            <h3 class="text-white">Juan Perez</h3>
-                                            <span class="post">Gerente General</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="swiper-slide">
-                            <div class="row">
-                                <div class="col-xl-8 col-md-12 d-block mx-auto">
-                                    <div class="testimonia">
-                                        <p class="text-white-80">
-                                            <i class="fa-solid fa-quote-left fs-20"></i>
-                                            Me encanta cómo esta página web está diseñada y organizada. La disposición de la información es clara y concisa, lo que hace que sea fácil encontrar lo que necesito. Además, la velocidad de carga es impresionante, lo que demuestra una excelente optimización. Sin duda, una de las mejores experiencias de usuario que he tenido en línea.
-                                        </p>
-                                        <div class="testimonia-data">
-                                            <h3 class="text-white">María Rodríguez</h3>
-                                            <span class="post">Desarrolladora Web</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="swiper-slide">
-                            <div class="row">
-                                <div class="col-xl-8 col-md-12 d-block mx-auto">
-                                    <div class="testimonia">
-                                        <p class="text-white-80">
-                                            <i class="fa-solid fa-quote-left fs-20"></i>
-                                            La estructura de esta página web es impecable. Me impresiona cómo cada sección está cuidadosamente diseñada para proporcionar una experiencia de usuario fluida y agradable. Además, el diseño visual es atractivo y moderno, lo que añade un toque de elegancia al sitio. Definitivamente, un ejemplo de cómo debería ser una página web bien diseñada y optimizada
-                                        </p>
-                                        <div class="testimonia-data">
-                                            <h3 class="text-white">Carlos García</h3>
-                                            <span class="post">Diseñador UX/UI</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <!-- Contacto -->
-            <section class="section" id="contact">
-                <div class="container text-center">
-                    <p class="fs-12 fw-semibold text-success mb-1">
-                        <span class="landing-section-heading">CONTACTO</span>
-                    </p>
-                    <h3 class="fw-semibold mb-2 custom-heading">¿Tienes preguntas?</h3>
-                    <h4 class="fw-semibold mb-4 custom-heading">No dudes en contactarnos para cualquier consulta o comentario.</h4>
-                    <div class="row justify-content-center">
-                        <div class="col-12">
-                            <div class="card custom-card overflow-hidden section-bg border shadow-none">
-                                <div class="card-body">
-                                    <div class="row g-4">
-                                        <div class="col-md-4">
-                                            <h5 for="name" class="fw-semibold">Nombre</h5>
-                                            <input type="text" id="name" name="name" class="form-control form-control-lg" placeholder="Nombre completo" style="height: 40px;">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <h5 for="name_company" class="fw-semibold">Nombre de la empresa</h5>
-                                            <input type="text" id="name_company" name="name_company" class="form-control form-control-lg" placeholder="Nombre de la empresa" style="height: 40px;">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <h5 for="number_phone" class="fw-semibold">Número de teléfono</h5>
-                                            <input type="text" id="number_phone" name="number_phone" class="form-control form-control-lg" placeholder="Número de teléfono" style="height: 40px;">
-                                        </div>
-                                        
-                                        <div class="col-12 mt-3">
-                                            <button type="button" class="btn btn-lg btn-primary" aria-label="Enviar">
-                                                Enviar
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>  
-                    </div>
-                </div>
-            </section>
-                    
-             <!-- x -->
-             <section class="section landing-footer text-fixed-white">
-                <div class="container">
-                    <div class="row align-items-center">
-                        <div class="col-md-6 col-sm-6 col-12 mb-md-0 mb-3 text-center text-md-start">
-                            <div class="px-4">
-                                <a href="" aria-label="index">
-                                    <img src="/static/assets/images/brand-logos/sia.png" alt="" class="desktop-white">
-                                </a>
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-sm-6 col-12 mb-md-0 mb-3">
-                            <div class="px-4">
-                                <h2 class="fw-semibold mb-3">Contacto</h2>
-                                <h6 class="fw-semibold mb-3">
-                                    <i class="fas fa-home"></i> Camino a Calichar KM 100 + 1, Apaseo el Alto. Guanajuato, México.
-                                </h6>
-                                <h6 class="fw-semibold mb-3">
-                                    <i class="fas fa-phone"></i> (442) 208 6040
-                                </h6>
-                                <h6 class="fw-semibold mb-3">
-                                    <i class="fas fa-envelope"></i> cris.cuamatzi@tenergy.com.mx
-                                </h6>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- x -->
-            <div class="text-center landing-main-footer py-3">
-                <div class="text-muted fs-15">
-                     © 2024
-                    <span id="year"> Copyright: Tenergy</span>
-                </div>
-            </div>
-            <!-- x -->
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+        <div class="navbar-logo">
+            <img src="/static/assets/images/landing/logoBlack.png" alt="Logo">
         </div>
-    </div>
+        <!-- Botón de menú para dispositivos móviles -->
+        <div class="navbar-toggle" id="navbar-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
 
-    <div class="scrollToTop" style="display: flex;">
-        <span class="arrow">
-            <i class="fa-solid fa-arrow-up fs-20"></i>
-        </span>
-    </div>
+        <!-- Enlaces de navegación a la derecha -->
+        <ul class="navbar-links" id="navbar-links">
+            <li><a href="#home">Inicio</a><span class="hover-rect"></span></li>
+            <li><a href="#pricing">Planes</a><span class="hover-rect"></span></li>
+            <li><a href="#contact">Contacto</a><span class="hover-rect"></span></li>
+            {% if user.is_authenticated %}
+                <li><a>{{user.username}}<span class="hover-rect"></span></a></li>
+            {% else %}
+                <li><a href="/login">Inicio de sesión<span class="hover-rect"></span></a></li>
+            {% endif %}
+        </ul>
+        </div>
+    </nav>
+    
+    <section class="landing-section" id="home">
+        <div class="container">
+            <div class="feature">
+                <img src="/static/assets/images/landing/bgComputer.png" class="feature-img" alt="@Imagen generada con IA">
+                <div class="content">
+                    <h3>Equipo de Computo</h3>
+                    <!--p>Mejora la gestión de tus equipos de cómputo mediante un seguimiento exhaustivo.</p-->
+                    <a href="/computers-equipment/" class="cta">Ingresar</a>
+                </div>
+            </div>
+            <div class="feature">
+                <img src="/static/assets/images/landing/bgInfraestructura.jpeg" class="feature-img" alt="@Imagen generada con IA">
+                <div class="content">
+                    <h3>Infraestructura</h3>
+                    <!--p>Mantén tu infraestructura bajo control con herramientas que proporcionan un monitoreo constante.</p-->
+                    <a href="/infrastructure/" class="cta">Ingresar</a>
+                </div>
+            </div>
+            <div class="feature">
+                <img src="/static/assets/images/landing/bgVehiculos.jpg" class="feature-img" alt="@Imagen generada con IA">
+                <div class="content">
+                    <h3>Vehículos</h3>
+                    <!--p>Supervisa el uso, el mantenimiento y el estado de cada unidad para asegurar un funcionamiento seguro.</p-->
+                    <a href="/vehicles/" class="cta">Ingresar</a>
+                </div>
+            </div>
+            <div class="feature">
+                <img src="/static/assets/images/landing/bgTools.jpg" class="feature-img" alt="@Imagen generada con IA">
+                <div class="content">
+                    <h3>Equipos y Herramientas</h3>
+                    <!--p>Controla un inventario actualizado de tus equipos y herramientas, permitiendo un acceso rápido y un uso eficiente.</p-->
+                    <a href="/equipments_and_tools/" class="cta">Ingresar</a>
+                </div>
+            </div>
+            <div class="feature">
+                <img src="/static/assets/images/landing/bgServicios.jpg" class="feature-img" alt="@Imagen generada con IA">
+                <div class="content">
+                    <h3>Servicios</h3>
+                    <!--span>
+                        Registra de manera detallada los pagos realizados por tus servicios, simplificando el seguimiento y la gestión eficiente de tus egresos.
+                    </span-->
+                    <a href="/category_services/" class="cta">Ingresar</a>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <div id="responsive-overlay"></div>
+    <section class="pricing-section" id="pricing">
+        <h2 class="pricing-title">¡Consulta nuestros planes y empieza a rentar!</h2>
+        <div class="pricing-container">
+            <div class="pricing-plan">
+                <div class="plan">
+                    <h3>Plan Básico</h3>
+                    <p class="price">$119<span>mxn/mensual</span></p>
+                    <h4>Costo anual a $1,309 mxn</h4>
+                    <ul>
+                        <li>✅ 1 Usuario</li>
+                        <li>✅ Acceso a solo un módulo</li>
+                        <li>✅ Inventario limitado a 1000 Unidades</li>
+                    </ul>
+                    <div class="pricing-plan-cta">
+                        <a href="#contact" class="cta">Cotizar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="pricing-plan">
+                <div class="plan">
+                    <h3>Profesional</h3>
+                    <p class="price">$238<span>mxn/mensual</span></p>
+                    <h4>Costo anual a $2,618 mxn</h4>
+                    <ul>
+                        <li>✅ 3 Usuario</li>
+                        <li>✅ Acceso a tres módulos</li>
+                        <li>✅ Inventario limitado a 15000 Unidades</li>
+                    </ul>
+                    <div class="pricing-plan-cta">
+                        <a href="#contact" class="cta">Cotizar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="pricing-plan">
+                <div class="plan">
+                    <h3>Empresarial</h3>
+                    <p class="price">$519<span>mxn/mensual</span></p>
+                    <h4>Costo anual a $5,709 mxn</h4>
+                    <ul>
+                        <li>✅ Usuario Ilimitados</li>
+                        <li>✅ Acceso a todos los módulos</li>
+                        <li>✅ Inventario ilimitado</li>
+                    </ul>
+                    <div class="pricing-plan-cta">
+                        <a href="#contact" class="cta">Cotizar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    
+    <section class="contact-section" id="contact">
+        <div class="contact-container">
+            <h2>Contáctanos</h2>
+            <p>Si tienes alguna pregunta o necesitas más información, no dudes en contactarnos.</p>
+            <form action="#" method="POST" class="contact-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="text" name="name" required>
+                    <div class="contact_labelline">Nombre</div>
+                </div>
+                <div class="form-group">
+                    <input type="text" name="name_company" required>
+                    <div class="contact_labelline">Nombre de la empresa</div>
+                </div>
+                <div class="form-group">
+                    <input type="text" name="email" required>
+                    <div class="contact_labelline">Correo electrónico</div>
+                </div>
+                <div class="form-group">
+                    <textarea id="message" name="message" required></textarea>
+                    <div class="contact_labelline">Mensaje</div>
+                </div>
+                <button type="submit" class="cta">Enviar mensaje</button>
+            </form>
+        </div>
+    </section>
 
-    <!-- scripts -->
-    <!-- Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel/slick/slick.min.js"></script>
-    <script src="{% static 'assets/js/defaultmenu.js' %}"></script>
-    <script src="{% static 'assets/js/sticky.js' %}"></script>
-    <script src="{% static 'assets/js/landing.js' %}"></script>
+    <footer class="footer-section">
+        <!-- Footer Superior -->
+        <div class="footer-top">
+            <div class="footer-column">
+                <h4>Enlaces Rápidos</h4>
+                <ul>
+                    <li><a href="#home">Inicio</a></li>
+                    <li><a href="#pricing">Planes</a></li>
+                    <li><a href="#contact">Contacto</a></li>
+                    {% if not user.is_authenticated %}
+                        <li><a href="/user/login/">Iniciar sesión</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Servicios</h4>
+                <ul>
+                    <li><a href="/computers-equipment/">Equipo de computo</a></li>
+                    <li><a href="/infrastructure/">Infraestructura</a></li>
+                    <li><a href="/vehicles/">Vehículos</a></li>
+                    <li><a href="/equipments_and_tools/">Equipos y herramientas</a></li>
+                    <li><a href="/category_services/">Servicios</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Contacto</h4>
+                <ul>
+                    <li>Email: cris.cuamatzi@tenergy.com.mx</li>
+                    <li>Tel: (442) 208 6040</li>
+                    <li>Ubicación: Camino a Calichar KM 100 + 1, Apaseo el Alto. Guanajuato, México.</li>
+                </ul>
+            </div>
+        </div>
+    
+        <!-- Footer Inferior -->
+        <div class="footer-bottom">
+            <p>&copy; 2024 Tenergy,  Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
 </body>
+{% if sendEmail %}
+    <script>
+        setTimeout(function(){
+            alert("FORMULARIO DE CONTACTO ENVIADO");
+        }, 3000);
+    </script>
+{% endif %}
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        /*THIS FOR THE PANNEL VIEWS, WHEN THE VIEW IS IN PHONE*/
+        const view_features = document.querySelectorAll('.landing-section .feature');
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                const image = entry.target.querySelector('img');
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    image.classList.add('visible');
+                } else {
+                    entry.target.classList.remove('visible');
+                    image.classList.remove('visible');
+                }
+            });
+        },{
+            threshold: 0.5
+        });
+        view_features.forEach(view_feature => {
+            observer.observe(view_feature);
+        });
+
+        /*THIS FOR THE NAVBAR WHEN THE WEBSITE IT'S BEING SEE IN A PHONE*/
+        const navbarToggle = document.getElementById('navbar-toggle');
+        const navbarLinks = document.getElementById('navbar-links');
+        navbarToggle.addEventListener('click', () => {
+            navbarLinks.classList.toggle('active');
+            navbarToggle.classList.toggle('active');
+        });
+
+        /*THIS FOR THE PANNEL VIEWS, WHEN THE MOUSE IT'S OVER THE SECCTION, THIS SHOW THE IMAGE, TEXT, AND BUTTON*/
+        const features = document.querySelectorAll('.feature');
+        const container = document.querySelector('.container');
+        // Observar cada "feature"
+        features.forEach(feature => {
+            observer.observe(feature);
+        });
+        features.forEach(function(feature) {
+            feature.addEventListener('mouseenter', function() {
+                features.forEach(function(otherFeature) {
+                    if (otherFeature !== feature) {
+                        otherFeature.style.opacity = 0.4;
+                    }
+                });
+            });
+            feature.addEventListener('mouseleave', function() {
+                features.forEach(function(otherFeature) {
+                    otherFeature.style.opacity = 1;
+                });
+            });
+        });
+
+        /*AUTO SCROLL WITH THE NAVBAR DINAMIC AND FLUID*/
+        const navLinks = document.querySelectorAll('.navbar-links a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                if(targetId == "login"){
+                    window.location.pathname = "user/login/"
+                }
+                const targetElement = document.getElementById(targetId);
+                window.scrollTo({
+                    top: targetElement.offsetTop,
+                    behavior: 'smooth'
+                });
+                navbar.style.top = '-300px';
+            });
+        });
+
+        /*NAVBAR DISAPPEAR WHEN THE SCROLL ITS DOWN BUT SHOW'S WHEN IT'S UP*/
+        let lastScrollTop = 0;
+        const navbar = document.querySelector('.navbar');
+        window.addEventListener('scroll', function() {
+            let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+            if (currentScroll > lastScrollTop) {
+                navbar.style.top = '-300px';
+            } else {
+                navbar.style.top = '0';
+            }
+            lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+        });
+    });
+</script>
 </html>
