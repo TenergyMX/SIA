@@ -45,10 +45,8 @@ class Vehicles {
                     url: "/get_vehicles_info/",
                     dataSrc: "data",
                     data: {},
-                    
                 },
                 columns: [
-
                     {
                         title: "Alerta",
                         data: "alert",
@@ -59,7 +57,7 @@ class Vehicles {
                             }
                             return "";
                         },
-                    },
+                    },
 
                     { title: "Nombre", data: "name", className: "toggleable" },
                     { title: "Marca", data: "brand", className: "toggleable" },
@@ -118,18 +116,16 @@ class Vehicles {
                     },
                     beforeSend: function () {},
                     success: function (response) {
-                        console.log("esta es la respuesta ", response);
                         if (response.alert && response.alert.missing_tables) {
                             const missingTables = response.alert.missing_tables;
                             missingTables.forEach(function (table) {
-                                console.log("Tabla faltante:", table);
                                 $(`#v-${table} .alert-icon`).html(
                                     '<i class="fa-regular fa-circle-exclamation" style="color:rgb(255, 174, 0);"></i>'
                                 );
                             });
                         } else {
                             console.error("La respuesta no tiene la estructura esperada.");
-                        }
+                        }
                         // console.log(response["imgPath"]);
                         var card = $(".card-vehicle-info");
 
@@ -167,8 +163,6 @@ class Vehicles {
                     },
                     beforeSend: function () {},
                     success: function (response) {
-                        console.log("Respuesta de la API:", response);
-
                         var select = $(self.list.id);
                         select.html(null);
                         $.each(response["data"], function (index, value) {
@@ -323,8 +317,7 @@ class Vehicles {
                         .addFile(datos["image_path"])
                         .then((file) => {})
                         .catch((error) => {
-                            console.error("Error al cargar la imagen:", error);
-                            Swal.fire("Error", "Error al cargar la imagen", "error");
+                            Swal.fire("Error", "Error al cargar la imagen", error);
                         });
                     obj_offcanvas.find("[type='submit']").hide();
                     obj_offcanvas.find("[name='update']").show();
@@ -366,7 +359,7 @@ class Vehicles {
                     datos.set("cover-image", fileInput, fileInput.name);
                 } else {
                     console.error("No se ha podido obtener un archivo válido.");
-                }
+                }
             }
 
             $.ajax({
