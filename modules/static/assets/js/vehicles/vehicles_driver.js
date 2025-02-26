@@ -4,7 +4,7 @@ $(document).ready(function() {
     //Previsualización de la imagen del conductor
     document.getElementById('driver_image').addEventListener('change', function(event) {
         const file = event.target.files[0]; // Obtiene el archivo seleccionado
-        const preview = document.getElementById('image_preview'); // Obtiene el elemento de previsualización
+        const preview = document.getElementById('image_preview'); 
 
         if (file) {
             const reader = new FileReader(); // Crea un FileReader para leer el archivo
@@ -75,6 +75,7 @@ function get_users(selectedUserId) {
         },
     });
 }
+
 // Función para mostrar el formulario en modo agregar
 function add_driver_vehicle() {
     console.log("estamos en la funcion de agregar conductor");
@@ -162,6 +163,14 @@ function edit_drivers(boton) {
         
                 // Configurar el formulario para editar
                 $('#form_add_driver').attr('onsubmit', 'edit_driver(); return false');
+                console.log("imagen:",response.data.driver_image)
+                if (response.data.driver_image) {
+                    $('#image_preview').attr('src', response.data.driver_image);
+                    $('#image_preview').css('display', 'block');
+                } else {
+                    $('#image_preview').attr('src', '');
+                    $('#image_preview').css('display', 'none');
+                }
             } else {
                 Swal.fire("Error", "No se encontraron los datos del conductor.", "error");
             }
@@ -223,6 +232,7 @@ function edit_driver() {
 
 
 
+
 // Función para eliminar un conductor
 function delete_driver(boton) {
     var row = $(boton).closest('tr');
@@ -263,8 +273,8 @@ function delete_driver(boton) {
                     }
                 },
                 error: function(error) {
-                    console.error("Error al eliminar la categoría:", error);
-                    Swal.fire("Error", "Hubo un error al eliminar la categoría.", "error");
+                    console.error("Error al eliminar el conductor:", error);
+                    Swal.fire("Error", "Hubo un error al eliminar el conductor.", "error");
                 }
             });
         }

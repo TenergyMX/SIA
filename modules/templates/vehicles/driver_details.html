@@ -1,0 +1,162 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="">    
+    <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+        <h1 class="page-title fw-semibold fs-18 mb-0">
+            Conductor
+        </h1>
+        <div class="ms-md-1 ms-0"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 col-xxl-3">
+            {% include "vehicles/cards/driver_info.html" %}
+        </div>
+        <div class="col-md-8 col-xxl-9">
+            <div class="row">
+                <div class="col-12">
+                    <!-- x -->
+                    <div class="card custom-card">
+                        <div class="card-body p-0">
+                            <!-- nav tab -->
+                            <div class="p-2 border-bottom border-block-end-dashed">
+                                <ul class="nav nav-tabs mb-0 tab-style-6 justify-content-start">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="v-load" data-bs-toggle="tab" data-bs-target="#v-load-pane" type="button" role="tab" aria-controls="v-load-pane" aria-selected="true">
+                                            Cargando tabs...
+                                        </button>
+                                    </li>
+                                    {% if permiso.36.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-licence" data-bs-toggle="tab" data-bs-target="#v-licence-pane" type="button" role="tab" aria-controls="v-licence-pane" aria-selected="true">
+                                            Licencia <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                    {% if permiso.36.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-multa" data-bs-toggle="tab" data-bs-target="#v-multa-pane" type="button" role="tab" aria-controls="v-multa-pane" aria-selected="false">
+                                            Multas <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            <!-- contenido tab -->
+                            <div class="p-3">
+                                <div class="tab-content">
+                                    <div class="tab-pane fade p-0 border-0 active show" id="v-load-pane" role="tabpanel" aria-labelledby="v-load" tabindex="0">
+                                        <div class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-licence-pane" role="tabpanel" aria-labelledby="v-licence" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.36.create %}
+                                                <button type="button" class="btn btn-primary" data-driver-licence="add-item"
+                                                    data-driver-id="{{ driver.id }}"  
+                                                    title="Agregar licencia">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-primary" data-driver-licence="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_licence">
+                                                <thead>
+                                                    <tr>
+                                                        <th>1</th>
+                                                        <th>2</th>
+                                                        <th>3</th>
+                                                        <th>4</th>
+                                                        <th>5</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade p-0 border-0" id="v-multa-pane" role="tabpanel" aria-labelledby="multa-tab" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.36.create %}
+                                                <button type="button" class="btn btn-primary" data-driver-multa="add-item"
+                                                    data-driver-id="{{ driver.id }}"  
+                                                    title="Agregar multa">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-primary" data-driver-multa="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table="multa">
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table w-100" id="table_multa">
+                                                <thead></thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- x -->
+                </div>
+            </div>        
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    {% include "vehicles/modals/mdl_crud_licencia.html" %}
+    {% include "vehicles/modals/mdl_crud_multa.html" %}
+{% endblock %}
+
+
+
+{% block head %}
+<style>
+    .info-card {
+        border: 1px solid var(--default-border) !important;
+    }
+    .select2-container {
+        z-index: 1055;
+    }
+</style>
+<script>
+    const driver_id = "{{ driver.id }}"
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+<script src="{% static 'assets/js/vehicles/drivers.js' %}"></script>
+
+
+<script>
+    $(document).ready(function() {
+        var $tabs = $("ul.nav-tabs li");
+        $tabs.show();
+        $("#v-load").closest("li").remove();
+        $("#v-load-pane").remove();
+        
+        $tabs = $("ul.nav-tabs li");
+        $tabs.first().find('button').tab('show');
+    });
+</script>
+{% endblock %}
