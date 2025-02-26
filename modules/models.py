@@ -187,6 +187,31 @@ class Vehicle_Maintenance(models.Model):
         verbose_name = 'Mantenimiento de Vehículo'
         verbose_name_plural = 'Mantenimiento de Vehículos'
 
+class Vehicle_Driver(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="compañía")
+    name_driver = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)
+    image_path = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Responsable del equipo")                 # fotografia del conductor 
+    number_phone = models.CharField(max_length=15, blank=True, null=True, verbose_name="Número de telefono")                
+    address = models.TextField(max_length=80, blank=True, null=True, verbose_name="Dirección")
+
+class Licences_Driver(models.Model):
+    name_driver = models.ForeignKey(Vehicle_Driver, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)
+    start_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Inicio")
+    expiration_date = models.DateField(blank=True, null=True, verbose_name="Fecha de expiración de licencia")
+    #license_driver = models.ForeignKey(Vehicle_Driver, on_delete=models.CASCADE, blank=True, null=True, verbose_name="licencia de conducir")
+    license_driver = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="licencia de conducir")
+
+class Multas(models.Model):
+    name_driver = models.ForeignKey(Vehicle_Driver, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Vehiculo")
+    cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='Costo')
+    notes = models.TextField(blank=True, null=True, verbose_name="Notas")
+    reason = models.TextField(blank=True, null=True, verbose_name="Razón")
+    date = models.DateField(blank=True, null=True, verbose_name="Fecha")
+
+
+
+
 
 # Todo ----- [2] [ EQUIPOS DE COMPUTO ] -----
 

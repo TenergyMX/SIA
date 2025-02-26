@@ -1,0 +1,44 @@
+<div class="modal fade effect-scale" id="mdl-crud-licencia" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_add_licence" onsubmit="add_licence(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label for="name_driver">Nombre del conductor</label>
+                        <input type="text" id="name_driver" name="name_driver" class="form-control" readonly>
+                        <input type="hidden" id="name_driver_id" name="name_driver_id">
+                    </div>                 
+                    <div class="col-md-4">
+                        <label for="">Fecha de inicio</label>
+                        <input type="date" id="start_date" name="start_date" class="form-control" placeholder="Fecha de inicio">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="">Fecha de expiración</label>
+                        <input type="date" id="expiration_date" name="expiration_date" class="form-control" placeholder="Fecha de expiración">
+                    </div>
+                    <div class="col-md-8"> 
+                        <label for="formFile" class="form-label">Licencia de conducir</label>
+                        <input class="form-control" type="file" id="formFile" name="license_driver">
+                        <div id="current_license_link" class="mt-2">
+                            <!-- Aquí se inyectará el enlace al archivo si existe -->
+                        </div>
+                    </div>                 
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
