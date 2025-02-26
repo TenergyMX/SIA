@@ -1,0 +1,50 @@
+<div class="modal fade effect-scale" id="mdl-crud-multa" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_add_multa" onsubmit="add_multa(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="name_driver_multa">Nombre del conductor</label>
+                        <input type="text" id="name_driver_multa" name="name_driver_multa" class="form-control" readonly>
+                        <input type="hidden" id="name_driver_multa_id" name="name_driver_multa_id">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="vehicle">Vehículo</label>
+                        <select name="vehicle" id="vehicle" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un vehículo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cost">Costo</label>
+                        <input type="text" id="cost" name="cost" class="form-control" placeholder="Costo" maxlength="255" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="notes">Notas</label>
+                        <input type="text" id="notes" name="notes" class="form-control" placeholder="Notas" maxlength="255">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="reason">Razón</label>
+                        <input type="text" id="reason" name="reason" class="form-control" placeholder="Razón" maxlength="255">
+                    </div>      
+                    <div class="col-md-4">
+                        <label for="">Fecha</label>
+                        <input type="date" id="date" name="date" class="form-control" placeholder="Fecha de inicio">
+                    </div>                                    
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

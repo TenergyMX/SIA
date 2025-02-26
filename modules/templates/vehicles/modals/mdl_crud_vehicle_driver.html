@@ -1,0 +1,49 @@
+<div class="modal fade effect-scale" id="mdl_crud_vehicle_driver" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="form_add_driver" class="modal-content" id="form_add_driver" onsubmit="add_driver(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="driver_vehicle">Nombre del conductor</label>
+                        <select name="driver_vehicle" id="driver_vehicle" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un usuario</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="number_phone">Número de teléfono</label>
+                        <input type="text" id="number_phone" name="number_phone" class="form-control" placeholder="Número teléfono" maxlength="15" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="address">Dirección</label>
+                        <input type="text" id="address" name="address" class="form-control" placeholder="Dirección" maxlength="255" required>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="driver_image">Imagen del conductor</label>
+                        <input type="file" id="driver_image" name="driver_image" class="form-control" accept="image/*" >
+                    </div>
+                    <div class="col-md-12 text-center mb-2">
+                        <picture>
+                            <img id="image_preview"  alt="" class="img-fluid" style="max-height: 200px; display: none;">
+                        </picture>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

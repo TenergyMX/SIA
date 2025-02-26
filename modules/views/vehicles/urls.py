@@ -101,4 +101,30 @@ urlpatterns = [
     path("vehicles/responsiva/<str:qr>/<int:vehicle_id>", views.module_vehicle_responsiva),
     path("validar_vehicle_en_sa/", views.validar_vehicle_en_sa),
 
+    #conductores
+    path("driver_vehicles/", views.driver_vehicles),
+    path("get_table_vehicles_driver/", views.get_table_vehicles_driver),
+    path("get_users/", views.get_users),
+    path("add_driver/", views.add_driver),
+    path("delete_driver/", views.delete_driver),
+    path("get_drivers/", views.get_drivers),
+    path("edit_driver/", views.edit_driver),
+
+    #información
+    path("drivers/info/<int:driver_id>/", views.drivers_details),
+    path("drivers/info/<int:driver_id>/details/", views.get_driver_details),
+
+    #licencias
+    path("get_table_licence/", views.get_table_licence),
+    path("add_licence/", views.add_licence),
+    path("edit_licence/", views.edit_licence),
+    path("delete_licence/", views.delete_licence),
+
+    #multas
+    path("get_vehicles/", views.get_vehicles),
+    path("get_table_multas/", views.get_table_multas),
+    path("add_multa/", views.add_multa),
+    path("edit_multa/", views.edit_multa),
+    path("delete_multa/", views.delete_multa),
+
 ]

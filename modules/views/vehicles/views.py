@@ -42,6 +42,8 @@ from django.shortcuts import render, get_object_or_404
 from django.core.files.base import ContentFile
 import qrcode
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db.models import F, Value
+from django.db.models.functions import Concat
 from django.db.models import Q
 
 from django.core.mail import EmailMultiAlternatives
@@ -301,6 +303,50 @@ def vehicles_fuel_views(request):
     else:
         template = "error/access_denied.html"
     return render(request, template, context)
+
+
+@login_required
+def driver_vehicles(request):
+    context = user_data(request)
+    module_id = 2
+    submodule_id = 36
+
+    access = get_module_user_permissions(context, submodule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+
+    if context["access"]["read"]:
+        template = "vehicles/vehicles_driver.html"
+    else:
+        template = "error/access_denied.html"
+    return render(request, template, context)
+
+
+@login_required
+def drivers_details(request, driver_id = None):
+    context = user_data(request)
+    context["driver"] = {"id": driver_id}
+    module_id = 2
+    subModule_id = 36
+    request.session["last_module_id"] = module_id
+
+    access = get_module_user_permissions(context, subModule_id)
+    permisos = get_user_access(context)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["permiso"] = permisos["data"]
+    context["sidebar"] = sidebar["data"]
+
+    if context["access"]["read"]:
+        template = "vehicles/driver_details.html"
+    else:
+        template = "error/access_denied.html"
+
+    return render(request, template, context)
+
 
 # TODO --------------- [ HELPER ] ----------
 
@@ -778,7 +824,6 @@ def update_vehicle_info(request):
     dt = request.POST
     company_id = request.session.get('company').get('id')
     id = dt.get("id", None)
-
 
     if not id:
         response["error"] = {"message": "No se proporcionó un ID de vehículo válido"}
@@ -3054,7 +3099,6 @@ def descargar_qr(request):
     else:
         return JsonResponse({'error': 'Vehicle not found'}, status=404)
 
-
 def validar_vehicle_en_sa(request):
     dt = request.POST
     id_vehicle = dt.get("id_vehicle", None)
@@ -3089,6 +3133,705 @@ def validar_vehicle_en_sa(request):
             "status": "SALIDA",
             "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
         })
+
+# Función para la tabla conductores
+def get_table_vehicles_driver(request):
+    response = {"status": "error", "message": "Sin procesar"}
+    try:
+        context = user_data(request)
+        isList = request.GET.get("isList", False)
+        subModule_id = 36
+
+        if isList:
+            datos = list(Vehicle_Driver.objects.select_related('name_driver').annotate(
+                driver_name=Concat(F('name_driver__username'), Value(' '), F('name_driver__last_name'))  
+            ).values("id", "company", "driver_name", "image_path"))  
+        else:
+            access = get_module_user_permissions(context, subModule_id)  
+            access = access["data"]["access"]
+            area = context["area"]["name"]
+            company_id = context["company"]["id"]
+            editar = access["update"]
+            eliminar = access["delete"]
+            tipo_user = context["role"]["name"]
+
+            datos = list(Vehicle_Driver.objects.select_related('name_driver').annotate(
+                driver_name=Concat(F('name_driver__username'), Value(' '), F('name_driver__last_name'))  
+            ).filter(company_id=company_id).values("id", "company", "driver_name", "number_phone", "address", "image_path"))
+
+            for item in datos:
+
+                item["btn_action"] = ""
+                item["btn_action"] = f"""
+                <a href="/drivers/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
+                    <i class="fa-solid fa-eye"></i>
+                </a>\n
+                """
+                item["btn_action"] += (
+                    "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_drivers(this)' aria-label='info'>"
+                    "<i class='fa-solid fa-pen'></i>"
+                    "</button>\n"
+                )
+                item["btn_action"] += (
+                    "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_driver(this)' aria-label='delete'>"
+                    "<i class='fa-solid fa-trash'></i>"
+                    "</button>"
+                )
+                item["alert"] = alerta_conductor(item["id"])
+
+        response["data"] = datos
+        response["status"] = "success"
+        response["message"] = "Datos cargados exitosamente"
+    except Exception as e:
+        response["message"] = str(e)
+
+    return JsonResponse(response)
+
+def alerta_conductor(id_conductor):
+    try:
+        # Obtiene la licencia del conductor usando su ID
+        licence = Licences_Driver.objects.filter(name_driver_id=id_conductor).order_by("-id").first()
+        # Si no hay licencia registrada para el conductor, retorna True
+        if not licence:
+            return True
+
+        # Si existe licencia, verifica la fecha de expiración
+        today = timezone.now().date()
+        one_month_left = today + timedelta(days=30)
+
+        # Verifica si la fecha de expiración es dentro de un mes
+        if licence.expiration_date and licence.expiration_date <= one_month_left:
+            return True
+
+        # Si no se cumplen las condiciones, retorna False
+        return False
+    except Exception as e:
+        # En caso de algún error, devuelve False
+        return False
+
+
+# Funcion para obtener los nombres de los usuarios que ya han sido cargados para agregar un equipo 
+@login_required
+@csrf_exempt
+def get_users(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+        
+        users = User.objects.filter(
+            id__in=User_Access.objects.filter(company_id=company_id).values('user_id')
+        ).distinct().values('id', 'username', 'last_name')  
+        data = list(users)
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+#Función para agregar un  conductor
+def add_driver(request):
+    context = user_data(request)
+    subModule_id = 36
+    response = {"success": False}
+    dt = request.POST
+    access = get_module_user_permissions(context, subModule_id)  
+    company_id = context["company"]["id"]
+
+    if request.method == 'POST':
+        print("esta es la informacion del formulario:", dt)
+        name_driver = request.POST.get('driver_vehicle').strip()
+        number_phone = request.POST.get('number_phone')
+        address = request.POST.get('address')  
+        img = request.FILES.get('driver_image') 
+
+        if not name_driver or not number_phone or not address:
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+        if Vehicle_Driver.objects.filter(name_driver=name_driver).exists() :
+            return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra en la base de datos, ingresa otro diferente.'})
+
+
+        try:
+            with transaction.atomic():
+                
+                # Crear el conductor sin la imagen inicialmente
+                driver = Vehicle_Driver.objects.create(
+                    company_id=company_id,
+                    name_driver_id=name_driver,
+                    number_phone=number_phone,
+                    address=address,
+                )
+
+                # Si hay imagen, procesarla
+                if img:
+                    # Generar la ruta de la imagen
+                    s3Path = f'docs/{company_id}/vehicle/conductor/{name_driver}/'
+                    # Obtener el nombre y extensión
+                    file_name, extension = os.path.splitext(img.name)
+                    # Nuevo nombre de la imagen
+                    new_name = f"conductor_{name_driver}{extension}"
+                    # Unir la ruta y el nombre
+                    S3name = s3Path + new_name
+                    # Subir archivo a S3 (asegúrate de tener configurada la función upload_to_s3)
+                    upload_to_s3(img, bucket_name, S3name)
+
+                    # Guardar la ruta en el modelo
+                    driver.image_path = S3name
+                    driver.save()
+                    print("si lo guardo")
+
+            return JsonResponse({'success': True, 'message': 'Conductor agregado correctamente!'})
+        
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': 'Error inesperado: ' + str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+
+
+#función para mostrar la información antes de editar
+def get_drivers(request):
+    driver_id = request.GET.get('id')
+    if driver_id:
+        try:
+            driver = Vehicle_Driver.objects.get(id=driver_id)
+            driver_image_url = driver.image_path.url if driver.image_path else None
+            tempImgPath = ""
+            if driver_image_url != None:
+                tempImgPath = generate_presigned_url(bucket_name, driver_image_url[1:])
+            
+            return JsonResponse({
+                "success": True,
+                "data": {
+                    "id": driver.id,
+                    "driver_id": driver.name_driver.id,
+                    "driver_username": driver.name_driver.username, 
+                    "number_phone": driver.number_phone,
+                    "address": driver.address,
+                    "driver_image": tempImgPath
+                }
+            })
+        except Vehicle_Driver.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Conductor no encontrado."}, status=404)
+    return JsonResponse({"success": False, "message": "ID no proporcionado."}, status=400)
+
+
+#Función para editar la información 
+@login_required
+@csrf_exempt
+def edit_driver(request):
+    context = user_data(request)
+    subModule_id = 36
+    response = {"success": False}
+    dt = request.POST
+    access = get_module_user_permissions(context, subModule_id)  
+    company_id = context["company"]["id"]
+
+    if request.method == 'POST':
+        _id = request.POST.get('id')
+        name_driver = request.POST.get('driver_vehicle')
+        number_phone = request.POST.get('number_phone')
+        address = request.POST.get('address')
+        img = request.FILES.get('driver_image')
+   
+
+        if not name_driver or not number_phone or not address:
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+        try:
+            driver = Vehicle_Driver.objects.get(id=_id)
+            print("este es el registro:", driver)
+            print(name_driver)
+            print(number_phone)
+            print(address)
+            print(img)
+            
+            driver.name_driver_id = name_driver  
+            driver.number_phone = number_phone
+            driver.address = address
+            #actualizar la imagen si es necesario
+            if img:
+                # Generar la ruta de la imagen
+                    s3Path = f'docs/{company_id}/vehicle/conductor/{name_driver}/'
+                    # Obtener el nombre y extensión
+                    file_name, extension = os.path.splitext(img.name)
+                    # Nuevo nombre de la imagen
+                    new_name = f"conductor_{name_driver}{extension}"
+                    # Unir la ruta y el nombre
+                    S3name = s3Path + new_name
+                    if driver.image_path:
+                        delete_s3_object(AWS_BUCKET_NAME, str(driver.image_path.url[1:]))
+                    # Subir archivo a S3 (asegúrate de tener configurada la función upload_to_s3)
+                    upload_to_s3(img, bucket_name, S3name)
+
+                    # Guardar la ruta en el modelo
+                    driver.image_path = S3name
+                    driver.save()
+                    
+                    print("si lo guardo")
+
+
+            return JsonResponse({'success': True, 'message': 'Equipo editado correctamente!'})
+
+        except Equipment_Tools.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Equipo no encontrado'}, status=404)
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error interno del servidor: {str(e)}'}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
+
+
+#funcion para eliminar conductores
+@login_required
+@csrf_exempt
+def delete_driver(request):                          
+    if request.method == 'POST':
+        form = request.POST
+        _id = form.get('id')
+
+        if not _id:
+            return JsonResponse({'success': False, 'message': 'No ID provided'})
+
+        try:
+            driver = Vehicle_Driver.objects.get(id=_id)
+        except Vehicle_Driver.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Category not found'})
+
+        driver.delete()
+
+        return JsonResponse({'success': True, 'message': 'Conductor eliminado correctamente!'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+#funcion para mostrar los detalles del conductor
+def get_driver_details(request, driver_id):
+    driver = get_object_or_404(Vehicle_Driver.objects.select_related('company', 'name_driver'), id=driver_id)
+
+    driver_image_url = driver.image_path.url if driver.image_path else None
+    tempImgPath = ""
+    if driver_image_url != None:
+            tempImgPath = generate_presigned_url(bucket_name, driver_image_url[1:])
+            
+    data = {
+        "id": driver.id,
+        "name": f"{driver.name_driver.username} {driver.name_driver.last_name}" if driver.name_driver else "No asignado",
+        "company__name": driver.company.name if driver.company else "No asignada",
+        "number_phone": driver.number_phone if driver.number_phone else "No disponible",
+        "address": driver.address if driver.address else "No disponible",
+        "image_path": tempImgPath
+    }
+
+    return JsonResponse(data)
+
+
+#función para agregar licencia
+def add_licence(request):
+    context = user_data(request)
+    dt = request.POST
+    company_id = context["company"]["id"]
+
+    if request.method == 'POST':        
+        name_driver_id = request.POST.get('name_driver_id', '').strip() 
+        start_date = request.POST.get('start_date')
+        expiration_date = request.POST.get('expiration_date')  
+        license_driver = request.FILES.get('license_driver') 
+
+        if not name_driver_id or not start_date or not expiration_date or not license_driver:
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+        
+        try:
+            # Convertir las fechas a objetos de tipo datetime
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+            expiration_date_obj = datetime.strptime(expiration_date, '%Y-%m-%d')
+
+            # Validar que la fecha de vencimiento sea mayor que la fecha de inicio
+            if expiration_date_obj <= start_date_obj:
+                return JsonResponse({'success': False, 'message': 'La fecha de vencimiento debe ser mayor que la fecha de inicio.'})
+            
+            name_driver_id = int(name_driver_id)  
+            driver = Vehicle_Driver.objects.get(id=name_driver_id)  
+        except (ValueError, Vehicle_Driver.DoesNotExist):
+            return JsonResponse({'success': False, 'message': 'El conductor seleccionado no existe.'})
+
+        try:
+            with transaction.atomic():
+                licence = Licences_Driver.objects.create(
+                    name_driver=driver, 
+                    start_date=start_date,
+                    expiration_date=expiration_date,
+                )
+
+                if license_driver:
+                    s3Path = f'docs/{company_id}/vehicle/licencia/{name_driver_id}/'
+                    file_name, extension = os.path.splitext(license_driver.name)
+                    new_name = f"licencia_{name_driver_id}{extension}"
+                    S3name = s3Path + new_name
+
+                    upload_to_s3(license_driver, bucket_name, S3name)
+
+                    licence.license_driver = S3name
+                    licence.save()
+
+
+            return JsonResponse({'success': True, 'message': 'Licencia agregada correctamente!'})
+        
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': 'Error inesperado: ' + str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+
+
+#funcion de la tabla licencias
+def get_table_licence(request):
+    driver_id = request.GET.get('id')
+    if driver_id:
+        try:
+            # Obtener el conductor
+            driver = Vehicle_Driver.objects.get(id=driver_id)
+
+            # Obtener las licencias asociadas al conductor
+            licences = Licences_Driver.objects.filter(name_driver=driver).order_by("-id")  
+
+            # Serializar las licencias
+            licences_data = []
+            first_licence = True
+            for licence in licences:
+                
+                driver_name = f"{driver.name_driver.username} {driver.name_driver.last_name}" if driver.name_driver else "No asignado",
+                start_date = licence.start_date
+                expiration_date = licence.expiration_date
+                licence_driver_url = licence.license_driver.url if licence.license_driver else None
+                licence_driver = ""
+                
+                # If it's the first license, check expiration and set alert
+                if first_licence:
+                    if licence_driver_url is not None:
+                        licence_driver = generate_presigned_url(bucket_name, licence_driver_url[1:])
+                    
+                    # Initialize the alert flag
+                    alert_flag = False
+
+                    # If there's no expiration date or no licence file, activate the alert
+                    if not expiration_date or not licence_driver:
+                        alert_flag = True
+                    else:
+                        # If less than a month to expiration, set alert to True
+                        if expiration_date - datetime.now().date() <= timedelta(days=30):
+                            alert_flag = True
+
+                    first_licence = False
+                    status_licence = True  # First license should be active
+                else:
+                    # For subsequent licenses, just mark them as inactive (status_licence = False)
+                    status_licence = False
+                    alert_flag = False  # No need to check expiration for other licenses
+
+                licences_data.append({
+                    "id": licence.id,
+                    "driver_name": driver_name,
+                    "expiration_date": licence.expiration_date.strftime("%Y-%m-%d") if licence.expiration_date else "",  
+                    "start_date": licence.start_date.strftime("%Y-%m-%d") if licence.start_date else "",  
+                    "license_driver": licence_driver,
+                    "alert": alert_flag,  # Añadimos la bandera de alerta
+                    "status_licence": status_licence,  # First license is active, others are inactive
+                    "btn_action": f"""
+                        <button class="btn btn-sm btn-primary btn-edit" onclick="btn_edit_licence(this)">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>                     
+                        <button class="btn btn-sm btn-danger" onclick="delete_licence(this)">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    """,
+                })
+                
+
+            return JsonResponse({
+                "success": True,
+                "data": licences_data
+            })
+        except Vehicle_Driver.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Conductor no encontrado."}, status=404)
+    return JsonResponse({"success": False, "message": "ID no proporcionado."}, status=400)
+
+
+# Función para editar la información de la licencia
+@login_required
+@csrf_exempt
+def edit_licence(request):
+    context = user_data(request)
+    subModule_id = 36
+    response = {"success": False}
+    access = get_module_user_permissions(context, subModule_id)  
+    company_id = context["company"]["id"]
+
+    if request.method == 'POST':
+        _id = request.POST.get('id')
+        start_date = request.POST.get('start_date')
+        expiration_date = request.POST.get('expiration_date')
+        license_driver = request.FILES.get('license_driver')
+
+        if not start_date or not expiration_date:
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+        
+        try:
+            licence = Licences_Driver.objects.get(id=_id)
+            name_driver_id = licence.name_driver.id
+
+            # Actualizar los datos de la licencia
+            licence.start_date = start_date
+            licence.expiration_date = expiration_date
+
+            # Actualizar el documento si es necesario
+            if license_driver:
+                s3Path = f'docs/{company_id}/vehicle/licencia/{name_driver_id}/'
+                file_name, extension = os.path.splitext(license_driver.name)
+                new_name = f"licencia_{name_driver_id}{extension}"
+                S3name = s3Path + new_name
+
+                upload_to_s3(license_driver, bucket_name, S3name)
+                licence.license_driver = S3name
+
+                print("Archivo subido correctamente a S3:", S3name)
+
+            # Guardar siempre los cambios
+            licence.save()
+
+            return JsonResponse({'success': True, 'message': 'Licencia actualizada correctamente!'})
+
+        except Licences_Driver.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Licencia no encontrada'}, status=404)
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error interno del servidor: {str(e)}'}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
+
+#funcion para eliminar licencias
+@login_required
+@csrf_exempt
+def delete_licence(request):                          
+    if request.method == 'POST':
+        form = request.POST
+        _id = form.get('id')
+
+        if not _id:
+            return JsonResponse({'success': False, 'message': 'No ID licence'})
+
+        try:
+            licence = Licences_Driver.objects.get(id=_id)
+        except Licences_Driver.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Licence not found'})
+
+        licence.delete()
+
+        return JsonResponse({'success': True, 'message': 'Licencia eliminada correctamente!'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+# Funcion para obtener los nombres de los vehiculos que ya han sido cargados para agregar un equipo 
+@login_required
+@csrf_exempt
+def get_vehicles(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+
+        vehicles = Vehicle.objects.filter(company_id=company_id).values('id', 'name')  # Asegúrate de que 'name' es el campo correcto en el modelo
+        data = list(vehicles)
+
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+#función para agregar licencia
+def add_multa(request):
+    print("se entro a la funcion para agregar multa")
+    context = user_data(request)
+    dt = request.POST
+    company_id = context["company"]["id"]
+
+    if request.method == 'POST':
+        print("esta es la informacion del formulario de multa:", dt)
+        
+        name_driver_multa = request.POST.get('name_driver_multa', '').strip() 
+        name_driver_multa_id = request.POST.get('name_driver_multa_id')
+        vehicle = request.POST.get('vehicle')
+        cost = request.POST.get('cost')
+        notes = request.POST.get('notes')
+        reason = request.POST.get('reason')
+        date = request.POST.get('date')
+
+        if not name_driver_multa or not vehicle or not cost or not notes or not reason or not date:
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+        
+        try:
+            
+            name_driver_multa_id = int(name_driver_multa_id)  
+            print("esto contiene el nombre del cosnductor de la multa:", name_driver_multa)
+            driver = Vehicle_Driver.objects.get(id=name_driver_multa_id)
+            vehicle = Vehicle.objects.get(id=vehicle)
+
+        except (ValueError, driver.DoesNotExist):
+            return JsonResponse({'success': False, 'message': 'El conductor seleccionado no existe.'})
+
+        try:
+            with transaction.atomic():
+                multa = Multas.objects.create(
+                    name_driver=driver,
+                    vehicle = vehicle,
+                    cost = cost,
+                    notes = notes,
+                    reason = reason,
+                    date = date,  
+                )
+
+                multa.save()
+                print("si lo guardo")
+
+            return JsonResponse({'success': True, 'message': 'Multa agregada correctamente!'})
+        
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': 'Error inesperado: ' + str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+
+
+#funcion de la tabla licencias
+def get_table_multas(request):
+    driver_id = request.GET.get('id')
+    print("este es el id del registro ", driver_id)
+    if driver_id:
+        try:
+            # Obtener el conductor
+            driver = Vehicle_Driver.objects.get(id=driver_id)
+            print("el id es ", driver)
+
+            # Obtener las multas asociadas al conductor
+            multas = Multas.objects.filter(name_driver=driver)  
+            print("multas encontradas:", multas)
+
+            # Serializar las licencias
+            multas_data = []
+            for multa in multas:
+
+                # Serializar el nombre del conductor
+                driver_name = f"{driver.name_driver.username} {driver.name_driver.last_name}" if driver.name_driver else "No asignado"
+
+                # Serializar el vehículo (en lugar de pasar el objeto completo)
+                vehicle_info = {
+                    "id": multa.vehicle.id,
+                    "modelo": multa.vehicle.name,  # Adjust according to your model fields
+                }
+
+                # Crear el objeto de multa con la información serializada
+                multas_data.append({
+                    "id": multa.id,
+                    "driver_name": driver_name,
+                    "vehicle": vehicle_info,  
+                    "cost": multa.cost,
+                    "notes": multa.notes,
+                    "reason": multa.reason,
+                    "date": multa.date,
+                    "btn_action": f"""
+                        <button class="btn btn-sm btn-primary btn-edit" onclick="btn_edit_multa(this)">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>                     
+                        <button class="btn btn-sm btn-danger" onclick="delete_multa(this)">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    """
+                })
+
+            return JsonResponse({
+                "success": True,
+                "data": multas_data
+            })
+        except Vehicle_Driver.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Conductor no encontrado."}, status=404)
+    return JsonResponse({"success": False, "message": "ID no proporcionado."}, status=400)
+
+
+
+# Función para editar la información de multa
+@login_required
+@csrf_exempt
+def edit_multa(request):
+    context = user_data(request)
+    subModule_id = 36
+    response = {"success": False}
+    access = get_module_user_permissions(context, subModule_id)  
+    company_id = context["company"]["id"]
+
+    if request.method == 'POST':
+        _id = request.POST.get('id')
+        name_driver = request.POST.get('name_driver_multa')
+        vehicle = request.POST.get('vehicle')
+        cost = request.POST.get('cost')
+        notes = request.POST.get('notes')
+        reason = request.POST.get('reason')
+        date = request.POST.get('date')
+
+        if not name_driver or not vehicle or not cost or not notes or not reason or not date:
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+        
+        try:    
+            multa = Multas.objects.get(id=_id)
+
+            name_driver_id = multa.name_driver.id
+            modelo_vehicle_id = multa.vehicle.id
+
+            print("esto contienen el registro de multas:",multa)
+    
+
+            multa.cost = cost
+            multa.notes = notes
+            multa.reason = reason
+            multa.date = date
+
+            # Guardar siempre los cambios
+            multa.save()
+
+            return JsonResponse({'success': True, 'message': 'Multa actualizada correctamente!'})
+
+        except Multas.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Multa no encontrada'}, status=404)
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error interno del servidor: {str(e)}'}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
+
+
+#funcion para eliminar licencias
+@login_required
+@csrf_exempt
+def delete_multa(request):                          
+    if request.method == 'POST':
+        form = request.POST
+        _id = form.get('id')
+
+        if not _id:
+            return JsonResponse({'success': False, 'message': 'No ID Multa'})
+
+        try:
+            multa = Multas.objects.get(id=_id)
+        except Multas.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Multa not found'})
+
+        multa.delete()
+
+        return JsonResponse({'success': True, 'message': 'Multa eliminada correctamente!'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

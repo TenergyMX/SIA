@@ -68,4 +68,35 @@ class Migration(migrations.Migration):
                 ('module', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.module', verbose_name='Módulos')),
             ],
         ),
+        migrations.AddField(
+            model_name='infrastructure_category',
+            name='empresa',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
+        ),
+        migrations.AddField(
+            model_name='services_category',
+            name='empresa',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
+        ),
+        migrations.AddField(
+            model_name='vehicle',
+            name='qr_access',
+            field=models.FileField(blank=True, null=True, upload_to='qrcodes/access/'),
+        ),
+        migrations.AddField(
+            model_name='vehicle',
+            name='qr_info',
+            field=models.FileField(blank=True, null=True, upload_to='qrcodes/info/'),
+        ),
+        migrations.AddField(
+            model_name='vehicle_maintenance',
+            name='status',
+            field=models.CharField(default='blank', max_length=255),
+        ),
+        migrations.AddField(
+            model_name='equipement_category',
+            name='empresa',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
+        ),
+        
     ]

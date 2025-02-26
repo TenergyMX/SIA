@@ -17,4 +17,14 @@ class Migration(migrations.Migration):
             name='company',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
         ),
+        migrations.CreateModel(
+            name='Vehicle_Maintenance_Kilometer',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('kilometer', models.DecimalField(decimal_places=2, max_digits=7)),
+                ('status', models.CharField(default='current', max_length=50, null=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('vehiculo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle')),
+            ],
+        ),
     ]
