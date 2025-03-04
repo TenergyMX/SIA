@@ -81,8 +81,9 @@ class VehiclesResponsiva {
         if (options.vehicle) {
             self.vehicle = { ...defaultOptions.vehicle, ...options.vehicle };
         }
-
-        self.init();
+        $(document).ready(function () {
+            self.init();
+        });
     }
 
     init() {
@@ -126,12 +127,31 @@ class VehiclesResponsiva {
         }
 
         self.setupEventHandlers();
-        // Si qr está presente en la URL, mostrar el modal automáticamente
+        // Si `qr` está presente en la URL, esperar a que el modal se cargue y luego abrirlo
         if (qr) {
-            setTimeout(function () {
-                self.openResponsivaModal(qr);
-            }, 100); // Retrasa la ejecución 5 segundos
+            self.esperarModal("#mdl_crud_responsiva")
+                .then(() => self.openResponsivaModal(qr))
+                .catch((error) => console.error(error));
         }
+    }
+    esperarModal(selector, intentos = 10, intervalo = 100) {
+        return new Promise((resolve, reject) => {
+            let contador = 0;
+
+            function verificarModal() {
+                let modal = document.querySelector(selector);
+                if (modal) {
+                    resolve(); // Modal encontrado
+                } else if (contador < intentos) {
+                    contador++;
+                    setTimeout(verificarModal, intervalo);
+                } else {
+                    reject(`El modal "${selector}" no está disponible.`);
+                }
+            }
+
+            verificarModal();
+        });
     }
 
     openResponsivaModal(id_vehicle) {
