@@ -78,6 +78,14 @@ function table_licence() {
                 className: "toggleable",
                 render: function (data, type, row) {
                     // Check if this is the first license and if the alert flag is active
+                    console.log("estatus licencia");
+                    console.log(
+                        $("#v-licence .alert-icon").html(
+                            '<i class="fa-regular fa-circle-exclamation" style="color:rgb(255, 174, 0);"></i>'
+                        )
+                    );
+                    console.log(data);
+                    console.log(row);
                     if (row.status_licence) {
                         // First license, check if it's close to expiration
                         if (data) {

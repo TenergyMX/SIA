@@ -21,7 +21,7 @@ class Vehicle(models.Model):
     vehicle_type = models.CharField(max_length=32, blank=True, null=True)                   # Tipo de vehiculo
     validity = models.DateField(blank=True, null=True, verbose_name="Vigencia")             # Vigencia
     policy_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Número de póliza") # Número de polisa
-    mileage = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)   # Kilometraje
+    mileage = models.IntegerField(blank=True, default=0)   # Kilometraje
     insurance_company = models.CharField(max_length=100, blank=True, null=True)             # Aseguradora
     qr_info = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
     qr_access = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
@@ -57,7 +57,7 @@ class Vehicle(models.Model):
 
 class Vehicle_Maintenance_Kilometer(models.Model):
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
-    kilometer = models.DecimalField(max_digits=7, decimal_places=2)
+    kilometer = models.IntegerField(default=0, blank=True)
     status = models.CharField(max_length=50, null=True, default="current")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -109,8 +109,8 @@ class Vehicle_Responsive(models.Model):
     image_path_entry_2 = models.FileField(upload_to='docs/', blank=True, null=True)
     image_path_exit_1 = models.FileField(upload_to='docs/', blank=True, null=True)
     image_path_exit_2 = models.FileField(upload_to='docs/', blank=True, null=True)
-    initial_mileage = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    final_mileage = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    initial_mileage = models.IntegerField(blank=True, default=0)   # Kilometraje
+    final_mileage = models.IntegerField(blank=True, default=0)   # Kilometraje
     initial_fuel = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     final_fuel = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     start_date = models.DateTimeField(blank=True, null=True)
@@ -171,7 +171,7 @@ class Vehicle_Maintenance(models.Model):
     date = models.DateField(blank=True, null=True)
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, blank=True, null=True)
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    mileage = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    mileage = models.IntegerField(blank=True, default=0)   # Kilometraje
     time = models.CharField(max_length=100, blank=True, null=True, help_text="Tiempo")
     general_notes = models.TextField(max_length=255, blank=True, null=True)
     actions = models.TextField(blank=True, null=True)
