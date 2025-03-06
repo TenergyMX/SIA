@@ -623,6 +623,7 @@ class VehiclesMaintenance {
                         }
                         message = response.message || "Se han guardado los datos con éxito";
                         Swal.fire("Exito", message, "success");
+                        $("#comprobante").val("");
                     },
                     error: function (xhr, status, error) {
                         let errorMessage = "Ocurrió un error inesperado";
