@@ -48,11 +48,12 @@ from django.db.models import Q
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-
+from django.utils.timezone import localtime
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
 
+import threading
 # TODO --------------- [ VARIABLES ] ---------- 
 
 AUDITORIA_VEHICULAR_POR_MES = 2
@@ -1389,7 +1390,7 @@ def update_vehicle_verificacion(request):
 
 
 # cargar funcion completa
-def add_vehicle_responsiva(request):
+def add_vehicle_responsiva_back(request):
     response = {"success": False}
     context = user_data(request)
     dt = request.POST
@@ -1421,8 +1422,7 @@ def add_vehicle_responsiva(request):
                     return flag
                 elif data_flag("status") == "warning":
                     response["warning"] = {"message" : data_flag("message")}
-                    print("este es el mensaje");
-                    print(response)
+
             obj = Vehicle_Responsive(
                 vehicle_id = dt.get("vehicle_id"),
                 responsible_id = dt.get("responsible_id"),
@@ -1435,8 +1435,6 @@ def add_vehicle_responsiva(request):
             obj.save()
             obj_vehicle.mileage = dt.get("initial_mileage")
             obj_vehicle.save()
-            
-            
 
             if 'signature' in request.FILES and request.FILES['signature']:
                 load_file = request.FILES.get('signature')
@@ -1500,7 +1498,6 @@ def add_vehicle_responsiva(request):
         response["error"] = {"message": str(e)}
     return JsonResponse(response)
     
-# caargar funcion completa
 def get_vehicle_responsiva(request):
     context = user_data(request)
     response = {"success": False, "data": []}
@@ -1508,7 +1505,7 @@ def get_vehicle_responsiva(request):
     vehicle_id = dt.get("vehicle_id", None)
     subModule_id = 8
 
-    lista = Vehicle_Responsive.objects.filter(vehicle_id = vehicle_id).values(
+    lista = Vehicle_Responsive.objects.filter(vehicle_id=vehicle_id).values(
         "id", "vehicle__id", "vehicle__name", "responsible__id", "responsible__first_name", "responsible__last_name",
         "image_path_entry_1", "image_path_entry_2", "image_path_exit_1", "image_path_exit_2",
         "initial_mileage", "final_mileage",
@@ -1522,32 +1519,34 @@ def get_vehicle_responsiva(request):
     for data in lista:
         modified_data = data.copy()
 
-        file_path1 = data.get('image_path_exit_1')
-        if file_path1:
-            imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
-            modified_image_path_exit_1 = imagePath1
-            
-            modified_data['image_path_exit_1'] = modified_image_path_exit_1
-            modified_data_list.append(modified_data)
+        # **Convertir la fecha a la zona local y formatearla en "DD/MM/YYYY HH:MM"**
+        if modified_data.get("start_date"):
+            modified_data["start_date"] = localtime(modified_data["start_date"]).strftime("%d/%m/%Y %H:%M")
 
-        file_path2 = data.get('image_path_exit_2')
-        if file_path2:
-            imagePath2 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path2))
-            modified_image_path_exit_2 = imagePath2
-            
-            modified_data['image_path_exit_2'] = modified_image_path_exit_2
-            modified_data_list.append(modified_data)
+        if modified_data.get("end_date"):
+            modified_data["end_date"] = localtime(modified_data["end_date"]).strftime("%d/%m/%Y %H:%M")
 
-        signature = data.get('signature')
-        sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
-        modified_sign = sign
+        # Genera URLs solo si los valores existen
+        if data.get('image_path_exit_1'):
+            modified_data['image_path_exit_1'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['image_path_exit_1']))
         
-        modified_data['signature'] = modified_sign
-        modified_data_list.append(modified_data)
+        if data.get('image_path_exit_2'):
+            modified_data['image_path_exit_2'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['image_path_exit_2']))
+        # Genera URLs solo si los valores existen
+        if data.get('image_path_entry_1'):
+            modified_data['image_path_entry_1'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['image_path_entry_1']))
 
+        if data.get('image_path_entry_2'):
+            modified_data['image_path_entry_2'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['image_path_entry_2']))
+
+        if data.get('signature'):
+            modified_data['signature'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['signature']))
+
+        modified_data_list.append(modified_data)
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
+
     for item in modified_data_list:
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-responsiva=\"show-info-details\" title=\"Mostrar info\">
             <i class="fa-solid fa-eye"></i>
@@ -1556,9 +1555,12 @@ def get_vehicle_responsiva(request):
             item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-responsiva=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>"""
-    response["data"] = list(modified_data_list)
+
+    response["data"] = modified_data_list
     response["success"] = True
     return JsonResponse(response)
+
+
 
 def get_vehicles_responsiva(request):
     context = user_data(request)
@@ -1582,55 +1584,33 @@ def get_vehicles_responsiva(request):
     for data in lista:
         modified_data = data.copy()
 
-        file_path1 = data.get('image_path_exit_1')
-        if file_path1:
-            imagePath1 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path1))
-            modified_image_path_exit_1 = imagePath1
-        
-            modified_data['image_path_exit_1'] = modified_image_path_exit_1
-            modified_data_list.append(modified_data)
-        
-        file_path2 = data.get('image_path_exit_2')
-        if file_path2:
-            imagePath2 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path2))
-            modified_image_path_exit_2 = imagePath2
-            
-            modified_data['image_path_exit_2'] = modified_image_path_exit_2
-            modified_data_list.append(modified_data)
+        # Formatear fechas si existen
+        for date_field in ["start_date", "end_date"]:
+            if modified_data[date_field]:
+                modified_data[date_field] = modified_data[date_field].strftime("%d/%m/%Y %H:%M")
 
-        signature = data.get('signature')
-        sign = generate_presigned_url(AWS_BUCKET_NAME, str(signature))
-        modified_sign = sign
-        
-        modified_data['signature'] = modified_sign
+        # Procesar imágenes y firmas
+        for img_field in ["image_path_exit_1", "image_path_exit_2", "image_path_entry_1", "image_path_entry_2"]:
+            if modified_data.get(img_field):
+                modified_data[img_field] = generate_presigned_url(AWS_BUCKET_NAME, str(modified_data[img_field]))
+
+        # Procesar firma
+        if modified_data.get("signature"):
+            modified_data["signature"] = generate_presigned_url(AWS_BUCKET_NAME, str(modified_data["signature"]))
+
         modified_data_list.append(modified_data)
 
-        file_path3 = data.get('image_path_entry_1')
-        # imagePath3 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path3))
-        # modified_image_path_exit_3 = imagePath3
-        
-        # modified_data['image_path_entry_1'] = modified_image_path_exit_3
-        # modified_data_list.append(modified_data)
-
-        # file_path4 = data.get('image_path_entry_2')
-        # imagePath4 = generate_presigned_url(AWS_BUCKET_NAME, str(file_path4))
-        # modified_image_path_exit_4 = imagePath4
-        
-        # modified_data['image_path_entry_2'] = modified_image_path_exit_4
-        # modified_data_list.append(modified_data)
-
-    if context["role"]["id"] == 1:
-        """"""
-    elif context["role"]["id"] in [1,2]:
-        lista = lista.filter(vehicle__company_id = context["company"]["id"])
+    # Filtrado según el rol del usuario
+    if context["role"]["id"] in [1, 2]:
+        lista = lista.filter(vehicle__company_id=context["company"]["id"])
     else:
-        lista = lista.filter(vehicle__responsible_id = context["user"]["id"])
+        lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
 
-    access = get_module_user_permissions(context, subModule_id)
-    access = access["data"]["access"]
+    # Obtener permisos de acceso
+    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
+    # Agregar botones de acción
     for item in modified_data_list:
-        #item["btn_action"] = ""
         check = item["final_mileage"] and item["end_date"]
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-responsiva=\"show-info-details\" title=\"Mostrar info\">
             <i class="fa-solid fa-eye"></i>
@@ -1643,11 +1623,12 @@ def get_vehicles_responsiva(request):
             item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-responsiva=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>"""
-    response["data"] = list(modified_data_list)
+
+    response["data"] = modified_data_list
     response["success"] = True
     return JsonResponse(response)
 
-def update_vehicle_responsiva(request):
+def update_vehicle_responsiva_back(request):
     response = {"success": False}
     context = user_data(request)
     dt = request.POST
@@ -1713,20 +1694,20 @@ def update_vehicle_responsiva(request):
                 obj_vehicle.mileage = dt.get("final_mileage")
             obj_vehicle.save()
 
-        load_file_1 = request.FILES.get('image_path_entry_1')
+        load_file_1 = request.FILES.get('image_path_exit_1')
         if load_file_1:
 
-            load_file = request.FILES.get('image_path_entry_1')
+            load_file = request.FILES.get('image_path_exit_1')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"entrada_1{extension}"
             obj.image_path_entry_1 = folder_path + new_name
             upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
             obj.save()
-        load_file_2 = request.FILES.get('image_path_entry_2')
+        load_file_2 = request.FILES.get('image_path_exit_2')
         if load_file_2:
 
-            load_file = request.FILES.get('image_path_entry_2')
+            load_file = request.FILES.get('image_path_exit_2')
             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"entrada_2{extension}"
@@ -3914,6 +3895,208 @@ def delete_multa(request):
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
+def add_vehicle_responsiva(request):
+    response = {"success": False}
+    context = user_data(request)
+    dt = request.POST
+    vehicle_id = dt.get("vehicle_id")
+
+    # CONDITIONAL KILOMETER REGISTER GREATER THAN THE KILOMETER VEHICLE
+    try:
+        obj_vehicle = Vehicle.objects.get(id=vehicle_id)
+        company_id = obj_vehicle.company.id
+        # Verificamos que el kilometraje sea coherente
+        mileage = Decimal(dt.get("initial_mileage")) if dt.get("initial_mileage") else None
+        if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
+            response["status"] = "warning"
+            response["message"] = "El kilometraje del vehículo es mayor que el valor proporcionado."
+            return JsonResponse(response)
+    except Vehicle.DoesNotExist:
+        response["status"] = "warning"
+        response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
+        return JsonResponse(response)
+
+    try:
+        with transaction.atomic():
+            flag = check_vehicle_kilometer(request, obj_vehicle, dt.get("initial_mileage"), dt.get("start_date"))
+            if isinstance(flag, JsonResponse):
+                data_flag = json.loads(flag.content.decode('utf-8')).get
+                if data_flag("status") == "error":
+                    return flag
+                elif data_flag("status") == "warning":
+                    response["warning"] = {"message": data_flag("message")}
+
+            obj = Vehicle_Responsive(
+                vehicle_id=dt.get("vehicle_id"),
+                responsible_id=dt.get("responsible_id"),
+                initial_mileage=dt.get("initial_mileage"),
+                initial_fuel=dt.get("initial_fuel"),
+                destination=dt.get("destination"),
+                trip_purpose=dt.get("trip_purpose"),
+                start_date=dt.get("start_date")
+            )
+            obj.save()
+            obj_vehicle.mileage = dt.get("initial_mileage")
+            obj_vehicle.save()
+
+            if 'signature' in request.FILES and request.FILES['signature']:
+                load_file = request.FILES.get('signature')
+                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+                file_name, extension = os.path.splitext(load_file.name)
+
+                new_name = f"signature{extension}"
+                # Crear el hilo para cargar la imagen
+                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+                thread.start()
+                
+                obj.signature = folder_path + new_name
+                obj.save()
+
+            if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
+                load_file = request.FILES.get('image_path_exit_1')
+                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+                file_name, extension = os.path.splitext(load_file.name)
+
+                new_name = f"salida_1{extension}"
+                # Crear el hilo para cargar la imagen
+                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+                thread.start()
+                
+                obj.image_path_exit_1 = folder_path + new_name
+                obj.save()
+
+            if 'image_path_exit_2' in request.FILES and request.FILES['image_path_exit_2']:
+                load_file = request.FILES.get('image_path_exit_2')
+                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+                file_name, extension = os.path.splitext(load_file.name)
+
+                new_name = f"salida_2{extension}"
+                # Crear el hilo para cargar la imagen
+                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+                thread.start()
+                
+                obj.image_path_exit_2 = folder_path + new_name
+                obj.save()
+
+            if "warning" in response:
+                return JsonResponse(response)
+
+            response["id"] = obj.id
+            response["success"] = True
+    except Exception as e:
+        response["success"] = False
+        response["error"] = {"message": str(e)}
+
+    return JsonResponse(response)
+
+def update_vehicle_responsiva(request):
+    response = {"success": False}
+    context = user_data(request)
+    dt = request.POST
+    vehicle_id = dt.get("vehicle_id")
+
+    # Verificamos que el vehículo exista
+    try:
+        obj_vehicle = Vehicle.objects.get(id=vehicle_id)
+        company_id = obj_vehicle.company.id
+    except Vehicle.DoesNotExist:
+        response["status"] = "warning"
+        response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
+        return JsonResponse(response)
+
+    # Iniciar transacción
+    try:
+        with transaction.atomic():
+            print(dt.get("responsiva_id"))
+            print("looool")
+            obj = Vehicle_Responsive.objects.get(id=dt.get("id"))
+            obj.final_mileage = dt.get("final_mileage")
+            obj.final_fuel = dt.get("final_fuel")
+            obj.end_date = dt.get("end_date")
+            obj.save()
+
+            # Verificar si se recibió una firma para actualizar
+            if 'signature' in request.FILES and request.FILES['signature']:
+                load_file = request.FILES.get('signature')
+                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+                file_name, extension = os.path.splitext(load_file.name)
+
+                new_name = f"signature{extension}"
+                # Crear el hilo para cargar la imagen
+                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+                thread.start()
+
+                obj.signature = folder_path + new_name
+                obj.save()
+
+            # Verificar si se recibió la primera imagen de salida
+            if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
+                load_file = request.FILES.get('image_path_exit_1')
+                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+                file_name, extension = os.path.splitext(load_file.name)
+
+                new_name = f"entrada_1{extension}"
+                # Crear el hilo para cargar la imagen
+                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+                thread.start()
+
+                obj.image_path_entry_1 = folder_path + new_name
+                obj.save()
+
+            # Verificar si se recibió la segunda imagen de salida
+            if 'image_path_exit_2' in request.FILES and request.FILES['image_path_exit_2']:
+                load_file = request.FILES.get('image_path_exit_2')
+                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+                file_name, extension = os.path.splitext(load_file.name)
+
+                new_name = f"entrada_2{extension}"
+                # Crear el hilo para cargar la imagen
+                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+                thread.start()
+
+                obj.image_path_entry_2 = folder_path + new_name
+                obj.save()
+
+            response["id"] = obj.id
+            response["success"] = True
+
+    except Exception as e:
+        response["success"] = False
+        response["error"] = {"message": str(e)}
+
+    return JsonResponse(response)
+
+def upload_images_in_background(file, folder_path, new_name, bucket_name):
+    """
+    Función para cargar imágenes de forma asincrónica en un bucket de AWS S3.
+    
+    :param file: El archivo que se quiere cargar.
+    :param folder_path: El directorio en el que se debe almacenar la imagen en S3.
+    :param new_name: El nuevo nombre del archivo una vez cargado.
+    :param bucket_name: El nombre del bucket de AWS S3 donde se va a almacenar la imagen.
+    """
+    # Crear una nueva instancia del cliente S3
+    s3_client = boto3.client('s3')
+
+    # Ruta completa del archivo que se va a subir
+    file_path = folder_path + new_name
+
+    try:
+        # Leer el archivo en memoria como bytes
+        file_content = file.read()
+
+        # Crear un buffer en memoria a partir de los bytes del archivo
+        file_buffer = io.BytesIO(file_content)
+
+        # Subir archivo a S3
+        s3_client.upload_fileobj(file_buffer, AWS_BUCKET_NAME, file_path)
+        print(f"Archivo {new_name} subido con éxito a {AWS_BUCKET_NAME}/{file_path}")
+    except FileNotFoundError:
+        print(f"El archivo {new_name} no fue encontrado.")
+    except NoCredentialsError:
+        print("Las credenciales de AWS no están configuradas correctamente.")
+    except Exception as e:
+        print(f"Error al subir el archivo {new_name}: {e}")
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

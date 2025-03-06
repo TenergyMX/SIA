@@ -160,7 +160,6 @@ class VehiclesResponsiva {
         obj_modal.find("form")[0].reset();
         obj_modal.modal("show");
 
-        console.log("información del registro");
         $.ajax({
             url: "/validar_vehicle_en_sa/", // Cambia esta URL por la ruta de tu servidor que va a manejar la solicitud
             type: "POST",
@@ -331,20 +330,26 @@ class VehiclesResponsiva {
 
                     if (datos["image_path_exit_1"]) {
                         $("[alt='image_path_exit_1']")
-                            .attr("src", "/" + datos["image_path_exit_1"])
+                            .attr("src", datos["image_path_exit_1"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
-                        $("[alt='image_path_exit_1']").closest(".card").addClass("placeholder");
+                        $("[alt='image_path_exit_1']")
+                            .attr("src", "")
+                            .closest(".card")
+                            .removeClass("placeholder");
                     }
 
                     if (datos["image_path_exit_2"]) {
                         $("[alt='image_path_exit_2']")
-                            .attr("src", "/" + datos["image_path_exit_1"])
+                            .attr("src", datos["image_path_exit_2"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
-                        $("[alt='image_path_exit_2']").closest(".card").addClass("placeholder");
+                        $("[alt='image_path_exit_2']")
+                            .attr("src", "")
+                            .closest(".card")
+                            .removeClass("placeholder");
                     }
                     // # cargar funcion completa
                     if (datos["image_path_entry_1"]) {
@@ -353,7 +358,10 @@ class VehiclesResponsiva {
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
-                        $("[alt='image_path_entry_1']").closest(".card").addClass("placeholder");
+                        $("[alt='image_path_entry_1']")
+                            .attr("src", "")
+                            .closest(".card")
+                            .removeClass("placeholder");
                     }
                     // # cargar funcion completa
                     if (datos["image_path_entry_2"]) {
@@ -362,7 +370,10 @@ class VehiclesResponsiva {
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
-                        $("[alt='image_path_entry_2']").closest(".card").addClass("placeholder");
+                        $("[alt='image_path_entry_2']")
+                            .attr("src", "")
+                            .closest(".card")
+                            .removeClass("placeholder");
                     }
                     // # cargar funcion completa
                     // firma
@@ -382,13 +393,22 @@ class VehiclesResponsiva {
         obj_modal.find("form").on("submit", function (e) {
             e.preventDefault();
             var submit = $("button[type='submit']:focus", this).attr("name");
-            var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_responsiva/";
+            var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_maintenance/";
             var datos = new FormData(this);
 
             if (submit == "add" && !self.input.signature.hasDrawing()) {
                 Swal.fire("Sin firma", "El responsable debe firmar", "warning");
                 return;
             }
+
+            Swal.fire({
+                title: "Procesando...",
+                text: "Por favor, espera mientras se procesa la solicitud.",
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
 
             if (submit == "add") {
                 url = "/add_vehicle_responsiva/";
@@ -405,10 +425,10 @@ class VehiclesResponsiva {
                             processData: false,
                             contentType: false,
                             success: function (response) {
-                                console.log(response);
+                                Swal.close(); // Cerrar alerta de carga antes de mostrar el resultado
+
                                 if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
-                                    return;
                                 } else if (response.warning) {
                                     Swal.fire(
                                         "Advertencia",
@@ -416,17 +436,17 @@ class VehiclesResponsiva {
                                         "warning"
                                     );
                                 } else if (!response.success) {
-                                    console.log(response);
-                                    Swal.fire("Error", "Ocurrio un error inesperado", "error");
-                                    return;
+                                    Swal.fire("Error", "Ocurrió un error inesperado", "error");
                                 } else {
-                                    Swal.fire("Exito", "Salida Registrada", "success");
+                                    Swal.fire("Éxito", "Salida Registrada", "success");
                                 }
+
                                 obj_modal.modal("hide");
                                 self.tbl_responsiva.ajax.reload();
                                 self.input.signature.clearCanvas();
                             },
                             error: function (xhr, status, error) {
+                                Swal.close();
                                 Swal.fire(
                                     "Error del servidor",
                                     "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
@@ -435,7 +455,10 @@ class VehiclesResponsiva {
                             },
                         });
                     })
-                    .catch((error) => {});
+                    .catch((error) => {
+                        Swal.close();
+                        Swal.fire("Error", "No se pudo obtener la firma", "error");
+                    });
             } else {
                 url = "/update_vehicle_responsiva/";
 
@@ -446,23 +469,24 @@ class VehiclesResponsiva {
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        console.log(response);
+                        Swal.close(); // Cerrar alerta de carga antes de mostrar el resultado
                         if (!response.success && response.error) {
                             Swal.fire("Error", response.error["message"], "error");
-                            return;
                         } else if (response.warning) {
                             Swal.fire("Advertencia", response.warning["message"], "warning");
-                        } else if (!response.success) {
-                            console.log(response);
-                            Swal.fire("Error", "Ocurrio un error inesperado", "error");
+                        } else if (response.status == "warning") {
+                            Swal.fire("Error", response.message, "warning");
                             return;
+                        } else if (!response.success) {
+                            Swal.fire("Advertencia", "Error inesperado", "error");
                         } else {
-                            Swal.fire("Exito", "Entrada Registrada", "success");
+                            Swal.fire("Éxito", "Entrada Registrada", "success");
                         }
                         obj_modal.modal("hide");
                         self.tbl_responsiva.ajax.reload();
                     },
                     error: function (xhr, status, error) {
+                        Swal.close();
                         Swal.fire(
                             "Error del servidor",
                             "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
@@ -471,6 +495,7 @@ class VehiclesResponsiva {
                     },
                 });
             }
+
             // end
         });
     }
