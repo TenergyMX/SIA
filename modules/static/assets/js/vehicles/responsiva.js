@@ -46,6 +46,7 @@ class VehiclesResponsiva {
                     { title: "Fecha final", data: "end_date" },
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
+                order: [[0, "desc"]], // Ordena por ID (columna 0) de mayor a menor
             },
             vehicle: {
                 data: { id: null },
