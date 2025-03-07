@@ -54,6 +54,8 @@ dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
 
 import threading
+from PIL import Image
+
 # TODO --------------- [ VARIABLES ] ---------- 
 
 AUDITORIA_VEHICULAR_POR_MES = 2
@@ -4066,6 +4068,33 @@ def update_vehicle_responsiva(request):
 
     return JsonResponse(response)
 
+def resize_image(image, size=(400, 600)):
+    """
+    Redimensiona la imagen en memoria antes de subirla a AWS S3.
+    
+    :param image: El archivo que se quiere redimensionar.
+    :param size: El tamaño deseado (ancho, alto) para redimensionar la imagen.
+    :return: La imagen redimensionada en bytes.
+    """
+    img = Image.open(image)
+
+    # Obtener la resolución actual de la imagen
+    width, height = img.size
+
+    # Solo redimensionar si la imagen es mayor a la resolución deseada
+    if width > size[0] or height > size[1]:
+        img_resized = img.resize(size, Image.LANCZOS)
+
+        # Crear un buffer en memoria para almacenar la imagen redimensionada
+        buffer = io.BytesIO()
+        img_resized.save(buffer, format=img.format)
+        buffer.seek(0)  # Regresar al inicio del buffer para que se pueda leer correctamente
+        return buffer
+    else:
+        # Si no es necesario redimensionar, devolver la imagen original
+        image.seek(0)
+        return image
+
 def upload_images_in_background(file, folder_path, new_name, bucket_name):
     """
     Función para cargar imágenes de forma asincrónica en un bucket de AWS S3.
@@ -4075,28 +4104,29 @@ def upload_images_in_background(file, folder_path, new_name, bucket_name):
     :param new_name: El nuevo nombre del archivo una vez cargado.
     :param bucket_name: El nombre del bucket de AWS S3 donde se va a almacenar la imagen.
     """
-    # Crear una nueva instancia del cliente S3
     s3_client = boto3.client('s3')
 
     # Ruta completa del archivo que se va a subir
     file_path = folder_path + new_name
 
     try:
-        # Leer el archivo en memoria como bytes
-        file_content = file.read()
+        # Re-open file or duplicate the in-memory file object
+        file_copy = io.BytesIO(file.read())  # Duplicate file in memory
 
-        # Crear un buffer en memoria a partir de los bytes del archivo
-        file_buffer = io.BytesIO(file_content)
+        # Redimensionar la imagen antes de subirla
+        resized_image = resize_image(file_copy)
 
-        # Subir archivo a S3
-        s3_client.upload_fileobj(file_buffer, AWS_BUCKET_NAME, file_path)
-        print(f"Archivo {new_name} subido con éxito a {AWS_BUCKET_NAME}/{file_path}")
+        # Subir archivo redimensionado a S3
+        s3_client.upload_fileobj(resized_image, bucket_name, file_path)
+        print(f"Archivo {new_name} redimensionado y subido con éxito a {bucket_name}/{file_path}")
     except FileNotFoundError:
         print(f"El archivo {new_name} no fue encontrado.")
     except NoCredentialsError:
         print("Las credenciales de AWS no están configuradas correctamente.")
     except Exception as e:
         print(f"Error al subir el archivo {new_name}: {e}")
-
+    finally:
+        # Close the copied file to free memory
+        file_copy.close()
 # TODO --------------- [ END ] ----------
 # ! Este es el fin
