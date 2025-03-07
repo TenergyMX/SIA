@@ -17,6 +17,26 @@
             <span data-key-value="destination">----</span>
         </p>
         <div class="table-responsive mb-3">
+            
+            <style>
+                .fuel-img img {
+                    height: 3rem;
+                    width: auto;
+                    position: relative;
+                }
+                
+                .fuel-img .punta{
+                    position:absolute;
+                    left: 26%;
+                    top: 21%;
+                    transform: rotate(-65deg) scale(0.8);
+                }            
+            </style>
+            <!--posicion -> 0%   left 26%, top 21%, -65deg-->
+            <!--posicion -> 25%  left 32%, top 6%, -33deg-->
+            <!--posicion -> 50%  left 44%, top 0%, 0deg-->
+            <!--posicion -> 75%  left 55%, top 6%, 33deg-->
+            <!--posicion -> 100% left 60%, top 21%, 65deg-->
             <table class="table table-bordered table-hover w-100">
                 <thead>
                     <tr>
@@ -30,13 +50,25 @@
                     <tr>
                         <th>Inicial</th>
                         <td><span data-key-value="initial_mileage"></span></td>
-                        <td><span data-key-value="initial_fuel"></span></td>
+                        <td class="d-flex align-items-center flex-column fuel-img">
+                            <span data-key-value="initial_fuel"></span>
+                            <div class="position-relative">
+                                <img class="medidor" src="/static/assets/images/vehicles/gasolina-medidor-medidor.png">
+                                <img class="punta punta-inicial" src="/static/assets/images/vehicles/gasolina-medidor-punta.png">
+                            </div>
+                        </td>
                         <td><span data-key-value="start_date"></span></td>
                     </tr>
                     <tr>
                         <th>Final</th>
                         <td><span data-key-value="final_mileage"></span></td>
-                        <td><span data-key-value="final_fuel"></span></td>
+                        <td class="d-flex align-items-center flex-column fuel-img">
+                            <span data-key-value="final_fuel"></span>
+                            <div class="position-relative">
+                                <img class="medidor" src="/static/assets/images/vehicles/gasolina-medidor-medidor.png">
+                                <img class="punta punta-final" src="/static/assets/images/vehicles/gasolina-medidor-punta.png">
+                            </div>
+                        </td>
                         <td><span data-key-value="end_date"></span></td>
                     </tr>
                 </tbody>
