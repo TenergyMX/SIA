@@ -40,7 +40,7 @@ class VehiclesRefrendo {
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
-            vehicle: { 
+            vehicle: {
                 data: { id: null },
             },
         };
@@ -59,7 +59,6 @@ class VehiclesRefrendo {
                     vehicle_id: self.table.vehicle.id,
                 };
 
-            
                 // Buscar el índice del elemento que quieres eliminar
                 let indexToRemove = self.table.columns.findIndex(function (column) {
                     return column.title === "Vehiculo" && column.data === "vehicle__name";
@@ -91,7 +90,7 @@ class VehiclesRefrendo {
                 },
                 columns: self.table.columns,
                 order: [
-                    [0, "asc"],
+                    [0, "desc"],
                     [1, "asc"],
                 ],
                 language: {

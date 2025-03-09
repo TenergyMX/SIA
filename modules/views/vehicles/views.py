@@ -3899,7 +3899,6 @@ def delete_multa(request):
 
 def add_vehicle_responsiva(request):
     response = {"success": False}
-    context = user_data(request)
     dt = request.POST
     vehicle_id = dt.get("vehicle_id")
 
@@ -3952,7 +3951,6 @@ def add_vehicle_responsiva(request):
                 thread.start()
                 
                 obj.signature = folder_path + new_name
-                obj.save()
 
             if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
                 load_file = request.FILES.get('image_path_exit_1')
@@ -3965,7 +3963,6 @@ def add_vehicle_responsiva(request):
                 thread.start()
                 
                 obj.image_path_exit_1 = folder_path + new_name
-                obj.save()
 
             if 'image_path_exit_2' in request.FILES and request.FILES['image_path_exit_2']:
                 load_file = request.FILES.get('image_path_exit_2')
@@ -3978,7 +3975,7 @@ def add_vehicle_responsiva(request):
                 thread.start()
                 
                 obj.image_path_exit_2 = folder_path + new_name
-                obj.save()
+            obj.save()
 
             if "warning" in response:
                 return JsonResponse(response)
@@ -3993,7 +3990,6 @@ def add_vehicle_responsiva(request):
 
 def update_vehicle_responsiva(request):
     response = {"success": False}
-    context = user_data(request)
     dt = request.POST
     vehicle_id = dt.get("vehicle_id")
 
@@ -4009,13 +4005,10 @@ def update_vehicle_responsiva(request):
     # Iniciar transacción
     try:
         with transaction.atomic():
-            print(dt.get("responsiva_id"))
-            print("looool")
             obj = Vehicle_Responsive.objects.get(id=dt.get("id"))
             obj.final_mileage = dt.get("final_mileage")
             obj.final_fuel = dt.get("final_fuel")
             obj.end_date = dt.get("end_date")
-            obj.save()
 
             # Verificar si se recibió una firma para actualizar
             if 'signature' in request.FILES and request.FILES['signature']:
@@ -4029,11 +4022,10 @@ def update_vehicle_responsiva(request):
                 thread.start()
 
                 obj.signature = folder_path + new_name
-                obj.save()
 
             # Verificar si se recibió la primera imagen de salida
-            if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
-                load_file = request.FILES.get('image_path_exit_1')
+            if 'image_path_entry_1' in request.FILES and request.FILES['image_path_entry_1']:
+                load_file = request.FILES.get('image_path_entry_1')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
                 file_name, extension = os.path.splitext(load_file.name)
 
@@ -4043,11 +4035,10 @@ def update_vehicle_responsiva(request):
                 thread.start()
 
                 obj.image_path_entry_1 = folder_path + new_name
-                obj.save()
 
             # Verificar si se recibió la segunda imagen de salida
-            if 'image_path_exit_2' in request.FILES and request.FILES['image_path_exit_2']:
-                load_file = request.FILES.get('image_path_exit_2')
+            if 'image_path_entry_2' in request.FILES and request.FILES['image_path_entry_2']:
+                load_file = request.FILES.get('image_path_entry_2')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
                 file_name, extension = os.path.splitext(load_file.name)
 
@@ -4057,7 +4048,7 @@ def update_vehicle_responsiva(request):
                 thread.start()
 
                 obj.image_path_entry_2 = folder_path + new_name
-                obj.save()
+            obj.save()
 
             response["id"] = obj.id
             response["success"] = True
@@ -4068,32 +4059,6 @@ def update_vehicle_responsiva(request):
 
     return JsonResponse(response)
 
-def resize_image(image, size=(400, 600)):
-    """
-    Redimensiona la imagen en memoria antes de subirla a AWS S3.
-    
-    :param image: El archivo que se quiere redimensionar.
-    :param size: El tamaño deseado (ancho, alto) para redimensionar la imagen.
-    :return: La imagen redimensionada en bytes.
-    """
-    img = Image.open(image)
-
-    # Obtener la resolución actual de la imagen
-    width, height = img.size
-
-    # Solo redimensionar si la imagen es mayor a la resolución deseada
-    if width > size[0] or height > size[1]:
-        img_resized = img.resize(size, Image.LANCZOS)
-
-        # Crear un buffer en memoria para almacenar la imagen redimensionada
-        buffer = io.BytesIO()
-        img_resized.save(buffer, format=img.format)
-        buffer.seek(0)  # Regresar al inicio del buffer para que se pueda leer correctamente
-        return buffer
-    else:
-        # Si no es necesario redimensionar, devolver la imagen original
-        image.seek(0)
-        return image
 
 def upload_images_in_background(file, folder_path, new_name, bucket_name):
     """
@@ -4114,10 +4079,8 @@ def upload_images_in_background(file, folder_path, new_name, bucket_name):
         file_copy = io.BytesIO(file.read())  # Duplicate file in memory
 
         # Redimensionar la imagen antes de subirla
-        resized_image = resize_image(file_copy)
-
         # Subir archivo redimensionado a S3
-        s3_client.upload_fileobj(resized_image, bucket_name, file_path)
+        s3_client.upload_fileobj(file_copy, bucket_name, file_path)
         print(f"Archivo {new_name} redimensionado y subido con éxito a {bucket_name}/{file_path}")
     except FileNotFoundError:
         print(f"El archivo {new_name} no fue encontrado.")

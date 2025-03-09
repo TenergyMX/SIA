@@ -48,7 +48,6 @@ class VehiclesVerificacion {
             },
         };
 
-
         if (options.infoCard) {
             self.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
         }
@@ -61,7 +60,6 @@ class VehiclesVerificacion {
                 self.table.ajax.data = {
                     vehicle_id: self.table.vehicle.id,
                 };
-        
 
                 // Buscar el índice del elemento que quieres eliminar
                 let indexToRemove = self.table.columns.findIndex(function (column) {
@@ -94,7 +92,7 @@ class VehiclesVerificacion {
                 },
                 columns: self.table.columns,
                 order: [
-                    [0, "asc"],
+                    [0, "desc"],
                     [1, "asc"],
                 ],
                 language: {

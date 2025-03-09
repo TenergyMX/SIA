@@ -71,7 +71,7 @@ class VehiclesAudit {
                 },
                 columns: self.table.columns,
                 order: [
-                    [0, "asc"],
+                    [0, "desc"],
                     [1, "asc"],
                 ],
                 language: {
