@@ -119,7 +119,7 @@ class VehiclesMaintenance {
                 },
                 columns: self.table.columns,
                 order: [
-                    [0, "asc"],
+                    [0, "desc"],
                     [1, "asc"],
                 ],
                 language: {
@@ -253,6 +253,7 @@ class VehiclesMaintenance {
 
             switch (option) {
                 case "refresh-table":
+                    console.log("prueba");
                     self.tbl_maintenance.ajax.reload();
                     break;
                 case "add-item":
@@ -275,6 +276,7 @@ class VehiclesMaintenance {
                     obj_modal.find("[name='type']").trigger("change");
                     break;
                 case "update-item":
+                    console.log("prueba de editar");
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
                     obj_modal.find(".modal-header").html("Actualizar registro");

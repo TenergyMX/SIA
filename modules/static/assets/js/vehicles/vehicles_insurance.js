@@ -45,8 +45,7 @@ class VehiclesInsurance {
 
         if (options.table) {
             self.table = { ...defaultOptions.table, ...options.table };
-            
-            
+
             if (self.table.vehicle.id) {
                 self.table.ajax.url = "/get_vehicle_insurance/";
                 self.table.ajax.data = {
@@ -84,7 +83,7 @@ class VehiclesInsurance {
                 },
                 columns: self.table.columns,
                 order: [
-                    [0, "asc"],
+                    [0, "desc"],
                     [1, "asc"],
                 ],
                 language: {
@@ -136,7 +135,7 @@ class VehiclesInsurance {
                     obj_modal
                         .find("[name='vehicle__name']")
                         .val(self.vehicle.data.vehicle__name || null);
-                    break;
+                    break;
                 case "update-item":
                     obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
@@ -286,7 +285,7 @@ class VehiclesInsurance {
                         "error"
                     );
                 },
-            });
-        });
+            });
+        });
     }
 }

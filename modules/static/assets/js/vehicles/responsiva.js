@@ -32,7 +32,7 @@ class VehiclesResponsiva {
                     data: {},
                 },
                 columns: [
-                    { title: "ID", data: "id", visible: false },
+                    { title: "ID", data: "id" },
                     { title: "Vehículo", data: "vehicle__name" },
                     {
                         title: "Responsable",
@@ -46,7 +46,6 @@ class VehiclesResponsiva {
                     { title: "Fecha final", data: "end_date" },
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
-                order: [[0, "desc"]], // Ordena por ID (columna 0) de mayor a menor
             },
             vehicle: {
                 data: { id: null },
@@ -104,10 +103,7 @@ class VehiclesResponsiva {
                     data: self.table.ajax.data,
                 },
                 columns: self.table.columns,
-                order: [
-                    [0, "asc"],
-                    [1, "asc"],
-                ],
+                order: [[0, "desc"]],
                 language: {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
                 },
@@ -501,3 +497,45 @@ class VehiclesResponsiva {
         });
     }
 }
+
+document.querySelectorAll('.form-control[name^="image_path_"]').forEach((input) => {
+    input.classList.add("resize-image");
+    input.addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function (event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function () {
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d");
+                    canvas.width = 400;
+                    canvas.height = 600;
+                    ctx.drawImage(img, 0, 0, 400, 600);
+                    canvas.toBlob(
+                        function (blob) {
+                            const newFile = new File([blob], file.name, {
+                                type: file.type,
+                                lastModified: Date.now(),
+                            });
+
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(newFile);
+                            Swal.fire({
+                                title: "Imagen Procesada",
+                                text: "La imagen se ha redimensionado correctamente.",
+                                icon: "success",
+                                confirmButtonText: "OK",
+                            });
+                            input.files = dataTransfer.files;
+                        },
+                        "image/jpeg",
+                        0.9
+                    );
+                };
+            };
+        }
+    });
+});

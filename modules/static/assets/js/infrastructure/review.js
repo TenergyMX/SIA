@@ -127,7 +127,7 @@ class InfrastructureReview {
                     },
                 },
                 columns: self.table.columns,
-                order: [[0, "asc"]],
+                order: [[0, "desc"]],
                 language: {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
                 },

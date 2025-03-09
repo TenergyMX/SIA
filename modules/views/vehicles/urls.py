@@ -127,4 +127,6 @@ urlpatterns = [
     path("edit_multa/", views.edit_multa),
     path("delete_multa/", views.delete_multa),
 
+    
+
 ]
