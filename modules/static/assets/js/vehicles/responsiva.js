@@ -214,7 +214,6 @@ class VehiclesResponsiva {
                     hideShow("#v-responsiva-pane .info-details", "#v-responsiva-pane .info");
                     break;
                 case "show-info-details":
-                    console.log("testing");
                     hideShow("#v-responsiva-pane .info", "#v-responsiva-pane .info-details");
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_responsiva.row(fila).data();
@@ -255,7 +254,6 @@ class VehiclesResponsiva {
                                 top: `${top}%`,
                                 transform: `rotate(${deg}deg) scale(0.8)`,
                             });
-                            console.log(left, top, deg);
                         }
 
                         if (index === "final_fuel") {
@@ -287,7 +285,6 @@ class VehiclesResponsiva {
                                 top: `${top}%`,
                                 transform: `rotate(${deg}deg) scale(0.8)`,
                             });
-                            console.log(left, top, deg);
                         }
                     });
 
@@ -372,7 +369,6 @@ class VehiclesResponsiva {
                             processData: false,
                             contentType: false,
                             success: function (response) {
-                                console.log(response);
                                 if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
                                     return;
@@ -383,7 +379,6 @@ class VehiclesResponsiva {
                                         "warning"
                                     );
                                 } else if (!response.success) {
-                                    console.log(response);
                                     Swal.fire("Error", "Ocurrio un error inesperado", "error");
                                     return;
                                 } else {
@@ -419,7 +414,6 @@ class VehiclesResponsiva {
                         } else if (!response.success && response.warning) {
                             Swal.fire("Advertencia", response.warning["message"], "warning");
                         } else if (!response.success) {
-                            console.log(response);
                             Swal.fire("Error", "Ocurrio un error inesperado", "error");
                             return;
                         } else {

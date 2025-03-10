@@ -3214,7 +3214,6 @@ def add_driver(request):
     company_id = context["company"]["id"]
 
     if request.method == 'POST':
-        print("esta es la informacion del formulario:", dt)
         name_driver = request.POST.get('driver_vehicle').strip()
         number_phone = request.POST.get('number_phone')
         address = request.POST.get('address')  
@@ -3253,7 +3252,6 @@ def add_driver(request):
                     # Guardar la ruta en el modelo
                     driver.image_path = S3name
                     driver.save()
-                    print("si lo guardo")
 
             return JsonResponse({'success': True, 'message': 'Conductor agregado correctamente!'})
         
@@ -3315,11 +3313,6 @@ def edit_driver(request):
             return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
         try:
             driver = Vehicle_Driver.objects.get(id=_id)
-            print("este es el registro:", driver)
-            print(name_driver)
-            print(number_phone)
-            print(address)
-            print(img)
             
             driver.name_driver_id = name_driver  
             driver.number_phone = number_phone
@@ -3342,9 +3335,6 @@ def edit_driver(request):
                     # Guardar la ruta en el modelo
                     driver.image_path = S3name
                     driver.save()
-                    
-                    print("si lo guardo")
-
 
             return JsonResponse({'success': True, 'message': 'Equipo editado correctamente!'})
 
@@ -3569,7 +3559,6 @@ def edit_licence(request):
                 upload_to_s3(license_driver, bucket_name, S3name)
                 licence.license_driver = S3name
 
-                print("Archivo subido correctamente a S3:", S3name)
 
             # Guardar siempre los cambios
             licence.save()
@@ -3626,13 +3615,11 @@ def get_vehicles(request):
 
 #función para agregar licencia
 def add_multa(request):
-    print("se entro a la funcion para agregar multa")
     context = user_data(request)
     dt = request.POST
     company_id = context["company"]["id"]
 
     if request.method == 'POST':
-        print("esta es la informacion del formulario de multa:", dt)
         
         name_driver_multa = request.POST.get('name_driver_multa', '').strip() 
         name_driver_multa_id = request.POST.get('name_driver_multa_id')
@@ -3648,7 +3635,6 @@ def add_multa(request):
         try:
             
             name_driver_multa_id = int(name_driver_multa_id)  
-            print("esto contiene el nombre del cosnductor de la multa:", name_driver_multa)
             driver = Vehicle_Driver.objects.get(id=name_driver_multa_id)
             vehicle = Vehicle.objects.get(id=vehicle)
 
@@ -3667,7 +3653,6 @@ def add_multa(request):
                 )
 
                 multa.save()
-                print("si lo guardo")
 
             return JsonResponse({'success': True, 'message': 'Multa agregada correctamente!'})
         
@@ -3682,16 +3667,13 @@ def add_multa(request):
 #funcion de la tabla licencias
 def get_table_multas(request):
     driver_id = request.GET.get('id')
-    print("este es el id del registro ", driver_id)
     if driver_id:
         try:
             # Obtener el conductor
             driver = Vehicle_Driver.objects.get(id=driver_id)
-            print("el id es ", driver)
 
             # Obtener las multas asociadas al conductor
             multas = Multas.objects.filter(name_driver=driver)  
-            print("multas encontradas:", multas)
 
             # Serializar las licencias
             multas_data = []
@@ -3761,10 +3743,7 @@ def edit_multa(request):
             multa = Multas.objects.get(id=_id)
 
             name_driver_id = multa.name_driver.id
-            modelo_vehicle_id = multa.vehicle.id
-
-            print("esto contienen el registro de multas:",multa)
-    
+            modelo_vehicle_id = multa.vehicle.id    
 
             multa.cost = cost
             multa.notes = notes
@@ -4003,7 +3982,6 @@ def upload_images_in_background(file, folder_path, new_name, bucket_name):
         # Redimensionar la imagen antes de subirla
         # Subir archivo redimensionado a S3
         s3_client.upload_fileobj(file_copy, bucket_name, file_path)
-        print(f"Archivo {new_name} redimensionado y subido con éxito a {bucket_name}/{file_path}")
     except FileNotFoundError:
         print(f"El archivo {new_name} no fue encontrado.")
     except NoCredentialsError:
@@ -4024,7 +4002,6 @@ def verificar_mantenimiento(request):
             selected_options={}
             # Procesar el cuerpo de la solicitud como JSON
             data = json.loads(request.body)
-            print(data)
             # Obtener los valores del JSON
             selected_options = list(data.get("selectedOption"))  # Ahora es una lista
             vehicle_id = data.get("vehicle")
@@ -4074,7 +4051,6 @@ def verificar_mantenimiento(request):
                             return JsonResponse(response)
                     else:
                         _id = int(id_edit)-1
-                        print(_id, " osnmaonm")
                         last_maintenance_obj = last_maintenance.filter(id = _id).first() # .first() para obtener el primer resultado, si existe
 
                 # Verificar si se encontró algún mantenimiento

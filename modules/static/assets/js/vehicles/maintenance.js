@@ -274,7 +274,6 @@ class VehiclesMaintenance {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        console.log(response);
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }
@@ -298,7 +297,6 @@ class VehiclesMaintenance {
 
             switch (option) {
                 case "refresh-table":
-                    console.log("prueba");
                     self.tbl_maintenance.ajax.reload();
                     break;
                 case "add-item":
@@ -321,7 +319,6 @@ class VehiclesMaintenance {
                     obj_modal.find("[name='type']").trigger("change");
                     break;
                 case "update-item":
-                    console.log("prueba de editar");
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
                     obj_modal.find(".modal-header").html("Actualizar registro");
@@ -424,7 +421,6 @@ class VehiclesMaintenance {
                     var datos = self.tbl_maintenance.row(fila).data();
                     var obj_div = $("#v-maintenance-pane .info-details");
                     $.each(datos, function (index, value) {
-                        console.log(value);
                         var isFileInput = obj_div.find(`[name="${index}"]`).is(":file");
 
                         if (!isFileInput) {
@@ -467,8 +463,6 @@ class VehiclesMaintenance {
                         datos["id"],
                         "INTERNO",
                         function (result) {
-                            console.log("Respuesta recibida:", result);
-
                             let opciones = result; // Usamos el resultado directamente
 
                             // Recorrer los <li> dentro de #card_maintenance_info y cambiar su color si su texto está en opciones
@@ -531,8 +525,6 @@ class VehiclesMaintenance {
             $.each(self.dataMaintenance[tipo], function (index, value) {
                 optionsHTML += `<option value="${value["descripcion"]}">${value["descripcion"]}</option>`;
             });
-            console.log(tipo);
-            select.html(optionsHTML);
 
             // Si estás usando select2, actualiza select2 después de cambiar las opciones
             select.select2({
@@ -554,7 +546,6 @@ class VehiclesMaintenance {
             } else {
                 id_edit = ""; // Si no hay valor en el campo, asegúrate de que sea una cadena vacía
             }
-            console.log(id_edit);
             verificar_mantenimiento(selectedOption, vehicle_man, tipo, id_edit, "MODAL");
             if (selectedOption.includes("Nuevo")) {
                 // Abrir el modal para agregar un nuevo tipo
@@ -783,8 +774,6 @@ function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo,
         contentType: "application/json", // Establecemos el tipo de contenido
         dataType: "json", // Esperamos recibir una respuesta JSON
         success: function (data) {
-            console.log(data.message);
-
             // Declarar 'opciones' fuera del bloque if
             let opciones = [];
 
@@ -794,8 +783,6 @@ function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo,
             }
 
             if (modulo == "MODAL") {
-                console.log("Opciones a resaltar:", opciones); // Depuración
-
                 $(
                     ".select2-container--default .select2-selection--multiple .select2-selection__choice"
                 ).each(function () {
@@ -847,8 +834,6 @@ function add_option() {
             maintenance_type: maintenanceType,
         }),
         success: function (data) {
-            console.log(data.message);
-
             $("#mdl-crud-option-maintenance").modal("hide");
 
             // Limpiar solo el campo de la nueva opción
