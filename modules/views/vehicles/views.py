@@ -628,7 +628,7 @@ def alertas(vehicle_id, detailed=False):
     Parámetros:
     - vehicle_id: ID del vehículo a verificar.
     - detailed: Si es True, devuelve un diccionario con 'alert' y 'missing_tables'.
-               Si es False, devuelve solo un booleano (True si hay alerta, False si no).
+    - Si es False, devuelve solo un booleano (True si hay alerta, False si no).
     
     Devuelve:
     - Si detailed=True: {"alert": bool, "missing_tables": list}
@@ -789,6 +789,10 @@ def get_vehicles_info(request):
                 try:
                     vehicle_id = item["id"]
                     item["alert"] = alertas(vehicle_id)
+
+                    #consulta para mantenimiento en proceso 
+                    maintenance_in_process = Vehicle_Maintenance.objects.filter(vehicle_id=vehicle_id, status="Proceso").exists()
+                    item["maintenance_in_process"] = maintenance_in_process
                     
                     if item["image_path"]:
                         tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
@@ -1630,99 +1634,6 @@ def get_vehicles_responsiva(request):
     response["success"] = True
     return JsonResponse(response)
 
-def update_vehicle_responsiva_back(request):
-    response = {"success": False}
-    context = user_data(request)
-    dt = request.POST
-    id = dt.get("id", None)
-    registro = dt.get("registro", "entrada")
-
-    #CONDITIONAL RESPONSIVE ID WAS SEND IT
-    if id is None or id == "":
-        response["status"] = "warning"
-        response["error"] = "No se proporcionó un ID válido para actualizar."
-        return JsonResponse(response)
-    
-    #CONDITIONAL RESPONSIVA EXISTS IN DB
-    try:
-        obj = Vehicle_Responsive.objects.get(id=id)
-    except Vehicle_Responsive.DoesNotExist:
-        response["status"] = "warning"
-        response["message"] = f"No existe ningún resgitro con el ID '{id}'"
-        return JsonResponse(response)
-
-    company_id = obj.vehicle.company.id
-    vehicle_id = obj.vehicle.id
-
-    #CONDITIONAL FINAL_MILEAGE IS GTE INITIAL_MILEAGE 
-    try:
-        obj_vehicle = Vehicle.objects.get(id = vehicle_id)
-        if dt.get("final_mileage", None):
-            initial_mileage = Decimal(obj.initial_mileage)
-            final_mileage = Decimal(dt["final_mileage"])
-            
-            if initial_mileage > final_mileage:
-                response["status"] = "warning"
-                response["message"] = "El kilometraje inicial es mayor al kilometraje final"
-                return JsonResponse(response)
-            if obj_vehicle.mileage > final_mileage:
-                response["status"] = "warning"
-                response["message"] = "El kilometraje del vehículo es mayor que el valor proporcionado."
-                return JsonResponse(response)
-    except Vehicle.DoesNotExist:
-        response["status"] = "error"
-        response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
-        return JsonResponse(response)
-
-    try:
-        with transaction.atomic():
-            #UPDATE INFORMATION MISSING
-            obj.final_fuel = dt.get("final_fuel")
-            obj.final_mileage = dt.get("final_mileage")
-            obj.end_date = dt.get("end_date")
-            obj.save()
-
-            flag = check_vehicle_kilometer(request, obj_vehicle, dt.get("final_mileage"), dt.get("end_date"))
-            if isinstance(flag, JsonResponse):
-                data_flag = json.loads(flag.content.decode('utf-8')).get
-                if data_flag("status") == "error":
-                    return flag
-                elif data_flag("status") == "warning":
-                    response["warning"] = {"message" : data_flag("message")}
-
-            if registro == "salida":
-                obj_vehicle.mileage = dt.get("initial_mileage")
-            elif registro == "entrada":
-                obj_vehicle.mileage = dt.get("final_mileage")
-            obj_vehicle.save()
-
-        load_file_1 = request.FILES.get('image_path_exit_1')
-        if load_file_1:
-
-            load_file = request.FILES.get('image_path_exit_1')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            file_name, extension = os.path.splitext(load_file.name)
-            new_name = f"entrada_1{extension}"
-            obj.image_path_entry_1 = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
-            obj.save()
-        load_file_2 = request.FILES.get('image_path_exit_2')
-        if load_file_2:
-
-            load_file = request.FILES.get('image_path_exit_2')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            file_name, extension = os.path.splitext(load_file.name)
-            new_name = f"entrada_2{extension}"
-            obj.image_path_entry_2 = folder_path + new_name
-            upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
-            obj.save()
-        response["status"] = "success"
-        response["success"] = True
-    except Exception as e:
-        response["status"] = "success"
-        response["message"] = str(e)
-    return JsonResponse(response)
-
 def delete_vehicle_responsiva(request):
     response = {"success": False, "data": []}
     dt = request.POST
@@ -2313,7 +2224,7 @@ def get_vehicle_maintenance(request):
         "id", "vehicle_id", "vehicle__name",
         "provider_id", "provider__name",
         "date", "type", "cost", 
-        "mileage","time", "general_notes", "actions", "comprobante"
+        "mileage","time", "general_notes", "actions", "comprobante", "status"
     )
 
     if context["role"] in [2,3]:
@@ -2355,7 +2266,7 @@ def get_vehicles_maintenance(request):
         "id", "vehicle_id", "vehicle__name",
         "provider_id", "provider__name",
         "date", "type", "cost", 
-        "mileage","time", "general_notes", "actions", "comprobante"
+        "mileage","time", "general_notes", "actions", "comprobante", "status"
     )
 
     if context["role"] in [2,3]:
@@ -3303,7 +3214,6 @@ def add_driver(request):
     company_id = context["company"]["id"]
 
     if request.method == 'POST':
-        print("esta es la informacion del formulario:", dt)
         name_driver = request.POST.get('driver_vehicle').strip()
         number_phone = request.POST.get('number_phone')
         address = request.POST.get('address')  
@@ -3342,7 +3252,6 @@ def add_driver(request):
                     # Guardar la ruta en el modelo
                     driver.image_path = S3name
                     driver.save()
-                    print("si lo guardo")
 
             return JsonResponse({'success': True, 'message': 'Conductor agregado correctamente!'})
         
@@ -3404,11 +3313,6 @@ def edit_driver(request):
             return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
         try:
             driver = Vehicle_Driver.objects.get(id=_id)
-            print("este es el registro:", driver)
-            print(name_driver)
-            print(number_phone)
-            print(address)
-            print(img)
             
             driver.name_driver_id = name_driver  
             driver.number_phone = number_phone
@@ -3431,9 +3335,6 @@ def edit_driver(request):
                     # Guardar la ruta en el modelo
                     driver.image_path = S3name
                     driver.save()
-                    
-                    print("si lo guardo")
-
 
             return JsonResponse({'success': True, 'message': 'Equipo editado correctamente!'})
 
@@ -3658,7 +3559,6 @@ def edit_licence(request):
                 upload_to_s3(license_driver, bucket_name, S3name)
                 licence.license_driver = S3name
 
-                print("Archivo subido correctamente a S3:", S3name)
 
             # Guardar siempre los cambios
             licence.save()
@@ -3715,13 +3615,11 @@ def get_vehicles(request):
 
 #función para agregar licencia
 def add_multa(request):
-    print("se entro a la funcion para agregar multa")
     context = user_data(request)
     dt = request.POST
     company_id = context["company"]["id"]
 
     if request.method == 'POST':
-        print("esta es la informacion del formulario de multa:", dt)
         
         name_driver_multa = request.POST.get('name_driver_multa', '').strip() 
         name_driver_multa_id = request.POST.get('name_driver_multa_id')
@@ -3737,7 +3635,6 @@ def add_multa(request):
         try:
             
             name_driver_multa_id = int(name_driver_multa_id)  
-            print("esto contiene el nombre del cosnductor de la multa:", name_driver_multa)
             driver = Vehicle_Driver.objects.get(id=name_driver_multa_id)
             vehicle = Vehicle.objects.get(id=vehicle)
 
@@ -3756,7 +3653,6 @@ def add_multa(request):
                 )
 
                 multa.save()
-                print("si lo guardo")
 
             return JsonResponse({'success': True, 'message': 'Multa agregada correctamente!'})
         
@@ -3771,16 +3667,13 @@ def add_multa(request):
 #funcion de la tabla licencias
 def get_table_multas(request):
     driver_id = request.GET.get('id')
-    print("este es el id del registro ", driver_id)
     if driver_id:
         try:
             # Obtener el conductor
             driver = Vehicle_Driver.objects.get(id=driver_id)
-            print("el id es ", driver)
 
             # Obtener las multas asociadas al conductor
             multas = Multas.objects.filter(name_driver=driver)  
-            print("multas encontradas:", multas)
 
             # Serializar las licencias
             multas_data = []
@@ -3850,10 +3743,7 @@ def edit_multa(request):
             multa = Multas.objects.get(id=_id)
 
             name_driver_id = multa.name_driver.id
-            modelo_vehicle_id = multa.vehicle.id
-
-            print("esto contienen el registro de multas:",multa)
-    
+            modelo_vehicle_id = multa.vehicle.id    
 
             multa.cost = cost
             multa.notes = notes
@@ -3906,7 +3796,13 @@ def add_vehicle_responsiva(request):
     try:
         obj_vehicle = Vehicle.objects.get(id=vehicle_id)
         company_id = obj_vehicle.company.id
-        # Verificamos que el kilometraje sea coherente
+        #verificar que no este en mantenimiento el vehiculo
+        mantenimiento = Vehicle_Maintenance.objects.filter(vehicle_id=vehicle_id, status="Proceso").first()
+        if mantenimiento:
+            response["status"] = "warning"
+            response["message"] = "El vehículo se encuentra en mantenimiento, no se puede generar una responsiva."
+            return JsonResponse(response)
+        # Verificamos que el kilmetraje sea coherente
         mileage = Decimal(dt.get("initial_mileage")) if dt.get("initial_mileage") else None
         if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
             response["status"] = "warning"
@@ -3997,6 +3893,11 @@ def update_vehicle_responsiva(request):
     try:
         obj_vehicle = Vehicle.objects.get(id=vehicle_id)
         company_id = obj_vehicle.company.id
+        mantenimiento = Vehicle_Maintenance.objects.filter(vehicle_id=vehicle_id, status="Proceso").first()
+        if mantenimiento:
+            response["status"] = "warning"
+            response["message"] = "El vehículo se encuentra en mantenimiento, no se puede generar una responsiva."
+            return JsonResponse(response)
     except Vehicle.DoesNotExist:
         response["status"] = "warning"
         response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
@@ -4081,7 +3982,6 @@ def upload_images_in_background(file, folder_path, new_name, bucket_name):
         # Redimensionar la imagen antes de subirla
         # Subir archivo redimensionado a S3
         s3_client.upload_fileobj(file_copy, bucket_name, file_path)
-        print(f"Archivo {new_name} redimensionado y subido con éxito a {bucket_name}/{file_path}")
     except FileNotFoundError:
         print(f"El archivo {new_name} no fue encontrado.")
     except NoCredentialsError:
@@ -4091,5 +3991,128 @@ def upload_images_in_background(file, folder_path, new_name, bucket_name):
     finally:
         # Close the copied file to free memory
         file_copy.close()
+
+
+@csrf_exempt
+def verificar_mantenimiento(request):
+    response = {"success": False}
+    
+    if request.method == "POST":
+        try:
+            selected_options={}
+            # Procesar el cuerpo de la solicitud como JSON
+            data = json.loads(request.body)
+            # Obtener los valores del JSON
+            selected_options = list(data.get("selectedOption"))  # Ahora es una lista
+            vehicle_id = data.get("vehicle")
+            tipo = data.get("tipo")
+            id_edit = data.get("id_edit")
+
+            # Verificar que 'selectedOption' sea una lista
+            if not isinstance(selected_options, list):
+                response["status"] = "warning"
+                response["message"] = "El campo 'selectedOption' debe ser una lista."
+                return JsonResponse(response)
+
+            # Verificar que el vehículo exista
+            try:
+                obj_vehicle = Vehicle.objects.get(id=vehicle_id)
+                company_id = obj_vehicle.company.id
+            except Vehicle.DoesNotExist:
+                response["status"] = "warning"
+                response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
+                return JsonResponse(response)
+
+            # Obtener el último mantenimiento del vehículo
+            try:
+                last_maintenance = Vehicle_Maintenance.objects.filter(vehicle=obj_vehicle, type = tipo)
+                count = last_maintenance.count()
+                last_maintenance_obj = last_maintenance.order_by('-id').first()
+                old_maintenance_obj = last_maintenance.first()
+                if id_edit:
+                    if int(last_maintenance_obj.id) == int(id_edit) and count <= 1:
+                        response["status"] = "warning"
+                        response["message"] = "No hay registros anteriores."    
+                        return JsonResponse(response)
+                    elif int(old_maintenance_obj.id) == int(id_edit):   
+                        response["status"] = "warning"
+                        response["message"] = ""    
+                        return JsonResponse(response)
+                        # Caso cuando el ID editado coincide con el último, se debe obtener el registro anterior
+                    elif int(last_maintenance_obj.id) == int(id_edit):
+                        
+                        # Verificar si hay un registro anterior
+                        if count > 1:
+                            # Tomar el siguiente registro (anterior al último)
+                            last_maintenance_obj = last_maintenance.order_by("-id")[1]  # El segundo objeto en la consulta
+                        else:
+                            response["status"] = "warning"
+                            response["message"] = "No hay registros anteriores."
+                            return JsonResponse(response)
+                    else:
+                        _id = int(id_edit)-1
+                        last_maintenance_obj = last_maintenance.filter(id = _id).first() # .first() para obtener el primer resultado, si existe
+
+                # Verificar si se encontró algún mantenimiento
+                if last_maintenance_obj and last_maintenance_obj.actions and count >= 1:
+                #     actions = json.loads(last_maintenance_obj.actions)  # Convertir el campo JSON en un diccionario
+                #     # Verificar si alguna de las opciones está en las acciones del último mantenimiento
+                # Si ninguna opción coincide
+                    response["message"] = ""
+                    response["status"] = "success"
+                    for selected_option in selected_options:
+                        if selected_option in last_maintenance_obj.actions:
+                            response["status"] = "info"
+                            response["message"] += f"{selected_option}*"
+                    
+                    if response["status"] == "success":
+                        response["message"] = "Las opciones no están registradas en el último mantenimiento."
+
+                    return JsonResponse(response)
+                    
+                else:
+                    response["status"] = "info"
+                    response["message"] = ""
+            except Vehicle_Maintenance.DoesNotExist:
+                response["status"] = "warning"
+                response["message"] = ""
+        
+        except json.JSONDecodeError:
+            response["status"] = "error"
+            response["message"] = "Error al procesar los datos JSON. Asegúrate de que el formato sea correcto."
+        except Exception as e:
+            response["status"] = "error"
+            response["message"] = f"Error interno: {str(e)}"
+    
+    return JsonResponse(response)
+
+@csrf_exempt  # Eximir la protección CSRF para este endpoint, si estás usando POST
+def update_status_man(request):
+    if request.method == 'POST':
+        # Obtener los datos enviados
+        maintenance_id = request.POST.get('id')
+        new_status = request.POST.get('status')
+
+        try:
+            # Obtener el mantenimiento
+            maintenance = Vehicle_Maintenance.objects.get(id=maintenance_id)
+            
+            # Verificar si la fecha ya pasó y si el estado no es "Proceso" o "Finalizado"
+            current_date = timezone.now().date()
+            maintenance_date = maintenance.date
+            if maintenance_date < current_date and maintenance.status not in ["Proceso", "Finalizado"]:
+                new_status = "Retrasado"  # Si la fecha ya pasó, marcar como "Retrasado"
+            
+            # Actualizar el estado
+            maintenance.status = new_status
+            maintenance.save()
+
+            # Responder con éxito
+            return JsonResponse({'status': 'success', 'message': 'Estado actualizado correctamente.'})
+
+        except Vehicle_Maintenance.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Mantenimiento no encontrado.'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Método no permitido.'})
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

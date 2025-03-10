@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+    console.log("testing reset");
     const qrInfoContainer = document.getElementById("qr-info-container");
     const qrAccessContainer = document.getElementById("qr-access-container");
 

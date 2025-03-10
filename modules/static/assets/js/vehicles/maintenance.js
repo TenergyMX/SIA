@@ -58,6 +58,51 @@ class VehiclesMaintenance {
                     { title: "Kilometraje", data: "mileage" },
                     { title: "Costos", data: "cost" },
                     { title: "Proveedor", data: "provider__name" },
+                    {
+                        title: "Status",
+                        data: "status",
+                        render: function (data, type, row) {
+                            // Verificar si la fecha ya pasó y el estado no es "Proceso" o "Finalizado"
+                            var currentDate = new Date();
+                            var maintenanceDate = new Date(row.date);
+                            var status = data;
+
+                            // Si la fecha ya pasó y el estado no es "Proceso" o "Finalizado", marcar como "Retrasado"
+                            if (
+                                maintenanceDate < currentDate &&
+                                status !== "Proceso" &&
+                                status !== "Finalizado"
+                            ) {
+                                status = "Retrasado"; // Marcamos como Retrasado
+                            }
+
+                            // Generar el select con el estado actual y la clase 'status-man'
+                            return `
+                                <select class="form-select form-select-sm d-inline-block float-end action-item status-man" data-id="${
+                                    row.id
+                                }">
+                                    <option value="Nuevo" ${
+                                        status === "Nuevo" ? "selected" : ""
+                                    }>Nuevo</option>
+                                    <option value="Programado" ${
+                                        status === "Programado" ? "selected" : ""
+                                    }>Programado</option>
+                                    <option value="Proceso" ${
+                                        status === "Proceso" ? "selected" : ""
+                                    }>Proceso</option>
+                                    <option value="Reagendado" ${
+                                        status === "Reagendado" ? "selected" : ""
+                                    }>Reagendado</option>
+                                    <option value="Finalizado" ${
+                                        status === "Finalizado" ? "selected" : ""
+                                    }>Finalizado</option>
+                                    <option value="Retrasado" ${
+                                        status === "Retrasado" ? "selected" : ""
+                                    }>Retrasado</option>
+                                </select>
+                            `;
+                        },
+                    },
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
@@ -229,7 +274,6 @@ class VehiclesMaintenance {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        console.log(response);
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }
@@ -253,7 +297,6 @@ class VehiclesMaintenance {
 
             switch (option) {
                 case "refresh-table":
-                    console.log("prueba");
                     self.tbl_maintenance.ajax.reload();
                     break;
                 case "add-item":
@@ -276,7 +319,6 @@ class VehiclesMaintenance {
                     obj_modal.find("[name='type']").trigger("change");
                     break;
                 case "update-item":
-                    console.log("prueba de editar");
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
                     obj_modal.find(".modal-header").html("Actualizar registro");
@@ -378,7 +420,6 @@ class VehiclesMaintenance {
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_maintenance.row(fila).data();
                     var obj_div = $("#v-maintenance-pane .info-details");
-
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_div.find(`[name="${index}"]`).is(":file");
 
@@ -394,7 +435,7 @@ class VehiclesMaintenance {
                     // Lista
                     var jsonString = datos["actions"].replace(/'/g, '"');
                     var objeto = JSON.parse(jsonString);
-                    obj_div.find("ol.list-group").html(null);
+                    obj_div.find("ol.list-group").html(null); // 15 // "S10" // "preventivo"
                     $.each(objeto, function (index, value) {
                         let li = $("<li>")
                             .addClass("list-group-item list-group-item-action")
@@ -410,6 +451,44 @@ class VehiclesMaintenance {
                         select.find(`option[value="${value}"]`).prop("selected", true);
                         li.append(select);
                     });
+                    var lista = [];
+
+                    var actionsKeys = Object.keys(objeto);
+                    lista.push(...actionsKeys);
+
+                    verificar_mantenimiento(
+                        lista,
+                        datos["vehicle_id"],
+                        datos["type"],
+                        datos["id"],
+                        "INTERNO",
+                        function (result) {
+                            let opciones = result; // Usamos el resultado directamente
+
+                            // Recorrer los <li> dentro de #card_maintenance_info y cambiar su color si su texto está en opciones
+                            $(
+                                "#card_maintenance_info .list-group-item.list-group-item-action"
+                            ).each(function () {
+                                // Obtener SOLO el texto principal del <li>, ignorando el contenido de elementos hijos como <select>
+                                let textoLi = $(this).clone().children().remove().end().text();
+
+                                if (opciones.includes(textoLi)) {
+                                    $(this).attr(
+                                        "style",
+                                        "background-color:rgb(205,101,101) !important; color: #ffffff !important;border: 1px solid #ffffff !important;"
+                                    ); // Resaltar en rojo con !important
+                                    // Insertar el ícono con el tooltip
+                                    $(this).append(
+                                        '<span data-bs-toggle="tooltip" data-bs-placement="top" title="Cambio realizado en mantenimiento anterior">' +
+                                            '<i class="fa fa-question-circle" style="cursor: pointer; color: #ffffff; margin-left: 10px;"></i>' +
+                                            "</span>"
+                                    );
+                                    // Inicializar los tooltips de Bootstrap
+                                    $('[data-bs-toggle="tooltip"]').tooltip();
+                                }
+                            });
+                        }
+                    );
 
                     // Archivo
                     if (datos["comprobante"]) {
@@ -446,8 +525,6 @@ class VehiclesMaintenance {
             $.each(self.dataMaintenance[tipo], function (index, value) {
                 optionsHTML += `<option value="${value["descripcion"]}">${value["descripcion"]}</option>`;
             });
-            console.log(tipo);
-            select.html(optionsHTML);
 
             // Si estás usando select2, actualiza select2 después de cambiar las opciones
             select.select2({
@@ -457,10 +534,19 @@ class VehiclesMaintenance {
         });
 
         // Detectar si seleccionan "Nuevo" y abrir el modal
+
         obj_modal.on("change", "[name='actions[]']", function () {
             var selectedOption = $(this).val();
-            console.log(selectedOption);
+            var vehicle_man = $('#mdl_crud_maintenance select[name="vehicle_id"]').val();
+            var tipo = $('#mdl_crud_maintenance select[name="type"]').val();
+            let id_edit = ""; // Inicializa la variable con un valor por defecto
 
+            if ($('#mdl_crud_maintenance input[name="id"]').val()) {
+                id_edit = $('#mdl_crud_maintenance input[name="id"]').val();
+            } else {
+                id_edit = ""; // Si no hay valor en el campo, asegúrate de que sea una cadena vacía
+            }
+            verificar_mantenimiento(selectedOption, vehicle_man, tipo, id_edit, "MODAL");
             if (selectedOption.includes("Nuevo")) {
                 // Abrir el modal para agregar un nuevo tipo
                 $("#mdl-crud-option-maintenance").modal("show");
@@ -673,6 +759,68 @@ class VehiclesMaintenance {
     }
 }
 
+function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo, callback = null) {
+    var dataToSend = {
+        selectedOption: selectedOption, // selectedOptions es un array
+        vehicle: vehicle, // El ID del vehículo
+        tipo: tipo,
+        id_edit: id_edit,
+    };
+    // datos.append("actionsformat2", JSON.stringify(actionsformat2));
+    $.ajax({
+        url: "/verificar_mantenimiento/",
+        method: "POST",
+        data: JSON.stringify(dataToSend),
+        contentType: "application/json", // Establecemos el tipo de contenido
+        dataType: "json", // Esperamos recibir una respuesta JSON
+        success: function (data) {
+            // Declarar 'opciones' fuera del bloque if
+            let opciones = [];
+
+            if (data.status == "info") {
+                // Separar el mensaje en opciones sin modificar el contenido
+                opciones = data.message.split("*").filter((op) => op !== "");
+            }
+
+            if (modulo == "MODAL") {
+                $(
+                    ".select2-container--default .select2-selection--multiple .select2-selection__choice"
+                ).each(function () {
+                    let tituloOpcion = $(this).attr("title");
+
+                    // Si el title está en la lista de opciones devueltas, cambia el color de toda la estructura
+                    if (opciones.includes(tituloOpcion)) {
+                        $(this).css({
+                            "background-color": "rgb(205,101,101)", // Establece el fondo
+                            border: "1px solid rgb(205,101,101)",
+                        });
+                        // Establecer un texto de tooltip cuando el cursor pase sobre el elemento
+                        $(this).attr("title", "Cambio realizado en mantenimiento pasado");
+                    } else {
+                        // Eliminar el color de fondo si no coincide con las opciones
+                        $(this).css({
+                            "background-color": "var(--primary-color)", // Establece el fondo
+                            border: "1px solid var(--primary-color)", // Ajuste para el borde
+                        });
+                    }
+                });
+            } else {
+                if (callback) {
+                    callback(opciones); // Llama al callback con el resultado
+                }
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error("Error:", error);
+            Swal.fire({
+                title: "Error",
+                text: "Hubo un problema al procesar la solicitud",
+                icon: "error",
+            });
+        },
+    });
+}
+
 function add_option() {
     var optionName = $("#option_maintenance_name").val(); // Obtiene el valor del input
     var maintenanceType = $('select[name="type"]').val(); // Obtiene el tipo de mantenimiento
@@ -686,8 +834,6 @@ function add_option() {
             maintenance_type: maintenanceType,
         }),
         success: function (data) {
-            console.log(data.message);
-
             $("#mdl-crud-option-maintenance").modal("hide");
 
             // Limpiar solo el campo de la nueva opción
@@ -726,6 +872,54 @@ function actualizarLista() {
         },
         error: function (xhr) {
             console.error("Error al cargar las opciones:", xhr);
+        },
+    });
+}
+
+// Manejar el cambio de estado en el select con la clase 'status-man'
+$(document).on("change", ".status-man", function () {
+    var newStatus = $(this).val();
+    var id = $(this).data("id");
+
+    // Mostrar el SweetAlert para confirmar el cambio
+    Swal.fire({
+        title: "¿Estás seguro?",
+        text: `Estás a punto de cambiar el estado a "${newStatus}".`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, cambiar",
+        cancelButtonText: "Cancelar",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Llamar a la función para actualizar el estado
+            update_status_man(id, newStatus);
+        } else {
+            // Restaurar el valor anterior si se cancela
+            var currentStatus = $(this).find("option:selected").text();
+            $(this).val(currentStatus);
+        }
+    });
+});
+
+// Función para enviar la solicitud AJAX y actualizar el estado
+function update_status_man(id, newStatus) {
+    $.ajax({
+        url: "/update_status_man/", // URL que definimos en urls.py
+        method: "POST",
+        data: {
+            id: id,
+            status: newStatus,
+            csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(), // Asegúrate de incluir el token CSRF si estás usando Django
+        },
+        success: function (response) {
+            // Aquí puedes manejar la respuesta si es necesario
+            Swal.fire("Actualizado", `El estado ha sido cambiado a "${newStatus}".`, "success");
+            // Recargar la tabla o actualizar la fila según sea necesario
+            $("#example").DataTable().ajax.reload();
+        },
+        error: function (xhr, status, error) {
+            // Manejar error en caso de que la solicitud falle
+            Swal.fire("Error", "Ocurrió un error al intentar actualizar el estado.", "error");
         },
     });
 }
