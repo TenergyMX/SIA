@@ -52,13 +52,25 @@ class Vehicles {
                         data: "alert",
                         className: "toggleable",
                         render: function (data, type, row) {
-                            if (data) {
-                                return '<i class="fa-solid fa-bell fa-shake" style="color:rgb(255, 174, 0)"></i>';
+                            // Verificamos si el vehículo está en proceso de mantenimiento
+                            let iconos = "";
+
+                            if (row.maintenance_in_process) {
+                                // Si el vehículo está en mantenimiento en proceso, mostramos el icono de llave inglesa
+                                iconos +=
+                                    '<i class="fa-solid fa-car-wrench" style="color:rgb(192, 233, 44)" title="Vehículo en proceso de mantenimiento"></i> ';
                             }
-                            return "";
+
+                            // Si tiene una alerta, mostramos el icono de alerta
+                            if (data) {
+                                iconos +=
+                                    '<i class="fa-solid fa-bell fa-shake" style="color:rgb(255, 174, 0)" title="Alerta de mantenimiento"></i>';
+                            }
+
+                            // Si no hay iconos, no mostramos nada
+                            return iconos || "";
                         },
                     },
-
                     { title: "Nombre", data: "name", className: "toggleable" },
                     { title: "Marca", data: "brand", className: "toggleable" },
                     { title: "Modelo", data: "model", className: "toggleable" },

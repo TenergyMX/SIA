@@ -81,6 +81,8 @@ urlpatterns = [
     path("delete_vehicle_kilometer/", views.delete_vehicle_kilometer),
     path("update_vehicle_kilometer/", views.update_vehicle_kilometer),
     path("get_vehicle_maintenance_kilometer/", views.get_vehicle_maintenance_kilometer),
+    path('update_status_man/', views.update_status_man, name='update_status_man'),  # URL para actualizar el estado
+
 
     path("get-vehicles-calendar/", views.get_vehicles_calendar),
 
@@ -100,6 +102,7 @@ urlpatterns = [
 
     path("vehicles/responsiva/<str:qr>/<int:vehicle_id>", views.module_vehicle_responsiva),
     path("validar_vehicle_en_sa/", views.validar_vehicle_en_sa),
+    path("verificar_mantenimiento/", views.verificar_mantenimiento),
 
     #conductores
     path("driver_vehicles/", views.driver_vehicles),
@@ -126,6 +129,7 @@ urlpatterns = [
     path("add_multa/", views.add_multa),
     path("edit_multa/", views.edit_multa),
     path("delete_multa/", views.delete_multa),
+
 
     
 
