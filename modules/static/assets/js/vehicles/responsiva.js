@@ -117,6 +117,92 @@ class VehiclesResponsiva {
         }
 
         self.setupEventHandlers();
+        // Si `QR` está presente en la URL, esperar a que el modal se cargue y luego abrirlo
+        if (qr) {
+            self.esperarModal("#mdl_crud_responsiva")
+                .then(() => self.openResponsivaModal(qr))
+                .catch((error) => console.error(error));
+        }
+    }
+    esperarModal(selector, intentos = 10, intervalo = 100) {
+        return new Promise((resolve, reject) => {
+            let contador = 0;
+
+            function verificarModal() {
+                let modal = document.querySelector(selector);
+                if (modal) {
+                    resolve(); // Modal encontrado
+                } else if (contador < intentos) {
+                    contador++;
+                    setTimeout(verificarModal, intervalo);
+                } else {
+                    reject(`El modal "${selector}" no está disponible.`);
+                }
+            }
+
+            verificarModal();
+        });
+    }
+
+    openResponsivaModal(id_vehicle) {
+        const self = this;
+        var obj_modal = $("#mdl_crud_responsiva");
+        obj_modal.find("form")[0].reset();
+        obj_modal.modal("show");
+
+        $.ajax({
+            url: "/validar_vehicle_en_sa/", // Cambia esta URL por la ruta de tu servidor que va a manejar la solicitud
+            type: "POST",
+            data: {
+                id_vehicle: id_vehicle, // Enviamos la variable qr
+                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(), // Asegúrate de incluir el token CSRF si estás usando Django
+            },
+            success: function (response) {
+                var status = response.status;
+                console.log(response);
+                if (status == "SALIDA") {
+                    obj_modal.find(".modal-header").html("Registrar salida");
+                    obj_modal.find(".final").hide().find(":input").prop("disabled", true);
+                    obj_modal.find(".inicial").show().find(":input").prop("disabled", false);
+                    if (response.fecha_actual) {
+                        $("input[name='start_date']").val(response.fecha_actual);
+                    }
+                    obj_modal.find("[name='initial_mileage']").val(response.km_final || null);
+                    obj_modal.find("[name='initial_fuel']").val(response.gasolina_final || null);
+                    obj_modal.find("[type='submit']").hide();
+                    obj_modal.find("[name='add']").show();
+                } else if (status == "ENTRADA") {
+                    obj_modal.find(".modal-header").html("Registrar entrada");
+                    obj_modal.find(".inicial").hide().find(":input").prop("disabled", true);
+                    obj_modal.find(".final").show().find(":input").prop("disabled", false);
+                    obj_modal.find("[name='id']").val(response.id_register || null);
+                    if (response.fecha_actual) {
+                        $("input[name='end_date']").val(response.fecha_actual);
+                    }
+                    obj_modal.find("[type='submit']").hide();
+                    obj_modal.find("[name='update']").show();
+                    setTimeout(function () {
+                        $('select[name="responsible_id"]').val(response.id_responsable || null);
+                    }, 500);
+                    console.log(id_vehicle);
+                    console.log(response.id_register);
+                    console.log(response.id_responsable);
+                }
+            },
+            error: function (xhr, status, error) {
+                // Maneja el error si la solicitud falla
+                console.log("Error en la solicitud AJAX:", error);
+            },
+        });
+
+        console.log(self.vehicle.data.vehicle_id);
+        setTimeout(function () {
+            $('select[name="vehicle_id"]').val(id_vehicle);
+        }, 500);
+        // obj_modal.find("[name='vehicle_id']").val(qr || null);
+        // obj_modal.find("[name='vehicle_name']").val(self.vehicle.data.vehicle_name || null);
+
+        //
     }
 
     setupEventHandlers() {
