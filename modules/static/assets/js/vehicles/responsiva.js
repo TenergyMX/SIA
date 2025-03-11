@@ -124,7 +124,7 @@ class VehiclesResponsiva {
         }
 
         self.setupEventHandlers();
-        // Si `qr` está presente en la URL, esperar a que el modal se cargue y luego abrirlo
+        // Si `QR` está presente en la URL, esperar a que el modal se cargue y luego abrirlo
         if (qr) {
             self.esperarModal("#mdl_crud_responsiva")
                 .then(() => self.openResponsivaModal(qr))
