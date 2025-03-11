@@ -224,7 +224,6 @@ class VehiclesResponsiva {
                             .find(`[data-key-value="${index}"]`)
                             .html(value || "---")
                             .removeClass();
-
                         if (index === "initial_fuel") {
                             const posicion = value;
                             const posiciones = [
@@ -249,13 +248,12 @@ class VehiclesResponsiva {
                                 posiciones[index].deg +
                                 (posiciones[siguienteIndex].deg - posiciones[index].deg) *
                                     porcentaje;
-                            obj_div.find(`.punta-inicial`).css({
+                            obj_div.find(".punta-inicial").css({
                                 left: `${left}%`,
                                 top: `${top}%`,
                                 transform: `rotate(${deg}deg) scale(0.8)`,
                             });
                         }
-
                         if (index === "final_fuel") {
                             const posicion = value;
                             const posiciones = [
@@ -280,7 +278,7 @@ class VehiclesResponsiva {
                                 posiciones[index].deg +
                                 (posiciones[siguienteIndex].deg - posiciones[index].deg) *
                                     porcentaje;
-                            obj_div.find(`.punta-final`).css({
+                            obj_div.find(".punta-final").css({
                                 left: `${left}%`,
                                 top: `${top}%`,
                                 transform: `rotate(${deg}deg) scale(0.8)`,
@@ -369,6 +367,14 @@ class VehiclesResponsiva {
                             processData: false,
                             contentType: false,
                             success: function (response) {
+                                Swal.close(); // Cerrar alerta de carga antes de mostrar el resultado
+                                if (response.status == "warning") {
+                                    Swal.fire(
+                                        "Warning",
+                                        "Vehiculo en proceso de mantenimiento",
+                                        "warning"
+                                    );
+                                }
                                 if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
                                     return;
@@ -378,9 +384,6 @@ class VehiclesResponsiva {
                                         response.warning["message"],
                                         "warning"
                                     );
-                                } else if (!response.success) {
-                                    Swal.fire("Error", "Ocurrio un error inesperado", "error");
-                                    return;
                                 } else {
                                     Swal.fire("Exito", "Salida Registrada", "success");
                                 }
