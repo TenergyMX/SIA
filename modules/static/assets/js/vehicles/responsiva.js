@@ -81,12 +81,19 @@ class VehiclesResponsiva {
         if (options.vehicle) {
             self.vehicle = { ...defaultOptions.vehicle, ...options.vehicle };
         }
-
-        self.init();
+        $(document).ready(function () {
+            self.init();
+        });
     }
 
     init() {
         const self = this;
+
+        // Obtener la parte de la URL que contiene "qr/15"
+        const pathParts = window.location.pathname.split("/");
+
+        // Buscar el valor después de "qr"
+        const qr = pathParts[pathParts.indexOf("qr") + 1];
 
         if (self.table) {
             self.tbl_responsiva = $(self.table.id).DataTable({
@@ -213,6 +220,7 @@ class VehiclesResponsiva {
             var obj = $(this);
             var option = obj.data("vehicle-responsiva");
             obj_modal.find("form :input").prop("disabled", false).closest(".col-12").show();
+
             switch (option) {
                 case "refresh-table":
                     self.tbl_responsiva.ajax.reload();
@@ -286,10 +294,10 @@ class VehiclesResponsiva {
                     var datos = self.tbl_responsiva.row(fila).data();
 
                     $.each(datos, function (index, value) {
-                        var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
+                        var isFileInput = obj_modal.find([(name = "${index}")]).is(":file");
 
                         if (!isFileInput) {
-                            obj_modal.find(`[name='${index}']`).val(value);
+                            obj_modal.find([(name = "${index}")]).val(value);
                         }
                     });
 
@@ -379,42 +387,54 @@ class VehiclesResponsiva {
 
                     if (datos["image_path_exit_1"]) {
                         $("[alt='image_path_exit_1']")
-                            .attr("src", "/" + datos["image_path_exit_1"])
+                            .attr("src", datos["image_path_exit_1"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
-                        $("[alt='image_path_exit_1']").closest(".card").addClass("placeholder");
+                        $("[alt='image_path_exit_1']")
+                            .attr("src", "")
+                            .closest(".card")
+                            .removeClass("placeholder");
                     }
 
                     if (datos["image_path_exit_2"]) {
                         $("[alt='image_path_exit_2']")
-                            .attr("src", "/" + datos["image_path_exit_1"])
+                            .attr("src", datos["image_path_exit_2"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
-                        $("[alt='image_path_exit_2']").closest(".card").addClass("placeholder");
+                        $("[alt='image_path_exit_2']")
+                            .attr("src", "")
+                            .closest(".card")
+                            .removeClass("placeholder");
                     }
-
+                    // # cargar funcion completa
                     if (datos["image_path_entry_1"]) {
                         $("[alt='image_path_entry_1']")
-                            .attr("src", "/" + datos["image_path_entry_1"])
+                            .attr("src", datos["image_path_entry_1"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
-                        $("[alt='image_path_entry_1']").closest(".card").addClass("placeholder");
+                        $("[alt='image_path_entry_1']")
+                            .attr("src", "")
+                            .closest(".card")
+                            .removeClass("placeholder");
                     }
-
+                    // # cargar funcion completa
                     if (datos["image_path_entry_2"]) {
                         $("[alt='image_path_entry_2']")
-                            .attr("src", "/" + datos["image_path_entry_2"])
+                            .attr("src", datos["image_path_entry_2"])
                             .closest(".card")
                             .removeClass("placeholder");
                     } else {
-                        $("[alt='image_path_entry_2']").closest(".card").addClass("placeholder");
+                        $("[alt='image_path_entry_2']")
+                            .attr("src", "")
+                            .closest(".card")
+                            .removeClass("placeholder");
                     }
-
+                    // # cargar funcion completa
                     // firma
-                    $("[alt='firma']").attr("src", "/" + datos["signature"]);
+                    $("[alt='firma']").attr("src", datos["signature"]);
 
                     // ! Actualizamos la info card
                     if (self.vehicle && self.vehicle.infoCard) {
@@ -427,11 +447,10 @@ class VehiclesResponsiva {
             }
         });
 
-        /*PREPARE FOR SET A NEW MAINTENANCE IN CASE THE MANTENIMIENTO NEED IT*/
         obj_modal.find("form").on("submit", function (e) {
             e.preventDefault();
             var submit = $("button[type='submit']:focus", this).attr("name");
-            var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_responsiva/";
+            var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_maintenance/";
             var datos = new FormData(this);
 
             if (submit == "add" && !self.input.signature.hasDrawing()) {
@@ -439,8 +458,18 @@ class VehiclesResponsiva {
                 return;
             }
 
+            Swal.fire({
+                title: "Procesando...",
+                text: "Por favor, espera mientras se procesa la solicitud.",
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
             if (submit == "add") {
                 url = "/add_vehicle_responsiva/";
+
                 self.input.signature
                     .getCanvasBlob()
                     .then((blob) => {
@@ -463,21 +492,22 @@ class VehiclesResponsiva {
                                 }
                                 if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
-                                    return;
-                                } else if (!response.success && response.warning) {
+                                } else if (response.warning) {
                                     Swal.fire(
                                         "Advertencia",
                                         response.warning["message"],
                                         "warning"
                                     );
                                 } else {
-                                    Swal.fire("Exito", "Salida Registrada", "success");
+                                    Swal.fire("Éxito", "Salida Registrada", "success");
                                 }
+
                                 obj_modal.modal("hide");
                                 self.tbl_responsiva.ajax.reload();
                                 self.input.signature.clearCanvas();
                             },
                             error: function (xhr, status, error) {
+                                Swal.close();
                                 Swal.fire(
                                     "Error del servidor",
                                     "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
@@ -486,10 +516,13 @@ class VehiclesResponsiva {
                             },
                         });
                     })
-                    .catch((error) => {});
+                    .catch((error) => {
+                        Swal.close();
+                        Swal.fire("Error", "No se pudo obtener la firma", "error");
+                    });
             } else {
-                /* submit == UPDTE */
                 url = "/update_vehicle_responsiva/";
+
                 $.ajax({
                     type: "POST",
                     url: url,
@@ -497,21 +530,24 @@ class VehiclesResponsiva {
                     processData: false,
                     contentType: false,
                     success: function (response) {
+                        Swal.close(); // Cerrar alerta de carga antes de mostrar el resultado
                         if (!response.success && response.error) {
                             Swal.fire("Error", response.error["message"], "error");
-                            return;
-                        } else if (!response.success && response.warning) {
+                        } else if (response.warning) {
                             Swal.fire("Advertencia", response.warning["message"], "warning");
-                        } else if (!response.success) {
-                            Swal.fire("Error", "Ocurrio un error inesperado", "error");
+                        } else if (response.status == "warning") {
+                            Swal.fire("Error", response.message, "warning");
                             return;
+                        } else if (!response.success) {
+                            Swal.fire("Advertencia", "Error inesperado", "error");
                         } else {
-                            Swal.fire("Exito", "Entrada Registrada", "success");
+                            Swal.fire("Éxito", "Entrada Registrada", "success");
                         }
                         obj_modal.modal("hide");
                         self.tbl_responsiva.ajax.reload();
                     },
                     error: function (xhr, status, error) {
+                        Swal.close();
                         Swal.fire(
                             "Error del servidor",
                             "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
@@ -520,6 +556,7 @@ class VehiclesResponsiva {
                     },
                 });
             }
+
             // end
         });
     }
