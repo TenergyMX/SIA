@@ -318,6 +318,66 @@ class VehiclesResponsiva {
                             .find(`[data-key-value="${index}"]`)
                             .html(value || "---")
                             .removeClass();
+                            if (index === "initial_fuel") {
+                                const posicion = value;
+                                const posiciones = [
+                                    { left: 26, top: 21, deg: -65 },
+                                    { left: 32, top: 6, deg: -33 },
+                                    { left: 44, top: 0, deg: 0 },
+                                    { left: 55, top: 6, deg: 33 },
+                                    { left: 60, top: 21, deg: 65 },
+                                ];
+                                const index = Math.floor(posicion / 25);
+                                const siguienteIndex = Math.min(index + 1, posiciones.length - 1);
+                                const porcentaje = (posicion - index * 25) / 25;
+                                const left =
+                                    posiciones[index].left +
+                                    (posiciones[siguienteIndex].left - posiciones[index].left) *
+                                        porcentaje;
+                                const top =
+                                    posiciones[index].top +
+                                    (posiciones[siguienteIndex].top - posiciones[index].top) *
+                                        porcentaje;
+                                const deg =
+                                    posiciones[index].deg +
+                                    (posiciones[siguienteIndex].deg - posiciones[index].deg) *
+                                        porcentaje;
+                                obj_div.find(".punta-inicial").css({
+                                    left: `${left}%`,
+                                    top: `${top}%`,
+                                    transform: `rotate(${deg}deg) scale(0.8)`,
+                                });
+                            }
+                            if (index === "final_fuel") {
+                                const posicion = value;
+                                const posiciones = [
+                                    { left: 26, top: 21, deg: -65 },
+                                    { left: 32, top: 6, deg: -33 },
+                                    { left: 44, top: 0, deg: 0 },
+                                    { left: 55, top: 6, deg: 33 },
+                                    { left: 60, top: 21, deg: 65 },
+                                ];
+                                const index = Math.floor(posicion / 25);
+                                const siguienteIndex = Math.min(index + 1, posiciones.length - 1);
+                                const porcentaje = (posicion - index * 25) / 25;
+                                const left =
+                                    posiciones[index].left +
+                                    (posiciones[siguienteIndex].left - posiciones[index].left) *
+                                        porcentaje;
+                                const top =
+                                    posiciones[index].top +
+                                    (posiciones[siguienteIndex].top - posiciones[index].top) *
+                                        porcentaje;
+                                const deg =
+                                    posiciones[index].deg +
+                                    (posiciones[siguienteIndex].deg - posiciones[index].deg) *
+                                        porcentaje;
+                                obj_div.find(".punta-final").css({
+                                    left: `${left}%`,
+                                    top: `${top}%`,
+                                    transform: `rotate(${deg}deg) scale(0.8)`,
+                                });
+                            }
                     });
 
                     $('[data-key-value="responsible"]').html(
@@ -423,7 +483,9 @@ class VehiclesResponsiva {
                             contentType: false,
                             success: function (response) {
                                 Swal.close(); // Cerrar alerta de carga antes de mostrar el resultado
-
+                                if (response.status == "warning") {
+                                    Swal.fire("Warning", "Vehiculo en proceso de mantenimiento", "warning");
+                                }
                                 if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
                                 } else if (response.warning) {
@@ -432,8 +494,6 @@ class VehiclesResponsiva {
                                         response.warning["message"],
                                         "warning"
                                     );
-                                } else if (!response.success) {
-                                    Swal.fire("Error", "Ocurrió un error inesperado", "error");
                                 } else {
                                     Swal.fire("Éxito", "Salida Registrada", "success");
                                 }

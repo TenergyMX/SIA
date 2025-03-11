@@ -19961,6 +19961,18 @@ a.link-underline-dark {
     width:15rem;
 }
 
+.fuel-img img {
+  height: 3rem;
+  width: auto;
+  position: relative;
+}
+
+.fuel-img .punta{
+  position:absolute;
+  left: 26%;
+  top: 21%;
+  transform: rotate(-65deg) scale(0.8);
+}      
 
 /* End:: Icon Link */
 
