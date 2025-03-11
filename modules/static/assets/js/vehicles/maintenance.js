@@ -419,6 +419,9 @@ class VehiclesMaintenance {
 
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_maintenance.row(fila).data();
+
+                    // Limpiar el contenido del contenedor antes de cargar nuevos datos
+                    
                     var obj_div = $("#v-maintenance-pane .info-details");
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_div.find(`[name="${index}"]`).is(":file");
@@ -435,7 +438,7 @@ class VehiclesMaintenance {
                     // Lista
                     var jsonString = datos["actions"].replace(/'/g, '"');
                     var objeto = JSON.parse(jsonString);
-                    obj_div.find("ol.list-group").html(null); // 15 // "S10" // "preventivo"
+                    obj_div.find("ol.list-group").html(""); // 15 // "S10" // "preventivo"
                     $.each(objeto, function (index, value) {
                         let li = $("<li>")
                             .addClass("list-group-item list-group-item-action")
@@ -516,6 +519,7 @@ class VehiclesMaintenance {
 
         obj_modal.find('[name="type"]').on("change", function (e) {
             var tipo = $(this).val().toLowerCase();
+            console.log(tipo);
             var select = obj_modal.find("[name='actions[]']");
             var optionsHTML = "";
             select.empty();
@@ -523,9 +527,11 @@ class VehiclesMaintenance {
 
             // Agregar las opciones correspondientes
             $.each(self.dataMaintenance[tipo], function (index, value) {
+                console.log("prueba"+value["descripcion"]);
                 optionsHTML += `<option value="${value["descripcion"]}">${value["descripcion"]}</option>`;
             });
-
+            // Actualiza el select con las nuevas opciones
+            select.html(optionsHTML);
             // Si estás usando select2, actualiza select2 después de cambiar las opciones
             select.select2({
                 search: true,
@@ -740,18 +746,22 @@ class VehiclesMaintenance {
         const self = this;
         var obj_modal = $("#mdl_crud_computerSystem");
         var url = SIA.static + "assets/json/vehicles-maintenance.json";
+        console.log(url);
 
         $.ajax({
             type: "GET",
             url: url,
             success: function (response) {
+                console.log("JSON cargado correctamente:", response);
                 self.dataMaintenance = {};
                 $.each(response.data, function (index, mantenimiento) {
+                    console.log(mantenimiento);
                     var tipo = mantenimiento.tipo;
                     self.dataMaintenance[tipo] = mantenimiento.items;
                 });
             },
             error: function (xhr, status, error) {
+                console.error("Error al cargar el JSON:", error);
                 self.dataMaintenance = { preventivo: [], correctivo: [] };
             },
             complete: function () {},
