@@ -486,11 +486,11 @@ class VehiclesResponsiva {
                                 if (response.status == "warning") {
                                     Swal.fire(
                                         "Warning",
-                                        "Vehiculo en proceso de mantenimiento",
+                                        "Vehiculo en proceso de mantenimiento \n" + 
+                                        "No se pudo realizar el registro, informe a la persona encargada",
                                         "warning"
                                     );
-                                }
-                                if (!response.success && response.error) {
+                                } else if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
                                 } else if (response.warning) {
                                     Swal.fire(
