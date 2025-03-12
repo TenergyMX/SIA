@@ -26,4 +26,5 @@ postgres_data/
 /modules/views/computer-equipment/.env
 modules/awsCred.env
 postgres/siaDB.pgsql
-
+modules/.DS_Store
+.DS_Store
