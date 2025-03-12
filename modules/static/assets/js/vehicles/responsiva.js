@@ -204,8 +204,16 @@ class VehiclesResponsiva {
 
         console.log(self.vehicle.data.vehicle_id);
         setTimeout(function () {
-            $('select[name="vehicle_id"]').val(id_vehicle);
+            $
         }, 500);
+        // Usar la función para asignar el valor
+        asignarValorSelect(id_vehicle)
+        .then(() => {
+            console.log("Valor asignado correctamente.");
+        })
+        .catch((error) => {
+            console.error(error);
+        });
         // obj_modal.find("[name='vehicle_id']").val(qr || null);
         // obj_modal.find("[name='vehicle_name']").val(self.vehicle.data.vehicle_name || null);
 
@@ -483,7 +491,7 @@ class VehiclesResponsiva {
                             contentType: false,
                             success: function (response) {
                                 Swal.close(); // Cerrar alerta de carga antes de mostrar el resultado
-                                if (response.status == "warning") {
+                                if (response.status == "warning" && response.type == "mantenimiento") {
                                     Swal.fire(
                                         "Warning",
                                         "Vehiculo en proceso de mantenimiento \n" + 
@@ -492,7 +500,7 @@ class VehiclesResponsiva {
                                     );
                                 } else if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
-                                } else if (response.warning) {
+                                } else if (response.warning && response.type == "kilometraje") {
                                     Swal.fire(
                                         "Advertencia",
                                         response.warning["message"],
@@ -531,11 +539,18 @@ class VehiclesResponsiva {
                     contentType: false,
                     success: function (response) {
                         Swal.close(); // Cerrar alerta de carga antes de mostrar el resultado
-                        if (!response.success && response.error) {
+                        if (response.status == "warning" && response.type == "mantenimiento") {
+                            Swal.fire(
+                                "Warning",
+                                "Vehiculo en proceso de mantenimiento \n" + 
+                                "No se pudo realizar el registro, informe a la persona encargada",
+                                "warning"
+                            );
+                        } else if (!response.success && response.error) {
                             Swal.fire("Error", response.error["message"], "error");
                         } else if (response.warning) {
                             Swal.fire("Advertencia", response.warning["message"], "warning");
-                        } else if (response.status == "warning") {
+                        } else if (response.status == "warning" && response.type == "kilometraje") {
                             Swal.fire("Error", response.message, "warning");
                             return;
                         } else if (!response.success) {
@@ -603,3 +618,26 @@ document.querySelectorAll('.form-control[name^="image_path_"]').forEach((input) 
         }
     });
 });
+
+function asignarValorSelect(id_vehicle, intentos = 10, intervalo = 100) {
+    return new Promise((resolve, reject) => {
+        let contador = 0;
+
+        function verificarYAsignar() {
+            var select = $('select[name="vehicle_id"]');
+            var opcionExiste = select.find(`option[value="${id_vehicle}"]`).length > 0;
+
+            if (opcionExiste) {
+                select.val(id_vehicle); // Asignar el valor si la opción existe
+                resolve();
+            } else if (contador < intentos) {
+                contador++;
+                setTimeout(verificarYAsignar, intervalo); // Reintentar después de un intervalo
+            } else {
+                reject("La opción no está disponible en el select.");
+            }
+        }
+
+        verificarYAsignar();
+    });
+}

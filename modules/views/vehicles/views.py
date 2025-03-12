@@ -3791,6 +3791,7 @@ def add_vehicle_responsiva(request):
     response = {"success": False}
     dt = request.POST
     vehicle_id = dt.get("vehicle_id")
+    response["type"] = ""
 
     # CONDITIONAL KILOMETER REGISTER GREATER THAN THE KILOMETER VEHICLE
     try:
@@ -3800,13 +3801,15 @@ def add_vehicle_responsiva(request):
         mantenimiento = Vehicle_Maintenance.objects.filter(vehicle_id=vehicle_id, status="Proceso").first()
         if mantenimiento:
             response["status"] = "warning"
+            response["type"] = "mantenimiento"
             response["message"] = "El vehículo se encuentra en mantenimiento, no se puede generar una responsiva."
             return JsonResponse(response)
         # Verificamos que el kilmetraje sea coherente
         mileage = Decimal(dt.get("initial_mileage")) if dt.get("initial_mileage") else None
         if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
             response["status"] = "warning"
-            response["message"] = "El kilometraje del vehículo es mayor que el valor proporcionado."
+            response["type"] = "kilometraje"
+            response["message"] = "El kilometraje ddebe ser mayor. Kilometrakje del vehículo: " + str(obj_vehicle.mileage) + " Kilometraje proporcionado: " + str(mileage)
             return JsonResponse(response)
     except Vehicle.DoesNotExist:
         response["status"] = "warning"
@@ -3897,6 +3900,16 @@ def update_vehicle_responsiva(request):
         if mantenimiento:
             response["status"] = "warning"
             response["message"] = "El vehículo se encuentra en mantenimiento, no se puede generar una responsiva."
+            return JsonResponse(response)
+                # Verificamos que el kilmetraje sea coherente
+        mileage = Decimal(dt.get("final_mileage")) if dt.get("final_mileage") else None
+        print(mileage)
+        print(obj_vehicle.mileage)
+        print("estos son los kilometrajes")
+        if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
+            response["status"] = "warning"
+            response["type"] = "kilometraje"
+            response["message"] = "El kilometraje ddebe ser mayor. Kilometrakje del vehículo: " + str(obj_vehicle.mileage) + " Kilometraje proporcionado: " + str(mileage)
             return JsonResponse(response)
     except Vehicle.DoesNotExist:
         response["status"] = "warning"
