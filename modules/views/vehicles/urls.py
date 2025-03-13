@@ -123,4 +123,10 @@ urlpatterns = [
     path("edit_multa/", views.edit_multa),
     path("delete_multa/", views.delete_multa),
 
+    path("add_check/", views.add_check),
+    path("obtener_checks_empresa/", views.obtener_checks_empresa),
+    path('get_checks_by_audit/<int:audit_id>/', views.get_checks_by_audit),
+    
+    path("add_vehicle_audit/", views.add_vehicle_audit),
+
 ]

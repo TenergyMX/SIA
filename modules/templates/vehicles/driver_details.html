@@ -6,6 +6,11 @@
             Conductor
         </h1>
         <div class="ms-md-1 ms-0"></div>
+
+        <button type="button" class="btn btn-icon btn-sm btn-primary" onclick="regresar()" title="Regresar">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
     </div>
 
     <div class="row">
@@ -157,6 +162,7 @@
         
         $tabs = $("ul.nav-tabs li");
         $tabs.first().find('button').tab('show');
+    
     });
 </script>
 {% endblock %}

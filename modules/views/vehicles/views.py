@@ -1822,18 +1822,14 @@ def add_vehicle_audit(request):
         return JsonResponse(response)
     
     try:
+        checks = json.loads(dt.get("checks", "[]")) 
+        print("esto contiene los checks:", checks)
+        
         obj = Vehicle_Audit(
             vehicle_id = dt.get("vehicle_id"),
             audit_date = dt.get("audit_date"),
-            check_interior = dt.get("check_interior"),
-            notes_interior = dt.get("notes_interior"),
-            check_exterior = dt.get("check_exterior"),
-            notes_exterior = dt.get("notes_exterior"),
-            check_tires = dt.get("check_tires"),
-            notes_tires = dt.get("notes_tires"),
-            check_antifreeze_level = dt.get("check_antifreeze_level"),
-            check_fuel_level = dt.get("check_tires"),
-            general_notes = dt.get("general_notes")
+            general_notes = dt.get("general_notes"),
+            checks=json.dumps(checks)  
         )
         obj.save()
         id = obj.id
@@ -1855,13 +1851,8 @@ def get_vehicle_audit(request):
     lista = Vehicle_Audit.objects.filter(
         vehicle_id = vehicle_id
     ).values(
-        "id", "vehicle_id", "vehicle__name",
-        "notes_interior", "check_interior",
-        "audit_date", "check_antifreeze_level",
-        "check_exterior", "notes_exterior",
-        "notes_tires", "check_tires",
-        "check_fuel_level",
-        "general_notes"
+        "id", "vehicle_id", "checks"
+
     )
 
     if context["role"]["id"] in [1,2,3]:
@@ -1875,12 +1866,6 @@ def get_vehicle_audit(request):
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
     for item in lista:
-        item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"show-info-details\">
-            <i class="fa-sharp fa-solid fa-eye"></i>
-        </button>\n"""
-        item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"check\" title="Check">
-            <i class="fa-regular fa-ballot-check"></i>
-        </button>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"update-item\">
                 <i class="fa-solid fa-pen"></i>
@@ -1900,33 +1885,54 @@ def get_vehicles_audit(request):
     vehicle_id = dt.get("vehicle_id", None)
     subModule_id = 10
 
+    # Obtener la lista de auditorías
     lista = Vehicle_Audit.objects.values(
-        "id", "vehicle_id", "vehicle__name",
-        "notes_interior", "check_interior",
-        "audit_date", "check_antifreeze_level",
-        "check_exterior", "notes_exterior",
-        "notes_tires", "check_tires",
-        "check_fuel_level",
-        "general_notes"
+        "id", "vehicle_id", "vehicle__name", 
+        "audit_date", "general_notes",
+        "checks"
     )
 
     if context["role"]["id"] in [1,2,3]:
-        lista = lista.filter(vehicle__company_id = context["company"]["id"])
+        lista = lista.filter(vehicle__company_id=context["company"]["id"])
     else:
-        lista = lista.filter(vehicle__responsible_id = context["user"]["id"])
+        lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
+
     if not context["role"]["id"] in [1,2]:
         lista = lista.exclude(visible=False)
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
+
     for item in lista:
-        check = item["check_interior"] is not None and item["check_exterior"] is not None and item["check_tires"] is not None
+        if item["checks"]:
+            checks_data = json.loads(item["checks"])
+            checks_with_names = []
+
+            # Recorrer los checks del JSON
+            for check in checks_data:
+                check_id = check.get("id")
+                check_status = check.get("status")
+                check_notes = check.get("notes")
+
+                # Obtener el nombre del check
+                check_name = Checks.objects.filter(id=check_id).values_list("name", flat=True).first()
+
+                # Construir el nuevo objeto con toda la información
+                checks_with_names.append({
+                    "id": check_id,
+                    "name": check_name if check_name else "Sin nombre",
+                    "status": check_status,
+                    "notes": check_notes
+                })
+            
+            # Reemplazar el JSON con la nueva estructura
+            item["checks"] = checks_with_names
+        else:
+            item["checks"] = []
+
+        # Botones de acción
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"show-info-details\">
             <i class="fa-sharp fa-solid fa-eye"></i>
-        </button>\n"""
-        if not check:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"check\" title="Check">
-            <i class="fa-regular fa-list-check"></i>
         </button>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"update-item\">
@@ -1937,20 +1943,17 @@ def get_vehicles_audit(request):
                 <i class="fa-solid fa-trash"></i>
             </button>\n"""
 
+    # Enviar la respuesta
     response["data"] = list(lista)
     response["success"] = True
     return JsonResponse(response)
-
-from django.http import JsonResponse
-from django.db.models import Q
-import random
-from datetime import datetime, timedelta
 
 def update_vehicle_audit(request):
     response = {"success": False}
     dt = request.POST
 
     vehicle_audit_id = dt.get("id")
+    print("este es el id a editar:", vehicle_audit_id)
     vehicle_id = dt.get("vehicle_id")
     company_id = request.session['company']["id"]
 
@@ -1960,6 +1963,7 @@ def update_vehicle_audit(request):
             "error": {"message": "No se proporcionó un ID válido para actualizar."}
         })
 
+    # Validar si la auditoría existe
     try:
         obj = Vehicle_Audit.objects.get(id=vehicle_audit_id)
     except Vehicle_Audit.DoesNotExist:
@@ -1968,16 +1972,30 @@ def update_vehicle_audit(request):
             "error": {"message": f"No existe ningún registro con el ID '{vehicle_audit_id}'"}
         })
 
+    # Actualizar la auditoría existente
     try:
-        obj.check_interior = dt.get("check_interior")
-        obj.notes_interior = dt.get("notes_interior")
-        obj.check_exterior = dt.get("check_exterior")
-        obj.notes_exterior = dt.get("notes_exterior")
-        obj.check_tires = dt.get("check_tires")
-        obj.notes_tires = dt.get("notes_tires")
-        obj.check_antifreeze_level = dt.get("check_antifreeze_level")
-        obj.check_fuel_level = dt.get("check_fuel_level")  # Corrige este campo
-        obj.general_notes = dt.get("general_notes")
+        checks_data = []
+
+        # Iterar sobre todos los elementos de request.POST y seleccionar aquellos que comienzan con "check_" o "notas_"
+        for key, value in request.POST.items():
+            if key.startswith('check_'):
+                # Obtener el número del check (después de "check_")
+                check_id = key.split('_')[1]  # Esto extrae el número del check, por ejemplo, '9' de 'check_9'
+                notes_key = f'notas_{check_id}'  # Construir la clave correspondiente de notas (por ejemplo, 'notas_9')
+
+                # Verificar si también existe una nota correspondiente
+                notes_value = request.POST.get(notes_key)
+
+                # Si tanto el estado (check) como las notas existen, agregamos a la lista de checks_data
+                if notes_value:
+                    checks_data.append({
+                        'id': check_id,
+                        'status': value,  # El valor del check
+                        'notes': notes_value  # El valor de las notas
+                    })
+        print("estos son los checks")
+        print(checks_data)
+        obj.checks = json.dumps(checks_data)
 
         obj.save()
         response["success"] = True
@@ -1986,19 +2004,22 @@ def update_vehicle_audit(request):
             "success": False,
             "error": {"message": str(e)}
         })
-
+    
     # Generar las próximas auditorías
     try:
         obj_vehiculos = Vehicle.objects.filter(company_id=company_id, is_active=True)
         obj_auditoria = Vehicle_Audit.objects.filter(vehicle__company_id=company_id)
 
-        obj_auditoria_no_check = obj_auditoria.filter(
-            Q(check_interior__isnull=True) | Q(check_interior=""),
-            Q(check_exterior__isnull=True) | Q(check_exterior=""),
-            Q(check_tires__isnull=True) | Q(check_tires="")
-        )
+        # Filtrar auditorías sin checks o con checks vacíos
+        obj_auditoria_no_check = [
+            audit for audit in obj_auditoria
+            if not audit.checks or any(
+                "status" in check and isinstance(check.get("status"), str) and check.get("status").strip() == ""
+                for check in json.loads(audit.checks or "[]")
+            )
+        ]
 
-        if obj_auditoria_no_check.count() == 0:
+        if len(obj_auditoria_no_check) == 0:
             list_id_vehiculos = list(obj_vehiculos.values_list("id", flat=True))
             random.shuffle(list_id_vehiculos)
 
@@ -2039,6 +2060,7 @@ def update_vehicle_audit(request):
     return JsonResponse(response)
 
 
+
 def delete_vehicle_audit(request):
     response = {"success": False, "data": []}
     dt = request.POST
@@ -2058,7 +2080,7 @@ def delete_vehicle_audit(request):
     response["success"] = True
     return JsonResponse(response)
 
-
+    
 
 def add_vehicle_maintenance(request):
     context = user_data(request)
@@ -2850,12 +2872,16 @@ def validar_vehicle_en_sa(request):
         else:
             registro = responsiva.id
             responsable = responsiva.responsible.id
+
+            responsables = User.objects.all().order_by("name").values("id", "name")  
+
             return JsonResponse({
                 "success": "Todo bien",
                 "status": "ENTRADA",
                 "id_register": registro,
                 "id_responsable": responsable,
-                "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
+                "fecha_actual": fecha_actual, # Agrega la fecha y hora actual
+                "responsables": list(responsables)
             })            
     else:
         return JsonResponse({
@@ -3529,6 +3555,116 @@ def delete_multa(request):
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
+#funcion para agregar check
+@login_required
+@csrf_exempt
+def add_check(request):
+    print("Se entró a la función para agregar check")
+    context = user_data(request)
+    company_id = context["company"]["id"]
+
+    if request.method == 'POST':
+        print("Información del formulario:", request.POST)
+        name = request.POST.get('name', '').strip()
+
+        if not name:
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+
+        try:
+            with transaction.atomic():
+                company = Company.objects.get(id=company_id)
+
+                # Verificar si ya existe un check con el mismo nombre en la misma empresa
+                if Checks.objects.filter(company=company, name__iexact=name).exists():
+                    return JsonResponse({'success': False, 'message': 'El nombre del check ya existe para esta empresa.'})
+
+                check = Checks.objects.create(
+                    company=company,  
+                    name=name
+                )
+
+                print("Se guardó correctamente")
+
+            return JsonResponse({'success': True, 'message': 'Check agregado correctamente!'})
+        except Company.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Empresa no encontrada.'})
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': 'Error inesperado: ' + str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido'})
+
+
+#obtener los check por empresa
+def obtener_checks_empresa(request):
+    context = user_data(request)
+    # dt = request.POST
+    company_id = context["company"]["id"]
+    checks = Checks.objects.filter(company_id=company_id).values("id", "name")
+    print("estos son los checks", checks)
+    return JsonResponse(list(checks), safe=False)
+
+
+#obtener los checks de una auditoria de vehiculo
+def get_checks_by_audit(request, audit_id):
+    response = {"success": False, "data": []}
+
+    try:
+        # Obtener la auditoría por ID
+        audit = Vehicle_Audit.objects.get(id=audit_id)
+        checks = json.loads(audit.checks)  
+        
+        checks_with_names = []
+        for check in checks:
+            check_id = check.get("id")
+            check_status = check.get("status")
+            check_notes = check.get("notes")
+
+            check_name = Checks.objects.filter(id=check_id).values_list("name", flat=True).first()
+
+            checks_with_names.append({
+                "id": check_id,
+                "name": check_name if check_name else "Sin nombre",
+                "status": check_status,
+                "notes": check_notes
+            })
+        
+        response["success"] = True
+        response["data"] = checks_with_names
+    except Vehicle_Audit.DoesNotExist:
+        response["error"] = "No se encontró la auditoría"
+    except Exception as e:
+        response["error"] = str(e)
+
+    return JsonResponse(response)
+
+
+@csrf_exempt
+def add_vehicle_audit(request):
+    if request.method == "POST":
+        vehicle_id = request.POST.get("vehicle_id")
+        audit_date = request.POST.get("audit_date")
+        general_notes = request.POST.get("general_notes")
+        checks = request.POST.getlist("checks[]")  
+
+        if not vehicle_id or not audit_date:
+            return JsonResponse({"success": False, "error": "Datos incompletos"})
+
+        # Crear la auditoría
+        audit = Vehicle_Audit.objects.create(
+            vehicle_id=vehicle_id,
+            audit_date=audit_date,
+            general_notes=general_notes,
+        )
+
+        # Obtener los checks seleccionados y asignarlos correctamente
+        selected_checks = Checks.objects.filter(id__in=checks)  
+        audit.checks.set(selected_checks)
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False, "error": "Método no permitido"})
 
 
 # TODO --------------- [ END ] ----------

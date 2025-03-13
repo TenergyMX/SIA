@@ -60,3 +60,5 @@ admin.site.register(Payments_Services)
 admin.site.register(Vehicle_Driver)
 admin.site.register(Licences_Driver)
 admin.site.register(Multas)
+
+admin.site.register(Checks)

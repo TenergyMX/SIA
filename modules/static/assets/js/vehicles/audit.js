@@ -17,10 +17,6 @@ class VehiclesAudit {
                     { title: "ID", data: "id", visible: false },
                     { title: "Vehículo", data: "vehicle__name" },
                     { title: "Fecha", data: "audit_date" },
-                    { title: "Chk. Interior", data: "check_exterior" },
-                    { title: "Chk. Exterior", data: "check_interior" },
-                    { title: "Chk. Llantas", data: "check_tires" },
-                    { title: "Chk. Anticongelante", data: "check_antifreeze_level" },
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
@@ -68,7 +64,7 @@ class VehiclesAudit {
                     url: self.table.ajax.url,
                     dataSrc: self.table.ajax.dataSrc,
                     data: self.table.ajax.data,
-                },
+                },  
                 columns: self.table.columns,
                 order: [
                     [0, "asc"],
@@ -90,16 +86,16 @@ class VehiclesAudit {
         }
 
         self.setupEventHandlers();
-    }
+    }   
 
     setupEventHandlers() {
         const self = this;
         var obj_modal = $("#mdl_crud_audit");
-
+                      
         $(document).on("click", "[data-vehicle-audit]", function (e) {
             const obj = $(this);
             const option = obj.data("vehicle-audit");
-
+            
             switch (option) {
                 case "refresh-table":
                     self.tbl_audit.ajax.reload();
@@ -118,11 +114,21 @@ class VehiclesAudit {
                         obj_modal.find('[name="vehicle_id"]').show();
                         obj_modal.find('[name="vehicle__name"]').hide();
                     }
+
+                    //llamar la función de cargar checks
+                    obtener_checks_empresa();
+
+                    obj_modal.find("form").off("submit").on("submit", function (e) {
+                        e.preventDefault();
+                        add_vehicle_audit();
+                    });
+                    
                     break;
+
                 case "update-item":
                     obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
-                    obj_modal.find(".modal-header").html("Actualizar registro");
+                    obj_modal.find(".modal-header").html("Actualizar Auditoría vehicular");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='update']").show();
 
@@ -130,13 +136,13 @@ class VehiclesAudit {
                     var datos = self.tbl_audit.row(fila).data();
 
                     $.each(datos, function (index, value) {
-                        var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
+                        obj_modal.find(`[name='${index}']`).val(value);
+                    });                
 
-                        if (!isFileInput) {
-                            obj_modal.find(`[name='${index}']`).val(value);
-                        }
-                    });
+                    var audit_id = datos["id"];
+
                     break;
+
                 case "delete-item":
                     var url = "/delete_vehicle_audit/";
                     var fila = $(this).closest("tr");
@@ -187,12 +193,35 @@ class VehiclesAudit {
                     var datos = self.tbl_audit.row(fila).data();
                     var obj_div = $("#v-audit-pane .info-details");
 
+                    // Limpiar la tabla de checks antes de cargar nuevos datos
+                    var tbody = obj_div.find(".table tbody");
+                    tbody.empty();
+
                     $.each(datos, function (index, value) {
                         obj_div
                             .find(`[data-key-value="${index}"]`)
                             .html(value || "---")
                             .removeClass();
                     });
+
+                    // Si los datos contienen una lista de checks, iteramos sobre ellos
+                    if (datos["checks"] && Array.isArray(datos["checks"])) {
+                        datos["checks"].forEach(function (checkItem) {
+                            var nuevaFila = `
+                                <tr>
+                                    <th>${checkItem.name || "---"}</th>
+                                    
+                                    <td class="status">
+                                        <span class="d">${checkItem.status || "---vacio"}</span>
+                                    </td>
+                                    <td class="notes">
+                                        <span class="d">${checkItem.notes || "---"}</span>
+                                    </td>
+                                </tr>
+                            `;
+                            tbody.append(nuevaFila);
+                        });
+                    }
 
                     // ! Actualizamos la info card
                     if (self.vehicle && self.vehicle.infoCard) {
@@ -205,43 +234,149 @@ class VehiclesAudit {
                     break;
             }
         });
-
+            
         obj_modal.find("form").on("submit", function (e) {
             e.preventDefault();
             var submit = $("button[type='submit']:focus", this).attr("name");
             var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_audit/";
             var datos = new FormData(this);
-
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: datos,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    if (!response.success && response.error) {
-                        Swal.fire("Error", response.error["message"], "error");
-                        return;
-                    } else if (!response.success && response.warning) {
-                        Swal.fire("Advertencia", response.warning["message"], "warning");
-                        return;
-                    } else if (!response.success) {
-                        console.log(response);
-                        Swal.fire("Error", "Ocurrio un error inesperado", "error");
-                        return;
-                    }
-                    Swal.fire("Exito", "Se han guardado los datos con exito", "success");
-                    self.tbl_audit.ajax.reload();
-                    obj_modal.modal("hide");
-                },
-                error: function (xhr, status, error) {
-                    Swal.fire(
-                        "Error del servidor",
-                        "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
-                        "error"
-                    );
-                },
-            });
-        });
+        });            
     }
 }
+
+
+
+
+function obtener_checks_empresa(selectedValues = []) {
+    console.log("Cargando checks en el select...");
+
+    $.ajax({
+        url: `/obtener_checks_empresa/`,
+        method: "GET",
+        dataType: "json",
+        success: function (data) {
+            console.log("Datos recibidos:", data);
+
+            let selectChecks = $("select[name='checks[]']");
+            selectChecks.empty(); 
+
+            if (Array.isArray(data) && data.length > 0) {
+                data.forEach(function (check) {
+                    let isSelected = selectedValues.includes(check.id.toString()) ? "selected" : "";
+                    selectChecks.append(`<option value="${check.id}" ${isSelected}>${check.name}</option>`);
+                });
+            }
+
+            // opción para "Agregar Nuevo Check"
+            selectChecks.append(`
+                <option value="add_new" class="text-success fw-bold">
+                    Agregar Nuevo Check
+                </option>
+            `);
+
+            // Inicializa select2 después de agregar las opciones
+            selectChecks.select2({
+                width: '100%',
+                placeholder: "Seleccione los checks",
+                dropdownParent: $('#mdl_crud_audit'), 
+                dropdownAutoWidth: true, 
+                closeOnSelect: false, 
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("Error en la solicitud AJAX:", status, error);
+        }
+    });
+}
+
+
+// Detectar cuando el usuario selecciona la opción "Agregar Nuevo Check"
+$(document).on("change", "select[name='checks[]']", function () {
+    if ($(this).val()?.includes("add_new")) {
+        $(this).val("");
+        $("#mdl-crud-check").modal("show");         
+    }
+});
+
+// Detectar el envío del formulario de agregar un check
+$(document).on("submit", function (e) {
+    e.preventDefault();  
+    add_check();  
+});
+
+// Función para manejar el envío del formulario de checks
+function add_check() { 
+    const self = this;
+
+    var form = document.getElementById("form_add_check");
+    var formData = new FormData(form);
+
+    // Enviar los datos mediante AJAX
+    $.ajax({
+        type: "POST",
+        url: "/add_check/", 
+        data: formData,
+        processData: false, 
+        contentType: false, 
+        success: function (response) {
+            if (response.success) {
+                Swal.fire({
+                    title: "Éxito",
+                    text: "Check agregado correctamente",
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                form.reset();
+                obtener_checks_empresa();
+                $("#mdl-crud-check").modal("hide"); 
+                tabla_auditorias.ajax.reload();
+            } else {
+                Swal.fire({
+                    title: "Error",
+                    text: response.message || "Ocurrió un error inesperado",
+                    icon: "error",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        },
+    });
+}
+
+function add_vehicle_audit() {
+    let formData = new FormData(document.querySelector("form[name='form-vrt']"));
+    formData.append("csrfmiddlewaretoken", document.querySelector("[name='csrfmiddlewaretoken']").value);
+
+    // Obtener los valores seleccionados de los checks
+    let selectedChecks = $("#select-field").val();
+    if (selectedChecks) {
+        selectedChecks.forEach((check) => {
+            formData.append("checks[]", check);
+        });
+    }
+
+    $.ajax({
+        url: "/add_vehicle_audit/",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            if (response.success) {
+                Swal.fire("Éxito", "Auditoría agregada correctamente", "success");
+                $("#mdl_crud_audit").modal("hide");
+                $("#table_responsiva").DataTable().ajax.reload(); 
+            } else {
+                Swal.fire("Error", response.error, "error");
+            }
+        },
+        error: function () {
+            Swal.fire("Error", "No se pudo agregar la auditoría", "error");
+        },
+    });
+}
+
+
+
+

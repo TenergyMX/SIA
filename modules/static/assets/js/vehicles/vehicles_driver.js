@@ -230,9 +230,6 @@ function edit_driver() {
 }
 
 
-
-
-
 // Función para eliminar un conductor
 function delete_driver(boton) {
     var row = $(boton).closest('tr');

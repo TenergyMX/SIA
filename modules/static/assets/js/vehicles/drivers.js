@@ -640,3 +640,14 @@ function delete_multa(boton) {
     });
 }
 
+
+function regresar() {
+    $(document).ready(function () {
+        $('#table_driver_vehicles').DataTable().ajax.reload();
+    });
+
+    console.log("tabla recargada correctamente");
+    // Regresar a la página de la tabla de conductores
+    window.location.href = "/driver_vehicles/";
+}
+
