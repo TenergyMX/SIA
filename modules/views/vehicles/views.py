@@ -1048,7 +1048,8 @@ def add_vehicle_refrendo(request):
     dt = request.POST
 
     vehicle_id = dt.get("vehiculo_id")
-    
+    print(f"Vehicle ID recibido para refrendo: {vehicle_id}")
+
     try:
         obj_vehicle = Vehicle.objects.get(id = vehicle_id)
         company_id = obj_vehicle.company.id

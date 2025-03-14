@@ -15,7 +15,6 @@ from users.models import *
 from modules.utils import *
 import requests
 from django.urls import resolve
-from unidecode import unidecode
 
 # TODO --------------- [ VIEWS ] ---------- 
 def home_view(request):
