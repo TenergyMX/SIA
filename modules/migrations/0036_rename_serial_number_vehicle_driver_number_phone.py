@@ -10,9 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name='vehicle_driver',
-            old_name='serial_number',
-            new_name='number_phone',
-        ),
+       
     ]

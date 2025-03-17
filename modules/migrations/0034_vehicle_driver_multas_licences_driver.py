@@ -14,34 +14,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='Vehicle_Driver',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image_path', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='Responsable del equipo')),
-                ('company', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='compañía')),
-                ('name_driver', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, verbose_name='Nombre del conductor')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Multas',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('cost', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Costo')),
-                ('notes', models.TextField(blank=True, null=True, verbose_name='Notas')),
-                ('reason', models.TextField(blank=True, null=True, verbose_name='Razón')),
-                ('date', models.DateField(blank=True, null=True, verbose_name='Fecha')),
-                ('name_driver', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle_driver', verbose_name='Nombre del conductor')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Licences_Driver',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('start_date', models.DateField(blank=True, null=True, verbose_name='Fecha de Inicio')),
-                ('expiration_date', models.DateField(blank=True, null=True, verbose_name='Fecha de expiración de licencia')),
-                ('license_driver', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='licencia de conducir')),
-                ('name_driver', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle_driver', verbose_name='Nombre del conductor')),
-            ],
-        ),
+    
+        
     ]

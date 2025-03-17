@@ -10,14 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='vehicle_driver',
-            name='address',
-            field=models.TextField(blank=True, max_length=80, null=True, verbose_name='Dirección'),
-        ),
-        migrations.AddField(
-            model_name='vehicle_driver',
-            name='serial_number',
-            field=models.CharField(blank=True, max_length=15, null=True, verbose_name='Número de telefono'),
-        ),
+        
     ]

@@ -139,6 +139,9 @@ class Vehicle_Audit(models.Model):
     audit_date = models.DateField()
     general_notes = models.TextField(blank=True, null=True)
     checks = models.TextField(blank=True, null=True)
+    is_checked = models.BooleanField(default=False)
+    is_visible = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Auditoría de {self.vehicle} el {self.audit_date}"

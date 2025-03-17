@@ -70,6 +70,8 @@ urlpatterns = [
     path("get_vehicles_audit/", views.get_vehicles_audit),
     path("update_vehicle_audit/", views.update_vehicle_audit),
     path("delete_vehicle_audit/", views.delete_vehicle_audit),
+    path("upd_audit_checks/", views.upd_audit_checks),
+    path("evaluate_audit/", views.evaluate_audit),
 
     # Todo --- [ Mantenimiento ] ---
     path("add_vehicle_maintenance/", views.add_vehicle_maintenance),
@@ -127,6 +129,4 @@ urlpatterns = [
     path("obtener_checks_empresa/", views.obtener_checks_empresa),
     path('get_checks_by_audit/<int:audit_id>/', views.get_checks_by_audit),
     
-    path("add_vehicle_audit/", views.add_vehicle_audit),
-
 ]
