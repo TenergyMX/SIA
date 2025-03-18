@@ -399,9 +399,7 @@ $(document).on("change", "select[name='checks[]']", function () {
 });
 
 
-function upd_audit_checks() {
-    alert("Actualizando auditoría...");
-    
+function upd_audit_checks() {    
     // Deshabilitar el botón para evitar múltiples clics
     var saveButton = $("#btn_guardar");  // Suponiendo que tu botón tiene el id 'btn_guardar'
     saveButton.prop("disabled", true);

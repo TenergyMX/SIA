@@ -3280,7 +3280,7 @@ def validar_vehicle_en_sa(request):
             registro = responsiva.id
             responsable = responsiva.responsible.id
 
-            responsables = User.objects.all().order_by("name").values("id", "name")  
+            responsables = User.objects.all().order_by("first_name").values("id", "first_name")  
 
             return JsonResponse({
                 "success": "Todo bien",

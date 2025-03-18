@@ -166,7 +166,6 @@ class VehiclesResponsiva {
             },
             success: function (response) {
                 var status = response.status;
-                console.log(response);
                 if (status == "SALIDA") {
                     obj_modal.find(".modal-header").html("Registrar salida");
                     obj_modal.find(".final").hide().find(":input").prop("disabled", true);
@@ -191,9 +190,7 @@ class VehiclesResponsiva {
                     setTimeout(function () {
                         $('select[name="responsible_id"]').val(response.id_responsable || null);
                     }, 500);
-                    console.log(id_vehicle);
-                    console.log(response.id_register);
-                    console.log(response.id_responsable);
+                
                 }
             },
             error: function (xhr, status, error) {
@@ -202,7 +199,6 @@ class VehiclesResponsiva {
             },
         });
 
-        console.log(self.vehicle.data.vehicle_id);
         setTimeout(function () {
             $
         }, 500);

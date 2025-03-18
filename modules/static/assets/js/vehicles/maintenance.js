@@ -193,7 +193,6 @@ class VehiclesMaintenance {
 
     setupEventHandlers() {
         const self = this;
-        console.log(self.vehicle);  
         var obj_modal = $("#mdl_crud_maintenance");
         var obj_modal_option = $("#mdl-crud-option-maintenance");
 
@@ -520,7 +519,6 @@ class VehiclesMaintenance {
 
         obj_modal.find('[name="type"]').on("change", function (e) {
             var tipo = $(this).val().toLowerCase();
-            console.log(tipo);
             var select = obj_modal.find("[name='actions[]']");
             var optionsHTML = "";
             select.empty();
@@ -528,7 +526,6 @@ class VehiclesMaintenance {
 
             // Agregar las opciones correspondientes
             $.each(self.dataMaintenance[tipo], function (index, value) {
-                console.log("prueba"+value["descripcion"]);
                 optionsHTML += `<option value="${value["descripcion"]}">${value["descripcion"]}</option>`;
             });
             // Actualiza el select con las nuevas opciones
@@ -611,7 +608,6 @@ class VehiclesMaintenance {
                                     });
                                 },
                                 error: function (xhr) {
-                                    console.error("Error:", xhr.responseJSON.message);
                                     Swal.fire({
                                         title: "Error",
                                         text: xhr.responseJSON.message,
@@ -726,8 +722,6 @@ class VehiclesMaintenance {
                             errorMessage = xhr.responseJSON.message;
                         }
                         Swal.fire("Error", errorMessage, "error");
-                        console.log("Error en la petición AJAX:");
-                        console.error("xhr:", xhr);
                     },
                 });
             });
@@ -747,22 +741,18 @@ class VehiclesMaintenance {
         const self = this;
         var obj_modal = $("#mdl_crud_computerSystem");
         var url = SIA.static + "assets/json/vehicles-maintenance.json";
-        console.log(url);
 
         $.ajax({
             type: "GET",
             url: url,
             success: function (response) {
-                console.log("JSON cargado correctamente:", response);
                 self.dataMaintenance = {};
                 $.each(response.data, function (index, mantenimiento) {
-                    console.log(mantenimiento);
                     var tipo = mantenimiento.tipo;
                     self.dataMaintenance[tipo] = mantenimiento.items;
                 });
             },
             error: function (xhr, status, error) {
-                console.error("Error al cargar el JSON:", error);
                 self.dataMaintenance = { preventivo: [], correctivo: [] };
             },
             complete: function () {},
@@ -822,7 +812,6 @@ function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo,
             }
         },
         error: function (xhr, status, error) {
-            console.error("Error:", error);
             Swal.fire({
                 title: "Error",
                 text: "Hubo un problema al procesar la solicitud",
@@ -858,7 +847,6 @@ function add_option() {
             });
         },
         error: function (xhr) {
-            console.error("Error:", xhr.responseJSON.message);
             Swal.fire({
                 title: "Error",
                 text: xhr.responseJSON.message,

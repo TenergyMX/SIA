@@ -225,7 +225,7 @@ def get_users_with_access(request):
         "role__id", "role__name",
         "company_id", "company__name",
         "area_id", "area__code", "area__name",
-    )
+    ).order_by("user__first_name")
     # Verificar el rol del usuario actual
     if user_role_id == 1:  
         pass  # No se filtra
