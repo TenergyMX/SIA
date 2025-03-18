@@ -131,6 +131,7 @@ class VehiclesRefrendo {
                     obj_modal.find("[name='add']").show();
                     obj_modal.find('[name="actions[]"]').trigger("change");
 
+                    console.log("este es el vehicle data al agregar un refrendo:", self.vehicle.data.vehicle_id);
                     if (self.vehicle && self.vehicle.data.vehicle_id) {
                         obj_modal.find('[name="vehiculo_id"]').hide();
                         obj_modal.find('[name="vehiculo__name"]').show();
@@ -139,7 +140,9 @@ class VehiclesRefrendo {
                         obj_modal.find('[name="vehiculo__name"]').hide();
                     }
 
-                    obj_modal.find("[name='vehicle_id']").val(self.vehicle.data.vehicle_id || null);
+                    obj_modal.find("[name='vehiculo_id']").val(self.vehicle.data.vehicle_id || null);
+                    console.log('Enviando vehiculo_id para refrendo:', self.vehicle.data.vehicle_id);
+
                     obj_modal
                         .find("[name='vehiculo__name']")
                         .val(self.vehicle.data.vehicle__name || null)
