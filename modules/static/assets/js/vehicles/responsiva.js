@@ -158,11 +158,11 @@ class VehiclesResponsiva {
         obj_modal.modal("show");
 
         $.ajax({
-            url: "/validar_vehicle_en_sa/", // Cambia esta URL por la ruta de tu servidor que va a manejar la solicitud
+            url: "/validar_vehicle_en_sa/", 
             type: "POST",
             data: {
-                id_vehicle: id_vehicle, // Enviamos la variable qr
-                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(), // Asegúrate de incluir el token CSRF si estás usando Django
+                id_vehicle: id_vehicle,
+                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
             },
             success: function (response) {
                 var status = response.status;
@@ -217,7 +217,6 @@ class VehiclesResponsiva {
         // obj_modal.find("[name='vehicle_id']").val(qr || null);
         // obj_modal.find("[name='vehicle_name']").val(self.vehicle.data.vehicle_name || null);
 
-        //
     }
 
     setupEventHandlers() {
@@ -322,10 +321,19 @@ class VehiclesResponsiva {
                     var obj_div = $("#v-responsiva-pane .info-details");
 
                     $.each(datos, function (index, value) {
-                        obj_div
-                            .find(`[data-key-value="${index}"]`)
-                            .html(value || "---")
-                            .removeClass();
+                        if (index === "initial_fuel" || index === "final_fuel") {
+                            obj_div.find(`[data-key-value="${index}"]`)
+                                .html(isNaN(parseInt(value)) ? "--- %" : parseInt(value) + " %")
+                                .removeClass();
+                        } else {
+                            obj_div.find(`[data-key-value="${index}"]`)
+                                .html(isNaN(parseInt(value)) ? "---" : parseInt(value))
+                                .removeClass();
+                        }
+                        
+                        
+                        
+
                         if (index === "initial_fuel") {
                             const posicion = value;
                             const posiciones = [
