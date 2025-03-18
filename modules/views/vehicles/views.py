@@ -1594,11 +1594,13 @@ def get_vehicles_responsiva(request):
 
     for data in lista:
         modified_data = data.copy()
+# **Convertir la fecha a la zona local y formatearla en "DD/MM/YYYY HH:MM"**
+        if modified_data.get("start_date"):
+            modified_data["start_date"] = localtime(modified_data["start_date"]).strftime("%d/%m/%Y %H:%M")
 
-        # Formatear fechas si existen
-        for date_field in ["start_date", "end_date"]:
-            if modified_data[date_field]:
-                modified_data[date_field] = modified_data[date_field].strftime("%d/%m/%Y %H:%M")
+        if modified_data.get("end_date"):
+            modified_data["end_date"] = localtime(modified_data["end_date"]).strftime("%d/%m/%Y %H:%M")
+
 
         # Procesar imágenes y firmas
         for img_field in ["image_path_exit_1", "image_path_exit_2", "image_path_entry_1", "image_path_entry_2"]:

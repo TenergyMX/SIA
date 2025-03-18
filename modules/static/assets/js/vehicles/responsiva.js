@@ -327,7 +327,7 @@ class VehiclesResponsiva {
                                 .removeClass();
                         } else {
                             obj_div.find(`[data-key-value="${index}"]`)
-                                .html(isNaN(parseInt(value)) ? "---" : parseInt(value))
+                                .html(value || "---")
                                 .removeClass();
                         }
                         
