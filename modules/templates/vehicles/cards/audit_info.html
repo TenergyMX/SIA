@@ -1,68 +1,56 @@
 <div class="card">
     <div class="card-body">
+        <!-- Vehículo -->
         <p class="card-text vehicle placeholder-glow" style="display: none;">
-            <span class="fw-bold">Vehiculo: </span>
+            <span class="fw-bold">Vehículo: </span>
             <span data-key-value="vehicle__name" class="placeholder col-md-4"></span>
         </p>
+
+        <!-- Fecha de la Auditoría -->
         <p class="card-text audit_date placeholder-glow">
             <span class="fw-bold">Fecha: </span>
             <span data-key-value="audit_date" class="d placeholder col-10 col-md-4"></span>
         </p>
+
+        <!-- Tabla de Checks -->
         <div class="table-responsive mb-3">
-            <table class="table table-bordered w-100 placeholder-glow">
+            <table class="table table-bordered w-100 placeholder-glow" id="audit-checks-table">
                 <thead>
                     <tr>
-                        <th>Nombre</th>
+                        <th>Nombres</th>
                         <th>Check</th>
                         <th>Notas</th>
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- Fila de cada check -->
                     <tr>
-                        <th>Exterior</th>
-                        <td class="check_exterior">
-                            <span data-key-value="check_exterior" class="d placeholder col-4"></span>
+                        <th>
+                            <span data-key-value="check" class="d placeholder col-4"></span>
+                        </th>
+                        <td class="status">
+                            <span data-key-value="status" class="d placeholder col-4"></span>
                         </td>
-                        <td class="notes_exterior">
-                            <span data-key-value="notes_exterior" class="d placeholder col-10 col-md-6"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Interior</th>
-                        <td class="check_interior">
-                            <span data-key-value="check_interior" class="d placeholder col-4"></span>
-                        </td>
-                        <td class="notes_interior">
-                            <span data-key-value="notes_interior" class="d placeholder col-10 col-md-6"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Llantas</th>
-                        <td class="check_tires">
-                            <span data-key-value="check_tires" class="d placeholder col-4"></span>
-                        </td>
-                        <td class="notes_tires">
-                            <span data-key-value="notes_tires" class="d placeholder col-10 col-md-6"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Anti congelante</th>
-                        <td colspan="2" class="check_antifreeze_level">
-                            <span data-key-value="check_antifreeze_level" class="d placeholder col-4"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Nivel de Gasolina</th>
-                        <td colspan="2" class="check_fuel_level">
-                            <span data-key-value="check_fuel_level" class="d placeholder col-4"></span>
+                        <!-- Notas Editables -->
+                        <td class="notes">
+                            <textarea data-key-value="notes" class="form-control editable-textarea" rows="2" placeholder="Escribe las notas aquí..." readonly></textarea>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+        <!-- Notas Generales -->
         <p class="card-text placeholder-glow general_notes">
             <span class="fw-bold d-block w-100">Notas generales: </span>
             <span data-key-value="general_notes" class="d placeholder col-10 col-md-8"></span>
         </p>
+
+        <!-- Botón de actualización -->
+        <div id="update-button-container" class="text-end mt-3">
+            <button id="update-audit-btn" class="btn btn-primary" style="display: none;">
+                Actualizar Auditoría
+            </button>
+        </div>
     </div>
 </div>

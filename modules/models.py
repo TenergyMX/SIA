@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from users.models import *
 from datetime import datetime, timedelta
+from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 class Vehicle(models.Model):
@@ -141,30 +142,20 @@ class Vehicle_Insurance(models.Model):
 
     def __str__(self):
         return self.policy_number
-    
+
 class Vehicle_Audit(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     audit_date = models.DateField()
-    check_interior = models.CharField(max_length=20, blank=True, null=True)
-    notes_interior = models.TextField(blank=True, null=True)
-    check_exterior = models.CharField(max_length=20, blank=True, null=True)
-    notes_exterior = models.TextField(blank=True, null=True)
-    check_tires = models.CharField(max_length=20, blank=True, null=True)
-    notes_tires = models.TextField(blank=True, null=True)
-    check_antifreeze_level = models.CharField(max_length=20, blank=True, null=True)
-    check_fuel_level = models.CharField(max_length=20, blank=True, null=True)
     general_notes = models.TextField(blank=True, null=True)
+    checks = models.TextField(blank=True, null=True)
     is_checked = models.BooleanField(default=False)
     is_visible = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Auditoría de {self.vehicle} el {self.audit_date}"
-    
-    class Meta:
-        verbose_name = 'Auditoría de Vehículo'
-        verbose_name_plural = 'Auditoría de Vehículos'
-    
+
+
 class Vehicle_Maintenance(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     type = models.CharField(max_length=32, blank=True, null=True)
@@ -209,12 +200,12 @@ class Multas(models.Model):
     reason = models.TextField(blank=True, null=True, verbose_name="Razón")
     date = models.DateField(blank=True, null=True, verbose_name="Fecha")
 
-
-
+class Checks(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
+    name = models.CharField(max_length=64, blank=True, null=True)
 
 
 # Todo ----- [2] [ EQUIPOS DE COMPUTO ] -----
-
 class ComputerSystem(models.Model):
     is_active = models.BooleanField(default=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
@@ -317,10 +308,8 @@ class SoftwareInstallation(models.Model):
 
     def __str__(self):
         return f"{self.software.name if self.software else 'Software sin nombre'} en {self.computerSystem.name}"
-
     def clean(self):
         from django.core.exceptions import ValidationError
-
         if not self.software:
             raise ValidationError("Debe especificar un software.")
         

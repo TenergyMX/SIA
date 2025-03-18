@@ -193,6 +193,7 @@ class VehiclesMaintenance {
 
     setupEventHandlers() {
         const self = this;
+        console.log(self.vehicle);  
         var obj_modal = $("#mdl_crud_maintenance");
         var obj_modal_option = $("#mdl-crud-option-maintenance");
 
@@ -201,7 +202,7 @@ class VehiclesMaintenance {
                 url: "/get_vehicle_maintenance_kilometer/",
                 dataSrc: "data",
                 data: {
-                    id: vehicle_id,
+                    id: self.vehicle.id,
                 },
             },
             columns: [
