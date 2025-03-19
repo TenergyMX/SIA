@@ -219,6 +219,8 @@ class ComputerSystem(models.Model):
     equipment_status = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Equipo")
     last_maintenance_date = models.DateField(blank=True, null=True, verbose_name="Fecha del Último Mantenimiento")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
+    qr_info_computer = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
+
 
     class Meta:
         verbose_name = "Equipo de Computo"

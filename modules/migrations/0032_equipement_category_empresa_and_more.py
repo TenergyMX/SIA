@@ -12,16 +12,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='equipement_category',
-            name='empresa',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
-        ),
-        migrations.AddField(
-            model_name='infrastructure_category',
-            name='empresa',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='users.company', verbose_name='Empresa'),
-        ),
+        
         migrations.AlterField(
             model_name='infrastructure_category',
             name='name',

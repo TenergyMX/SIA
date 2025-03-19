@@ -34,6 +34,12 @@ from io import BytesIO
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
 
+import qrcode
+from django.shortcuts import render, get_object_or_404
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
+
+
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 
 dotenv_path = join(dirname(__file__), 'awsCred.env')
@@ -1838,5 +1844,125 @@ def generar_auditoria_de_equipo_de_computo(company_id):
         response["success"] = False
         response["error"] = {"message": str(e)}
     return response
+
+
+
+#función para generar el código qr
+def generate_qr_computer(request, qr_type, computerSystemId):
+    context = user_data(request)
+    company_id = context["company"]["id"]
+    computer = get_object_or_404(ComputerSystem, id=computerSystemId)
+
+    print(f"Generando QR para el equipo con ID: {computerSystemId}")
+
+    
+    if qr_type == "info" and computer.qr_info_computer:
+        qr_url_info = generate_presigned_url(AWS_BUCKET_NAME, str(computer.qr_info_computer))
+        print(f"QR ya generado. URL: {qr_url_info}")
+
+        return JsonResponse({'status': 'generados', 'qr_url_info': qr_url_info})
+
+    # Contenido del QR
+    if qr_type == 'info':
+        qr_content = f"http://localhost:8000/computers-equipment/info/{computerSystemId}/"
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
+
+    # Generar el QR
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_content)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill='black', back_color='white')
+
+    # Guardar la imagen en un buffer
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # Definir la ruta del archivo en S3
+    s3Path = f'docs/{company_id}/computers-equipment/{computerSystemId}/qr/'
+    s3Name = f"qr_info{computerSystemId}.png"
+    full_s3_path = s3Path + s3Name
+
+    print(f"Subiendo el QR a S3 en la ruta: {full_s3_path}")
+
+    # Asignar la ruta al modelo
+    computer.qr_info_computer = full_s3_path
+
+    # Crear un InMemoryUploadedFile
+    img_file = InMemoryUploadedFile(
+        buffer, None, s3Name, 'image/png', buffer.getbuffer().nbytes, None
+    )
+
+    # Subir a S3
+    upload_to_s3(img_file, AWS_BUCKET_NAME, full_s3_path)
+    computer.save()  # Guardar cambios en la base de datos
+
+    print(f"QR guardado en la base de datos con URL: {full_s3_path}")
+
+    # Generar la URL 
+    qr_url = generate_presigned_url(AWS_BUCKET_NAME, full_s3_path)
+    print(f"Generando URL del QR en S3: {qr_url}")
+
+    return JsonResponse({'status': 'success', 'qr_url': qr_url})
+
+
+def check_qr_computer(request, computerSystemId):
+    try:
+        computer = get_object_or_404(ComputerSystem, id=computerSystemId)
+
+        if computer.qr_info_computer:
+            qr_url_info = generate_presigned_url(AWS_BUCKET_NAME, str(computer.qr_info_computer))
+            return JsonResponse({'status': 'success', 'qr_url_info': qr_url_info})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'QR no generado'})
+    except ComputerSystem.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Equipo no encontrado'}, status=404)
+
+
+
+#funcion para descargar el qr
+def descargar_qr_computer(request):
+    id_computer = request.GET.get("computerSystemId")
+    tipo_qr = request.GET.get("type")  
+
+    computer = ComputerSystem.objects.filter(id=id_computer).first()
+    if computer:
+        if tipo_qr == "info":
+            if not computer.qr_info_computer:
+                return JsonResponse({'error': 'QR no generado'}, status=404)
+
+            url_computer = computer.qr_info_computer  
+        else:
+            return JsonResponse({'error': 'Tipo de QR no válido'}, status=400)
+
+        url_s3 = generate_presigned_url(AWS_BUCKET_NAME, str(url_computer))
+        return JsonResponse({'url_computer': url_s3})
+    else:
+        return JsonResponse({'error': 'Equipo no encontrado'}, status=404)
+
+
+#funcion para eliminar el qr
+def delete_qr_computer(request, qr_type, computerSystemId):
+    computer = get_object_or_404(ComputerSystem, id=computerSystemId)
+    url = ""
+    if qr_type == 'info' and computer.qr_info_computer:
+        url = str(computer.qr_info_computer)
+        computer.qr_info_computer.delete()
+    elif qr_type == 'access' and computer.qr_access:
+        url = str(computer.qr_access)
+        computer.qr_access.delete()
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid QR type or QR does not exist'}, status=400)
+    
+    delete_s3_object(AWS_BUCKET_NAME, url)
+    return JsonResponse({'status':'success'})
+
 
 # END

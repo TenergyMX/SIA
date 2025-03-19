@@ -58,4 +58,14 @@ urlpatterns = [
     path("delete-computer-equipment-deliverie/", views.delete_computer_equipment_deliverie),
 
     path("get_users_with_assigned_computer_equipment/", views.get_users_with_assigned_computer_equipment),
+
+    #codigo qr
+    path('generate_qr_computer/<str:qr_type>/<int:computerSystemId>/', views.generate_qr_computer),
+    path('check_qr_computer/<int:computerSystemId>/', views.check_qr_computer),
+    path('descargar_qr_computer/', views.descargar_qr_computer),
+    path('delete_qr_computer/<str:qr_type>/<int:computerSystemId>/', views.delete_qr_computer),
+
+
+
+
 ]
