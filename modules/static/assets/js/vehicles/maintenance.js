@@ -193,7 +193,6 @@ class VehiclesMaintenance {
 
     setupEventHandlers() {
         const self = this;
-        console.log(self.vehicle);  
         var obj_modal = $("#mdl_crud_maintenance");
         var obj_modal_option = $("#mdl-crud-option-maintenance");
 
@@ -328,7 +327,6 @@ class VehiclesMaintenance {
 
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_maintenance.row(fila).data();
-                    obj_modal.find('[name="type"]').trigger("change");
 
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
@@ -342,6 +340,7 @@ class VehiclesMaintenance {
                         let jsonString = datos["actions"].replace(/'/g, '"');
                         let objeto = JSON.parse(jsonString);
                         let claves = Object.keys(objeto);
+                        obj_modal.find('[name="type"]').trigger("change");
                         obj_modal.find('[name="actions[]"]').val(claves);
                         obj_modal.find('[name="actions[]"]').trigger("change");
                     } catch (error) {
@@ -422,7 +421,7 @@ class VehiclesMaintenance {
                     var datos = self.tbl_maintenance.row(fila).data();
 
                     // Limpiar el contenido del contenedor antes de cargar nuevos datos
-                    
+
                     var obj_div = $("#v-maintenance-pane .info-details");
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_div.find(`[name="${index}"]`).is(":file");
@@ -520,7 +519,6 @@ class VehiclesMaintenance {
 
         obj_modal.find('[name="type"]').on("change", function (e) {
             var tipo = $(this).val().toLowerCase();
-            console.log(tipo);
             var select = obj_modal.find("[name='actions[]']");
             var optionsHTML = "";
             select.empty();
@@ -528,7 +526,6 @@ class VehiclesMaintenance {
 
             // Agregar las opciones correspondientes
             $.each(self.dataMaintenance[tipo], function (index, value) {
-                console.log("prueba"+value["descripcion"]);
                 optionsHTML += `<option value="${value["descripcion"]}">${value["descripcion"]}</option>`;
             });
             // Actualiza el select con las nuevas opciones
@@ -566,7 +563,8 @@ class VehiclesMaintenance {
                     .on("submit", function (e) {
                         e.preventDefault();
 
-                        var optionName = $("#option_maintenance_name").val(); // Obtiene el valor del input
+                        var optionName = $("#option_maintenance_name").val();
+                        optionName = optionName.toUpperCase(); // Obtiene el valor del input
                         var maintenanceType = $('select[name="type"]').val(); // Obtiene el tipo de mantenimiento
 
                         if (optionName) {
@@ -607,8 +605,8 @@ class VehiclesMaintenance {
                                         title: "¡Éxito!",
                                         text: "La descripción ha sido agregada correctamente",
                                         icon: "success",
-                                        timer: 1500,
                                     });
+                                    self.loadApi();
                                 },
                                 error: function (xhr) {
                                     console.error("Error:", xhr.responseJSON.message);
@@ -726,7 +724,7 @@ class VehiclesMaintenance {
                             errorMessage = xhr.responseJSON.message;
                         }
                         Swal.fire("Error", errorMessage, "error");
-                        console.log("Error en la petición AJAX:");
+
                         console.error("xhr:", xhr);
                     },
                 });
@@ -747,16 +745,13 @@ class VehiclesMaintenance {
         const self = this;
         var obj_modal = $("#mdl_crud_computerSystem");
         var url = SIA.static + "assets/json/vehicles-maintenance.json";
-        console.log(url);
 
         $.ajax({
             type: "GET",
             url: url,
             success: function (response) {
-                console.log("JSON cargado correctamente:", response);
                 self.dataMaintenance = {};
                 $.each(response.data, function (index, mantenimiento) {
-                    console.log(mantenimiento);
                     var tipo = mantenimiento.tipo;
                     self.dataMaintenance[tipo] = mantenimiento.items;
                 });
