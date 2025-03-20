@@ -201,7 +201,7 @@ class VehiclesMaintenance {
                 url: "/get_vehicle_maintenance_kilometer/",
                 dataSrc: "data",
                 data: {
-                    id: self.vehicle.id,
+                    id: self.vehicle.data.id,
                 },
             },
             columns: [
@@ -327,7 +327,6 @@ class VehiclesMaintenance {
 
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_maintenance.row(fila).data();
-                    obj_modal.find('[name="type"]').trigger("change");
 
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
@@ -338,10 +337,16 @@ class VehiclesMaintenance {
                     });
 
                     try {
-                        let jsonString = datos["actions"].replace(/'/g, '"');
-                        let objeto = JSON.parse(jsonString);
-                        let claves = Object.keys(objeto);
-                        obj_modal.find('[name="actions[]"]').val(claves);
+                        if (datos["actions"]) {
+                            let jsonString = datos["actions"].replace(/'/g, '"');
+                            let objeto = JSON.parse(jsonString);
+                            let claves = Object.keys(objeto);
+                            obj_modal.find('[name="type"]').trigger("change");
+
+                            obj_modal.find('[name="actions[]"]').val(claves);
+                        } else {
+                            obj_modal.find('[name="type"]').trigger("change");
+                        }
                         obj_modal.find('[name="actions[]"]').trigger("change");
                     } catch (error) {
                         console.error(error);
@@ -402,10 +407,14 @@ class VehiclesMaintenance {
                     });
 
                     try {
-                        let jsonString = datos["actions"].replace(/'/g, '"');
-                        let objeto = JSON.parse(jsonString);
-                        let claves = Object.keys(objeto);
-                        obj_modal.find('[name="actions[]"]').val(claves);
+                        if (datos["actions"]) {
+                            let jsonString = datos["actions"].replace(/'/g, '"');
+                            let objeto = JSON.parse(jsonString);
+                            let claves = Object.keys(objeto);
+                            obj_modal.find('[name="actions[]"]').val(claves);
+                        } else {
+                            console.log("No hay acciones");
+                        }
                         obj_modal.find('[name="actions[]"]').trigger("change");
                     } catch (error) {
                         console.error(error);
@@ -421,7 +430,7 @@ class VehiclesMaintenance {
                     var datos = self.tbl_maintenance.row(fila).data();
 
                     // Limpiar el contenido del contenedor antes de cargar nuevos datos
-                    
+
                     var obj_div = $("#v-maintenance-pane .info-details");
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_div.find(`[name="${index}"]`).is(":file");
@@ -563,7 +572,8 @@ class VehiclesMaintenance {
                     .on("submit", function (e) {
                         e.preventDefault();
 
-                        var optionName = $("#option_maintenance_name").val(); // Obtiene el valor del input
+                        var optionName = $("#option_maintenance_name").val();
+                        optionName = optionName.toUpperCase(); // Obtiene el valor del input
                         var maintenanceType = $('select[name="type"]').val(); // Obtiene el tipo de mantenimiento
 
                         if (optionName) {
@@ -604,8 +614,8 @@ class VehiclesMaintenance {
                                         title: "¡Éxito!",
                                         text: "La descripción ha sido agregada correctamente",
                                         icon: "success",
-                                        timer: 1500,
                                     });
+                                    self.loadApi();
                                 },
                                 error: function (xhr) {
                                     Swal.fire({

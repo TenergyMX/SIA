@@ -362,7 +362,10 @@ def drivers_details(request, driver_id = None):
 def get_vehicle_maintenance_kilometer(request):
     dt = request.GET.get
     response = {"success":True}
+    print(dt("id"))
     obj = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo_id=dt("id")).order_by("-kilometer").values("id", "kilometer")
+    print(obj)
+    print("hola")
     for item in obj:
         id = str(item["id"])
         item["kilometer"] = str(item["kilometer"])+" km"
@@ -1589,7 +1592,16 @@ def get_vehicles_responsiva(request):
         "start_date", "end_date",
         "signature", "destination", "trip_purpose"
     ).order_by("-id")
+    # Filtrado según el rol del usuario
 
+    if context["role"]["id"] in [1, 2]:
+        lista = lista.filter(vehicle__company_id=context["company"]["id"])
+        print(lista)
+    else:
+        lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
+
+    # Obtener permisos de acceso
+    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
     modified_data_list = []
 
     for data in lista:
@@ -1613,14 +1625,6 @@ def get_vehicles_responsiva(request):
 
         modified_data_list.append(modified_data)
 
-    # Filtrado según el rol del usuario
-    if context["role"]["id"] in [1, 2]:
-        lista = lista.filter(vehicle__company_id=context["company"]["id"])
-    else:
-        lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
-
-    # Obtener permisos de acceso
-    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
     # Agregar botones de acción
     for item in modified_data_list:
@@ -2452,10 +2456,11 @@ def get_vehicles_maintenance(request):
         "mileage","time", "general_notes", "actions", "comprobante", "status"
     )
 
-    if context["role"] in [2,3]:
-        data = lista.filter(vehicle__company_id = context["company"]["id"])
+    print(context["role"])
+    if context["role"]["id"] in [1,2]:
+        lista = lista.filter(vehicle__company_id = context["company"]["id"])
     else:
-        data = lista.filter(vehicle__responsible_id = context["user"]["id"])
+        lista = lista.filter(vehicle__responsible_id = context["user"]["id"])
     
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
@@ -2614,9 +2619,9 @@ def get_vehicles_calendar(request):
 
     mante = Vehicle_Maintenance.objects.filter(vehicle__company_id = company_id).values("date", "vehicle__name")
     audit = Vehicle_Audit.objects.filter(vehicle__company_id = company_id).values("audit_date", "vehicle__name")
-    tenencia = Vehicle_Tenencia.objects.filter().values("vehiculo__name", "fecha_pago")
-    refrendo = Vehicle_Refrendo.objects.filter().values("vehiculo__name", "fecha_pago")
-    verificacion = Vehicle_Verificacion.objects.filter().values("vehiculo__name", "fecha_pago")
+    tenencia = Vehicle_Tenencia.objects.filter(vehiculo__company_id = company_id).values("vehiculo__name", "fecha_pago")
+    refrendo = Vehicle_Refrendo.objects.filter(vehiculo__company_id = company_id).values("vehiculo__name", "fecha_pago")
+    verificacion = Vehicle_Verificacion.objects.filter(vehiculo__company_id = company_id).values("vehiculo__name", "fecha_pago")
 
 
 
@@ -2731,8 +2736,9 @@ def get_vehicles_fuels(request):
     dt = request.GET
     vehicle_id = dt.get("vehicle_id", None)
     subModule_id = 22
-
-    datos = Vehicle_fuel.objects.values(
+    company_id = context["company"]["id"]
+    
+    datos = Vehicle_fuel.objects.filter(vehicle__company_id = company_id).values(
         "id",
         "vehicle_id", "vehicle__name",
         "responsible_id", "responsible__first_name", "responsible__last_name",
@@ -2901,7 +2907,6 @@ def add_option(request):
             # Cargar el JSON desde el archivo
             with open(directorio_json, 'r') as file:
                 json_data = json.load(file)
-
             # Función para agregar un nuevo ítem
             def agregar_item(json_data, tipo_mantenimiento, nueva_descripcion):
                 for mantenimiento in json_data['data']:
@@ -2910,7 +2915,7 @@ def add_option(request):
                         nuevo_id = max_id + 1
                         nuevo_item = {
                             "id": nuevo_id,
-                            "descripcion": nueva_descripcion
+                            "descripcion":  nueva_descripcion.upper()
                         }
                         mantenimiento['items'].append(nuevo_item)
                         return json_data
@@ -3134,6 +3139,10 @@ def create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance
 
 def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=None):
     response = {"status": "success"}
+    print("llegamos a checar el kilometraje")
+    print(obj_vehicle)
+    print(kilometer)
+    print(date_set)
 
     # Check if maintenance kilometer records exist
     obj_maintenance_kilometer = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo=obj_vehicle)
@@ -3148,9 +3157,10 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         response["status"] = "error"
         response["error"] = {"message": "El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."}
         return JsonResponse(response)
-
+    print("esta es la resta del mantenimiento")
     # Check if there is an active maintenance alert for the vehicle
     flag_new = Vehicle_Maintenance.objects.filter(vehicle=obj_vehicle, type="preventivo").order_by("-id").first()
+    
     if flag_new and flag_new.status == "ALERTA":
         response["status"] = "warning"
         response["message"] = "Aún no se ha agendado la revisión del mantenimiento para este vehículo."
@@ -3158,12 +3168,16 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
     # Check if the next maintenance kilometer is near
     next_maintenance_km = next_maintenance.first().kilometer
     flag = next_maintenance_km - Decimal(kilometer)
+    print("esta es la resta del mantenimiento")
     if not flag_new and flag <= 200:
         response["status"] = "warning"
         create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance_km)
         response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
 
-    diferencia = abs(int(next_maintenance_km)-int(flag_new.mileage))
+    if flag_new:
+        diferencia = abs(int(next_maintenance_km)-int(flag_new.mileage))
+    else:
+        diferencia = abs(int(next_maintenance_km)-int(0))
     if flag_new and flag <= 200 and flag_new.status != "ALERTA" and diferencia >= 200:
         response["status"] = "warning"
         # Create a new maintenance record if necessary
@@ -3171,74 +3185,7 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
 
         sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
-    return JsonResponse(response)
-
-def check_vehicle_kilometer_back(request, obj_vehicle = None, kilometer = None, date_set = None):
-    response = {"status": "success"}
-    status = None
-    # TODO -- MAINTENANCE KILOMETER --
-    obj_maintenance_kilometer = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = obj_vehicle)
-    #CONDITIONAL MAINTENANCE KILOMETER FOR THAT VEHICLE EXISTS
-    if obj_maintenance_kilometer.count() == 0:
-        response["status"] = "error"
-        response["error"] = {"message" : f"Kilometraje para mantenimiento no asigando, por favor registre el kilometraje de manera manual"}
-    else:# TODO CONTINUE
-        next_maintenance = obj_maintenance_kilometer.filter(kilometer__gte = kilometer).order_by("kilometer")
-
-        #CONDITIONAL CHECKS IS EXIST MAINTENANCE KILOMETER IN MODELS
-        if next_maintenance.count() == 0:
-            response["status"] = "error"
-            response["error"] = {"message" : f"El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."}
-            return JsonResponse(response)
-        
-        #CONDITIONAL CHECKS IT'S MAINTENANCES STILL IN NEW
-        flag_new = Vehicle_Maintenance.objects.filter(vehicle = obj_vehicle, type = "preventivo").order_by("-id").first()
-        if flag_new.exist():
-            if flag_new == "ALERTA":
-                response["status"] = "warning"
-                response["message"] = f"Aún no se ha agendado la revisión del mantenimiento para este vehículo con el kilometraje {flag_new.mileage}"
-                return JsonResponse(response)
-
-        #CONDITIONAL CHECK THE NEXT KILOMETER DIFF LESS THEN 200
-        flag = next_maintenance.first().kilometer - Decimal(kilometer)
-        if flag <= 200:#TODO CONTINUA
-            response["status"] = "warning"
-            if flag_new.exist():
-                if flag_new != "ALERTA":
-                    status = "ALERTA"
-                    km = next_maintenance.first().kilometer
-                    response["message"] = f"El kilometraje está cerca de alcanzar los {km} km, se recomienda agendar una revisión."
-                    newDate = datetime.strptime(date_set, "%Y-%m-%dT%H:%M").date()
-                    newDate = newDate + timedelta(days=14)
-                    km = next_maintenance.first().kilometer
-                    obj_maintenance = Vehicle_Maintenance(
-                        vehicle = obj_vehicle,
-                        type = "preventivo",
-                        status = status,
-                        date = newDate,
-                        mileage = kilometer,
-                        general_notes = f"Vehiculo cerca de los {km} km, necesario programar revisión"
-                    )
-                    obj_maintenance.save()
-                    
-            else:
-                status = "ALERTA"
-                km = next_maintenance.first().kilometer
-                response["message"] = f"El kilometraje está cerca de alcanzar los {km} km, se recomienda agendar una revisión."
-                newDate = datetime.strptime(date_set, "%Y-%m-%dT%H:%M").date()
-                newDate = newDate + timedelta(days=14)
-                km = next_maintenance.first().kilometer
-                obj_maintenance = Vehicle_Maintenance(
-                    vehicle = obj_vehicle,
-                    type = "preventivo",
-                    status = status,
-                    date = newDate,
-                    mileage = kilometer,
-                    general_notes = f"Vehiculo cerca de los {km} km, necesario programar revisión"
-                )
-                obj_maintenance.save()
-        sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
-        
+    print("llegamos al final de checar el kilometraje")
     return JsonResponse(response)
 
 
@@ -4188,7 +4135,10 @@ def add_vehicle_responsiva(request):
                 if data_flag("status") == "error":
                     return flag
                 elif data_flag("status") == "warning":
-                    response["warning"] = {"message": data_flag("message")}
+                    response["warning"] = True
+                    response["type"] = "kilometraje"
+                    response["status"] = data_flag("status")
+                    response["message"] = data_flag("message")
 
             obj = Vehicle_Responsive(
                 vehicle_id=dt.get("vehicle_id"),
@@ -4404,7 +4354,7 @@ def verificar_mantenimiento(request):
             try:
                 last_maintenance = Vehicle_Maintenance.objects.filter(vehicle=obj_vehicle, type = tipo)
                 count = last_maintenance.count()
-                last_maintenance_obj = last_maintenance.order_by('-id').first()
+                last_maintenance_obj = last_maintenance.order_by('-date').first()
                 old_maintenance_obj = last_maintenance.first()
                 if id_edit:
                     if int(last_maintenance_obj.id) == int(id_edit) and count <= 1:
@@ -4421,7 +4371,7 @@ def verificar_mantenimiento(request):
                         # Verificar si hay un registro anterior
                         if count > 1:
                             # Tomar el siguiente registro (anterior al último)
-                            last_maintenance_obj = last_maintenance.order_by("-id")[1]  # El segundo objeto en la consulta
+                            last_maintenance_obj = last_maintenance.order_by("-date")[1]  # El segundo objeto en la consulta
                         else:
                             response["status"] = "warning"
                             response["message"] = "No hay registros anteriores."

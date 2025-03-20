@@ -158,13 +158,14 @@ class VehiclesResponsiva {
         obj_modal.modal("show");
 
         $.ajax({
-            url: "/validar_vehicle_en_sa/", 
+            url: "/validar_vehicle_en_sa/",
             type: "POST",
             data: {
                 id_vehicle: id_vehicle,
                 csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
             },
             success: function (response) {
+                console.log("Respuesta del servidor:", response);
                 var status = response.status;
                 if (status == "SALIDA") {
                     obj_modal.find(".modal-header").html("Registrar salida");
@@ -190,7 +191,6 @@ class VehiclesResponsiva {
                     setTimeout(function () {
                         $('select[name="responsible_id"]').val(response.id_responsable || null);
                     }, 500);
-                
                 }
             },
             error: function (xhr, status, error) {
@@ -200,19 +200,18 @@ class VehiclesResponsiva {
         });
 
         setTimeout(function () {
-            $
+            $;
         }, 500);
         // Usar la función para asignar el valor
         asignarValorSelect(id_vehicle)
-        .then(() => {
-            console.log("Valor asignado correctamente.");
-        })
-        .catch((error) => {
-            console.error(error);
-        });
+            .then(() => {
+                console.log("Valor asignado correctamente.");
+            })
+            .catch((error) => {
+                console.error(error);
+            });
         // obj_modal.find("[name='vehicle_id']").val(qr || null);
         // obj_modal.find("[name='vehicle_name']").val(self.vehicle.data.vehicle_name || null);
-
     }
 
     setupEventHandlers() {
@@ -318,17 +317,16 @@ class VehiclesResponsiva {
 
                     $.each(datos, function (index, value) {
                         if (index === "initial_fuel" || index === "final_fuel") {
-                            obj_div.find(`[data-key-value="${index}"]`)
+                            obj_div
+                                .find(`[data-key-value="${index}"]`)
                                 .html(isNaN(parseInt(value)) ? "--- %" : parseInt(value) + " %")
                                 .removeClass();
                         } else {
-                            obj_div.find(`[data-key-value="${index}"]`)
+                            obj_div
+                                .find(`[data-key-value="${index}"]`)
                                 .html(value || "---")
                                 .removeClass();
                         }
-                        
-                        
-                        
 
                         if (index === "initial_fuel") {
                             const posicion = value;
@@ -495,21 +493,23 @@ class VehiclesResponsiva {
                             contentType: false,
                             success: function (response) {
                                 Swal.close(); // Cerrar alerta de carga antes de mostrar el resultado
-                                if (response.status == "warning" && response.type == "mantenimiento") {
+                                if (
+                                    response.status == "warning" &&
+                                    response.type == "mantenimiento"
+                                ) {
                                     Swal.fire(
                                         "Warning",
-                                        "Vehiculo en proceso de mantenimiento \n" + 
-                                        "No se pudo realizar el registro, informe a la persona encargada",
+                                        "Vehiculo en proceso de mantenimiento \n" +
+                                            "No se pudo realizar el registro, informe a la persona encargada",
                                         "warning"
                                     );
                                 } else if (!response.success && response.error) {
                                     Swal.fire("Error", response.error["message"], "error");
-                                } else if (response.warning && response.type == "kilometraje") {
-                                    Swal.fire(
-                                        "Advertencia",
-                                        response.warning["message"],
-                                        "warning"
-                                    );
+                                } else if (
+                                    response.status == "warning" &&
+                                    response.type == "kilometraje"
+                                ) {
+                                    Swal.fire("Advertencia", response.message, "warning");
                                 } else {
                                     Swal.fire("Éxito", "Salida Registrada", "success");
                                 }
@@ -546,8 +546,8 @@ class VehiclesResponsiva {
                         if (response.status == "warning" && response.type == "mantenimiento") {
                             Swal.fire(
                                 "Warning",
-                                "Vehiculo en proceso de mantenimiento \n" + 
-                                "No se pudo realizar el registro, informe a la persona encargada",
+                                "Vehiculo en proceso de mantenimiento \n" +
+                                    "No se pudo realizar el registro, informe a la persona encargada",
                                 "warning"
                             );
                         } else if (!response.success && response.error) {

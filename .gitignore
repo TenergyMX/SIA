@@ -26,5 +26,7 @@ postgres_data/
 /modules/views/computer-equipment/.env
 modules/awsCred.env
 postgres/siaDB.pgsql
+/modules/static/assets/json/vehicles-maintenance.json
 modules/.DS_Store
 .DS_Store
+modules/static/assets/json/
