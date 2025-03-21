@@ -68,7 +68,7 @@ class Users {
                         title: "Creación",
                         data: function (d) {
                             let checked = d["create"] ? "checked" : "";
-                            return `<input type="checkbox" data-toggle="toggle" data-permission-type="read" data-submodule-id="${d["submodule_id"]}" ${checked}>`;
+                            return `<input type="checkbox" data-toggle="toggle" data-permission-type="create" data-submodule-id="${d["submodule_id"]}" ${checked}>`;
                         },
                         orderable: false,
                     },
@@ -76,7 +76,7 @@ class Users {
                         title: "Modificación",
                         data: function (d) {
                             let checked = d["update"] ? "checked" : "";
-                            return `<input type="checkbox" data-toggle="toggle" data-permission-type="read" data-submodule-id="${d["submodule_id"]}" ${checked}>`;
+                            return `<input type="checkbox" data-toggle="toggle" data-permission-type="update" data-submodule-id="${d["submodule_id"]}" ${checked}>`;
                         },
                         orderable: false,
                     },
@@ -84,7 +84,7 @@ class Users {
                         title: "Eliminar",
                         data: function (d) {
                             let checked = d["delete"] ? "checked" : "";
-                            return `<input type="checkbox" data-toggle="toggle" data-permission-type="read" data-submodule-id="${d["submodule_id"]}" ${checked}>`;
+                            return `<input type="checkbox" data-toggle="toggle" data-permission-type="delete" data-submodule-id="${d["submodule_id"]}" ${checked}>`;
                         },
                         orderable: false,
                     },
@@ -236,8 +236,6 @@ class Users {
                     var datos = self.tbl_users.row(fila).data();
 
                     $.each(datos, function (index, value) {
-                        console.log(index, " ", value);
-
                         obj_modal.find(`[name='${index}']`).val(value);
                     });
 
@@ -306,20 +304,32 @@ class Users {
             var obj = $(this);
             var datos = new FormData();
 
-            datos.append("checked", obj.is(":checked") || false);
-            datos.append("user_id", self.data.user_id);
+            // Aseguramos que 'checked' sea true o false, dependiendo del estado del checkbox.
+            datos.append("checked", obj.prop("checked") ? "true" : "false");
+
+            // Agregar otros datos necesarios
+            datos.append("user_id", self.data.user_id); // Asegúrate de que 'self.data.user_id' sea válido
             datos.append("submodule_id", obj.data("submodule-id"));
             datos.append("permission_type", obj.data("permission-type"));
             datos.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
 
+            // Realizar la petición AJAX
             $.ajax({
                 type: "POST",
                 url: "/update_userPermissions/",
                 data: datos,
                 processData: false,
                 contentType: false,
-                success: function (response) {},
-                error: function (xhr, status, error) {},
+                success: function (response) {
+                    // Aquí puedes manejar la respuesta del servidor si es necesario
+                    if (response.success) {
+                    } else {
+                        alert("Hubo un error al actualizar el permiso.");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert("Error en la petición AJAX: " + error);
+                },
             });
         });
 

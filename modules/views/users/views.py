@@ -391,26 +391,28 @@ def update_userPermissions(request):
     user_id = dt.get("user_id")
     submodule_id = dt.get("submodule_id", None)
     campo_db = dt.get("permission_type")
-    checked = True if dt.get("checked") == "true" else False
+    checked = True if dt.get("checked") == "true" else False  # Verifica que se reciba "true" o "false"
 
-    permiso = SubModule_Permission.objects.filter(subModule_id = submodule_id, user_id = user_id)
-    
-    # return JsonResponse(response)
+    permiso = SubModule_Permission.objects.filter(subModule_id=submodule_id, user_id=user_id)
+
     if permiso.exists():
-        """ El Permiso existe y solo se actualiza """
-        # update_data = {campo_db: checked}
-        # permiso.update(**update_data)
+        # El Permiso existe y solo se actualiza
+        update_data = {campo_db: checked}
+        permiso.update(**update_data)
     else:
-        """ El Permiso No existe. proceder a guardarlo """
+        # El Permiso No existe. Se procede a guardarlo
         add_data = {campo_db: checked}
         new_permiso = SubModule_Permission(
-            subModule_id = submodule_id,
-            user_id = user_id,
+            subModule_id=submodule_id,
+            user_id=user_id,
             **add_data
         )
         new_permiso.save()
+
     response["success"] = True
     return JsonResponse(response)
+
+
 
 def add_provider(request):
     response = {"success": False}
