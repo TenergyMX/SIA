@@ -24,7 +24,7 @@
                     </div>
                     <div class="">
                         {% if access.create %}
-                            <button type="button" class="btn btn-sm btn-primary" onclick="add_companys()" data-companys="add-company"
+                            <button type="button" class="btn btn-sm btn-primary" onclick="company.add_companys(this)" data-companys="add-company"
                                 title="Agregar empresa">
                                 <i class="fa-solid fa-plus"></i>
                             Agregar
@@ -66,9 +66,5 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    const empresas = new Company({
-        table: { id: "#table_companys" }
-    })
-</script>
+
 {% endblock %}

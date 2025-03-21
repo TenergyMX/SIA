@@ -130,6 +130,9 @@
 <script src="{% static 'assets/js/users/companys.js' %}"></script>
 <script>
     const empresas = new Company({
+        table: {
+            id: "#table_users_list",
+        },
         list: { id: 'select[name="company_id"]' }
     })
 </script>
