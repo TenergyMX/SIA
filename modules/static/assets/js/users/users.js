@@ -236,6 +236,8 @@ class Users {
                     var datos = self.tbl_users.row(fila).data();
 
                     $.each(datos, function (index, value) {
+                        console.log(index, " ", value);
+
                         obj_modal.find(`[name='${index}']`).val(value);
                     });
 
@@ -244,6 +246,7 @@ class Users {
                     obj_modal.find("[name='name']").val(datos["user__first_name"]);
                     obj_modal.find("[name='last_name']").val(datos["user__last_name"]);
                     obj_modal.find("[name='email']").val(datos["user__email"]);
+                    obj_modal.find("[name='password']").val("");
 
                     obj_modal.modal("show");
                     obj_modal.find("[name='addUser']").hide();

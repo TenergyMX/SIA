@@ -286,6 +286,7 @@ def update_user_with_access(request):
     user_id = dt.get('user_id')
     area_id = dt.get("area_id")
 
+    print("Estos son los datos del formulario:", dt)
     # Validar que todos los campos necesarios están presentes
     if not user_id:
         response["error"] = {"message": "El ID del usuario es obligatorio."}
@@ -310,9 +311,12 @@ def update_user_with_access(request):
             user.email = email
             user.first_name = first_name
             user.last_name = last_name
+
             if password:
                 user.set_password(password)
+            # Guardar el usuario después de actualizar los datos
             user.save()
+
 
             # Actualizar los datos de acceso
             access_record, created = User_Access.objects.get_or_create(user=user)
