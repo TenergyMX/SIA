@@ -28,7 +28,7 @@ $(document).ready(function () {
                     $('button[data-computer-qr="qr-info"]').show();
                     $('button[data-computer-qr="delete-qrinfo"]').hide(); 
                     $('button[data-computer-qr="descargar-qr-info"]').hide(); 
-                    $("#qr-info-computer-container").empty(); // Limpiar el contenedor de QR si no hay uno generado
+                    $("#qr-info-computer-container").empty(); 
                 }
             },
             error: function(xhr, status, error) {
@@ -72,11 +72,9 @@ $(document).on("click", '[data-computer-qr="descargar-qr-info"]', function () {
 });
 
 
-// Evento click para el botón de eliminar con confirmación de SweetAlert
 $(document).on("click", '[data-computer-qr="delete-qrinfo"]', function () {
     const computerSystemId = $('[data-computer-qr="qr-info"]').data("computersystem_id");
     
-    // Confirmación de eliminación con SweetAlert
     Swal.fire({
         title: "¿Estás seguro?",
         text: "¡No podrás revertir esta acción!",
@@ -88,7 +86,6 @@ $(document).on("click", '[data-computer-qr="delete-qrinfo"]', function () {
         cancelButtonText: "Cancelar"
     }).then((result) => {
         if (result.isConfirmed) {
-            // Si el usuario confirma, proceder con la eliminación
             delete_qr_computer(computerSystemId, "info");
         }
     });
@@ -117,7 +114,6 @@ function generate_qr_computer(computerSystemId, type) {
                     qrImage.onerror = function () {
                         console.error('Error al cargar la imagen QR:', qrImage.src);
                     };
-                    // Agregar la imagen al contenedor
                     $("#qr-info-computer-container").append(qrImage);
 
                     $('button[data-computer-qr="delete-qrinfo"]').show();
@@ -140,7 +136,6 @@ function generate_qr_computer(computerSystemId, type) {
 
 
 
-// Función para descargar el QR y mostrar el icono de éxito cuando termine
 function descargar_qr_computer(computerSystemId, type) {
     $.ajax({
         type: "GET",

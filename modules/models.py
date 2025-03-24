@@ -486,7 +486,8 @@ class Infrastructure_Item(models.Model):
     ], verbose_name="Unidad de Tiempo")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
-    
+    qr_info_infrastructure = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
+
     class Meta:
         verbose_name = "Item de Infraestructura"
         verbose_name_plural = "Items de Infraestructura"
