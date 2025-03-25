@@ -53,6 +53,9 @@ urlpatterns = [
     #Gráfica de historial de pagos 
     path('get_services_categories_payments/', views.get_services_categories_payments),
     path('get_payment_history_grafic/', views.get_payment_history_grafic),
+    path('get_service_names_by_category/<int:category_id>/', views.get_service_names_by_category),
+    path('get_service_expenses/<int:service_id>/', views.get_service_expenses),
+
 
 ]
 

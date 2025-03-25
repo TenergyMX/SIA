@@ -903,6 +903,11 @@ def get_services_by_category(request, category_id):
         if not company_id:
             return JsonResponse({"status": "error", "message": "No se encontró la empresa asociada al usuario"}, status=400)
 
+        # Obtener la categoría
+        category = Services_Category.objects.filter(id=category_id).first()
+        if not category:
+            return JsonResponse({"status": "error", "message": "Categoría no encontrada"}, status=404)
+
         services = Services.objects.filter(category_service_id=category_id, company_id=company_id)
         
         # Obtener los pagos "pagados" de los servicios filtrados
@@ -917,7 +922,12 @@ def get_services_by_category(request, category_id):
                 'total_payment': total_payment
             })
 
-        return JsonResponse({'status': 'success', 'data': service_data})
+        return JsonResponse({
+            'status': 'success',
+            'data': service_data,
+            'name_category': category.name_category,
+        })
+
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
@@ -1115,3 +1125,73 @@ def get_payment_history_grafic(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error interno: {str(e)}'}, status=500)
+
+
+# Función para obtener los nombres de los servicios por categoría
+def get_service_names_by_category(request, category_id):
+    print("esta es la funcion para obtener los servicios de acuerdo a la categoria selecccionada")
+    try:
+        # Obtener el contexto del usuario
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        # Verificar la empresa
+        if not company_id:
+            return JsonResponse({"status": "error", "message": "No se encontró la empresa asociada al usuario"}, status=400)
+
+        # Obtener la categoría
+        category = Services_Category.objects.filter(id=category_id, is_active_category=True, services__company_id=company_id).first()
+        if not category:
+            return JsonResponse({"status": "error", "message": "Categoría no encontrada o inactiva"}, status=404)
+
+        # Obtener los servicios relacionados con la categoría
+        services = Services.objects.filter(category_service=category, company_id=company_id)
+
+        # Crear la lista de nombres de servicios
+        service_data = [{"id": service.id, "name": service.name_service} for service in services]
+
+        print("esto contiene los servicios de la categoria seleccionada:", service_data)
+        return JsonResponse({'status': 'success', 'service_data': service_data})
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+def get_service_expenses(request, service_id):
+    try:
+        service = Services.objects.get(id=service_id)
+        print("este es el servicio seleccionado:", service)
+        # Obtener los pagos del servicio, agrupados por mes
+        payments = Payments_Services.objects.filter(
+            name_service_payment=service,
+            next_date_payment__year=datetime.now().year  
+        )
+
+        # Obtener los pagos por mes
+        months_expenses = payments.values('next_date_payment__month').annotate(
+            total=Sum('total_payment')
+        ).order_by('next_date_payment__month')  
+
+        months = []
+        expenses = []
+        for month_expense in months_expenses:
+            # Obtener el nombre del mes
+            month = datetime(datetime.now().year, month_expense['next_date_payment__month'], 1).strftime('%B')
+            months.append(month)
+            expenses.append(month_expense['total'])
+
+        # Devolver los datos en formato JSON
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'service_name': service.name_service,
+                'months': months,
+                'egresos': expenses,
+            }
+        })
+
+    except Services.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'El servicio no existe.'
+        })

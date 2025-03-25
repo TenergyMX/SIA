@@ -106,12 +106,20 @@
                                     <label for="category">Categoría de servicio</label>
                                     <select name="category" id="category" class="form-select" required>
                                         <option value="" disabled selected>Seleccione una categoría</option>
-                                    </select>
+                                    </select>   
+                                    
+                                    <div class="col-md-12 mb-2 me-2">
+                                        <label for="service">Servicio</label>
+                                        <select name="service" id="service" class="form-select" disabled>
+                                            <option value="" disabled selected>Seleccione un servicio</option>
+                                        </select>
+                                    </div>                                   
                                 </div>
 
-                                
+                            
+
                                 <!-- Filtro Rango de Fecha -->
-                                <div class="col-md-4 mb-2 me-2">
+                                <div class="col-md-4 mb-4 me-4">
                                     <label for="date_service">Rango de fecha de servicio</label>
                                     <div class="d-flex gap-2">
                                         <div class="col-md-6">
@@ -125,7 +133,6 @@
                                     </div>
                                 </div>
                                 
-                                
 
                                 <div class="col-md-4 mb-2 me-2">
                                     <label for="provider_services">Proveedor de servicio</label>
@@ -133,6 +140,7 @@
                                         <option value="" disabled selected>Seleccione un proveedor</option>
                                     </select>
                                 </div>
+                                
                             </div>
                         </div>
                     </div>
@@ -175,8 +183,20 @@
                         </div>
                     </div>
 
+
+                    <!-- Gráfica de Egresos por servicio -->
+                    <div id="graficaServicio" class="col-sm-12 col-lg-12" style="display: none;">
+                        <div class="card mb-0">
+                            <div class="card-body">
+                                <div>
+                                    <h5 id="servicio_nombre_actualizado">Gráfica de Servicio </h5>
+                                    <canvas id="graficaEgresosServicio" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                
 
             </div>
         </div>

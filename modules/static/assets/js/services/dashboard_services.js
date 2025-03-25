@@ -9,6 +9,8 @@ $(document).ready(function() {
 //funcion para mostrar las graficas por filtros 
 function graficas_filtros() {
 
+
+    
     // categoría
     $('#category').change(function() {
         var selectedCategoryId = $(this).val();
@@ -16,8 +18,28 @@ function graficas_filtros() {
             hideGraphics();
             $('#graficaCategoria').show();
             graficaEgresosCategoria(selectedCategoryId);  
+
+            // Cargar los servicios asociados a la categoría seleccionada
+            load_services_by_category(selectedCategoryId); 
         }
     });
+
+    // Servicio 
+    $('#service').change(function() {
+        var selectedServiceId = $(this).val();
+        var selectedCategoryId = $('#category').val(); 
+
+        hideGraphics();
+
+        if (selectedServiceId) {
+            $('#graficaServicio').show();
+            graficaEgresosServicio(selectedServiceId); 
+        } else if (selectedCategoryId) {
+            $('#graficaCategoria').show();
+            graficaEgresosCategoria(selectedCategoryId); 
+        }
+    });
+
 
     // proveedor
     $('#provider_services').change(function() {
@@ -38,7 +60,7 @@ function graficas_filtros() {
         if (startDate && endDate) {
             hideGraphics();
             $('#graficaRangoFechaContainer').show();
-            graficaEgresosRangoFecha(startDate, endDate);  // Actualiza el parámetro para enviar el rango completo
+            graficaEgresosRangoFecha(startDate, endDate); 
         }
     });    
     
@@ -50,6 +72,7 @@ function hideGraphics() {
     $('#graficaCategoria').hide();
     $('#graficaProveedor').hide();
     $('#graficaRangoFechaContainer').hide();
+    $('#graficaServicio').hide();
     
     if (graficaEgresosCategoriaInstance) {
         graficaEgresosCategoriaInstance.destroy();
@@ -60,7 +83,11 @@ function hideGraphics() {
     if (graficaEgresosRangoFechaInstance) {
         graficaEgresosRangoFechaInstance.destroy();
     }
+    if (graficaEgresosServicioInstance) {
+        graficaEgresosServicioInstance.destroy();
+    }
 }
+
 
 // Función para cargar los datos de los contadores en el dashboard
 function contadoresDashboard() {
@@ -211,11 +238,13 @@ function get_services_provider(selectedProviderId) {
         type: 'GET',
         success: function(response) {
             var select = $('#provider_services');
-            select.html("<option value='' disabled selected>Seleccione proveedor</option>");
+            select.html("<option value='' selected>Seleccione un proveedor</option>"); 
             $.each(response.data, function(index, provider) {
                 var selected = provider.id == selectedProviderId ? 'selected' : '';
                 select.append(`<option value="${provider.id}" ${selected}>${provider.name}</option>`);
             });
+
+            
             select.val(selectedProviderId); 
         },
         error: function(error) {
@@ -225,10 +254,56 @@ function get_services_provider(selectedProviderId) {
     });
 }
 
+$('#provider_services').change(function() {
+    limpiarCampos(); // Llama a la función que limpia el formulario
+});
+// Evento para limpiar los campos cuando se selecciona un proveedor
+$('#provider_services').change(function() {
+    var selectedProviderId = $(this).val();
+    if (selectedProviderId) {
+        limpiarCampos(); 
+    }
+});
+
+// Función para limpiar todos los campos del formulario
+function limpiarCampos() {
+    $('#category').val(''); 
+    $('#service').val(''); 
+    $('#start_date_service').val('');
+    $('#end_date_service').val('');   
+    hideGraphics(); 
+}
+
+// Evento para detectar cambios en las fechas de inicio y fin
+$('#start_date_service, #end_date_service').change(function() {
+    limpiarCamposFechas(); 
+});
+
+// Función para limpiar los campos de categoría, servicio y proveedor al seleccionar un rango de fecha
+function limpiarCamposFechas() {
+    $('#category').val('');
+    $('#service').val('');  
+    $('#provider_services').val(''); 
+    hideGraphics(); 
+}
+
+// Evento para detectar cambios en la categoría o el servicio
+$('#category, #service').change(function() {
+    limpiarCamposCategoriaServicio(); 
+});
+
+// Función para limpiar los campos de fecha y proveedor al seleccionar una categoría o servicio
+function limpiarCamposCategoriaServicio() {
+    $('#start_date_service').val(''); 
+    $('#end_date_service').val('');   
+    $('#provider_services').val('');  
+}
+
 // Variables para almacenar la instancia de la gráfica
 let graficaEgresosCategoriaInstance = null;
 let graficaEgresosProveedorInstance = null;
 let graficaEgresosRangoFechaInstance = null;
+let graficaEgresosServicioInstance = null;
 
 // Función para cargar la gráfica  por categoría
 function graficaEgresosCategoria(categoryId) {
@@ -239,12 +314,10 @@ function graficaEgresosCategoria(categoryId) {
             if (response.status === 'success') {
                 var serviceNames = [];
                 var payments = [];
-                var categoryName = response.data && response.data.name_category ? response.data.name_category : 'Categoría desconocida';
 
-                console.log("este es el nombre de la categoria:", categoryName);
-                
-
-                $('#categoryNameTitle').text('Gráfica de Servicios por Categoría: ' + categoryName);
+                var categoryName = response.name_category || 'Categoría desconocida';   
+                console.log("Nombre de la categoría:", categoryName); 
+                $('#categoryNameTitle').text('Gráfica de Servicios de la Categoría: ' + categoryName);
 
                 response.data.forEach(function(item) {
                     serviceNames.push(item.service_name);
@@ -307,7 +380,6 @@ function graficaEgresosProveedor(providerId) {
                 var serviceNames = [];
                 var payments = [];
                 
-
                 // Obtener el nombre del proveedor
                 var providerName = response.provider_name;
                 console.log("esto contiene el response", response);
@@ -316,7 +388,7 @@ function graficaEgresosProveedor(providerId) {
 
                 if (providerName) {
                     // Actualizar el título de la gráfica con el nombre del proveedor
-                    $('#proveedor').text('Gráfica de Servicios del proveedor: ' + providerName);
+                    $('#proveedor_nombre_actualizado').text('Gráfica de Servicios del proveedor: ' + providerName);
                 } else {
                     console.error("No se encontró el nombre del proveedor.");
                 }
@@ -436,5 +508,97 @@ function graficaEgresosRangoFecha(startDate, endDate) {
     });
 }
 
+// Función para cargar los servicios de una categoría seleccionada
+function load_services_by_category(categoryId) {
+    console.log("Entramos a la función para seleccionar un servicio por categoría");
 
+    $.ajax({
+        url: `/get_service_names_by_category/${categoryId}/`, 
+        type: 'GET',
+        dataType: "json",
+        success: function(response) {
+            console.log("Respuesta del servidor:", response); // Verificar la estructura de la respuesta
+            
+            var select = $('#service');
+            select.prop('disabled', false);
+            select.html("<option value='' disabled selected>Seleccione un servicio</option>");
 
+            if (response.status === 'success' && Array.isArray(response.service_data)) {
+                $.each(response.service_data, function(index, service) {
+                    select.append(`<option value="${service.id}">${service.name}</option>`);
+                });
+                console.log("Opciones agregadas al select:", select.html());
+            } else {
+                alert('No se encontraron servicios para esta categoría.');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al cargar servicios:', error);
+            alert('Hubo un error al cargar los servicios.');
+        }
+    });
+}
+
+function graficaEgresosServicio(serviceId) {
+    console.log("Solicitando datos para serviceId:", serviceId);
+    
+    $.ajax({
+        url: `/get_service_expenses/${serviceId}/`, 
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            console.log("Datos recibidos:", response);
+            if (response.success) {
+                renderGraficaEgresosServicio(response.data);
+            } else {
+                console.error("Error al obtener datos:", response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Error en la solicitud AJAX:", error);
+        }
+    });
+}
+
+function renderGraficaEgresosServicio(data) {
+    console.log("Renderizando gráfica con datos:", data);
+    
+    $('#servicio_nombre_actualizado').text(`Gráfica de egresos del servicio: ${data.service_name}`);
+
+    var ctx = document.getElementById("graficaEgresosServicio");
+
+    if (!ctx) {
+        console.error("No se encontró el canvas con id 'graficaEgresosServicio'");
+        return;
+    }
+    
+    ctx = ctx.getContext("2d");
+    
+    // Destruir instancia anterior si existe
+    if (graficaEgresosServicioInstance) {
+        graficaEgresosServicioInstance.destroy();
+    }
+
+    // Crear nueva gráfica
+    graficaEgresosServicioInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.months,
+            datasets: [{
+                label: `Egresos para ${data.service_name}`,
+                data: data.egresos, 
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
