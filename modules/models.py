@@ -5,6 +5,7 @@ from django.utils import timezone
 from users.models import *
 from datetime import datetime, timedelta
 from django.contrib.postgres.fields import ArrayField
+import re
 
 # Create your models here.
 class Vehicle(models.Model):
@@ -235,17 +236,72 @@ class ComputerSystem(models.Model):
     equipment_status = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Equipo")
     last_maintenance_date = models.DateField(blank=True, null=True, verbose_name="Fecha del Último Mantenimiento")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
+    qr_info_computer = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
+    identifier = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name="Identificador")
+    adquisition_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Adquisición")
 
     class Meta:
         verbose_name = "Equipo de Computo"
         verbose_name_plural = "Equipos de Computo"
 
-    def __str__(self):
-        if self.name:
-            return f"{self.name} ({self.brand} {self.model})"
-        else:
-            return "Equipo sin nombre"
+    def generar_identificador(self):
+        if self.equipment_type and self.company:
+            prefix_map = {
+                "portátil": "LAP",
+                "sobremesa": "COMP",
+                "servidor": "SERV"
+            }
+
+            # Obtener las 3 primeras letras del tipo de equipo
+            prefix = prefix_map.get(self.equipment_type.lower(), "EQP")
+
+            # Obtener las 3 primeras letras de la empresa
+            company_name = self.company.name if self.company and self.company.name else ""
+            company_initials = company_name[:3].upper()  # Las 3 primeras letras de la empresa
+
+            # Combinar el prefijo y las iniciales de la empresa
+            base_identifier = f"{prefix}-{company_initials}"
+
+            # Filtrar para obtener el último identificador de la misma empresa, que es el último con el mismo prefijo
+            last_identifier = ComputerSystem.objects.filter(
+                company=self.company
+            ).order_by('-identifier').first()
+            print(last_identifier)
+            print("estos son los datos")
+            if last_identifier:
+                # Extraer el número del último identificador
+                match = re.search(r'(\d+)$', last_identifier.identifier)
+                last_id_number = int(match.group(1)) if match else 0
+            else:
+                last_id_number = 0
+
+            # Si el último número es mayor a 0, reiniciar el contador a 1
+            next_id_number = last_id_number + 1 if last_id_number > 0 else 1
+
+            # Generar el identificador final con 4 dígitos
+            return f"{base_identifier}-{next_id_number:04d}"
+
+        return None
+
+    def save(self, *args, **kwargs):
+        # Generar identificador si no existe
+        if not self.identifier:
+            self.identifier = self.generar_identificador()
         
+        # Guardar el registro actual
+        super().save(*args, **kwargs)
+
+        # Verificar y actualizar los registros existentes sin identificador
+        equipos_sin_identificador = ComputerSystem.objects.filter(identifier__isnull=True)
+        for equipo in equipos_sin_identificador:
+            equipo.identifier = equipo.generar_identificador()
+            equipo.save()
+
+    def __str__(self):
+        return f"{self.identifier} - {self.name} ({self.brand} {self.model})"
+
+
+
 class ComputerPeripheral(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Nombre")
@@ -259,20 +315,60 @@ class ComputerPeripheral(models.Model):
     responsible = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Responsable")
     peripheral_status = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Periférico")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
+    identifier = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name="Identificador")
 
     class Meta:
         verbose_name = "Periférico de Equipo de Computo"
         verbose_name_plural = "Periféricos de Equipos de Computo"
 
-    def __str__(self):
-        if self.name:
-            if self.responsible:
-                return f"{self.name} ({self.brand} {self.model}) - Asignado a: {self.responsible.username}"
+    def generar_identificador(self):
+        if self.peripheral_type and self.company:
+            # Obtener las primeras 3 letras del tipo de periférico
+            peripheral_type_prefix = self.peripheral_type[:3].upper()
+
+            # Obtener las primeras 3 letras del nombre de la empresa
+            company_name_prefix = self.company.name[:3].upper()
+
+            # Crear el prefijo con el tipo de periférico y el nombre de la empresa
+            base_identifier = f"{peripheral_type_prefix}-{company_name_prefix}"
+
+            # Obtener el último identificador generado para esta combinación
+            last_identifier = ComputerPeripheral.objects.filter(identifier__startswith=f"{base_identifier}").order_by('-identifier').first()
+
+            if last_identifier:
+                # Extraer el número del último identificador
+                match = re.search(r'(\d+)$', last_identifier.identifier)
+                last_id_number = int(match.group(1)) if match else 0
             else:
-                return f"{self.name} ({self.brand} {self.model}) - Libre"
-        else:
-            return "Periférico sin nombre"
+                last_id_number = 0
+
+            # Generar el siguiente número consecutivo
+            next_id_number = last_id_number + 1
+
+            # Generar el identificador final con 4 dígitos
+            return f"{base_identifier}-{next_id_number:04d}"
+
+        return None
+
+    def save(self, *args, **kwargs):
+        # Generar identificador si no existe
+        if not self.identifier:
+            self.identifier = self.generar_identificador()
         
+        # Guardar el registro actual
+        super().save(*args, **kwargs)
+
+        # Verificar y actualizar los registros existentes sin identificador
+        equipos_sin_identificador = ComputerPeripheral.objects.filter(identifier__isnull=True)
+        for equipo in equipos_sin_identificador:
+            equipo.identifier = equipo.generar_identificador()
+            equipo.save()
+
+    def __str__(self):
+        return f"{self.identifier} - {self.name} ({self.brand} {self.model})"
+
+
+
 class Software(models.Model):
     SOFTWARE_TYPE_CHOICES = [
         ('individual', 'Individual'),
@@ -498,7 +594,8 @@ class Infrastructure_Item(models.Model):
     ], verbose_name="Unidad de Tiempo")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
-    
+    qr_info_infrastructure = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
+
     class Meta:
         verbose_name = "Item de Infraestructura"
         verbose_name_plural = "Items de Infraestructura"

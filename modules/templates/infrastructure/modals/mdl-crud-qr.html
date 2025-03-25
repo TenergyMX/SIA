@@ -1,0 +1,46 @@
+<div class="modal fade effect-scale" id="mdl-crud-qr" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Qr</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="infra-item-id"> 
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card custom-card">
+                            <div class="card-header">
+                                <h5 class="card-title">QR de Información de Infraestructura</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="qr-info-infraestructure-container">
+                                    <!-- Aquí se mostrará el QR de información -->
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-warning btn-sm" data-infraestructure-qr="qr-info"> 
+                                        <i class="fa-solid fa-pencil me-1"></i>
+                                        Generar
+                                    </button>                                       
+                                    
+                                    <button type="button" class="btn btn-danger btn-sm" data-infraestructure-qr="delete-qrinfo">
+                                        <i class="fa-solid fa-trash me-1"></i>
+                                        Eliminar
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-sm" data-infraestructure-qr="descargar-qr-info" style="display: none;">
+                                        <i class="fa-solid fa-download me-1"></i>
+                                        Descargar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            <div class="modal-footer">              
+            </div>
+        </form>
+    </div>
+</div>

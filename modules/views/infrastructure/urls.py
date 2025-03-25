@@ -24,4 +24,11 @@ urlpatterns = [
     path("delete-infrastructure-review/", views.delete_infrastructure_review),
 
     path("generates_review/", views.generates_review),
+
+    #codigo qr
+    path('generate_qr_infraestructure/<str:qr_type>/<int:itemId>/', views.generate_qr_infraestructure),
+    path('check_qr_infraestructure/<int:itemId>/', views.check_qr_infraestructure),
+    path('descargar_qr_infraestructure/', views.descargar_qr_infraestructure),
+    path('delete_qr_infraestructure/<str:qr_type>/<int:itemId>/', views.delete_qr_infraestructure),
+
 ]

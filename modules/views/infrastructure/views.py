@@ -22,6 +22,10 @@ from modules.utils import *
 from django.utils.timezone import now
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from django.shortcuts import render, get_object_or_404
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import qrcode
+
 # TODO --------------- [ VIEWS ] ----------
 @login_required
 def infrastructure_category_view(request):
@@ -187,6 +191,7 @@ def get_infrastructure_items(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in datos:
+            item["row_id"] = item["id"] 
             item["btn_action"] = ""
             if access["update"]:
                 item["btn_action"] += "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light' data-infrastructure-item='update-item' aria-label='info'>" \
@@ -195,7 +200,12 @@ def get_infrastructure_items(request):
             if access["delete"]:
                 item["btn_action"] += "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light' data-infrastructure-item='delete-item' aria-label='delete'>" \
                     "<i class='fa-solid fa-trash'></i>" \
-                "</button>"
+                "</button>\n"
+            item["btn_action"] += f"<button type='button' name='qr_code' class='btn btn-icon btn-sm btn-info-light' data-infrastructure-item='qr_code' data-id='{item['id']}' aria-label='qr_code'>" \
+                        "<i class=\"fa-solid fa-qrcode\"></i>" \
+                    "</button>\n"
+
+
 
     response["data"] = list(datos)
     response["status"] = "success"
@@ -610,3 +620,121 @@ def delete_infrastructure_category(request):
     response["status"] = "success"
     response["message"] = "Eliminado correctamente"
     return JsonResponse(response)
+
+
+def check_qr_infraestructure(request, itemId):
+    try:
+        infraestructure = get_object_or_404(Infrastructure_Item, id=itemId)
+
+        if infraestructure.qr_info_infrastructure:
+            qr_url_info = generate_presigned_url(AWS_BUCKET_NAME, str(infraestructure.qr_info_infrastructure))
+            return JsonResponse({'status': 'success', 'qr_url_info': qr_url_info})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'QR no generado'})
+    except Infrastructure_Item.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Equipo no encontrado'}, status=404)
+
+#función para generar el código qr
+def generate_qr_infraestructure(request, qr_type, itemId):
+    print("entramos a la funcion para descargar un qr")
+    context = user_data(request)
+    company_id = context["company"]["id"]
+    infraestructure = get_object_or_404(Infrastructure_Item, id=itemId)
+
+    print(f"Generando QR para el equipo con ID: {itemId}")
+
+    
+    if qr_type == "info" and infraestructure.qr_info_infrastructure:
+        qr_url_info = generate_presigned_url(AWS_BUCKET_NAME, str(infraestructure.qr_info_infrastructure))
+        print(f"QR ya generado. URL: {qr_url_info}")
+
+        return JsonResponse({'status': 'generados', 'qr_url_info': qr_url_info})
+
+    # Contenido del QR
+    if qr_type == 'info':
+        qr_content = f"http://sia-tenergy.com/infrastructure/{itemId}/"
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
+
+    # Generar el QR
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_content)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill='black', back_color='white')
+
+    # Guardar la imagen en un buffer
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # Definir la ruta del archivo en S3
+    s3Path = f'docs/{company_id}/infrastructure/{itemId}/qr/'
+    s3Name = f"qr_info{itemId}.png"
+    full_s3_path = s3Path + s3Name
+
+    print(f"Subiendo el QR a S3 en la ruta: {full_s3_path}")
+
+    # Asignar la ruta al modelo
+    infraestructure.qr_info_infrastructure = full_s3_path
+
+    # Crear un InMemoryUploadedFile
+    img_file = InMemoryUploadedFile(
+        buffer, None, s3Name, 'image/png', buffer.getbuffer().nbytes, None
+    )
+
+    # Subir a S3
+    upload_to_s3(img_file, AWS_BUCKET_NAME, full_s3_path)
+    infraestructure.save()  # Guardar cambios en la base de datos
+
+    print(f"QR guardado en la base de datos con URL: {full_s3_path}")
+
+    # Generar la URL 
+    qr_url = generate_presigned_url(AWS_BUCKET_NAME, full_s3_path)
+    print(f"Generando URL del QR en S3: {qr_url}")
+
+    return JsonResponse({'status': 'success', 'qr_url': qr_url})
+
+
+#funcion para descargar el qr
+def descargar_qr_infraestructure(request):
+    id_infraestructure = request.GET.get("itemId")
+    print("este es el id de la infraestructura:", id_infraestructure)
+    tipo_qr = request.GET.get("type")  
+
+    infrastructure = Infrastructure_Item.objects.filter(id=id_infraestructure).first()
+    if infrastructure:
+        if tipo_qr == "info":
+            if not infrastructure.qr_info_infrastructure:
+                return JsonResponse({'error': 'QR no generado'}, status=404)
+
+            url_infraestrucuture = infrastructure.qr_info_infrastructure  
+        else:
+            return JsonResponse({'error': 'Tipo de QR no válido'}, status=400)
+
+        url_s3 = generate_presigned_url(AWS_BUCKET_NAME, str(url_infraestrucuture))
+        return JsonResponse({'url_infraestructure': url_s3})
+    else:
+        return JsonResponse({'error': 'infraestructure no encontrado'}, status=404)
+
+
+#funcion para eliminar el qr
+def delete_qr_infraestructure(request, qr_type, itemId):
+    infrastructure = get_object_or_404(Infrastructure_Item, id=itemId)
+    url = ""
+    if qr_type == 'info' and infrastructure.qr_info_infrastructure:
+        url = str(infrastructure.qr_info_infrastructure)
+        infrastructure.qr_info_infrastructure.delete()
+    elif qr_type == 'access' and infrastructure.qr_access:
+        url = str(infrastructure.qr_access)
+        infrastructure.qr_access.delete()
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid QR type or QR does not exist'}, status=400)
+    
+    delete_s3_object(AWS_BUCKET_NAME, url)
+    return JsonResponse({'status':'success'})

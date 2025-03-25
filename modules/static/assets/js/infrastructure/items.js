@@ -32,6 +32,7 @@ class InfrastructureItem {
                     data: {},
                 },
                 columns: [
+                    { title: "Id", data: "id", className: "toggleable" },
                     { title: "Categoría", data: "category__name", className: "toggleable" },
                     { title: "Nombre", data: "name", className: "toggleable" },
                     { title: "Cantidad", data: "quantity", className: "toggleable" },
@@ -217,6 +218,7 @@ class InfrastructureItem {
                         .find("[name='is_active']")
                         .val(datos["is_active"] == true ? "1" : "0");
                     break;
+                
                 case "delete-item":
                     var url = "/delete-infrastructure-item/";
                     var fila = $(this).closest("tr");
@@ -235,6 +237,7 @@ class InfrastructureItem {
                             Swal.fire("Error", error, "error");
                         });
                     break;
+                    
                 default:
                     console.log("Opción dezconocida: " + option);
                     break;
