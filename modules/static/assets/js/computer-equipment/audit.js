@@ -123,6 +123,7 @@ class ComputerEquipment_audit {
                     var datos = self.tbl_audit.row(fila).data();
 
                     $.each(datos, function (index, value) {
+                        console.log(index, value);
                         var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
                         if (!isFileInput) {
                             obj_modal.find(`[name='${index}']`).val(value || "");

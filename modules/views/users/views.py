@@ -281,7 +281,7 @@ def update_user_with_access(request):
     email = dt.get('email', '').strip()
     first_name = dt.get('name', '').strip()
     last_name = dt.get('last_name', '').strip()
-    company_id = context.get("company", {}).get("id")
+    company_id = dt.get("company_id", {})
     role_id = dt.get('role', 4)
     user_id = dt.get('user_id')
     area_id = dt.get("area_id")
@@ -311,13 +311,14 @@ def update_user_with_access(request):
             user.email = email
             user.first_name = first_name
             user.last_name = last_name
+            
 
             if password:
                 user.set_password(password)
             # Guardar el usuario después de actualizar los datos
             user.save()
 
-
+            print("Estos son los datos del usuario:", company_id, role_id, area_id)
             # Actualizar los datos de acceso
             access_record, created = User_Access.objects.get_or_create(user=user)
             access_record.role_id = role_id
