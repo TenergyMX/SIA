@@ -268,8 +268,8 @@ class ComputerSystem(models.Model):
             ).order_by('-identifier').first()
             print(last_identifier)
             print("estos son los datos")
-            if last_identifier:
-                # Extraer el número del último identificador
+                        
+            if last_identifier and last_identifier.identifier:
                 match = re.search(r'(\d+)$', last_identifier.identifier)
                 last_id_number = int(match.group(1)) if match else 0
             else:
