@@ -73,7 +73,7 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th>REFERENCIA</th>
+                        <th>IDENTIFICADOR</th>
                         <th>CANTIDAD</th>
                         <th>DESCRIPCIÓN DEL ARTICULO</th>
                     </tr>
@@ -82,7 +82,7 @@
                     {% if data %}
                     {% for item in data %}
                     <tr>
-                        <td><span></span></td>
+                        <td>{{ item.identifier }}</td>
                         <td>{{ item.amount }}</td>
                         <td>{{ item.description }}</td>
                     </tr>
