@@ -226,7 +226,6 @@ class ComputerSoftware {
         $(document).on("click", "[data-computer-software]", function (e) {
             var obj = $(this);
             var option = obj.data("computer-software");
-            console.log("click");
 
             switch (option) {
                 case "refresh-table":
@@ -392,7 +391,7 @@ class ComputerSoftware {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        console.log(response);
+                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }
@@ -431,7 +430,7 @@ class ComputerSoftware {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        console.log(response);
+                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

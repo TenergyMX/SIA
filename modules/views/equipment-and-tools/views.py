@@ -518,7 +518,6 @@ def add_location(request):
 @login_required
 @csrf_exempt
 def add_equipment_tools(request):
-    print("entrando a add equipment")
     context = user_data(request)
     response = {"status": "error", "message": "sin procesar" }
     dt = request.POST
@@ -541,45 +540,42 @@ def add_equipment_tools(request):
             return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra regristado para esta empresa, ingresa otro diferente.'})
         
         try:
-
-            obj = Equipment_Tools(
-                # Obtener datos del POST
-                company_id = company_id,
-                equipment_category_id = request.POST.get('equipment_category'),
-                equipment_name = request.POST.get('equipment_name'),
-                equipment_type = request.POST.get('equipment_type'),
-                equipment_brand = request.POST.get('equipment_brand'),
-                equipment_description = request.POST.get('equipment_description'),
-                cost = request.POST.get('cost'),
-                amount = request.POST.get('amount'),
-                equipment_area_id = request.POST.get('equipment_area'),
-                equipment_responsible_id = request.POST.get('responsible_equipment'),
-                equipment_location_id = request.POST.get('equipment_location'),
-                
-            )
-            if not all([obj.company_id, obj.equipment_category, obj.equipment_name, obj.equipment_type, 
-                    obj.equipment_brand, obj.equipment_description, obj.cost, obj.amount, 
-                    obj.equipment_area, obj.equipment_responsible, obj.equipment_location]):
-                return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
-            obj.save()
-            id = obj.id
-
-            if 'equipment_technical_sheet' in request.FILES and request.FILES['equipment_technical_sheet']:
-                equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
-
-                print(f'extension: {equipment_technical_sheet.name}')
-                print(f'nombre: {obj.equipment_name}')
-
-                folder_path = f"docs/{company_id}/Equipments_tools/technical_sheet/{id}/"
-
-                file_name, extension = os.path.splitext(equipment_technical_sheet.name)
-
-                new_name = f'equipment_technical_sheet_{obj.equipment_name}{extension}'
-                s3Name = folder_path + new_name
-
-                upload_to_s3(equipment_technical_sheet, bucket_name, s3Name)
-                obj.equipment_technical_sheet = s3Name
+            with transaction.atomic():
+                obj = Equipment_Tools(
+                    # Obtener datos del POST
+                    company_id = company_id,
+                    equipment_category_id = request.POST.get('equipment_category'),
+                    equipment_name = request.POST.get('equipment_name'),
+                    equipment_type = request.POST.get('equipment_type'),
+                    equipment_brand = request.POST.get('equipment_brand'),
+                    equipment_description = request.POST.get('equipment_description'),
+                    cost = request.POST.get('cost'),
+                    amount = request.POST.get('amount'),
+                    equipment_area_id = request.POST.get('equipment_area'),
+                    equipment_responsible_id = request.POST.get('responsible_equipment'),
+                    equipment_location_id = request.POST.get('equipment_location'),
+                    
+                )
+                if not all([obj.company_id, obj.equipment_category, obj.equipment_name, obj.equipment_type, 
+                        obj.equipment_brand, obj.equipment_description, obj.cost, obj.amount, 
+                        obj.equipment_area, obj.equipment_responsible, obj.equipment_location]):
+                    return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
                 obj.save()
+                id = obj.id
+
+                if 'equipment_technical_sheet' in request.FILES and request.FILES['equipment_technical_sheet']:
+                    equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
+
+                    folder_path = f"docs/{company_id}/Equipments_tools/technical_sheet/{id}/"
+
+                    file_name, extension = os.path.splitext(equipment_technical_sheet.name)
+
+                    new_name = f'equipment_technical_sheet_{obj.equipment_name}{extension}'
+                    s3Name = folder_path + new_name
+
+                    upload_to_s3(equipment_technical_sheet, bucket_name, s3Name)
+                    obj.equipment_technical_sheet = s3Name
+                    obj.save()
 
             response["status"] = "success"
             response["message"] = "Guardado"
@@ -1191,11 +1187,10 @@ def edit_date_responsiva(request):
             try:
                 responsiva = Equipment_Tools_Responsiva.objects.get(id=id_responsiva)
                 responsiva.fecha_entrega = fecha_entrega_date
-                responsiva.save()
-
                 # Calcular el tiempo requerido
                 tiempo_requerido = (fecha_entrega_date - responsiva.fecha_inicio).days
                 responsiva.times_requested_responsiva = tiempo_requerido
+                responsiva.status_equipment = "Aceptado"
                 responsiva.save()
 
                 return JsonResponse({'success': True, 'message': 'Fecha de entrega actualizada exitosamente.'})
@@ -1294,8 +1289,8 @@ def generate_pdf(request, responsiva_id):
         pdf_context = {
             'responsiva': responsiva_instance,
             'responsible_name': responsiva_instance.responsible_equipment.username,
-            'signature_responsible': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_responsible)),
-            'signature_almacen': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_almacen)),
+            'signature_responsible': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_responsible)) if responsiva_instance.signature_responsible else None,
+            'signature_almacen': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_almacen)) if responsiva_instance.signature_almacen else None,
             'header_image': header_image_base64,
             'footer_image': footer_image_base64,
         }

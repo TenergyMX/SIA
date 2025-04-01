@@ -209,7 +209,6 @@ function add_licence() {
                     text: response.message,
                     icon: "error",
                     showConfirmButton: false,
-                    timer: 1500,
                 });
             }
         },
@@ -220,7 +219,6 @@ function add_licence() {
                 text: response.message,
                 icon: "error",
                 showConfirmButton: false,
-                timer: 1500,
             });
         },
     });
@@ -268,7 +266,6 @@ function btn_edit_licence(boton) {
 function edit_licence() {
     var form = $("#form_add_licence")[0];
     var formData = new FormData(form);
-    console.log(form);
     $.ajax({
         url: "/edit_licence/",
         type: "POST",
@@ -292,7 +289,6 @@ function edit_licence() {
                     title: "¡Error!",
                     text: licence.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -302,7 +298,6 @@ function edit_licence() {
                 title: "¡Error!",
                 text: "Hubo un error al actualizar la licencia.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -462,7 +457,6 @@ function add_multa() {
                     text: response.message,
                     icon: "error",
                     showConfirmButton: false,
-                    timer: 1500,
                 });
             }
         },
@@ -473,7 +467,6 @@ function add_multa() {
                 text: response.message,
                 icon: "error",
                 showConfirmButton: false,
-                timer: 1500,
             });
         },
     });
@@ -592,7 +585,6 @@ function edit_multa() {
                     title: "¡Error!",
                     text: multa.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -602,7 +594,6 @@ function edit_multa() {
                 title: "¡Error!",
                 text: "Hubo un error al actualizar la multa.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {

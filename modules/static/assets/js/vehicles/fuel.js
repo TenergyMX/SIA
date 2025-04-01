@@ -55,7 +55,7 @@ class ComputerEquipment_fuel {
                         title: "Comprobante de pago",
                         data: function (d) {
                             if (d["payment_receipt"]) {
-                                return `<a href="/${d["payment_receipt"]}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                return `<a href="${d["payment_receipt"]}" class="btn btn-sm btn-outline-primary" target="_blank">
                                     Comprobante
                                 </a>`;
                             } else {

@@ -498,7 +498,7 @@ class VehiclesMaintenance {
                         $(".comprobante [type='file']").hide();
                         $(".comprobante [type='file']").addClass("d-none");
                         $(".comprobante a.btn").show();
-                        $(".comprobante a.btn").attr("href", "/" + datos["comprobante"]);
+                        $(".comprobante a.btn").attr("href", datos["comprobante"]);
                         obj_div.find(".form-btn").hide();
                     } else {
                         $(".comprobante [type='file']").show();
@@ -614,7 +614,6 @@ class VehiclesMaintenance {
                                         title: "Error",
                                         text: xhr.responseJSON.message,
                                         icon: "error",
-                                        timer: 1500,
                                     });
                                 },
                             });
@@ -858,7 +857,6 @@ function add_option() {
                 title: "Error",
                 text: xhr.responseJSON.message,
                 icon: "error",
-                timer: 1500,
             });
         },
     });

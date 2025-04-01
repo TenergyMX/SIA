@@ -34,7 +34,6 @@ function graficas_filtros() {
         var startDate = $('#start_date_service').val();
         var endDate = $('#end_date_service').val();
         
-        console.log("Rango de fecha seleccionado:", startDate, endDate);
         if (startDate && endDate) {
             hideGraphics();
             $('#graficaRangoFechaContainer').show();
@@ -106,7 +105,6 @@ function graficaEgresos() {
                 response.data.forEach(function(item) {
                     categories.push(item.category);  
                     payments.push(Number(item.total_payment)); 
-                    console.log('Datos de pagos:', payments);
                 });
 
                 
@@ -154,7 +152,6 @@ function graficaEgresos() {
                                 callbacks: {
                                     label: function(tooltipItem) {
                                         var value = tooltipItem.raw;
-                                        console.log('Valor recibido: ', value);  
                                         if (typeof value === 'number' && !isNaN(value)) {
                                             return '$' + value.toFixed(2);
                                         } else {
@@ -180,12 +177,11 @@ function graficaEgresos() {
 
 // Función para cargar las categorías en el select
 function get_service_dashboard(selectedCategoryId) {
-    console.log('Función get_service_dashboard ejecutada');
     $.ajax({
         url: '/get_services_categories/',
         type: 'GET',
         success: function(response) {
-            console.log(response);
+            
             var select = $('#category');
             select.html(null);
             select.append("<option value='' disabled selected>Seleccione una categoría</option>");
@@ -241,7 +237,6 @@ function graficaEgresosCategoria(categoryId) {
                 var payments = [];
                 var categoryName = response.data && response.data.name_category ? response.data.name_category : 'Categoría desconocida';
 
-                console.log("este es el nombre de la categoria:", categoryName);
                 
 
                 $('#categoryNameTitle').text('Gráfica de Servicios por Categoría: ' + categoryName);
@@ -310,9 +305,7 @@ function graficaEgresosProveedor(providerId) {
 
                 // Obtener el nombre del proveedor
                 var providerName = response.provider_name;
-                console.log("esto contiene el response", response);
 
-                console.log("proveedor seleccionado:", providerName);
 
                 if (providerName) {
                     // Actualizar el título de la gráfica con el nombre del proveedor

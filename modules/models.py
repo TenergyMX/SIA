@@ -333,7 +333,7 @@ class ComputerPeripheral(models.Model):
             base_identifier = f"{peripheral_type_prefix}-{company_name_prefix}"
 
             # Obtener el último identificador generado para esta combinación
-            last_identifier = ComputerPeripheral.objects.filter(identifier__startswith=f"{base_identifier}").order_by('-identifier').first()
+            last_identifier = ComputerPeripheral.objects.filter(company=self.company).order_by('-identifier').first()
 
             if last_identifier:
                 # Extraer el número del último identificador

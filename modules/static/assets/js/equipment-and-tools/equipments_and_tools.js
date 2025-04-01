@@ -77,7 +77,6 @@ function add_equipment_category() {
                     text: response.message,
                     icon: "error",
                     showConfirmButton: false,
-                    timer: 1500,
                 });
             }
         },
@@ -88,7 +87,6 @@ function add_equipment_category() {
                 text: response.message,
                 icon: "error",
                 showConfirmButton: false,
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -162,7 +160,6 @@ function edit_category() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -172,7 +169,6 @@ function edit_category() {
                 title: "¡Error!",
                 text: response.message,
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {

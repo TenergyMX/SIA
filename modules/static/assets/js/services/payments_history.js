@@ -4,12 +4,11 @@ $(document).ready(function(){
 
 // Función para cargar las categorías en el select
 function get_categories_payments(selectedCategoryId) {
-    console.log('Función get_service_dashboard ejecutada para la grafica historial');
     $.ajax({
         url: '/get_services_categories_payments/',
         type: 'GET',
         success: function(response) {
-            console.log(response);
+            
             var select = $('#category_services');
             select.html(null);
             select.append("<option value='' disabled selected>Seleccione una categoría</option>");
@@ -29,17 +28,12 @@ function get_categories_payments(selectedCategoryId) {
 
 
 function load_payment_graph() {
-    console.log("llamando a la funcion :");
 
     var categoryId = $('#category_services').val();
     var startMonth = $('#start_month').val();
     var endMonth = $('#end_month').val();
 
-    console.log({
-        category_id: categoryId,
-        start_month: startMonth,
-        end_month: endMonth
-    });
+   
     
     // Verificar si los elementos existen
     if ($('#category_services').length === 0) {
@@ -47,7 +41,6 @@ function load_payment_graph() {
             icon: 'error',
             title: 'Error',
             text: 'El campo de categoría de servicios no está disponible.',
-            timer: 1000
         });
         return;
     }
@@ -56,7 +49,6 @@ function load_payment_graph() {
             icon: 'error',
             title: 'Error',
             text: 'El campo de mes inicial no está disponible.',
-            timer: 1000
         });
         return;
     }
@@ -65,7 +57,6 @@ function load_payment_graph() {
             icon: 'error',
             title: 'Error',
             text: 'El campo de mes final no está disponible.',
-            timer: 1000
         });
         return;
     }
@@ -77,7 +68,6 @@ function load_payment_graph() {
             icon: 'error',
             title: 'Fechas inválidas',
             text: 'La fecha de inicio es mayor a la fecha final. Por favor, ingrese una fecha válida.',
-            timer: 1000
         });
         return;
     }

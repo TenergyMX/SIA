@@ -415,9 +415,7 @@ def get_services_providers(request):
     try:
         context = user_data(request)
         company_id = context["company"]["id"]
-        print("este es el id de la compañia: ", company_id)
         company_name = context["company"]["name"]
-        print("este es el nombre de la compañia de servicios: ", company_name)
 
         if not company_id:
             return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
@@ -534,7 +532,6 @@ def update_payment_status():
         for payment in upcoming_payments:
             # Si la fecha ya pasó y no tiene comprobante de pago, cambiar el estado a "unpaid"
             if payment.next_date_payment < today and not payment.proof_payment:
-                print(f"Cambiando el estado del pago {payment.id} a 'unpaid' porque no se ha subido comprobante.")
                 payment.status_payment = 'unpaid'
                 payment.save()
 
@@ -712,15 +709,15 @@ def upload_payment_proof(request, payment_id):
 
             # Establecer la ruta donde se guardará el archivo
             folder_path = f"docs/{company_id}/services/proof_payment/{service_name}/"
-            fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, folder_path))
 
             # Generar el nombre único para el archivo
             current_date = datetime.now().strftime('%Y%m%d')
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"comprobante_pago_{service_name}_{current_date}{extension}"
-
+            s3Name = folder_path + new_name
+            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
             # Guardar el archivo en el sistema de archivos
-            fs.save(new_name, load_file)
+            # fs.save(new_name, load_file)
 
             # Actualizar la ruta del archivo en la tabla de pagos
             payment.proof_payment = os.path.join(folder_path, new_name)
@@ -749,13 +746,22 @@ def get_payment_history(request, service_id):
         payments = Payments_Services.objects.filter(name_service_payment_id=service_id).order_by('-next_date_payment').values(
             'id',
             'name_service_payment__name_service',
-            'proof_payment',
             'total_payment',
             'next_date_payment',
-            'status_payment'
+            'status_payment',
+            'proof_payment'
         )
 
-        return JsonResponse(list(payments), safe=False)
+        payments_list = list(payments)
+
+        for payment in payments_list:
+            if payment.get('proof_payment'):
+                payment['proof_payment'] = generate_presigned_url(AWS_BUCKET_NAME, str(payment['proof_payment']))
+            else:
+                payment['proof_payment'] = None
+
+        return JsonResponse(payments_list, safe=False)
+    
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'}, status=500)
 
@@ -768,7 +774,8 @@ def get_proof_payment(request, payment_id):
         
         # Verificar si el comprobante de pago existe
         if payment.proof_payment:
-            proof_url = payment.proof_payment.url  
+            proof_url = generate_presigned_url(AWS_BUCKET_NAME, str(payment.proof_payment.url))
+            # proof_url = payment.proof_payment.url  
             return JsonResponse({'success': True, 'proof_payment': proof_url})
         else:
             return JsonResponse({'success': False, 'message': 'Comprobante no encontrado.'})

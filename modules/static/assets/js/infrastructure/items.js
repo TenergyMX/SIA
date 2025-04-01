@@ -122,7 +122,6 @@ class InfrastructureItem {
 
         self.generateReview().then(() => {
             if (self.list) {
-                console.log(self.list.data);
                 self.list.ajax.reload();
             }
 

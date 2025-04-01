@@ -100,7 +100,6 @@ function add_category() {
                     text: response.message,
                     icon: "error",
                     showConfirmButton: false,
-                    timer: 1500
                 });
             }
         },
@@ -111,7 +110,6 @@ function add_category() {
                 text: response.message,
                 icon: "error",
                 showConfirmButton: false,
-                timer: 1500
             });
         },
     });
@@ -168,7 +166,6 @@ function edit_category() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500
                 });
             }
         },
@@ -178,7 +175,6 @@ function edit_category() {
                 title: "¡Error!",
                 text: response.message,
                 icon: "error",
-                timer: 1500
             });
         },
     });

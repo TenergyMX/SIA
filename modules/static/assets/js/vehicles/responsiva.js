@@ -166,7 +166,7 @@ class VehiclesResponsiva {
             },
             success: function (response) {
                 var status = response.status;
-                console.log(response);
+                
                 if (status == "SALIDA") {
                     obj_modal.find(".modal-header").html("Registrar salida");
                     obj_modal.find(".final").hide().find(":input").prop("disabled", true);

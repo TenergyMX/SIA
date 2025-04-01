@@ -328,31 +328,51 @@ def computer_equipment_deliverie_pdf_view(request):
 
     # Paso 1. Obtener los equipos de computos que tiene el usuario
     datos_1 = ComputerSystem.objects.filter(current_responsible_id = responsible_id).values()
-    for item in datos_1:
-        model = item['model'] if item['model'] else "-----"
-        serial_number = item['serial_number'] if item['serial_number'] else "-----"
-        context2["data"].append({
-            "model": "Equipo",
-            "pk": item["id"],
-            "fields": {
-                "model": model,
-                "serial_number": serial_number
-            }
-        })
+    print(datos_1)
+    
+    if datos_1:
+        for item in datos_1:
+            print(item)
+            model = item['model'] if item['model'] else "-----"
+            serial_number = item['serial_number'] if item['serial_number'] else "-----"
+            identifier = item['identifier'] if item['identifier'] else "-----"
+            comments = item['comments'] if item['comments'] else "-----"
+            context2["data"].append({
+                "type": "Equipo",
+                "pk": item["id"],
+                "fields": {
+                    "model": model,
+                    "serial_number": serial_number,
+                    "identifier": identifier,
+                    "comments" : comments
+                }
+            })
 
     # Paso 2. Obtener los perifericos que tiene el usuario
     datos_2 = ComputerPeripheral.objects.filter(responsible_id = responsible_id).values()
-    for item in datos_2:
-        tipo =  item['peripheral_type'] if item['peripheral_type'] else "-----"
-        marca = item['brand'] if item['brand'] else "-----"
-        context2["data"].append({
-            "model": "Periférico",
-            "pk": item["id"],
-            "fields": {
-                "model": model,
-                "serial_number": serial_number
-            }
-        })
+    print("estos son los datos de peri")
+    print(datos_2)
+    if datos_2:
+        for item in datos_2:
+            print(item)
+            tipo = item['peripheral_type'] if item['peripheral_type'] else "-----"
+            marca = item['brand'] if item['brand'] else "-----"
+            model = item['model'] if 'model' in item and item['model'] else "-----"  # Asegura que 'model' existe
+            serial_number = item['serial_number'] if 'serial_number' in item and item['serial_number'] else "-----"
+            identifier = item['identifier'] if item['identifier'] else "-----"
+            comments = item['comments'] if item['comments'] else "-----"
+            context2["data"].append({
+                "type": "Periférico",
+                "pk": item["id"],
+                "fields": {
+                    "model": tipo,
+                    "serial_number": serial_number,
+                    "identifier" : identifier,
+                    "comments" : comments
+                }
+            })
+    print(json.dumps(context2, indent=4, ensure_ascii=False))
+
 
     template = "computer-equipment/print/deliverie.html"
     template = get_template('computer-equipment/print/deliverie.html')
@@ -454,7 +474,7 @@ def get_computer_equipment(request):
         "current_responsible__first_name", "current_responsible__last_name",
         "previous_responsible_id", "previous_responsible__username",
         "previous_responsible__first_name", "previous_responsible__last_name",
-        "equipment_status", "last_maintenance_date","comments"
+        "equipment_status", "last_maintenance_date","comments", "identifier", "adquisition_date",
     )[0]
 
     response["data"] = datos
@@ -485,7 +505,7 @@ def get_computers_equipment(request):
         "current_responsible__first_name", "current_responsible__last_name",
         "previous_responsible_id", "previous_responsible__username",
         "previous_responsible__first_name", "previous_responsible__last_name",
-        "equipment_status", "last_maintenance_date","comments"
+        "equipment_status", "last_maintenance_date","comments", "identifier", "adquisition_date",
     )
 
     if context["role"]["id"] not in [1,2,3]:
@@ -612,7 +632,7 @@ def get_computer_peripherals(request):
         "acquisition_date",
         "location",
         "responsible_id", "responsible__first_name", "responsible__last_name",
-        "peripheral_status", "comments"
+        "peripheral_status", "comments","identifier"
     )
 
     if context["role"]["id"] not in [1,2,3]:
@@ -1284,41 +1304,41 @@ def add_computer_equipment_responsiva(request):
             obj.save()
             id = obj.id
 
-            if 'responsibility_letter' in request.FILES and request.FILES['responsibility_letter']:
-                load_file = request.FILES.get('responsibility_letter')
-                folder_path = f"docs/{company_id}/computers-equipment/responsiva/{id}/"
-                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+        if 'responsibility_letter' in request.FILES and request.FILES['responsibility_letter']:
+            load_file = request.FILES.get('responsibility_letter')
+            folder_path = f"docs/{company_id}/computers-equipment/responsiva/{id}/"
+            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
-                file_name, extension = os.path.splitext(load_file.name)
-                new_name = f"doc_1{extension}"
-                s3Name = folder_path + new_name
+            file_name, extension = os.path.splitext(load_file.name)
+            new_name = f"doc_1{extension}"
+            s3Name = folder_path + new_name
 
-                # Guardar archivo
-                upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
-                #fs.save(folder_path + new_name, load_file)
+            # Guardar archivo
+            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+            #fs.save(folder_path + new_name, load_file)
 
-                # Guardar ruta en la tabla
-                obj.responsibility_letter = s3Name
-                # obj.save()
+            # Guardar ruta en la tabla
+            obj.responsibility_letter = s3Name
+            # obj.save()
 
-                # Cargar y actualizar el historial existente
-                try:
-                    historial = json.loads(obj.record)
-                except (ValueError, TypeError):
-                    historial = []
+            # Cargar y actualizar el historial existente
+            try:
+                historial = json.loads(obj.record)
+            except (ValueError, TypeError):
+                historial = []
 
-                # Agregar el nuevo registro al historial
-                count = len(historial) + 1
-                historial.append({
-                    "id": count,
-                    "file_path": str(obj.responsibility_letter),
-                    "date": datetime.now().isoformat()
-                })
+            # Agregar el nuevo registro al historial
+            count = len(historial) + 1
+            historial.append({
+                "id": count,
+                "file_path": str(obj.responsibility_letter),
+                "date": datetime.now().isoformat()
+            })
 
-                # Convertir el historial actualizado a cadena JSON
-                historial_str = json.dumps(historial)
-                obj.record = historial_str
-                obj.save()
+            # Convertir el historial actualizado a cadena JSON
+            historial_str = json.dumps(historial)
+            obj.record = historial_str
+            obj.save()
             response["id"] = id
         response["status"] = "success"
         response["message"] = "Guardado"
@@ -1330,13 +1350,13 @@ def add_computer_equipment_responsiva(request):
         response["message"] = str(e)
     return JsonResponse(response)
 
+
 def get_computer_equipment_responsiva(request):
     context = user_data(request)
     response = {"status": "error", "message": "sin procesar", "data": [] }
     dt = request.GET
     isList = dt.get("isList", False)
     subModule_id = 19
-
 
     datos = ComputerEquipment_Responsiva.objects.values(
         "id",
@@ -1353,23 +1373,29 @@ def get_computer_equipment_responsiva(request):
 
     for data in datos:
         modified_data = data.copy()
-
-        record_string = data.get('record')
-        record_data = json.loads(record_string)
-        file_path = record_data[0].get('file_path')
-        print(f'ruta de pdf {file_path}')
-        tempLetterPath = generate_presigned_url(AWS_BUCKET_NAME, file_path)
-        print(f'datos: {data.get("responsibility_letter")}')
-        #data.values("responsibility_letter") = tempLetterPath
-        #print(f'datos: {data.get("responsibility_letter")}')
-        #print(tempLetterPath)
-        modified_responsibility_letter = tempLetterPath
         
-        modified_data['responsibility_letter'] = modified_responsibility_letter
-        modified_data_list.append(modified_data)
+        # Convertir record de JSON a lista de diccionarios
+        record_string = data.get('record', '[]')  # Evita errores si record es None
+        try:
+            record_data = json.loads(record_string)
+        except json.JSONDecodeError:
+            record_data = []  # Si hay un error en el JSON, se deja vacío
+        
+        # Modificar cada file_path en la lista de records
+        for record in record_data:
+            file_path = record.get('file_path')
+            if file_path:
+                record['file_path'] = generate_presigned_url(AWS_BUCKET_NAME, file_path)
 
-    print(f'data: {data}')
-    print(f'new data: {modified_data_list}')
+        # Convertir de nuevo a JSON
+        modified_data['record'] = json.dumps(record_data)
+
+        # Si también quieres actualizar responsibility_letter, puedes asignarlo al primer archivo
+        if record_data:
+            modified_data['responsibility_letter'] = record_data[-1].get('file_path')
+        else:
+            modified_data['responsibility_letter'] = data.get('responsibility_letter', None)
+        modified_data_list.append(modified_data)
 
     if isList:
         datos = datos.values("id", "responsible_id", "responsible__first_name", "responsible__last_name")
@@ -1383,15 +1409,14 @@ def get_computer_equipment_responsiva(request):
                     "<i class=\"fa-solid fa-pen\"></i>" \
                 "</button>\n"
             if access["delete"]:
-               item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-sia-computer-equipment-responsiva=\"delete-item\" aria-label=\"Delete\">" \
+                item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-sia-computer-equipment-responsiva=\"delete-item\" aria-label=\"Delete\">" \
                     "<i class=\"fa-solid fa-trash\"></i>" \
                 "</button>"
-            pass
-    #datos["responsibility_letter"] = tempLetterPath
+
     response["data"] = list(modified_data_list)
-    #response["data"] = list(datos)
     response["status"] = "success"
     return JsonResponse(response)
+
 
 def update_computer_equipment_responsiva(request):
     context = user_data(request)
@@ -1439,9 +1464,14 @@ def update_computer_equipment_responsiva(request):
                 # Contar archivos en el directorio
                 #existing_files = os.listdir(full_folder_path)
                 #file_count = len(existing_files)
+                # Cargar y actualizar el historial existente
+                try:
+                    historial = json.loads(obj.record)
+                except (ValueError, TypeError):
+                    historial = []
 
                 file_name, extension = os.path.splitext(load_file.name)
-                new_name = f"doc_1{extension}"
+                new_name = f"doc_{len(historial)+1}{extension}"
                 s3name = folder_path + new_name
 
                 # Guardar archivo
@@ -1452,11 +1482,7 @@ def update_computer_equipment_responsiva(request):
                 obj.responsibility_letter = os.path.join(folder_path, new_name)
                 obj.save()
 
-                # Cargar y actualizar el historial existente
-                try:
-                    historial = json.loads(obj.record)
-                except (ValueError, TypeError):
-                    historial = []
+                
 
                 # Agregar el nuevo registro al historial
                 historial.append({

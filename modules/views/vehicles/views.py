@@ -362,7 +362,10 @@ def drivers_details(request, driver_id = None):
 def get_vehicle_maintenance_kilometer(request):
     dt = request.GET.get
     response = {"success":True}
+    print(dt("id"))
     obj = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo_id=dt("id")).order_by("-kilometer").values("id", "kilometer")
+    print(obj)
+    print("hola")
     for item in obj:
         id = str(item["id"])
         item["kilometer"] = str(item["kilometer"])+" km"
@@ -3008,9 +3011,9 @@ def generate_qr(request, qr_type, vehicle_id):
      
     # Contenido
     if qr_type == 'info':
-        qr_content = f"http://sia-tenergy.com/vehicles/info/{vehicle_id}/"
+        qr_content = f"https://sia-tenergy.com/vehicles/info/{vehicle_id}/"
     elif qr_type == 'access':
-        qr_content = f"http://sia-tenergy.com/vehicles/responsiva/qr/{vehicle_id}"
+        qr_content = f"https://sia-tenergy.com/vehicles/responsiva/qr/{vehicle_id}"
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
     
@@ -3136,6 +3139,10 @@ def create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance
 
 def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=None):
     response = {"status": "success"}
+    print("llegamos a checar el kilometraje")
+    print(obj_vehicle)
+    print(kilometer)
+    print(date_set)
 
     # Check if maintenance kilometer records exist
     obj_maintenance_kilometer = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo=obj_vehicle)
@@ -3150,9 +3157,10 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         response["status"] = "error"
         response["error"] = {"message": "El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."}
         return JsonResponse(response)
-
+    print("esta es la resta del mantenimiento")
     # Check if there is an active maintenance alert for the vehicle
     flag_new = Vehicle_Maintenance.objects.filter(vehicle=obj_vehicle, type="preventivo").order_by("-id").first()
+    
     if flag_new and flag_new.status == "ALERTA":
         response["status"] = "warning"
         response["message"] = "Aún no se ha agendado la revisión del mantenimiento para este vehículo."
@@ -3160,12 +3168,16 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
     # Check if the next maintenance kilometer is near
     next_maintenance_km = next_maintenance.first().kilometer
     flag = next_maintenance_km - Decimal(kilometer)
+    print("esta es la resta del mantenimiento")
     if not flag_new and flag <= 200:
         response["status"] = "warning"
         create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance_km)
         response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
 
-    diferencia = abs(int(next_maintenance_km)-int(flag_new.mileage))
+    if flag_new:
+        diferencia = abs(int(next_maintenance_km)-int(flag_new.mileage))
+    else:
+        diferencia = abs(int(next_maintenance_km)-int(0))
     if flag_new and flag <= 200 and flag_new.status != "ALERTA" and diferencia >= 200:
         response["status"] = "warning"
         # Create a new maintenance record if necessary
@@ -3173,74 +3185,7 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
 
         sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
-    return JsonResponse(response)
-
-def check_vehicle_kilometer_back(request, obj_vehicle = None, kilometer = None, date_set = None):
-    response = {"status": "success"}
-    status = None
-    # TODO -- MAINTENANCE KILOMETER --
-    obj_maintenance_kilometer = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo = obj_vehicle)
-    #CONDITIONAL MAINTENANCE KILOMETER FOR THAT VEHICLE EXISTS
-    if obj_maintenance_kilometer.count() == 0:
-        response["status"] = "error"
-        response["error"] = {"message" : f"Kilometraje para mantenimiento no asigando, por favor registre el kilometraje de manera manual"}
-    else:# TODO CONTINUE
-        next_maintenance = obj_maintenance_kilometer.filter(kilometer__gte = kilometer).order_by("kilometer")
-
-        #CONDITIONAL CHECKS IS EXIST MAINTENANCE KILOMETER IN MODELS
-        if next_maintenance.count() == 0:
-            response["status"] = "error"
-            response["error"] = {"message" : f"El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."}
-            return JsonResponse(response)
-        
-        #CONDITIONAL CHECKS IT'S MAINTENANCES STILL IN NEW
-        flag_new = Vehicle_Maintenance.objects.filter(vehicle = obj_vehicle, type = "preventivo").order_by("-id").first()
-        if flag_new.exist():
-            if flag_new == "ALERTA":
-                response["status"] = "warning"
-                response["message"] = f"Aún no se ha agendado la revisión del mantenimiento para este vehículo con el kilometraje {flag_new.mileage}"
-                return JsonResponse(response)
-
-        #CONDITIONAL CHECK THE NEXT KILOMETER DIFF LESS THEN 200
-        flag = next_maintenance.first().kilometer - Decimal(kilometer)
-        if flag <= 200:#TODO CONTINUA
-            response["status"] = "warning"
-            if flag_new.exist():
-                if flag_new != "ALERTA":
-                    status = "ALERTA"
-                    km = next_maintenance.first().kilometer
-                    response["message"] = f"El kilometraje está cerca de alcanzar los {km} km, se recomienda agendar una revisión."
-                    newDate = datetime.strptime(date_set, "%Y-%m-%dT%H:%M").date()
-                    newDate = newDate + timedelta(days=14)
-                    km = next_maintenance.first().kilometer
-                    obj_maintenance = Vehicle_Maintenance(
-                        vehicle = obj_vehicle,
-                        type = "preventivo",
-                        status = status,
-                        date = newDate,
-                        mileage = kilometer,
-                        general_notes = f"Vehiculo cerca de los {km} km, necesario programar revisión"
-                    )
-                    obj_maintenance.save()
-                    
-            else:
-                status = "ALERTA"
-                km = next_maintenance.first().kilometer
-                response["message"] = f"El kilometraje está cerca de alcanzar los {km} km, se recomienda agendar una revisión."
-                newDate = datetime.strptime(date_set, "%Y-%m-%dT%H:%M").date()
-                newDate = newDate + timedelta(days=14)
-                km = next_maintenance.first().kilometer
-                obj_maintenance = Vehicle_Maintenance(
-                    vehicle = obj_vehicle,
-                    type = "preventivo",
-                    status = status,
-                    date = newDate,
-                    mileage = kilometer,
-                    general_notes = f"Vehiculo cerca de los {km} km, necesario programar revisión"
-                )
-                obj_maintenance.save()
-        sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
-        
+    print("llegamos al final de checar el kilometraje")
     return JsonResponse(response)
 
 
@@ -3282,7 +3227,7 @@ def validar_vehicle_en_sa(request):
             registro = responsiva.id
             responsable = responsiva.responsible.id
 
-            responsables = User.objects.all().order_by("name").values("id", "name")  
+            responsables = User.objects.all().order_by("first_name").values("id", "first_name")  
 
             return JsonResponse({
                 "success": "Todo bien",
@@ -4190,7 +4135,10 @@ def add_vehicle_responsiva(request):
                 if data_flag("status") == "error":
                     return flag
                 elif data_flag("status") == "warning":
-                    response["warning"] = {"message": data_flag("message")}
+                    response["warning"] = True
+                    response["type"] = "kilometraje"
+                    response["status"] = data_flag("status")
+                    response["message"] = data_flag("message")
 
             obj = Vehicle_Responsive(
                 vehicle_id=dt.get("vehicle_id"),

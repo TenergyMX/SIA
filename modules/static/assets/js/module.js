@@ -89,7 +89,6 @@ function deleteItem(_url, _data) {
                 contentType: false,
                 success: function (response) {
                     if (!response.success) {
-                        console.log(response);
                         if (response.error) {
                             reject(response.error["message"]);
                         } else if (response.warning) {
@@ -132,7 +131,6 @@ function getNotifications() {
                 Swal.fire("Advertencia", response.warning["message"], "warning");
                 return;
             } else if (!response.success) {
-                console.log(response);
                 Swal.fire("Error", "Ocurrio un error inesperado", "error");
                 return;
             } else if (response["recordsTotal"] == 0) {
@@ -181,7 +179,6 @@ function load_vehicles_list() {
         },
         beforeSend: function () {},
         success: function (response) {
-            console.log(response);
             var select = $("select[name='vehicle_id']");
             $.each(response["data"], function (index, value) {
                 select.append(`<option value="${value["id"]}">${value["name"]}</option>`);
