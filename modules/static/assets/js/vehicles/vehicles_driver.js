@@ -111,7 +111,7 @@ function add_driver() {
         contentType: false,
         success: function (response) {
             console.log("esta es la respuestra");
-            console.log(response);
+            
             if (response.success) {
                 $("#form_add_driver")[0].reset();
                 $("#mdl_crud_vehicle_driver").modal("hide");
@@ -127,7 +127,6 @@ function add_driver() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -137,7 +136,6 @@ function add_driver() {
                 title: "¡Error!",
                 text: "Hubo un error al guardar el conductor. Intenta nuevamente.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -155,7 +153,7 @@ function edit_drivers(boton) {
         data: { id: register.id },
         success: function (response) {
             console.log("esta es la información");
-            console.log(response);
+            
             if (response.success) {
                 $("#mdl_crud_vehicle_driver").modal("show");
                 // Cambiar el título del modal para indicar que es una actualización
@@ -217,7 +215,6 @@ function edit_driver() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -227,7 +224,6 @@ function edit_driver() {
                 title: "¡Error!",
                 text: "Hubo un error al actualizar el equipo.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {

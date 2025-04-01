@@ -3011,9 +3011,9 @@ def generate_qr(request, qr_type, vehicle_id):
      
     # Contenido
     if qr_type == 'info':
-        qr_content = f"http://sia-tenergy.com/vehicles/info/{vehicle_id}/"
+        qr_content = f"https://sia-tenergy.com/vehicles/info/{vehicle_id}/"
     elif qr_type == 'access':
-        qr_content = f"http://sia-tenergy.com/vehicles/responsiva/qr/{vehicle_id}"
+        qr_content = f"https://sia-tenergy.com/vehicles/responsiva/qr/{vehicle_id}"
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
     

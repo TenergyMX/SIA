@@ -256,7 +256,7 @@ class VehiclesVerificacion {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        console.log(response);
+                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

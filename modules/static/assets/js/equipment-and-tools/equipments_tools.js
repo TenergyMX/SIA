@@ -189,7 +189,7 @@ function add_location() {
         contentType: false,
         processData: false,
         success: function (response) {
-            console.log(response); // Verifica la respuesta
+             // Verifica la respuesta
             if (response.success) {
                 $("#form_location")[0].reset(); // Resetea el formulario
                 $("#mdl-crud-location").modal("hide"); // Cierra el modal
@@ -210,7 +210,6 @@ function add_location() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -220,7 +219,6 @@ function add_location() {
                 title: "¡Error!",
                 text: "Hubo un error al guardar la ubicación. Intenta nuevamente.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -268,7 +266,6 @@ function add_equipment_tool() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -279,7 +276,6 @@ function add_equipment_tool() {
                 title: "¡Error!",
                 text: "Hubo un error al guardar el equipo. Intenta nuevamente.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -348,7 +344,6 @@ function edit_equipments_tools() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -358,7 +353,6 @@ function edit_equipments_tools() {
                 title: "¡Error!",
                 text: "Hubo un error al actualizar el equipo.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -499,7 +493,6 @@ function calcularDiferencia() {
                         title: "Fecha no válida",
                         text: "Una o ambas fechas son inválidas. Por favor, ingrese fechas válidas.",
                         icon: "error",
-                        timer: 1000,
                     });
                     $('#form_responsiva [name="times_requested_responsiva"]').val("");
                     return;
@@ -512,7 +505,6 @@ function calcularDiferencia() {
                         title: "Fecha no válida",
                         text: "La fecha de entrega debe ser mayor a la fecha de inicio.",
                         icon: "error",
-                        timer: 1000,
                     });
                     return;
                 }
@@ -528,7 +520,6 @@ function calcularDiferencia() {
                     title: "Error",
                     text: "Hubo un problema al obtener la fecha del servidor.",
                     icon: "error",
-                    timer: 1500,
                 });
             },
         });
@@ -632,15 +623,15 @@ document.getElementById("form_responsiva").addEventListener("submit", function (
         }
     }
 
-    if (!hasDrawing) {
-        Swal.fire({
-            title: "Error",
-            text: "Es necesario que el responsable firme, el campo está vacío.",
-            icon: "warning",
-            timer: 1500,
-        });
-        return; // Detener el envío del formulario
-    }
+    // if (!hasDrawing) {
+    //     Swal.fire({
+    //         title: "Error",
+    //         text: "Es necesario que el responsable firme, el campo está vacío.",
+    //         icon: "warning",
+    //         timer: 1500,
+    //     });
+    //     return; // Detener el envío del formulario
+    // }
 
     // Crear FormData para enviar
     const form = $("#form_responsiva")[0]; // Obtener el formulario
@@ -665,7 +656,6 @@ document.getElementById("form_responsiva").addEventListener("submit", function (
 
 // Función para agregar una responsiva
 function add_responsiva(formData) {
-    console.log("Datos del formulario:", Object.fromEntries(formData));
 
     $.ajax({
         url: "/add_responsiva/",
@@ -675,7 +665,7 @@ function add_responsiva(formData) {
         contentType: false,
         success: function (response) {
             if (response.success) {
-                console.log(response);
+                
                 $("#form_responsiva")[0].reset(); // Resetear el formulario
                 ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
                 $("#mdl-crud-responsiva").modal("hide");
@@ -693,7 +683,6 @@ function add_responsiva(formData) {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1000,
                 });
             }
         },
@@ -703,7 +692,6 @@ function add_responsiva(formData) {
                 title: "¡Error!",
                 text: xhr.responseJSON.message || "Error inesperado.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -736,7 +724,6 @@ function modal_history(button) {
                 var tbody = $("#mdl-crud-history .table-history tbody");
                 tbody.empty(); // Limpiar la tabla
 
-                console.log(response.data);
 
                 response.data.forEach((item) => {
                     var row = `<tr>
@@ -757,7 +744,6 @@ function modal_history(button) {
                     title: "Error",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -767,7 +753,6 @@ function modal_history(button) {
                 title: "Error",
                 text: "Hubo un problema al obtener el historial.",
                 icon: "error",
-                timer: 1500,
             });
         },
     });

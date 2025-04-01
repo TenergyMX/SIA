@@ -236,8 +236,10 @@ class ComputerEquipment_responsiva {
                     var fila = $(this).closest("tr");
                     // Obtener los datos de la fila usando DataTables
                     var datos = self.tbl_responsiva.row(fila).data();
+
                     // Parsear el registro JSON a un array de objetos
                     var record = JSON.parse(datos["record"]);
+
                     // Obtener el cuerpo de la tabla en el modal
                     var tbody = obj_modal2.find("table tbody");
 
@@ -255,7 +257,7 @@ class ComputerEquipment_responsiva {
                             <td>${value["id"]}</td>
                             <td>${formattedDate}</td>
                             <td>
-                                <a href="/${value["file_path"]}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <a href="${value["file_path"]}" class="btn btn-sm btn-outline-primary" target="_blank">
                                     Responsiva
                                 </a>
                             </td>

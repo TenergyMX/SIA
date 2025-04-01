@@ -135,11 +135,9 @@ class InfrastructureCategory {
                         var isFileInput = obj_modal.find(`[name="${index}"]`).is(":file");
                         if (!isFileInput) {
                             obj_modal.find(`[name="${index}"]`).val(value || null);
-                            console.log(index);
                         }
                     });
 
-                    console.log(datos);
                     obj_modal
                         .find("[name='is_active']")
                         .val(datos["is_active"] == true ? "1" : "0");

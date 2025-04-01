@@ -1,6 +1,5 @@
 $(document).on("click", "[data-infrastructure-item='qr_code']", function () { 
     let itemId = $(this).data("id");  
-    console.log("Entramos al QR del item de infraestructura, el ID es:", itemId);
 
     if (itemId) {
         $("#infra-item-id").val(itemId); // Guardar ID en el input oculto
@@ -12,11 +11,9 @@ $(document).on("click", "[data-infrastructure-item='qr_code']", function () {
             type: "GET",
             url: `/check_qr_infraestructure/${itemId}/`,
             success: function(data) {
-                console.log("Esto contiene data:", data);
 
                 if (data.status === "success" && data.qr_url_info) {
                     const qrUrl = data.qr_url_info;
-                    console.log("QR URL:", qrUrl);
 
                     const qrImage = $('<img>').attr('src', qrUrl).attr('alt', 'QR Code');
                     $("#qr-info-infraestructure-container").empty().append(qrImage);
@@ -65,9 +62,7 @@ function generate_qr_infraestructure(itemId, type) {
         url: `/generate_qr_infraestructure/${type}/${itemId}/`,
         data: { type: type, itemId: itemId },
         success: function(data) {
-            console.log("Respuesta del servidor:", data);
             let qrUrl = data.qr_url_info || data.qr_url;
-            console.log("data.qr_url:", qrUrl);
             if (data.status === "success" || data.status === "generados") {
                 $("#qr-info-infraestructure-container").empty();
 
@@ -87,7 +82,6 @@ function generate_qr_infraestructure(itemId, type) {
                     $('button[data-infraestructure-qr="qr-info"]').hide();
                     $('button[data-infraestructure-qr="descargar-qr-info"]').show();
 
-                    console.log(`QR cargado correctamente: ${qrImage.src}`);
                 } else {
                     console.error("La URL del QR no es válida:", data);
                 }
@@ -105,7 +99,6 @@ function generate_qr_infraestructure(itemId, type) {
 // Evento click para el botón de descargar 
 $(document).on("click", '[data-infraestructure-qr="descargar-qr-info"]', function () {
     const itemId = $("#infra-item-id").val(); 
-    console.log("voy a descargar el qr del id:", itemId);
     Swal.fire({
         title: 'Descargando...',
         text: 'Por favor espera mientras se descarga el QR.',
@@ -124,7 +117,6 @@ $(document).on("click", '[data-infraestructure-qr="descargar-qr-info"]', functio
 
 
 function descargar_qr_infraestructure(itemId, type) {
-    console.log("este es el id que se esta descarga", itemId);
 
     $.ajax({
         type: "GET",
@@ -167,7 +159,6 @@ function descargar_qr_infraestructure(itemId, type) {
 
 $(document).on("click", '[data-infraestructure-qr="delete-qrinfo"]', function () {
     const itemId = $("#infra-item-id").val(); 
-    console.log("este es el qr a eliminar:", itemId);
     Swal.fire({
         title: "¿Estás seguro?",
         text: "¡No podrás revertir esta acción!",

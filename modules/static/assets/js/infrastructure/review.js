@@ -50,7 +50,7 @@ class InfrastructureReview {
                         title: "Archivo",
                         data: function (d) {
                             if (d["file"]) {
-                                return `<a href="/${d["file"]}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                return `<a href="${d["file"]}" class="btn btn-sm btn-outline-primary" target="_blank">
                                     Archivo
                                 </a>`;
                             } else {
@@ -199,7 +199,6 @@ class InfrastructureReview {
                             inputElement.val(value || null);
                         }
                     });
-                    console.log(datos);
                     setTimeout(function () {
                         obj_modal.find("select[name='item_id']").val(datos["item_id"]);
                     }, 1500);

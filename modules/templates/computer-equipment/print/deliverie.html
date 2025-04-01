@@ -71,8 +71,8 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
+                        <th>IDENTIFICADOR</th>
                         <th>TIPO</th>
-                        <th>MODELO</th>
                         <th>NUMERO DE SERIE</th>
                         <th>ESTADO</th>
                         <th>NOTAS</th>
@@ -82,10 +82,10 @@
                     {% if data %}
                     {% for item in data %}
                     <tr>
-                        <td>{{ item.model }}</td>
+                        <td>{{ item.fields.identifier }}</td>
                         <td>{{ item.fields.model }}</td>
                         <td>{{ item.fields.serial_number }}</td>
-                        <td><span></span></td>
+                        <td>{{ item.fields.serial_number }}</td>
                         <td><span></span></td>
                     </tr>
                     {% endfor %}

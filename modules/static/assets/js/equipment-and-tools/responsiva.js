@@ -110,7 +110,6 @@ function approve_button(button) {
             title: "¡Error!",
             text: "La responsiva ya fue aprobada, no puede ser aprobada de nuevo.",
             icon: "error",
-            timer: 1500,
         });
         return;
     }
@@ -170,7 +169,6 @@ function cancel_button(button) {
             title: "¡Error!",
             text: "La responsiva ya ha sido cancelada y no se puede cancelar de nuevo.",
             icon: "error",
-            timer: 1500,
         });
         return;
     }
@@ -236,7 +234,6 @@ function chek_responsiva_button(button) {
             title: "¡Error!",
             text: "Su responsiva fue cancelada anteriormente, no puedes hacer más cambios.",
             icon: "error",
-            timer: 1500,
         });
         return;
     }
@@ -259,7 +256,6 @@ function chek_responsiva_button(button) {
             title: "¡Error!",
             text: "La responsiva no está en estado aceptado, no puedes modificarla.",
             icon: "error",
-            timer: 1500,
         });
     }
 }
@@ -323,7 +319,6 @@ function status_responsiva() {
             title: "¡Error!",
             text: "Por favor, completa todos los campos obligatorios.",
             icon: "error",
-            timer: 1500,
         });
         return;
     }
@@ -336,7 +331,6 @@ function status_responsiva() {
                 title: "¡Error!",
                 text: "La cantidad a devolver es obligatoria y debe ser un número válido.",
                 icon: "error",
-                timer: 1500,
             });
             return;
         }
@@ -360,20 +354,19 @@ function status_responsiva() {
             title: "Error",
             text: "No se pudo obtener la firma. Por favor, inténtalo de nuevo.",
             icon: "error",
-            timer: 1500,
         });
         return;
     }
 
-    if (!hasDrawing) {
-        Swal.fire({
-            title: "Error",
-            text: "Es necesario que el responsable firme, el campo está vacío.",
-            icon: "warning",
-            timer: 1500,
-        });
-        return;
-    }
+    // if (!hasDrawing) {
+    //     Swal.fire({
+    //         title: "Error",
+    //         text: "Es necesario que el responsable firme, el campo está vacío.",
+    //         icon: "warning",
+    //         timer: 1500,
+    //     });
+    //     return;
+    // }
 
     // Convertir la firma a Blob
     const dataURL = canvasAlmacen.toDataURL();
@@ -411,7 +404,6 @@ function status_responsiva() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -421,7 +413,6 @@ function status_responsiva() {
                 title: "¡Error!",
                 text: "Hubo un error al guardar la responsiva.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -456,7 +447,6 @@ function edit_date_responsiva() {
             title: "¡Error!",
             text: "La fecha de entrega debe ser mayor a la fecha actual.",
             icon: "error",
-            timer: 1500,
         });
         return; // Detener la ejecución si la fecha no es válida
     }
@@ -483,7 +473,6 @@ function edit_date_responsiva() {
                     title: "Error",
                     text: response.message,
                     icon: "error",
-                    timer: 1500,
                 });
             }
         },
@@ -493,7 +482,6 @@ function edit_date_responsiva() {
                 title: "¡Error!",
                 text: "Hubo un error al guardar la nueva fecha.",
                 icon: "error",
-                timer: 1500,
             });
         },
         beforeSend: function (xhr) {
@@ -548,7 +536,6 @@ function generatePdf(responsivaId) {
                 title: "¡Error!",
                 text: "No se pudo generar el PDF.",
                 icon: "error",
-                timer: 1500,
             });
         },
     });

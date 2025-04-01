@@ -126,7 +126,6 @@ function add_service() {
             title: "¡Error!",
             text: "Todos los campos son obligatorios.",
             icon: "error",
-            timer: 1500
         });
         return;
     }
@@ -154,7 +153,6 @@ function add_service() {
                     text: response.message,
                     icon: "error",
                     showConfirmButton: false,
-                    timer: 1500
                 });
             }
         },
@@ -165,7 +163,6 @@ function add_service() {
                 text: response.message,
                 icon: "error",
                 showConfirmButton: false,
-                timer: 1500
             });
         },
     });
@@ -250,7 +247,6 @@ function edit_service() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500
                 });
             }
         },
@@ -266,7 +262,6 @@ function edit_service() {
                 title: "¡Error!",
                 text: errorMessage,
                 icon: "error",
-                timer: 1500
             });
         },
     });
@@ -323,7 +318,6 @@ function delete_services(boton) {
 
 //función para actualizar estado de pago 
 function updatePaymentStatus() {
-    console.log("Se está solicitando la actualización de los pagos..."); 
 
     $.ajax({
         url: '/update_payment_status_view/', 
@@ -331,7 +325,6 @@ function updatePaymentStatus() {
         dataType: 'json',  
         success: function(response) {
             if (response.status === 'success') {
-                console.log("Pagos actualizados correctamente:", response.message);
             } else {
                 console.error("Error al actualizar los pagos:", response.message);
             }

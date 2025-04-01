@@ -11,7 +11,6 @@ function table_plans() {
             url: "/get_table_plans/",  
             type: 'GET',
             dataSrc: function (json) {
-                console.log("Datos recibidos desde el servidor:", json.data);
                 json.data.forEach(function (item) {
                     item.status_payment_plan = item.status_payment_plan === 'Activo'; 
                 });
@@ -137,7 +136,6 @@ function add_plan() {
                     text: response.message,
                     icon: "error",
                     showConfirmButton: false,
-                    timer: 1500
                 });
             }
         },
@@ -148,7 +146,6 @@ function add_plan() {
                 text: "Hubo un error al guardar el plan.",
                 icon: "error",
                 showConfirmButton: false,
-                timer: 1500
             });
         },
     });
@@ -226,7 +223,6 @@ function edit_plans() {
                     title: "¡Error!",
                     text: response.message,
                     icon: "error",
-                    timer: 1500
                 });
             }
         },
@@ -242,7 +238,6 @@ function edit_plans() {
                 title: "¡Error!",
                 text: errorMessage,
                 icon: "error",
-                timer: 1500
             });
         },
     });

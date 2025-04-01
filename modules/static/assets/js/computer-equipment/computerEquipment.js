@@ -30,9 +30,15 @@ class ComputerEquipment {
                 },
                 columns: [
                     { title: "ID", data: "id", visible: false },
+                    { title: "Identificador", data: "identifier" },
                     { title: "Área", data: "area__name", className: "toggleable" },
                     { title: "Equipo", data: "name", className: "toggleable" },
-                    { title: "Numero de serie", data: "serial_number", className: "toggleable" },
+                    {
+                        title: "Numero de serie",
+                        data: "serial_number",
+                        className: "toggleable",
+                        visible: false,
+                    },
                     {
                         title: "Responsable",
                         data: function (d) {
@@ -47,11 +53,21 @@ class ComputerEquipment {
                         className: "toggleable",
                     },
                     { title: "Tipo de equipo", data: "equipment_type", className: "toggleable" },
-                    { title: "S.O.", data: "so", className: "toggleable" },
-                    { title: "Marca", data: "brand", className: "toggleable", visible: false },
-                    { title: "Modelo", data: "model", className: "toggleable", visible: false },
-                    { title: "Procesador", data: "processor", className: "toggleable" },
-                    { title: "RAM", data: "ram", className: "toggleable" },
+                    { title: "S.O.", data: "so", className: "toggleable", visible: false },
+                    { title: "Marca", data: "brand", className: "toggleable" },
+                    { title: "Modelo", data: "model", className: "toggleable" },
+                    {
+                        title: "Fecha Adquisición",
+                        data: "adquisition_date",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Procesador",
+                        data: "processor",
+                        className: "toggleable",
+                        visible: false,
+                    },
+                    { title: "RAM", data: "ram", className: "toggleable", visible: false },
                     {
                         title: "Actividad del Equipo",
                         data: "is_active",
@@ -115,7 +131,7 @@ class ComputerEquipment {
                         // card.find("picture img").attr("src", response["data"]["image_path"]);
 
                         self.data.id = response["data"]["id"] || null;
-                        self.data.key = "Goku eta vaina e seria";
+                        self.data.key = "";
                         self.data.name = response["data"]["name"];
                         self.data.model = response["data"]["model"];
                     },
@@ -297,7 +313,6 @@ class ComputerEquipment {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        console.log(response);
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

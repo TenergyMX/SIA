@@ -26,6 +26,7 @@ class ComputerPeripheral {
                 },
                 columns: [
                     { title: "ID", data: "id", visible: false },
+                    { title: "Identificador", data: "identifier", className: "toggleable" },
                     { title: "Nombre", data: "name", className: "toggleable" },
                     { title: "Tipo.", data: "peripheral_type", className: "toggleable" },
                     { title: "Marca", data: "brand", className: "toggleable" },
@@ -241,7 +242,7 @@ class ComputerPeripheral {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        console.log(response);
+                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

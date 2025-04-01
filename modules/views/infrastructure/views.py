@@ -302,17 +302,20 @@ def add_infrastructure_review(request):
 
             if 'file' in request.FILES and request.FILES['file']:
                 load_file = request.FILES['file']
-                folder_path = f"docs/{company_id}/infrastructure/review/"
+                folder_path = f"docs/{company_id}/infrastructure/review/{id}/"
                 fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)
                 new_name = f"review_{id}{extension}"
 
+                # Guardar ruta en la tabla
+                full_s3_path = folder_path + new_name
                 # Guardar archivo
-                fs.save(folder_path + new_name, load_file)
 
                 # Guardar ruta en la tabla
-                obj.file = folder_path + new_name
+                obj.file = full_s3_path
+
+                upload_to_s3(load_file, AWS_BUCKET_NAME, full_s3_path)
                 obj.save()
 
         response["id"] = obj.id
@@ -342,10 +345,10 @@ def get_infrastructure_reviews(request):
         "reviewer_id", "reviewer__first_name", "reviewer__last_name",
         "file"
     )
-
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
     for item in datos:
+
         item["btn_action"] = ""
         if access["update"]:
             item["btn_action"] += "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light' data-infrastructure-review='update-item' aria-label='info'>" \
@@ -355,6 +358,11 @@ def get_infrastructure_reviews(request):
             item["btn_action"] += "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light' data-infrastructure-review='delete-item' aria-label='delete'>" \
                 "<i class='fa-solid fa-trash'></i>" \
             "</button>"
+        if item["file"]:
+            item["file"] = generate_presigned_url(AWS_BUCKET_NAME, str(item["file"]))
+        else:
+            item["file"] = None
+
 
     response["data"] = list(datos)
     response["status"] = "success"
@@ -463,18 +471,17 @@ def update_infrastructure_review(request):
         obj.reviewer = reviewer
         if 'file' in request.FILES and request.FILES['file']:
                 load_file = request.FILES['file']
-                folder_path = f"docs/{company_id}/infrastructure/review/"
+                folder_path = f"docs/{company_id}/infrastructure/review/{id}/"
                 fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)
                 new_name = f"review_{id}{extension}"
-
-                # Guardar archivo
-                fs.save(folder_path + new_name, load_file)
-
+                full_s3_path = folder_path + new_name
                 # Guardar ruta en la tabla
                 obj.file = folder_path + new_name
-                obj.save()
+
+                upload_to_s3(load_file, AWS_BUCKET_NAME, full_s3_path)
+                
 
         obj.save()
 
@@ -652,7 +659,7 @@ def generate_qr_infraestructure(request, qr_type, itemId):
 
     # Contenido del QR
     if qr_type == 'info':
-        qr_content = f"http://sia-tenergy.com/infrastructure/{itemId}/"
+        qr_content = f"https://sia-tenergy.com/infrastructure/{itemId}/"
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
 
