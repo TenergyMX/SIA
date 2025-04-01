@@ -258,9 +258,12 @@ def computer_equipment_responsiva_pdf_view(request):
     for item in datos_1:
         model = item['model'] if item['model'] else "-----"
         serial_number = item['serial_number'] if item['serial_number'] else "-----"
+        identifier = item['identifier'] if item['identifier'] else "-----"
+        name = item['name'] if item['name'] else "-----"
         context2["data"].append({
             "amount": 1,
-            "description": f"Equipo de cómputo marca {model} con número de serie: {serial_number}"
+            "description": f"Equipo de cómputo marca {model} con nombre del equipo: {name}",
+            "identifier" : identifier
         })
 
     # Paso 2. Obtener los perifericos que tiene el usuario
@@ -268,9 +271,11 @@ def computer_equipment_responsiva_pdf_view(request):
     for item in datos_2:
         tipo =  item['peripheral_type'] if item['peripheral_type'] else "-----"
         marca = item['brand'] if item['brand'] else "-----"
+        identifier = item['identifier'] if item['identifier'] else "-----"
         context2["data"].append({
             "amount": 1,
-            "description": f"{tipo} marca {marca}"
+            "description": f"{tipo} marca {marca}",
+            "identifier" : identifier 
         })
 
     template = "computer-equipment/print/responsiva.html"
