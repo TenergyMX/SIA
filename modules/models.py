@@ -301,7 +301,6 @@ class ComputerSystem(models.Model):
         return f"{self.identifier} - {self.name} ({self.brand} {self.model})"
 
 
-
 class ComputerPeripheral(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Nombre")
@@ -332,15 +331,18 @@ class ComputerPeripheral(models.Model):
             # Crear el prefijo con el tipo de periférico y el nombre de la empresa
             base_identifier = f"{peripheral_type_prefix}-{company_name_prefix}"
 
-            # Obtener el último identificador generado para esta combinación
-            last_identifier = ComputerPeripheral.objects.filter(company=self.company).order_by('-identifier').first()
+            # Filtrar registros solo de la misma compañía y con el mismo prefijo
+            existing_identifiers = ComputerPeripheral.objects.filter(
+                company=self.company,  # Filtra por la misma empresa
+                identifier__startswith=base_identifier  # Filtra por el prefijo del identificador
+            ).values_list('identifier', flat=True)
 
-            if last_identifier:
-                # Extraer el número del último identificador
-                match = re.search(r'(\d+)$', last_identifier.identifier)
-                last_id_number = int(match.group(1)) if match else 0
-            else:
-                last_id_number = 0
+            # Extraer el número más alto generado para este tipo y compañía
+            last_id_number = 0
+            for ident in existing_identifiers:
+                match = re.search(r'(\d+)$', ident)
+                if match:
+                    last_id_number = max(last_id_number, int(match.group(1)))
 
             # Generar el siguiente número consecutivo
             next_id_number = last_id_number + 1
@@ -348,13 +350,13 @@ class ComputerPeripheral(models.Model):
             # Generar el identificador final con 4 dígitos
             return f"{base_identifier}-{next_id_number:04d}"
 
-        return None
+        return None  # Se agrega para manejar casos donde no se cumple la condición
 
     def save(self, *args, **kwargs):
         # Generar identificador si no existe
         if not self.identifier:
             self.identifier = self.generar_identificador()
-        
+
         # Guardar el registro actual
         super().save(*args, **kwargs)
 
@@ -366,7 +368,6 @@ class ComputerPeripheral(models.Model):
 
     def __str__(self):
         return f"{self.identifier} - {self.name} ({self.brand} {self.model})"
-
 
 
 class Software(models.Model):
