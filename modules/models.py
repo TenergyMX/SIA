@@ -255,7 +255,7 @@ class ComputerSystem(models.Model):
             # Obtener las 3 primeras letras del tipo de equipo
             prefix = prefix_map.get(self.equipment_type.lower(), "EQP")
 
-            # Obtener las 3 primeras letras de la empresa
+            # Obtener las 3 primeras letras de la empresa, asegurando que no sea más largo de 3 caracteres
             company_name = self.company.name if self.company and self.company.name else ""
             company_initials = company_name[:3].upper()  # Las 3 primeras letras de la empresa
 
@@ -266,20 +266,21 @@ class ComputerSystem(models.Model):
             last_identifier = ComputerSystem.objects.filter(
                 company=self.company
             ).order_by('-identifier').first()
-            print(last_identifier)
-            print("estos son los datos")
-            if last_identifier:
-                # Extraer el número del último identificador
+            
+            # Extraer el número del último identificador si existe
+            if last_identifier and last_identifier.identifier:
                 match = re.search(r'(\d+)$', last_identifier.identifier)
                 last_id_number = int(match.group(1)) if match else 0
             else:
                 last_id_number = 0
-
             # Si el último número es mayor a 0, reiniciar el contador a 1
             next_id_number = last_id_number + 1 if last_id_number > 0 else 1
 
             # Generar el identificador final con 4 dígitos
-            return f"{base_identifier}-{next_id_number:04d}"
+            final_identifier = f"{base_identifier}-{next_id_number:04d}"
+
+            # Asegurarse de que el identificador no supere los 20 caracteres
+            return final_identifier[:20]
 
         return None
 
