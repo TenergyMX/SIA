@@ -265,22 +265,19 @@ class ComputerSystem(models.Model):
             # Filtrar para obtener el último identificador de la misma empresa, que es el último con el mismo prefijo
             last_identifier = ComputerSystem.objects.filter(
                 company=self.company
-            ).order_by('-identifier').first()
+            ).values_list("identifier", flat=True)
             
-            # Extraer el número del último identificador si existe
-            if last_identifier and last_identifier.identifier:
-                match = re.search(r'(\d+)$', last_identifier.identifier)
-                last_id_number = int(match.group(1)) if match else 0
-            else:
-                last_id_number = 0
-            # Si el último número es mayor a 0, reiniciar el contador a 1
-            next_id_number = last_id_number + 1 if last_id_number > 0 else 1
+            last_id_number = 0
+            for ident in last_identifier:
+                match = re.search(r'(\d+)$', ident)
+                if match:
+                    last_id_number = max(last_id_number, int(match.group(1)))
+
+            # Generar el siguiente número consecutivo
+            next_id_number = last_id_number + 1
 
             # Generar el identificador final con 4 dígitos
-            final_identifier = f"{base_identifier}-{next_id_number:04d}"
-
-            # Asegurarse de que el identificador no supere los 20 caracteres
-            return final_identifier[:20]
+            return f"{base_identifier}-{next_id_number:04d}"
 
         return None
 
