@@ -27,7 +27,15 @@ class Vehicle(models.Model):
     insurance_company = models.CharField(max_length=100, blank=True, null=True)             # Aseguradora
     qr_info = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
     qr_access = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
-
+    email_sin_tenencia = models.BooleanField(default=False)
+    email_sin_refrendo = models.BooleanField(default=False)
+    email_sin_verificacion = models.BooleanField(default=False)
+    email_sin_responsive = models.BooleanField(default=False)
+    email_sin_insurance = models.BooleanField(default=False)
+    email_sin_audit = models.BooleanField(default=False)
+    email_sin_maintenance = models.BooleanField(default=False)
+    email_verificacion_s1 = models.BooleanField(default=False) 
+    email_verificacion_s2 = models.BooleanField(default=False)
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,
         blank=True, null=True,

@@ -154,14 +154,15 @@ EMAIL_HOST = 'tenergy.com.mx'
 EMAIL_PORT = 465
 EMAIL_USE_SSL = True
 EMAIL_HOST_USER = 'sia@tenergy.com.mx'
-EMAIL_HOST_PASSWORD = 'Energia2025#Ten'
+EMAIL_HOST_PASSWORD = 'Energia2025#TEN'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(CORE_DIR, 'modules/static')
-    
+
 ]
+
 
 
 
@@ -177,18 +178,9 @@ LOGIN_URL = '/user/login/'
 
 
 
-# ! PWA
-# PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR,'..','static','pwa', 'sw.js')
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'tenergy.com.mx'
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True
-EMAIL_HOST_USER = 'elizabeth.pascual@tenergy.com.mx'
-EMAIL_HOST_PASSWORD = 'Energia2025#Ten'
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
+# # ! PWA
+# # PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR,'..','static','pwa', 'sw.js')
 
 
-
-
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+# STATIC_URL = '/static/'
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
