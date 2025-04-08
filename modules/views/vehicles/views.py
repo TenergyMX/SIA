@@ -2012,7 +2012,7 @@ def get_vehicle_audit(request):
     lista = Vehicle_Audit.objects.filter(vehicle_id = vehicle_id).values(
         "id", "vehicle_id", "vehicle__name", 
         "audit_date", "general_notes",
-        "checks", "is_visible", "is_checked"  # Asegúrate de incluir estos campos
+        "checks", "is_visible", "is_checked" 
     )
 
     if context["role"]["id"] in [1, 2, 3]:

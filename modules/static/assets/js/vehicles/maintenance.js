@@ -15,7 +15,8 @@ class VehiclesMaintenance {
                     },
                     data: function () {
                         return {
-                            vehicle_id: defaultOptions.info.id || defaultOptions.info.vehicle_id,
+                            vehicle_id: defaultOptions.infoCard.id || defaultOptions.infoCard.vehicle.id,
+
                         };
                     },
                     reload: function () {
