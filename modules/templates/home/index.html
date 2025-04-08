@@ -14,9 +14,18 @@
 </head>
 <body>
     <nav class="navbar">
+        <div class="top-container">
+            <ul class="navbar-links-top" id="navbar-links-top">
+                <li><a href="/computers-equipment/">CapitalTECH</a><span class="hover-rect"></span></li>
+                <li><a href="/infrastructure/">CapitalDATA</a><span class="hover-rect"></span></li>
+                <li><a href="/vehicles/">CapitalTRANSPORT</a><span class="hover-rect"></span></li>
+                <li><a href="/equipments_and_tools/">CapitalASSETS</a><span class="hover-rect"></span></li>
+                <li><a href="/category_services/">CapitalSERVICES</a><span class="hover-rect"></span></li>
+            </ul>
+        </div>
         <div class="navbar-container">
         <div class="navbar-logo">
-            <img src="/static/assets/images/landing/logoBlack.png" alt="Logo">
+            <img src="/staticfiles/assets/images/brand-logos/CS_LOGO.png" alt="Logo">
         </div>
         <!-- Botón de menú para dispositivos móviles -->
         <div class="navbar-toggle" id="navbar-toggle">
@@ -31,7 +40,7 @@
             <li><a href="#pricing">Planes</a><span class="hover-rect"></span></li>
             <li><a href="#contact">Contacto</a><span class="hover-rect"></span></li>
             {% if user.is_authenticated %}
-                <li><a>{{user.username}}<span class="hover-rect"></span></a></li>
+                <li class="name"><a>{{user.username}}<span class="hover-rect"></span></a></li>
             {% else %}
                 <li><a href="/login">Inicio de sesión<span class="hover-rect"></span></a></li>
             {% endif %}
@@ -39,55 +48,136 @@
         </div>
     </nav>
     
-    <section class="landing-section" id="home">
-        <div class="container">
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgComputer.png" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+    <section class="landing-section">
+        <!-- <div class="container">
+            <div class="card">
+                <div class="imgbx">
+                    <img src="/static/assets/images/landing/bgComputer.png" class="card-img" alt="Computo">
+                </div>
+                <div class="card-content">
                     <h3>Equipo de Computo</h3>
-                    <!--p>Mejora la gestión de tus equipos de cómputo mediante un seguimiento exhaustivo.</p-->
                     <a href="/computers-equipment/" class="cta">Ingresar</a>
                 </div>
             </div>
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgInfraestructura.jpeg" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+            <div class="card">
+                <div class="imgbx">
+                    <img src="/static/assets/images/landing/bgInfraestructura.jpeg" class="card-img" alt="Infraestructura">
+                </div>
+                <div class="card-content">
                     <h3>Infraestructura</h3>
-                    <!--p>Mantén tu infraestructura bajo control con herramientas que proporcionan un monitoreo constante.</p-->
                     <a href="/infrastructure/" class="cta">Ingresar</a>
                 </div>
             </div>
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgVehiculos.jpg" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+            <div class="card">
+                <div class="imgbx">
+                    <img src="/static/assets/images/landing/bgVehiculos.jpg" class="card-img" alt="Vehículos">
+                </div>
+                <div class="card-content">
                     <h3>Vehículos</h3>
-                    <!--p>Supervisa el uso, el mantenimiento y el estado de cada unidad para asegurar un funcionamiento seguro.</p-->
                     <a href="/vehicles/" class="cta">Ingresar</a>
                 </div>
             </div>
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgTools.jpg" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+            <div class="card">
+                <div class="imgbx">
+                    <img src="/static/assets/images/landing/bgTools.jpg" class="card-img" alt="Herramientas">
+                 </div>
+                <div class="card-content">
                     <h3>Equipos y Herramientas</h3>
-                    <!--p>Controla un inventario actualizado de tus equipos y herramientas, permitiendo un acceso rápido y un uso eficiente.</p-->
                     <a href="/equipments_and_tools/" class="cta">Ingresar</a>
                 </div>
             </div>
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgServicios.jpg" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+            <div class="card">
+                <div class="imgbx">
+                <img src="/static/assets/images/landing/bgServicios.jpg" class="card-img" alt="Servicios">
+                </div>
+                <div class="card-content">
                     <h3>Servicios</h3>
-                    <!--span>
-                        Registra de manera detallada los pagos realizados por tus servicios, simplificando el seguimiento y la gestión eficiente de tus egresos.
-                    </span-->
                     <a href="/category_services/" class="cta">Ingresar</a>
                 </div>
             </div>
-        </div>
+        </div> -->
+        <div class="card-container">
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgComputer.png')">
+              <div class="overlay"></div>
+              <div class="title">CapitalTECH</div>
+              <div class="content">
+                <div class="info">Administración de Equipo de Cómputo</div>
+                <a href="/computers-equipment/" class="btn">Ingresar</a>
+                <a href="#" class="btnmas">Conoce más</a>
+              </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgInfraestructura.jpeg')">
+              <div class="overlay"></div>
+              <div class="title">CapitalDATA</div>
+              <div class="content">
+                <div class="info">Administración de Infraestructura</div>
+                <a href="/infrastructure/" class="btn">Ingresar</a>
+                <a href="#" class="btnmas">Conoce más</a>
+              </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgVehiculos.jpg')">
+              <div class="overlay"></div>
+              <div class="title">CapitalTRANSPORT</div>
+              <div class="content">
+                <div class="info">Adminnistración de Vehiculos Empresariales</div>
+                <a href="/vehicles/" class="btn">Ingresar</a>
+                <a href="#" class="btnmas">Conoce más</a>
+              </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgTools.jpg')">
+              <div class="overlay"></div>
+              <div class="title">CapitalASSETS</div>
+              <div class="content">
+                <div class="info">Administración de Equipos y Herramientas</div>
+                <a href="/equipments_and_tools/" class="btn">Ingresar</a>
+                <a href="#" class="btnmas">Conoce más</a>
+              </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgServicios.jpg')">
+              <div class="overlay"></div>
+              <div class="title">CapitalSERVICES</div>
+              <div class="content">
+                <div class="info">Gestor de servicios y proveedores</div>
+                <a href="/category_services/" class="btn">Ingresar</a>
+                <a href="#" class="btnmas">Conoce más</a>
+              </div>
+            </div>
+          </div>
     </section>
 
+    <div class="info-banner">
+        <div class="info-options">
+          <h2>Quiero hacer mi empresa más eficiente!</h2>
+          <p>Selecciona lo que estás buscando</p>
+          <div class="button-group">
+            <button class="filled">Gestión de mis vehículos</button>
+            <button class="filled">Administrar herramientas</button>
+            <button class="filled">Administrar equipos</button>
+            <button class="filled">Control de TI y tecnología</button>
+            <button>Control de mis servicios contratados</button>
+            <button>Control de inventario</button>
+            <button>Control de Finanzas</button>
+            <div class="button-group">
+                <button>2-9 Empleados</button>
+                <button>10-29 Empleados</button>
+                <button>+30 Empleados</button>
+            </div>
+          </div>
+          <button class="cta">Cotizar mi plataforma</button>
+        </div>
+        
+        <div class="info-image">
+          <div class="info-text">
+            <h1>Connected tools.<br>Better business.</h1>
+            <p>Simplify the financial side so you can focus on the bigger picture.</p>
+            <button class="cta">See plans & pricing</button>
+          </div>
+          <img src="/static/assets/images/landing/info-banner.jpg" alt="Person working in cafe">
+        </div>
+      </div>
+
     <section class="pricing-section" id="pricing">
-        <h2 class="pricing-title">¡Consulta nuestros planes y empieza a rentar!</h2>
+        <h2 class="pricing-title">¡Consulta nuestros planes y despega!</h2>
         <div class="pricing-container">
             <div class="pricing-plan">
                 <div class="plan">
