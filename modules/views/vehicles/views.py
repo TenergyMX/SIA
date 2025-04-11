@@ -2673,10 +2673,15 @@ def add_vehicle_fuel(request):
     context = user_data(request)
     response = {"status": "error", "message": "sin procesar","data": []}
     dt = request.POST
-    vehicle_id = dt.get("vehicle_id", None)
-    responsible_id = dt.get("responsible_id", None)
+    vehicle_id = dt.get("fuel_vehicle_id", None)
     company_id = context["company"]["id"]
+    responsible_id = request.user.id 
     
+    print("POST data:", dt)
+    print("vehicle_id recibido:", vehicle_id)
+    print("company_id:", company_id)
+    print("responsible_id (usuario actual):", responsible_id)
+
     try:
         obj = Vehicle.objects.get(id = vehicle_id)
     except Vehicle.DoesNotExist:
@@ -2684,7 +2689,6 @@ def add_vehicle_fuel(request):
         response["message"] = "El objeto no existe"
         return JsonResponse(response)
     
-    responsible_id = obj.responsible_id
 
     if not responsible_id or responsible_id == None:
         response["status"] = "warning"
@@ -2694,7 +2698,7 @@ def add_vehicle_fuel(request):
         with transaction.atomic():
             obj = Vehicle_fuel(
                 vehicle_id = vehicle_id,
-                responsible_id = responsible_id,
+                responsible_id=responsible_id,
                 fuel = dt.get("fuel"),
                 fuel_type = dt.get("fuel_type"),
                 cost = dt.get("cost"),
@@ -2730,40 +2734,58 @@ def add_vehicle_fuel(request):
         response["message"] = str(e)
     return JsonResponse(response)
 
+
 def get_vehicles_fuels(request):
     context = user_data(request)
-    response = {"status": "error", "message": "sin procesar","data": []}
+    response = {"status": "error", "message": "sin procesar", "data": []}
     dt = request.GET
-    vehicle_id = dt.get("vehicle_id", None)
     subModule_id = 22
     company_id = context["company"]["id"]
-    
-    datos = Vehicle_fuel.objects.filter(vehicle__company_id = company_id).values(
-        "id",
-        "vehicle_id", "vehicle__name",
-        "responsible_id", "responsible__first_name", "responsible__last_name",
-        "payment_receipt",
-        "fuel", "fuel_type",
-        "cost", "notes","date"
-    )
+    role_id = context["role"]["id"]
+    user_id = context["user"]["id"]
 
-    access = get_module_user_permissions(context, subModule_id)
-    access = access["data"]["access"]
-    
-    for item in datos:
-        item["btn_action"] = ""
-        if access["update"]:
-            item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-vehicle-fuel=\"update-item\">" \
-                "<i class=\"fa-solid fa-pen\"></i>" \
-            "</button>\n"
-        if access["delete"]:
-            item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-sia-vehicle-fuel=\"delete-item\">" \
-                "<i class=\"fa-solid fa-trash\"></i>" \
-            "</button>\n"
-    response["data"] = list(datos)
-    response["status"] = "success"
-    response["message"] = "Datos cargados exitosamente"
+    try:
+        # Obtener los registros filtrados por empresa
+        datos = Vehicle_fuel.objects.filter(vehicle__company_id=company_id)
+
+        if role_id == 4:
+            datos = datos.filter(responsible_id=user_id)
+
+        datos = datos.values(
+            "id",
+            "vehicle_id", "vehicle__name",
+            "responsible_id", "responsible__first_name", "responsible__last_name",
+            "payment_receipt",
+            "fuel", "fuel_type",
+            "cost", "notes", "date"
+        )
+
+        access = get_module_user_permissions(context, subModule_id)
+        access = access["data"]["access"]
+
+        for item in datos:
+            item["btn_action"] = ""
+            if access["update"]:
+                item["btn_action"] += (
+                    "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-vehicle-fuel=\"update-item\">"
+                    "<i class=\"fa-solid fa-pen\"></i></button>\n"
+                )
+            if access["delete"]:
+                item["btn_action"] += (
+                    "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-sia-vehicle-fuel=\"delete-item\">"
+                    "<i class=\"fa-solid fa-trash\"></i></button>\n"
+                )
+
+        response["data"] = list(datos)
+        response["status"] = "success"
+        response["message"] = "Datos cargados exitosamente"
+
+    except Exception as e:
+        print(f"Error en get_vehicles_fuels: {e}")
+        response["message"] = str(e)
+
     return JsonResponse(response)
+
 
 def get_vehicles_fuels_charts(request):
     context = user_data(request)
@@ -2771,7 +2793,7 @@ def get_vehicles_fuels_charts(request):
     vehicle_id = dt.get("vehicle_id", None)
     tipo = dt.get("type", "Litros")
     year = dt.get("year")
-    
+    print("esto contienela lista:", response)
     response = {
         "status": "error",
         "message": "sin procesar",
@@ -2783,7 +2805,7 @@ def get_vehicles_fuels_charts(request):
             }
         }
     }
-
+    print("estos son los datos:", datos)
     datos = Vehicle_fuel.objects.all()
     if year:
         datos = datos.filter(date__year=year)
@@ -2823,7 +2845,7 @@ def update_vehicle_fuel(request):
     response = {"status": "error", "message": "sin procesar","data": []}
     dt = request.POST
     id = dt.get("id", None)
-    vehicle_id = dt.get("vehicle_id", None)
+    vehicle_id = dt.get("fuel_vehicle_id", None)
     responsible_id = dt.get("responsible_id", None)
     company_id = context["company"]["id"]
     
@@ -4441,5 +4463,61 @@ def update_status_man(request):
             return JsonResponse({'status': 'error', 'message': 'Mantenimiento no encontrado.'})
     else:
         return JsonResponse({'status': 'error', 'message': 'Método no permitido.'})
+
+
+
+
+# Funcion para obtener los nombres de los vehiculos que ya han sido cargados para agregar un equipo 
+def get_user_vehicles(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        user = request.user
+
+        print("Usuario autenticado:", user)
+        print("ID de la empresa:", company_id)
+
+        if not company_id:
+            print("No se encontró empresa asociada al usuario")
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+
+        # Obtener todos los vehículos de la empresa
+        vehicles_fuel = Vehicle.objects.filter(company_id=company_id).values('id', 'name')
+        data = list(vehicles_fuel)
+        print("Vehículos encontrados:", data)
+
+        # Obtener el vehículo asignado al usuario como responsable
+        assigned_vehicle = Vehicle.objects.filter(responsible=user, company_id=company_id).first()
+        if assigned_vehicle:
+            print("Vehículo asignado al usuario:", assigned_vehicle.name, "(ID:", assigned_vehicle.id, ")")
+            user_vehicle_id = assigned_vehicle.id
+        else:
+            print("No hay vehículo asignado al usuario.")
+            user_vehicle_id = None
+
+        return JsonResponse({'data': data, 'user_vehicle_id': user_vehicle_id})
+
+    except Exception as e:
+        print("Error en get_user_vehicles:", str(e))
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+def get_user_vehicles_for_edit(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        vehicle_id = request.GET.get("vehicle_id")
+        vehicles = Vehicle.objects.filter(company_id=company_id)
+
+        if vehicle_id:
+            vehicles = vehicles | Vehicle.objects.filter(id=vehicle_id)
+
+        data = vehicles.distinct().values("id", "name").order_by("name")
+
+        return JsonResponse({"data": list(data)})
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=500)
+
+
 # TODO --------------- [ END ] ----------
 # ! Este es el fin
