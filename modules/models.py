@@ -27,7 +27,15 @@ class Vehicle(models.Model):
     insurance_company = models.CharField(max_length=100, blank=True, null=True)             # Aseguradora
     qr_info = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
     qr_access = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
-
+    email_sin_tenencia = models.BooleanField(default=False)
+    email_sin_refrendo = models.BooleanField(default=False)
+    email_sin_verificacion = models.BooleanField(default=False)
+    email_sin_responsive = models.BooleanField(default=False)
+    email_sin_insurance = models.BooleanField(default=False)
+    email_sin_audit = models.BooleanField(default=False)
+    email_sin_maintenance = models.BooleanField(default=False)
+    email_verificacion_s1 = models.BooleanField(default=False) 
+    email_verificacion_s2 = models.BooleanField(default=False)
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,
         blank=True, null=True,
@@ -72,6 +80,7 @@ class Vehicle_Tenencia(models.Model):
     fecha_pago = models.DateField()
     comprobante_pago = models.FileField(upload_to='docs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    email_tenencia = models.BooleanField(default=False)
 
     def clean(self):
         # Validar que el monto de la tenencia sea positivo
@@ -87,6 +96,7 @@ class Vehicle_Refrendo(models.Model):
     fecha_pago = models.DateField()
     comprobante_pago = models.FileField(upload_to='docs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    email_refrendo = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Refrendo vehicular para {self.vehiculo}"
@@ -100,6 +110,7 @@ class Vehicle_Verificacion(models.Model):
     lugar = models.CharField(max_length=100, blank=True, null=True)
     comprobante_pago = models.FileField(upload_to='docs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    email_verificacion = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Verificación vehicular para {self.vehiculo}"
@@ -140,6 +151,7 @@ class Vehicle_Insurance(models.Model):
     end_date = models.DateField(blank=True, null=True)
     doc = models.FileField(upload_to='docs/', blank=True, null=True) 
     created_at = models.DateTimeField(auto_now_add=True)
+    email_insurance = models.BooleanField(default=False)
 
     def __str__(self):
         return self.policy_number
@@ -152,6 +164,7 @@ class Vehicle_Audit(models.Model):
     is_checked = models.BooleanField(default=False)
     is_visible = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    email_audit = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Auditoría de {self.vehicle} el {self.audit_date}"
@@ -171,7 +184,8 @@ class Vehicle_Maintenance(models.Model):
     is_checked = models.BooleanField(default=False)
     status = models.CharField(max_length=255, null=False, default="blank")
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    email_maintenance = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.vehicle} - {self.type} - {self.date}"
     
@@ -661,7 +675,8 @@ class Payments_Services(models.Model):
     total_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
     next_date_payment = models.DateField(blank=True, null=True, verbose_name="Próxima fecha de pago")
     status_payment = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Estado de pago")
-
+    email_payment = models.BooleanField(default=False)
+    email_payment_unpaid = models.BooleanField(default=False)
 
 #tablas para el modulo de equipos y herramientas--modulo 6 num.6
 #tabla categorias
@@ -729,6 +744,15 @@ class Equipment_Tools_Responsiva(models.Model):
     signature_almacen = models.FileField(upload_to='docs/Equipments_tools/signatures/', blank=True, null=True, verbose_name="Firma de almacen")
     comments = models.CharField(blank=True, null=True, max_length=300, default='Regular', verbose_name="Comentarios")
     status_modified = models.BooleanField(default=False, verbose_name="Estado modificado")  # Campo para rastrear modificaciones del estado
+    email_responsiva = models.BooleanField(default=False)
+    email_responsiva_aceptada = models.BooleanField(default=False)
+    email_responsiva_next = models.BooleanField(default=False)
+    email_responsiva_late = models.BooleanField(default=False)
+    email_responsiva_date = models.BooleanField(default=False)
+
+
+
+
 
 
 #tabla de planes

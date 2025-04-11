@@ -21,6 +21,7 @@ services:
       - ./staticfiles/:/app/staticfiles/
       - ./users/migrations/:/app/users/migrations
       - ./modules/:/app/modules
+      - ./core/:/app/core/
 #     - ../pwa/:/manifest.json
 #     - ../pwa/service-worker.js:/service-worker.js
     networks:

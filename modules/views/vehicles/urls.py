@@ -136,4 +136,6 @@ urlpatterns = [
     path("obtener_checks_empresa/", views.obtener_checks_empresa),
     path('get_checks_by_audit/<int:audit_id>/', views.get_checks_by_audit),
     
+    path('get_user_vehicles/', views.get_user_vehicles),
+    path('get_user_vehicles_for_edit/', views.get_user_vehicles_for_edit),
 ]
