@@ -49,10 +49,5 @@ class Migration(migrations.Migration):
             model_name='vehicle_verificacion',
             name='email_verificacion',
             field=models.BooleanField(default=False),
-        ),
-        migrations.AlterField(
-            model_name='computersystem',
-            name='identifier',
-            field=models.CharField(blank=True, max_length=20, null=True, unique=True, verbose_name='Identificador'),
-        ),
+        )
     ]

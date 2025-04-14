@@ -15,4 +15,9 @@ class Migration(migrations.Migration):
             name='identifier',
             field=models.CharField(blank=True, max_length=20, null=True, verbose_name='Identificador'),
         ),
+        migrations.AlterField(
+            model_name='computersystem',
+            name='identifier',
+            field=models.CharField(blank=True, max_length=20, null=True, unique=True, verbose_name='Identificador'),
+        ),
     ]
