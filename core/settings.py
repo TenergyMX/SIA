@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 from pathlib import Path
 import os
-from os.path import join, dirname
+from os.path import join, dirname, abspath
 from dotenv import load_dotenv
 
 from django.conf import settings
