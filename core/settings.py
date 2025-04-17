@@ -21,9 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Directorio principal de tu aplicación
 CORE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-#SECRET_KEY = '%v4^ml05&nbvqjkx3j7k+9vam&c=2=!m=%h88mayfjz%!3$p*1'
-
-dotenv_path = join(dirname(__file__), '.env')
+dotenv_path = abspath(join(dirname(__file__), '..', 'venv', '.env'))
 load_dotenv(dotenv_path)
 
 # Quick-start development settings - unsuitable for production
@@ -38,9 +36,11 @@ except KeyError as e:
 DATABASE_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG")
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    os.environ.get("ALLOWED_HOSTS")
+]
 
 # Application definition
 
@@ -104,11 +104,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'sia',
-        'USER': 'postgres',
+        'NAME': os.environ.get("DATABASE_NAME"),
+        'USER': os.environ.get("POSTGRES_USER"),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
         'HOST': os.environ.get('DATABASE_ADDRESS'),  # o '127.0.0.1' si prefieres la dirección IP
-        'PORT': '5432',       # o el puerto que hayas configurado
+        'PORT': os.environ.get('DATABASE_PORT'),       # o el puerto que hayas configurado
     }
 }
 
@@ -150,19 +150,18 @@ STATIC_ROOT = os.path.join(CORE_DIR, 'staticfiles')
 STATIC_URL = '/staticfiles/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'tenergy.com.mx'
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True
-EMAIL_HOST_USER = 'sia@tenergy.com.mx'
-EMAIL_HOST_PASSWORD = 'Energia2025#TEN'
+EMAIL_HOST = os.environ.get("EMAIL_HOST"),
+EMAIL_PORT = os.environ.get("EMAIL_PORT"),
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL"),
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER"),
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD"),
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(CORE_DIR, 'modules/static')
-
+    
 ]
-
 
 
 
@@ -175,12 +174,3 @@ LOGIN_URL = '/user/login/'
 
 # ! PWA
 # PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR,'..','static','pwa', 'sw.js')
-
-
-
-# # ! PWA
-# # PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR,'..','static','pwa', 'sw.js')
-
-
-# STATIC_URL = '/static/'
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]

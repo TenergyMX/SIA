@@ -13,8 +13,6 @@ phases:
       - aws ecr get-login-password --region $__ECR_REGION__ | docker login --username AWS --password-stdin $__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME_
       - REPOSITORY_URI=$__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/$__ECR_REPOSITORY_NAME__
       - NGINX_REPOSITORY_URI=$__ACCOUNT_NUMBER__.dkr.ecr.$__ECR_REGION__.amazonaws.com/sia-nginx
-      - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.0 --asset core.tar.gz \core.tar.gz
-      - tar -xvf core.tar.gz
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.2 --asset venv.tar.gz \venv.tar.gz
       - tar -xvf venv.tar.gz
       - aws codeartifact get-package-version-asset --domain sia-tenergy   --repository sia-artifacts --format generic --namespace sia --package sia-package   --package-version 1.0.3 --asset awsCred.tar.gz \awsCred.tar.gz
