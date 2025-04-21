@@ -36,6 +36,9 @@ class Vehicle(models.Model):
     email_sin_maintenance = models.BooleanField(default=False)
     email_verificacion_s1 = models.BooleanField(default=False) 
     email_verificacion_s2 = models.BooleanField(default=False)
+    qr_fuel = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
+    fuel_type_vehicle = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
+
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,
         blank=True, null=True,
@@ -185,7 +188,8 @@ class Vehicle_Maintenance(models.Model):
     status = models.CharField(max_length=255, null=False, default="blank")
     created_at = models.DateTimeField(auto_now_add=True)
     email_maintenance = models.BooleanField(default=False)
-
+    email_maintenance_proximo = models.BooleanField(default=False)
+    email_maintenance_recordatorio = models.BooleanField(default=False)
     def __str__(self):
         return f"{self.vehicle} - {self.type} - {self.date}"
     

@@ -364,7 +364,7 @@ def get_vehicle_maintenance_kilometer(request):
     response = {"success":True}
     print(dt("id"))
     obj = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo_id=dt("id")).order_by("-kilometer").values("id", "kilometer")
-    print(obj)
+    print("esto contiene la lista de mantenimientos",obj)
     print("hola")
     for item in obj:
         id = str(item["id"])
@@ -373,6 +373,7 @@ def get_vehicle_maintenance_kilometer(request):
         item["acciones"] += f"<button type='submit' name='update' data-vehiculo-id='{id}' class='btn btn-primary w-auto mx-2 btn-sm'><i class='fa-solid fa-pencil'></i></button>"
         item["acciones"] += f"<button type='submit' name='delete' data-vehiculo-id='{id}' class='btn btn-danger w-auto mx-2 btn-sm'><i class='fa-solid fa-trash-can'></i></button></div>"
     response["data"] = list(obj)
+    print("esto contiene los mantenimientos", response["data"]) 
     return JsonResponse(response)
 
 def update_vehicle_kilometer(request):
@@ -491,6 +492,7 @@ def add_vehicle_kilometer(request):
         return JsonResponse(response)
     
     return JsonResponse(response)
+    
 def add_vehicle_info(request):
     context = user_data(request)
     response = {"success": False}
@@ -520,7 +522,8 @@ def add_vehicle_info(request):
             validity = dt.get("validity"),
             mileage = dt.get("mileage"),
             responsible_id = dt.get("responsible_id"),
-            owner_id = dt.get("owner_id")
+            owner_id = dt.get("owner_id"),
+            fuel_type_vehicle = dt.get("fuel_type_vehicle"),
         )
         obj.save()
         id = obj.id
@@ -862,6 +865,8 @@ def update_vehicle_info(request):
         obj.brand = dt.get("brand", obj.brand)
         obj.responsible_id = dt.get("responsible_id")
         obj.owner_id = dt.get("owner_id")
+        obj.fuel_type_vehicle = dt.get("fuel_type_vehicle")
+
         obj.save()
 
         if 'cover-image' in request.FILES and request.FILES['cover-image'] and True:
@@ -3018,17 +3023,21 @@ def generate_qr(request, qr_type, vehicle_id):
     # Obtener la URL base dinámicamente
     # protocol = 'https' if request.is_secure() else 'http' 
     # host = request.get_host()  
-    # BASE_URL = f"{protocol}://{host}"  
+    # BASE_URL = f"{protocol}:{{
+    # 
+    # //{host}"  
 
     # Verificar si el QR ya ha sido generado
     if qr_type == "consulta":
         qr_url_info = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_info)) if vehicle.qr_info else None
         qr_url_access = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_access)) if vehicle.qr_access else None
-        
+        qr_url_fuel = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_fuel)) if vehicle.qr_fuel else None
+
         return JsonResponse({
             'status': 'generados',
             'qr_url_info': qr_url_info,
-            'qr_url_access': qr_url_access
+            'qr_url_access': qr_url_access,
+            'qr_url_fuel': qr_url_fuel
         })
      
     # Contenido
@@ -3036,6 +3045,9 @@ def generate_qr(request, qr_type, vehicle_id):
         qr_content = f"https://sia-tenergy.com/vehicles/info/{vehicle_id}/"
     elif qr_type == 'access':
         qr_content = f"https://sia-tenergy.com/vehicles/responsiva/qr/{vehicle_id}"
+    elif qr_type == 'fuel':
+        qr_content = f"https://sia-tenergy.com/vehicles/fuel/{vehicle_id}/"
+
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
     
@@ -3067,6 +3079,9 @@ def generate_qr(request, qr_type, vehicle_id):
     elif qr_type == 'access':
         s3Name = f"qr_access_{vehicle_id}.png"
         vehicle.qr_access = s3Path+s3Name 
+    elif qr_type == 'fuel':
+        s3Name = f"qr_fuel_{vehicle_id}.png"
+        vehicle.qr_fuel = s3Path + s3Name
     
     # Crear un InMemoryUploadedFile con content_type
     img = InMemoryUploadedFile(
@@ -3082,6 +3097,10 @@ def generate_qr(request, qr_type, vehicle_id):
 #funcion para eliminar el qr
 def delete_qr(request, qr_type, vehicle_id):
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+
+    print("qr_type:", qr_type)
+    print("vehicle.qr_fuel:", vehicle.qr_fuel)
+    
     url = ""
     if qr_type == 'info' and vehicle.qr_info:
         url = str(vehicle.qr_info)
@@ -3089,6 +3108,9 @@ def delete_qr(request, qr_type, vehicle_id):
     elif qr_type == 'access' and vehicle.qr_access:
         url = str(vehicle.qr_access)
         vehicle.qr_access.delete()
+    elif qr_type == 'fuel' and vehicle.qr_fuel:
+        url = str(vehicle.qr_fuel)
+        vehicle.qr_fuel.delete()    
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type or QR does not exist'}, status=400)
     
@@ -3207,6 +3229,7 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
 
         sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
+        print("se ha enviado el correo")
     print("llegamos al final de checar el kilometraje")
     return JsonResponse(response)
 
@@ -3222,6 +3245,8 @@ def descargar_qr(request):
             url_vehicle = vehicle.qr_info.url[1:]
         elif tipo_qr == "access":
             url_vehicle = vehicle.qr_access.url[1:]
+        elif tipo_qr == "fuel":
+            url_vehicle = vehicle.qr_fuel.url[1:]
         url_s3 = generate_presigned_url(AWS_BUCKET_NAME, str(url_vehicle))
         return JsonResponse({'url_vehicle':url_s3})
     else:
@@ -4467,7 +4492,7 @@ def update_status_man(request):
 
 
 
-# Funcion para obtener los nombres de los vehiculos que ya han sido cargados para agregar un equipo 
+# Funcion para obtener los nombres de los vehiculos que ya han sido cargados
 def get_user_vehicles(request):
     try:
         context = user_data(request)
@@ -4519,5 +4544,26 @@ def get_user_vehicles_for_edit(request):
         return JsonResponse({"success": False, "message": str(e)}, status=500)
 
 
+
+def check_qr_fuel(request, vehicle_id):
+    print("entramos a la funcion check_qr_fuel")
+    try:
+        vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+        print("Vehículo encontrado:", vehicle.name)
+        print("ID del vehículo:", vehicle.id)
+        if vehicle.qr_fuel:
+            qr_url_fuel = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_fuel))
+            return JsonResponse({'status': 'success', 'qr_url_fuel': qr_url_fuel})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'QR no generado'})
+    except Vehicle.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'vehiculo no encontrado'}, status=404)
+
+
+
+
+
 # TODO --------------- [ END ] ----------
 # ! Este es el fin
+
+

@@ -138,4 +138,14 @@ urlpatterns = [
     
     path('get_user_vehicles/', views.get_user_vehicles),
     path('get_user_vehicles_for_edit/', views.get_user_vehicles_for_edit),
+
+
+
+
+    # #codigo qr combustible
+    # path('generate_qr_fuel/<str:qr_type>/<int:vehicle_id>/', views.generate_qr_fuel),
+    # path('check_qr_fuel/<int:vehicle_id>/', views.check_qr_fuel),
+    # path('descargar_qr_fuel/', views.descargar_qr_fuel),
+    # # path('delete_qr_computer/<str:qr_type>/<int:computerSystemId>/', views.delete_qr_computer),
+
 ]

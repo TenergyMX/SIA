@@ -313,6 +313,7 @@ class Vehicles {
 
                     obj_offcanvas.find("[name='vehicle_id']").hide().prop("readonly", true);
                     obj_offcanvas.find("[name='vehicle__name']").show().prop("readonly", true);
+                    obj_offcanvas.find("[name='vehicle__fuel_type_vehicle']").show().prop("readonly", true);
 
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_info.row(fila).data();
