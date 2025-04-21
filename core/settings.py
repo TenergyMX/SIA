@@ -33,14 +33,15 @@ try:
 except KeyError as e:
     raise RuntimeError("Could not find a SECRET_KEY in environment") from e
 
-DATABASE_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG")
+print(os.environ.get("DEBUG"))
 
 ALLOWED_HOSTS = [
     os.environ.get("ALLOWED_HOSTS")
 ]
+print(os.environ.get("ALLOWED_HOSTS"))
 
 # Application definition
 
