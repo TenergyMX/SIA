@@ -43,6 +43,19 @@ ALLOWED_HOSTS = [
 ]
 print(ALLOWED_HOSTS)
 
+SECURE_HSTS_SECONDS = os.environ.get("SECURE_HSTS_SECONDS")
+SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD")
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS")
+SECURE_PROXY_SSL_HEADER = os.environ.get("SECURE_PROXY_SSL_HEADER")
+SECURE_REFERRER_POLICY = os.environ.get("SECURE_REFERRER_POLICY")
+SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT")
+
+#############################################################
+# Opciones de sección
+SESSION_COOKIE_AGE = os.environ.get("SESSION_COOKIE_AGE")
+SESSION_EXPIRE_AT_BROWSER_CLOSE = os.environ.get("SESSION_EXPIRE_AT_BROWSER_CLOSE")
+#############################################################
+
 # Application definition
 
 INSTALLED_APPS = [
