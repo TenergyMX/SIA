@@ -52,7 +52,7 @@ SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT")
 
 #############################################################
 # Opciones de sección
-SESSION_COOKIE_AGE = os.environ.get("SESSION_COOKIE_AGE")
+SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE"))
 SESSION_EXPIRE_AT_BROWSER_CLOSE = os.environ.get("SESSION_EXPIRE_AT_BROWSER_CLOSE")
 #############################################################
 
