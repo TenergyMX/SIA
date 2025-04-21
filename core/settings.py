@@ -36,12 +36,12 @@ except KeyError as e:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG")
-print(os.environ.get("DEBUG"))
+print(DEBUG)
 
 ALLOWED_HOSTS = [
     os.environ.get("ALLOWED_HOSTS")
 ]
-print(os.environ.get("ALLOWED_HOSTS"))
+print(ALLOWED_HOSTS)
 
 # Application definition
 
