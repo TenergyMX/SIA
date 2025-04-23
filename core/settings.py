@@ -46,7 +46,7 @@ SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD")
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS")
 SECURE_REFERRER_POLICY = os.environ.get("SECURE_REFERRER_POLICY")
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT")
+#SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT")
 
 #############################################################
 # Opciones de sección
