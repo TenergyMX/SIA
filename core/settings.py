@@ -39,7 +39,10 @@ DEBUG = os.environ.get("DEBUG")
 print(DEBUG)
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS1', 'localhost').lower().split(',')
-print(ALLOWED_HOSTS)
+
+# Build CSRF-trusted origins from ALLOWED_HOSTS
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host]
+print(CSRF_TRUSTED_ORIGINS)
 
 SECURE_HSTS_SECONDS = os.environ.get("SECURE_HSTS_SECONDS")
 SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD")
