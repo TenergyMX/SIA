@@ -22,6 +22,7 @@ services:
       - ./users/migrations/:/app/users/migrations
       - ./modules/:/app/modules
       - ./core/:/app/core/
+      - ./templates/:/app/templates/
 #     - ../pwa/:/manifest.json
 #     - ../pwa/service-worker.js:/service-worker.js
     networks:

@@ -43,7 +43,7 @@ def home_view(request):
 
         #body-text
         text_content = f'{form.get("name", "Nombre no proporcionado")}, de la empresa {form.get("name_company", "Empresa no especificada")}: {form.get("message", "Sin mensaje")}'
-
+        domain = request.build_absolute_uri('/')[:-1]  # Obtiene el dominio dinámicamente
         #html
         html_content = f"""
         <html>
@@ -85,7 +85,7 @@ def home_view(request):
         </head>
         <body>
             <div class="container">
-            <img src="https://sia-tenergy.com/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
+            <img src="{domain}/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
             <h2>Nuevo mensaje de {form.get("name", "Nombre no proporcionado")}</h2>
             <p><strong>Empresa:</strong> {form.get("name_company", "Empresa no especificada")}</p>
             <p><strong>Correo:</strong> {form.get("email", "sin correo")}</p>
@@ -635,8 +635,8 @@ def get_notifications(request):
                     "alert": "danger",
                     "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
                     "title": "Vehículo sin seguro",
-                    "text": f"Vehículo: {item['vehicle__name']}",
-                    "link": f"/vehicles/info/{item['vehicle__id']}/"
+                    "text": f"Vehículo: {vehicle['name']}",  
+                    "link": f"/vehicles/info/{vehicle['id']}/" 
                 })
 
                 vehicle_instance = Vehicle.objects.get(id=vehicle["id"])
@@ -692,6 +692,23 @@ def get_notifications(request):
                     )
 
         # MANTENIMIENTO
+
+        # Agregar correos del área de Compras
+        qsUserCompras = User_Access.objects.filter(
+            company__id=request.session["company"]["id"], 
+            area__company__id=request.session["company"]["id"],
+            area__name='Compras'
+        )
+
+        print("Usuarios con acceso al área de Compras:", qsUserCompras)
+        emails_compras = set(item.user.email for item in qsUserCompras if item.user.email)
+        print("Correos electrónicos del área de Compras:", emails_compras)
+
+        # Agregar correos a la lista final de destinatarios para mantenimiento
+        recipient_emails_vehiculos = list(set(recipient_emails_vehiculos).union(emails_compras))
+        print("Lista final de correos (vehículos + compras):", recipient_emails_vehiculos)
+
+
         if 11 in access and access[11]["read"]:
             obj_mantenimiento = Vehicle_Maintenance.objects.filter(vehicle__company_id=company_id)
 
@@ -703,6 +720,16 @@ def get_notifications(request):
             )
 
             for mantenimiento in obj_mantenimiento_alerta:
+
+                mantenimiento_programado = (
+                    Vehicle_Maintenance_Kilometer.objects
+                    .filter(vehiculo=mantenimiento.vehicle)
+                    .order_by("-kilometer")
+                    .first()
+                )
+
+                kilometraje_objetivo = mantenimiento_programado.kilometer if mantenimiento_programado else "desconocido"
+
                 response["data"].append({
                     "alert": "danger",
                     "icon": "<i class=\"fa-solid fa-tools fs-18\"></i>",
@@ -712,10 +739,19 @@ def get_notifications(request):
                 })
 
                 if not mantenimiento.email_maintenance:
+
                     message_data = {
                         "title": f"Recordatorio de Mantenimiento: {mantenimiento.vehicle.name}",
-                        "body": f"El mantenimiento del vehículo <strong>{mantenimiento.vehicle.name}</strong> está en estado <strong>{mantenimiento.status}</strong>. Por favor, revisa el mantenimiento."
+                        "body": (
+                            f"El mantenimiento del vehículo <strong>{mantenimiento.vehicle.name}</strong> está en estado de "
+                            f"<strong>{mantenimiento.status}</strong>, ya que el kilometraje se encuentra por debajo de los "
+                            f"<strong>{kilometraje_objetivo}</strong> kilometros. Por favor, revisa el mantenimiento generado para "
+                            f"actualizar su fecha. <br><br>"
+                            f"<a href='http://localhost/vehicles/info/{mantenimiento.vehicle.id}/' style='color: #1a73e8;'>"
+                            f"Ver información del vehículo</a>" 
+                        )
                     }
+
                     print(f"Enviando correo para mantenimiento ID {mantenimiento.id}")
                     Send_Email(
                         subject="Recordatorio de Mantenimiento",
@@ -725,6 +761,50 @@ def get_notifications(request):
                         model_name=Vehicle_Maintenance,
                         field_to_update="email_maintenance"
                     )
+
+
+            # Alerta anticipada (2 días antes del mantenimiento programado)
+            fecha_actual = datetime.now().date()
+            print ("esta es lafecha actual:", fecha_actual)
+
+            for mantenimiento in obj_mantenimiento:
+                if mantenimiento.email_maintenance_proximo:
+                    continue
+
+                date = getattr(mantenimiento, "date", None)
+                print("esta es la fecha programada:", date)
+                if date:
+                    dias_restantes = (date - fecha_actual).days
+
+                    if dias_restantes == 2:
+                        response["data"].append({
+                            "alert": "warning",
+                            "icon": "<i class=\"fa-solid fa-calendar-days fs-18\"></i>",
+                            "title": "Mantenimiento próximo en 2 días",
+                            "text": f"Vehículo: {mantenimiento.vehicle.name}",
+                            "link": f"/vehicles/info/{mantenimiento.vehicle.id}/"
+                        })
+
+                        message_data = {
+                            "title": f"Mantenimiento programado para {mantenimiento.vehicle.name}",
+                            "body": (
+                                f"Se tiene programado un mantenimiento para el vehículo <strong>{mantenimiento.vehicle.name}</strong> "
+                                f"el día <strong>{date}</strong>. Por favor revisa los detalles en el sistema. <br><br>"
+                                f"<a href='http://localhost/vehicles/info/{mantenimiento.vehicle.id}/' style='color: #1a73e8;'>"
+                                f"Ver información del vehículo</a>"
+                            )
+                        }
+
+                        print(f"Enviando recordatorio anticipado para {mantenimiento.vehicle.name}")
+
+                        Send_Email(
+                            subject="Mantenimiento Próximo",
+                            recipient=recipient_emails_vehiculos,
+                            model_instance=mantenimiento,
+                            message_data=message_data,
+                            model_name=Vehicle_Maintenance,
+                            field_to_update="email_maintenance_proximo"
+                        )
 
     # Respuesta final
     response["recordsTotal"] = len(response["data"])

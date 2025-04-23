@@ -658,8 +658,9 @@ def generate_qr_infraestructure(request, qr_type, itemId):
         return JsonResponse({'status': 'generados', 'qr_url_info': qr_url_info})
 
     # Contenido del QR
+    domain = request.build_absolute_uri('/')[:-1]  # Obtiene el dominio dinámicamente
     if qr_type == 'info':
-        qr_content = f"https://sia-tenergy.com/infrastructure/{itemId}/"
+        qr_content = f"{domain}/infrastructure/{itemId}/"
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
 

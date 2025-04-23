@@ -201,9 +201,15 @@ class VehiclesMaintenance {
             ajax: {
                 url: "/get_vehicle_maintenance_kilometer/",
                 dataSrc: "data",
-                data: {
-                    id: self.vehicle.data.id,
+        
+
+                data: function(d) {
+                    const vehicleId = self.vehicle?.id || self.vehicle?.data?.id || self.table?.vehicle?.id;
+                    console.log("Enviando ID:", vehicleId);
+                    d.id = vehicleId;
                 },
+                
+                
             },
             columns: [
                 { data: "kilometer", title: "Kilometraje", orderable: false },
@@ -478,6 +484,7 @@ class VehiclesMaintenance {
                         function (result) {
                             let opciones = result; // Usamos el resultado directamente
 
+                            
                             // Recorrer los <li> dentro de #card_maintenance_info y cambiar su color si su texto está en opciones
                             $(
                                 "#card_maintenance_info .list-group-item.list-group-item-action"
