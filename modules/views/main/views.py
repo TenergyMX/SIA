@@ -43,7 +43,7 @@ def home_view(request):
 
         #body-text
         text_content = f'{form.get("name", "Nombre no proporcionado")}, de la empresa {form.get("name_company", "Empresa no especificada")}: {form.get("message", "Sin mensaje")}'
-
+        domain = request.build_absolute_uri('/')[:-1]  # Obtiene el dominio dinámicamente
         #html
         html_content = f"""
         <html>
@@ -85,7 +85,7 @@ def home_view(request):
         </head>
         <body>
             <div class="container">
-            <img src="https://sia-tenergy.com/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
+            <img src="{domain}/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
             <h2>Nuevo mensaje de {form.get("name", "Nombre no proporcionado")}</h2>
             <p><strong>Empresa:</strong> {form.get("name_company", "Empresa no especificada")}</p>
             <p><strong>Correo:</strong> {form.get("email", "sin correo")}</p>

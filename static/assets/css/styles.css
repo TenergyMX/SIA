@@ -19953,7 +19953,8 @@ a.link-underline-dark {
 
 
 #qr-info-container img,
-#qr-access-container img {
+#qr-access-container img,
+#qr-fuel-container img {
     max-width: 100%;
     height: auto; /* Para que no deforme la imagen */
     display: block;

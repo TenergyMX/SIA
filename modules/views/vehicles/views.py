@@ -77,18 +77,24 @@ def vehicles(request):
 
     if not check_user_access_to_module(request, module_id, subModule_id):
         return render(request, "error/access_denied.html")
-    
+
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
-    
+
+    # Limpiar espacios en los títulos de los submódulos
+    for module in sidebar["data"]:
+        for submodule in module.get("submodules", []):
+            submodule["title"] = submodule["title"].strip()  # Limpiar espacios al inicio y final
+
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/vechicles.html"
-    else:
-        template = "error/access_denied.html"
+    print("estos son los modulos permitidos", context["sidebar"])
+
+    template = "vehicles/vechicles.html" if context["access"]["read"] else "error/access_denied.html"
     return render(request, template, context)
+    
+
 
 @login_required
 def vehicles_details(request, vehicle_id = None):
@@ -3041,12 +3047,13 @@ def generate_qr(request, qr_type, vehicle_id):
         })
      
     # Contenido
+    domain = request.build_absolute_uri('/')[:-1]  # Obtiene el dominio dinámicamente
     if qr_type == 'info':
-        qr_content = f"https://sia-tenergy.com/vehicles/info/{vehicle_id}/"
+        qr_content = f"{domain}/vehicles/info/{vehicle_id}/"
     elif qr_type == 'access':
-        qr_content = f"https://sia-tenergy.com/vehicles/responsiva/qr/{vehicle_id}"
+        qr_content = f"{domain}/vehicles/responsiva/qr/{vehicle_id}"
     elif qr_type == 'fuel':
-        qr_content = f"https://sia-tenergy.com/vehicles/fuel/{vehicle_id}/"
+        qr_content = f"{domain}/vehicles/fuel/{vehicle_id}/"
 
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
@@ -3121,8 +3128,10 @@ def delete_qr(request, qr_type, vehicle_id):
 #@subject = CharField
 #@to = ArrayList
 #Vehicle = QuerySet
+
 def sendEmail_UpdateKilometer(request, subject, to_send, vehicle):
     from_send = settings.EMAIL_HOST_USER
+    domain = request.build_absolute_uri('/')[:-1]  # Obtiene el dominio dinámicamente
     if vehicle.responsible.username:
         responsable = vehicle.responsible.username
     else:
@@ -3142,7 +3151,7 @@ def sendEmail_UpdateKilometer(request, subject, to_send, vehicle):
     </head>
     <body>
         <div class="container">
-            <img src="https://sia-tenergy.com/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
+            <img src="{domain}/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
             <h2>{vehicle.name}</h2>
             <p>Responsable del vehiculo: {responsable}</p>
             <p>El vehículo está próximo a alcanzar el kilometraje para su revisión, por lo que es necesario programar el mantenimiento correspondiente</p>

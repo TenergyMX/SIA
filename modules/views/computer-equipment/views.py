@@ -71,8 +71,9 @@ def computer_equipment_view(request):
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
-    
-    if context["access"]["read"]:
+    print("estos son los modulos permitidos", context["sidebar"])
+
+    if context["access"]["read"]:   
         template = "computer-equipment/computer_equipment.html"
     else:
         template = "error/access_denied.html"
@@ -1892,7 +1893,8 @@ def generate_qr_computer(request, qr_type, computerSystemId):
             return JsonResponse({'status': 'generados', 'qr_url_info': qr_url_info})
 
         if qr_type == 'info':
-            qr_content = f"https://sia-tenergy.com/computers-equipment/info/{computerSystemId}/"
+            domain = request.build_absolute_uri('/')[:-1]  # Obtiene el dominio dinámicamente
+            qr_content = f"{domain}/computers-equipment/info/{computerSystemId}/"
         else:
             return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
 

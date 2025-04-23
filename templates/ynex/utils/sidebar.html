@@ -1,114 +1,179 @@
-{% load static %}
-<aside class="app-sidebar sticky" id="sidebar">
-    <!-- Start::main-sidebar-header -->
-    <div class="main-sidebar-header">
-        <a href="/" class="header-logo">
-            <img src="{% static '/assets/images/brand-logos/logo.png' %} " alt="logo"
-                class="desktop-logo" loading="lazy">
-            <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
-                class="toggle-logo" loading="lazy">
-            <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
-                class="desktop-dark" loading="lazy">
-            <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
-                class="toggle-dark" loading="lazy">
-            <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
-                class="desktop-white" loading="lazy">
-            <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
-                class="toggle-white" loading="lazy">
-        </a>
-    </div>
-    <!-- End::main-sidebar-header -->
+    {% load static %}
+    <aside class="app-sidebar sticky" id="sidebar">
+        <!-- Start::main-sidebar-header -->
+        <div class="main-sidebar-header">
+            <a href="/" class="header-logo">
+                <img src="{% static '/assets/images/brand-logos/logo.png' %} " alt="logo"
+                    class="desktop-logo" loading="lazy">
+                <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
+                    class="toggle-logo" loading="lazy">
+                <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
+                    class="desktop-dark" loading="lazy">
+                <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
+                    class="toggle-dark" loading="lazy">
+                <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
+                    class="desktop-white" loading="lazy">
+                <img src="{% static '/assets/images/brand-logos/logo.png' %}" alt="logo"
+                    class="toggle-white" loading="lazy">
+            </a>
+        </div>
+        <!-- End::main-sidebar-header -->
 
-    <!-- Start::main-sidebar -->
-    <div class="main-sidebar" id="sidebar-scroll" data-simplebar="init">
-        <nav class="main-menu-container nav nav-pills flex-column sub-open open active">
-            <div class="slide-left active d-none" id="slide-left">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24">
-                    <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path>
-                </svg>
-            </div>
-            <ul class="main-menu active" style="display: block; box-sizing: border-box">
-                <li class="slide__category">
-                    <span class="category-name">MAIN</span>
-                </li>
-                <li class="slide">
-                    <a href="/" class="side-menu__item">
-                        <i class="fa-solid fa-house side-menu__icon"></i>
-                        <span class="side-menu__label">
-                            Inicio
-                        </span>
-                    </a>
-                </li>
-                <li class="slide">
-                    <a href="/plans/" class="side-menu__item">
-                        <i class="fa-sharp fa-solid fa-money-check-pen"></i>
-                        <span class="side-menu__label">
-                            Planes
-                        </span>
-                    </a>
-                </li>
-                <li class="slide has-sub">
-                    <a href="javascript:void(0);" class="side-menu__item">
-                        <i class="fa-solid fa-laptop-binary side-menu__icon"></i>
-                        <span class="side-menu__label">
-                            Modulos
-                        </span>
-                        <i class="fa-solid fa-angle-right side-menu__angle"></i>
-                    </a>
-                    <ul class="slide-menu child1" data-popper-placement="top" data-popper-reference-hidden=""
-                        data-popper-escaped="">
-                        <li class="slide">
-                            <a href="/computers-equipment/" class="side-menu__item">
-                                Equipo de Cómputo
-                            </a>
-                        </li>
-                        <li class="slide">
-                            <a href="/infrastructure/" class="side-menu__item">
-                                Infraestructura
-                            </a>
-                        </li>
-                        <li class="slide">
-                            <a href="/vehicles/" class="side-menu__item">
-                                Vehículos
-                            </a>
-                        </li>
-                        <li class="slide">
-                            <a href="/category_services/" class="side-menu__item">
-                                Servicios
-                            </a>
-                        </li>
-                        <li class="slide">
-                            <a href="/equipments_and_tools/" class="side-menu__item">
-                                Equipos y Herramientas
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                {% for module in sidebar %}
-                <li class="slide__category">
-                    <span class="category-name">{{ module.title }}</span>
-                </li>
-                    {% for submodule in module.submodules %}
+        <!-- Start::main-sidebar -->
+        <div class="main-sidebar" id="sidebar-scroll" data-simplebar="init">
+            <nav class="main-menu-container nav nav-pills flex-column sub-open open active">
+                <div class="slide-left active d-none" id="slide-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24">
+                        <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path>
+                    </svg>
+                </div>
+                <ul class="main-menu active" style="display: block; box-sizing: border-box">
+                    <li class="slide__category">
+                        <span class="category-name">MAIN</span>
+                    </li>
                     <li class="slide">
-                        <a href="{{ submodule.link }}" class="side-menu__item">
-                            {% if submodule.icon %}
-                                {{ submodule.icon|safe }}
-                            {% else %}
-                                <i class="fa-regular fa-face-clouds side-menu__icon"></i>
-                            {% endif %}
-                            <span class="side-menu__label">{{ submodule.title }}</span>
+                        <a href="/" class="side-menu__item">
+                            <i class="fa-solid fa-house side-menu__icon"></i>
+                            <span class="side-menu__label">
+                                Inicio
+                            </span>
                         </a>
                     </li>
+                    <li class="slide">
+                        <a href="/plans/" class="side-menu__item">
+                            <i class="fa-sharp fa-solid fa-money-check-pen"></i>
+                            <span class="side-menu__label">
+                                Planes
+                            </span>
+                        </a>
+                    </li>
+                    <li class="slide has-sub">
+                        <a href="javascript:void(0);" class="side-menu__item">
+                            <i class="fa-solid fa-laptop-binary side-menu__icon"></i>
+                            <span class="side-menu__label">
+                                Modulos
+                            </span>
+                            <i class="fa-solid fa-angle-right side-menu__angle"></i>
+                        </a>
+                        <ul class="slide-menu child1" data-popper-placement="top" data-popper-reference-hidden=""
+                            data-popper-escaped="">
+                            <li class="slide">
+                                <a href="/computers-equipment/" class="side-menu__item">
+                                    Equipo de Cómputo
+                                </a>
+                            </li>
+                            <li class="slide">
+                                <a href="/infrastructure/" class="side-menu__item">
+                                    Infraestructura
+                                </a>
+                            </li>
+                            <li class="slide">
+                                <a href="/vehicles/" class="side-menu__item">
+                                    Vehículos
+                                </a>
+                            </li>
+                            <li class="slide">
+                                <a href="/category_services/" class="side-menu__item">
+                                    Servicios
+                                </a>
+                            </li>
+                            <li class="slide">
+                                <a href="/equipments_and_tools/" class="side-menu__item">
+                                    Equipos y Herramientas
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% with "Seguro,Auditoría,Mantenimiento,Verificacion,Info,Tenencia,Refrendo,Vehículo,Area,Usuarios,Proveedor,Empresas" as allowed_submodules %}
+                    {% for module in sidebar %}
+                        <li class="slide__category">
+                            <span class="category-name">
+                                {% if module.title == "Usuarios" %}
+                                    Configuración
+                                {% else %}
+                                    {{ module.title }}
+                                {% endif %}
+                            </span>
+                        </li>
+                
+                        {% if module.title == "Usuarios" or module.title == "Vehículo" %}
+                            <!-- Bloque con sublista para los permitidos -->
+                            <li class="slide has-sub">
+                                <a href="javascript:void(0);" class="side-menu__item">
+                                    {% if module.icon %}
+                                        {{ module.icon|safe }}
+                                    {% else %}
+                                        <i class="fa-solid fa-folder-open side-menu__icon"></i>
+                                    {% endif %}
+                                    <span class="side-menu__label">
+                                        {% if module.title == "Usuarios" %}
+                                            Empresa
+                                        {% else %}
+                                            {{ module.title }}
+                                        {% endif %}
+                                    </span>
+                                    <i class="fa-solid fa-angle-right side-menu__angle"></i>
+                                </a>
+                                <ul class="slide-menu child1">
+                                    {% for submodule in module.submodules %}
+                                        {% if submodule.title in allowed_submodules %}
+                                            <li class="slide">
+                                                <a href="{{ submodule.link }}" class="side-menu__item">
+                                                    {% if submodule.icon %}
+                                                        {{ submodule.icon|safe }}
+                                                    {% else %}
+                                                        <i class="fa-regular fa-face-clouds side-menu__icon"></i>
+                                                    {% endif %}
+                                                    <span class="side-menu__label">{{ submodule.title }}</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                
+                            <!-- Renderiza submódulos NO permitidos por fuera de la lista -->
+                            {% for submodule in module.submodules %}
+                                {% if submodule.title not in allowed_submodules %}
+                                    <li class="slide">
+                                        <a href="{{ submodule.link }}" class="side-menu__item">
+                                            {% if submodule.icon %}
+                                                {{ submodule.icon|safe }}
+                                            {% else %}
+                                                <i class="fa-regular fa-face-clouds side-menu__icon"></i>
+                                            {% endif %}
+                                            <span class="side-menu__label">{{ submodule.title }}</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                
+                        {% else %}
+                            <!-- Otros módulos: renderizar submodules directamente -->
+                            {% for submodule in module.submodules %}
+                                <li class="slide">
+                                    <a href="{{ submodule.link }}" class="side-menu__item">
+                                        {% if submodule.icon %}
+                                            {{ submodule.icon|safe }}
+                                        {% else %}
+                                            <i class="fa-regular fa-face-clouds side-menu__icon"></i>
+                                        {% endif %}
+                                        <span class="side-menu__label">{{ submodule.title }}</span>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        {% endif %}
                     {% endfor %}
-                {% endfor %}
-                <!-- end -->
-            </ul>
-            <div class="slide-right d-none" id="slide-right">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24">
-                    <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path>
-                </svg>
-            </div>
-        </nav>
-    </div>
-    <!-- End::main-sidebar -->
-</aside>
+                {% endwith %}
+                
+                    <!-- end -->
+                </ul>
+                <div class="slide-right d-none" id="slide-right">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24">
+                        <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path>
+                    </svg>
+                </div>
+            </nav>
+        </div>
+        <!-- End::main-sidebar -->
+    </aside>
