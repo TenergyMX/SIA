@@ -38,9 +38,7 @@ except KeyError as e:
 DEBUG = os.environ.get("DEBUG")
 print(DEBUG)
 
-ALLOWED_HOSTS = [
-    os.environ.get('ALLOWED_HOSTS1', 'localhost').lower().split(',')
-]
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS1', 'localhost').lower().split(',')
 print(ALLOWED_HOSTS)
 
 #SECURE_HSTS_SECONDS = os.environ.get("SECURE_HSTS_SECONDS")
