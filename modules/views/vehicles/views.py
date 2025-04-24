@@ -1803,8 +1803,8 @@ def get_vehicles_insurance(request):
         item["btn_action"] = ""
         if item["doc"] != None:
             tempDoc = generate_presigned_url(bucket_name, item["doc"])
-            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
-                <i class="fa-solid fa-file"></i> Descargar
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                <i class="fa-solid fa-file"></i> Ver documento
             </a>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-insurance=\"update-item\">
@@ -1849,7 +1849,7 @@ def get_vehicle_insurance(request):
         if item["doc"] != None:
             tempDoc = generate_presigned_url(bucket_name, item["doc"])
             item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
-                <i class="fa-solid fa-file"></i> Descargar
+                <i class="fa-solid fa-file"></i> Ver seguro
             </a>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-insurance=\"update-item\">
@@ -2722,17 +2722,11 @@ def add_vehicle_fuel(request):
             if 'payment_receipt' in request.FILES and request.FILES['payment_receipt']:
                 load_file = request.FILES.get('payment_receipt')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
-                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)                
                 new_name = f"payment_receipt_{id}{extension}"
 
-                # Eliminar archivos anteriores usando glob
-                #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"payment_receipt{id}.*"))
-                #for old_file_path in old_files:
-                #    if os.path.exists(old_file_path):
-                #        os.remove(old_file_path)
-                #fs.save(folder_path + new_name, load_file)
+            
                 upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
                 obj.payment_receipt = folder_path + new_name
                 obj.save()
@@ -2775,6 +2769,9 @@ def get_vehicles_fuels(request):
         access = access["data"]["access"]
 
         for item in datos:
+            if item["payment_receipt"]:
+                item["payment_receipt"] = generate_presigned_url(bucket_name, item["payment_receipt"])
+
             item["btn_action"] = ""
             if access["update"]:
                 item["btn_action"] += (
@@ -3026,12 +3023,6 @@ def generate_qr(request, qr_type, vehicle_id):
     company_id = context["company"]["id"]
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
 
-    # Obtener la URL base dinámicamente
-    # protocol = 'https' if request.is_secure() else 'http' 
-    # host = request.get_host()  
-    # BASE_URL = f"{protocol}:{{
-    # 
-    # //{host}"  
 
     # Verificar si el QR ya ha sido generado
     if qr_type == "consulta":
@@ -3074,9 +3065,7 @@ def generate_qr(request, qr_type, vehicle_id):
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
-    # Convertir el buffer en un ContentFile y darle un nombre
-    # content_file = ContentFile(buffer.read())
-    # content_file.name = f"qr_{vehicle_id}.png"  # Establecer un nombre para el archivo
+  
     
     # Definir la ruta del archivo en S3
     s3Path = f'docs/{company_id}/vehicle/{vehicle_id}/qr/'

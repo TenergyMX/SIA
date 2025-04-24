@@ -91,7 +91,7 @@ def get_sidebar(data={}, module_ids=None):
         if module_name not in modules:
             modules[module_name] = []
         modules[module_name].append({
-            "title": submodule.subModule.short_name if hasattr(submodule, 'subModule') else submodule.short_name,
+            "title": submodule.subModule.short_name if hasattr(submodule, 'subModule') else submodule.name,
             "icon": submodule.subModule.icon if hasattr(submodule, 'subModule') else submodule.icon,
             "link": submodule.subModule.link if hasattr(submodule, 'subModule') else submodule.link
         })
@@ -221,10 +221,41 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
         return False
 
     
+
+
+# def generate_presigned_url(bucket_name, object_name, expiration=3600):
+#     s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+#     return s3.generate_presigned_url(
+#         'get_object',
+#         Params={
+#             'Bucket': bucket_name,
+#             'Key': object_name,
+#             'ResponseContentDisposition': 'inline',
+#             'ResponseContentType': 'application/pdf'  
+#         },
+#         ExpiresIn=expiration
+#     )
+
+
 def generate_presigned_url(bucket_name, object_name, expiration=3600):
+    content_type, _ = mimetypes.guess_type(object_name)
+    if not content_type:
+        content_type = 'application/pdf'
+    disposition = 'inline'
     s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
+    return s3.generate_presigned_url(
+        'get_object',
+        Params={
+            'Bucket': bucket_name,
+            'Key': object_name,
+            'ResponseContentDisposition': disposition,
+            'ResponseContentType': content_type
+        },
+        ExpiresIn=expiration
+    )
+
+
+
 
 def validate_image(file):
     # Check file size (e.g., max 5 MB)

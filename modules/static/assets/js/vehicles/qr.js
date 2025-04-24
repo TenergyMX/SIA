@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const qrAccessContainer = document.getElementById("qr-access-container");
     const qrFuelContainer = document.getElementById("qr-fuel-container");
 
+    console.log("Valor de vehicle_id:", vehicle_id);
+
     generateQR(vehicle_id, "consulta");
     $('button[data-vehicle-qr="delete-qrinfo"]').hide();
     $('button[data-vehicle-qr="delete-qraccess"]').hide();
@@ -15,6 +17,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Función para generar QR
     function generateQR(vehicleId, type) {
+        console.log("Generando QR para:", type, "con ID:", vehicleId);
+
         let url = `/generate_qr/${type}/${vehicleId}/`;
 
         fetch(url)

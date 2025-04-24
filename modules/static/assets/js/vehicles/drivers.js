@@ -116,7 +116,7 @@ function table_licence() {
                     if (data["license_driver"]) {
                         // Verificar si la URL de la licencia es válida y mostrar el enlace
                         return `<a href="${data["license_driver"]}" target="_blank" class="btn btn-info">
-                                <i class="fa-solid fa-download"></i> Descargar licencia
+                                <i class="fa-solid fa-eye"></i> Ver licencia
                             </a>`;
                     } else {
                         return "Sin Licencia de conducir";
@@ -251,7 +251,7 @@ function btn_edit_licence(boton) {
     if (data.license_driver) {
         $("#current_license_link").html(`
             <a href="${data.license_driver}" target="_blank" class="btn btn-info">
-                <i class="fa-solid fa-download"></i> Descargar licencia
+                <i class="fa-solid fa-eye"></i> Ver licencia
             </a>
         `);
     } else {

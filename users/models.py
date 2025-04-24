@@ -77,7 +77,6 @@ class Module(models.Model):
 
 class SubModule(models.Model):
     is_active = models.BooleanField(default=True)
-    short_name = models.CharField(max_length=32, null=True)
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=128, null=True, blank=True)
     module = models.ForeignKey(Module, related_name='submodules', on_delete=models.CASCADE)
