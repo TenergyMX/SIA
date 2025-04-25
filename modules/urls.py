@@ -11,5 +11,6 @@ urlpatterns = [
     path('', include('modules.views.infrastructure.urls')),
     path('', include('modules.views.equipment-and-tools.urls')),
     path('', include('modules.views.services.urls')),
+    path('', include('modules.views.charts.urls')),
 ]
 

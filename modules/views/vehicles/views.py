@@ -4171,6 +4171,19 @@ def add_vehicle_responsiva(request):
                 trip_purpose=dt.get("trip_purpose"),
                 start_date=dt.get("start_date")
             )
+            
+            #conditional last register
+            item = Vehicle_Responsive.objects.filter(vehicle__id=dt.get("vehicle_id")).order_by("-created_at").first()
+            if item:
+                if (int(dt.get("initial_mileage")) - int(item.final_mileage)) > 5:
+                    #TODO SE CUMPLIO LA CONDICIONAL")
+                    obj.initial_mileage = item.final_mileage
+                    obj.initial_fuel = item.final_fuel
+                    obj.start_date = item.end_date
+                    obj.final_mileage = dt.get("initial_mileage")
+                    obj.final_fuel = dt.get("initial_fuel")
+                    obj.end_date = dt.get("start_date")
+                    
             obj.save()
             obj_vehicle.mileage = dt.get("initial_mileage")
             obj_vehicle.save()
