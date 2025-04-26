@@ -980,6 +980,11 @@ def get_vehicle_tenencia(request):
     access = access["data"]["access"]
     for item in lista:
         item["btn_action"] = ""
+        if item["comprobante_pago"] :
+            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                <i class="fa-solid fa-file"></i> Comprobante 
+            </a>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-tenencia=\"update-item\">
                 <i class="fa-solid fa-pen"></i>
@@ -1014,6 +1019,11 @@ def get_vehicles_tenencia(request):
     access = access["data"]["access"]
     for item in lista:
         item["btn_action"] = ""
+        if item["comprobante_pago"] :
+            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                <i class="fa-solid fa-file"></i> Comprobante 
+            </a>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm mb-1\" data-vehicle-tenencia=\"update-item\">
                 <i class="fa-solid fa-pen"></i>
@@ -1150,6 +1160,11 @@ def get_vehicle_refrendo(request):
 
     for item in lista:
         item["btn_action"] = ""
+        if item["comprobante_pago"] :
+            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                <i class="fa-solid fa-file"></i> Comprobante 
+            </a>\n"""
         item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-refrendo=\"update-item\">
             <i class="fa-solid fa-pen"></i>
         </button>\n"""
@@ -1179,6 +1194,11 @@ def get_vehicles_refrendo(request):
     access = access["data"]["access"]
     for item in lista:
         item["btn_action"] = ""
+        if item["comprobante_pago"] :
+            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                <i class="fa-solid fa-file"></i> Comprobante 
+            </a>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-refrendo=\"update-item\">
                 <i class="fa-solid fa-pen"></i>
@@ -1321,6 +1341,11 @@ def get_vehicle_verificacion(request):
 
     for item in lista:
         item["btn_action"] = ""
+        if item["comprobante_pago"] :
+            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                <i class="fa-solid fa-file"></i> Comprobante 
+            </a>\n"""
         item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-verificacion=\"update-item\">
                 <i class="fa-solid fa-pen"></i>
             </button>\n"""
@@ -1356,6 +1381,12 @@ def get_vehicles_verificacion(request):
 
     for item in lista:
         item["btn_action"] = ""
+        if item["comprobante_pago"] :
+            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                <i class="fa-solid fa-file"></i> Comprobante 
+            </a>\n"""
+            
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-verificacion=\"update-item\">
                 <i class="fa-solid fa-pen"></i>
@@ -1801,11 +1832,13 @@ def get_vehicles_insurance(request):
 
     for item in lista:
         item["btn_action"] = ""
-        if item["doc"] != None:
+
+        if item["doc"] :
             tempDoc = generate_presigned_url(bucket_name, item["doc"])
-            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
-                <i class="fa-solid fa-file"></i> Ver documento
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
+                <i class="fa-solid fa-file"></i> Ver seguro
             </a>\n"""
+
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-insurance=\"update-item\">
                 <i class="fa-solid fa-pen"></i>
@@ -1846,7 +1879,7 @@ def get_vehicle_insurance(request):
 
     for item in lista:
         item["btn_action"] = ""
-        if item["doc"] != None:
+        if item["doc"] :
             tempDoc = generate_presigned_url(bucket_name, item["doc"])
             item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
                 <i class="fa-solid fa-file"></i> Ver seguro
@@ -1864,11 +1897,58 @@ def get_vehicle_insurance(request):
     return JsonResponse(response)
 
 
+
 def update_vehicle_insurance(request):
     response = {"success": False, "data": []}
-    dt = request.GET
-    vehicle_id = dt.get("vehicle_id", None)
+    dt = request.POST
+    id = dt.get("id")
+
+    if not id:
+        response["error"] = {"message": "No se proporcionó un ID de seguro de vehículo"}
+        return JsonResponse(response)
+
+    try:
+        obj = Vehicle_Insurance.objects.get(id=id)
+        obj.vehicle_id = dt.get("vehicle_id", obj.vehicle_id)
+        obj.responsible_id = dt.get("responsible_id", obj.responsible_id)
+        obj.policy_number = dt.get("policy_number", obj.policy_number)
+        obj.insurance_company = dt.get("insurance_company", obj.insurance_company)
+        obj.cost = dt.get("cost", obj.cost)
+        obj.validity = dt.get("validity", obj.validity)
+        obj.start_date = dt.get("start_date", obj.start_date)
+        obj.end_date = dt.get("end_date", obj.end_date)
+
+        # Si hay un nuevo archivo adjunto
+        if 'doc' in request.FILES:
+            load_file = request.FILES['doc']
+            company_id = request.session.get('company').get('id')
+            folder_path = f'docs/{company_id}/vehicle/{obj.vehicle_id}/seguro/'
+            file_name, extension = os.path.splitext(load_file.name)
+            new_name = f"doc_{obj.id}{extension}"
+            s3Name = folder_path + new_name
+
+            upload_to_s3(load_file, bucket_name, s3Name)
+            obj.doc = s3Name
+
+        obj.save()
+
+        # Actualizar info también en el vehículo
+        vehicle = obj.vehicle
+        vehicle.policy_number = obj.policy_number
+        vehicle.validity = obj.end_date
+        vehicle.insurance_company = obj.insurance_company
+        vehicle.save()
+
+        response["success"] = True
+        response["id"] = obj.id
+
+    except Vehicle_Insurance.DoesNotExist:
+        response["error"] = {"message": f"No se encontró el registro con ID {id}"}
+    except Exception as e:
+        response["error"] = {"message": str(e)}
+
     return JsonResponse(response)
+
 
 def delete_vehicle_insurance(request):
     response = {"success": False, "data": []}

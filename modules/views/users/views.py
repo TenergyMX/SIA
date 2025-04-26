@@ -945,43 +945,46 @@ def delete_plans(request):
 
 # Función para la tabla de empresas (Company)
 def get_companys(request):
-    response = {"success": False, "message": "Sin procesar"}
     try:
-        isList = request.GET.get("isList", False)
-        
-        # Obtener los datos de las compañías
-        if isList:
-            lista = Company.objects.values("id", "name", "address")
-        else:
-            lista = Company.objects.values()
+        isList = request.GET.get("isList", "") == "true"
 
-            for item in lista:
-                item["btn_action"] = (
+        if isList:
+            lista = Company.objects.values("id", "name", "address", "email_company")
+        else:
+            lista = Company.objects.values("id", "name", "address", "email_company")
+
+        datos = []
+        for item in lista:
+            datos.append({
+                "id": item["id"],
+                "name": item["name"],
+                "address": item["address"],
+                "email_company": item["email_company"],  # <-- Aquí lo agregamos
+                "btn_action": (
                     "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_companys(this)' aria-label='edit'>"
                     "<i class='fa-solid fa-pen'></i>"
                     "</button>\n"
                     "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_company(this)' aria-label='delete'>"
                     "<i class='fa-solid fa-trash'></i>"
                     "</button>"
-                )
+                ) if not isList else ""
+            })
 
-        # Preparar la respuesta con los datos de las empresas
-        response["data"] = list(lista)
-        response["success"] = True
-        response["message"] = "Datos cargados exitosamente"
-    
+        return JsonResponse({"data": datos})
     except Exception as e:
-        response["message"] = str(e)
+        return JsonResponse({"data": [], "error": str(e)})
 
-    # Devolver la respuesta en formato JSON
-    return JsonResponse(response)
+
 
 #funcion para agregar empresas
 @login_required
 def add_company(request):
+    print("la funcion para agregar empresa esta siendo llamada")
     context = user_data(request)
 
     if request.method == 'POST':
+        print("Datos POST recibidos:", request.POST) 
+        print("Email recibido para agregar empresa:", request.POST.get('email_company'))
         try:
             name_company = request.POST.get('name').strip()
             addres_company = request.POST.get('address')
@@ -1003,6 +1006,7 @@ def add_company(request):
                 company = Company.objects.create(
                     name=name_company,
                     address=addres_company,
+                    email_company=email_user,
 
                 )
 
@@ -1134,23 +1138,15 @@ def edit_company(request):
     return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
 
 #funcion para eliminar las empresas
-@login_required
+@csrf_exempt
 def delete_company(request):
-    if request.method == 'POST':
-        form = request.POST
-        _id = form.get('id')
-
-        if not _id:
-            return JsonResponse({'success': False, 'message': 'No ID provided'})
-
+    if request.method == "POST":
         try:
-            category = Company.objects.get(id=_id)
-        except Company.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Category not found'})
-
-        category.delete()
-
-        return JsonResponse({'success': True, 'message': 'Empresa eliminada correctamente!'})
-
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+            body = json.loads(request.body)
+            company_id = body.get("id")
+            Company.objects.filter(id=company_id).delete()
+            return JsonResponse({"success": True, "message": "Empresa eliminada correctamente."})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)})
+    return JsonResponse({"success": False, "message": "Método no permitido."})
 
