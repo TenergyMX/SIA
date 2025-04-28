@@ -114,6 +114,12 @@ class Vehicle_Verificacion(models.Model):
     comprobante_pago = models.FileField(upload_to='docs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     email_verificacion = models.BooleanField(default=False)
+    STATUS_CHOICES = [
+        ('PENDIENTE','Pendiente'),
+        ('PAGADO','Pagado'),
+        ('PROXIMO','Próximo'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDIENTE')
 
     def __str__(self):
         return f"Verificación vehicular para {self.vehiculo}"

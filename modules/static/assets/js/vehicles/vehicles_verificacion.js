@@ -3,6 +3,8 @@ class VehiclesVerificacion {
         "use strict";
 
         const self = this;
+        self.filtro_estado = 'todos';
+        
         const defaultOptions = {
             infoCard: {
                 id: null,
@@ -13,12 +15,13 @@ class VehiclesVerificacion {
                     url: function () {
                         return "/get_vehicles_verificacion/";
                     },
-                    data: function () {
+                    data: function (d) {
                         return {
-                            vehicle_id: defaultOptions.info.id || defaultOptions.info.vehicle_id,
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado
                         };
                     },
-                    reload: function () {},
                 },
             },
 
@@ -30,7 +33,13 @@ class VehiclesVerificacion {
                 ajax: {
                     url: "/get_vehicles_verificacion/",
                     dataSrc: "data",
-                    data: {},
+                    data: function(d) {
+                        return {
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado
+                        };
+                    },
                 },
                 columns: [
                     { title: "ID", data: "id", visible: false },
@@ -38,7 +47,7 @@ class VehiclesVerificacion {
                     { title: "Engomado", data: "engomado" },
                     { title: "Periodo", data: "periodo" },
                     { title: "Fecha de pago", data: "fecha_pago" },
-                    { title: "lugar", data: "lugar" },
+                    { title: "Lugar", data: "lugar" },
                     { title: "Monto", data: "monto" },
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
@@ -48,59 +57,91 @@ class VehiclesVerificacion {
             },
         };
 
+        // Merge de opciones
+        this.table = { ...defaultOptions.table, ...(options.table || {}) };
+        this.vehicle = { ...defaultOptions.vehicle, ...(options.vehicle || {}) };
+        
         if (options.infoCard) {
-            self.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
+            this.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
         }
 
-        if (options.table) {
-            self.table = { ...defaultOptions.table, ...options.table };
-
-            if (self.table.vehicle.id) {
-                self.table.ajax.url = "/get_vehicle_verificacion/";
-                self.table.ajax.data = {
-                    vehicle_id: self.table.vehicle.id,
+        // Configuración especial si hay un vehicle.id
+        if (this.table.vehicle?.id) {
+            this.table.ajax.url = "/get_vehicle_verificacion/";
+            const originalDataFn = this.table.ajax.data;
+            this.table.ajax.data = function(d) {
+                const baseParams = originalDataFn ? originalDataFn(d) : d;
+                return {
+                    ...baseParams,
+                    vehicle_id: self.table.vehicle.id
                 };
+            };
 
-                // Buscar el índice del elemento que quieres eliminar
-                let indexToRemove = self.table.columns.findIndex(function (column) {
-                    return column.title === "Vehiculo" && column.data === "vehicle__name";
-                });
-
-                // Si se encontró el índice, eliminar el elemento del array
-                if (indexToRemove !== -1) {
-                    self.table.columns.splice(indexToRemove, 1);
-                }
+            // Eliminar columna de vehículo si es necesario
+            const indexToRemove = this.table.columns.findIndex(
+                column => column.title === "Vehículo" && column.data === "vehiculo__name"
+            );
+            if (indexToRemove !== -1) {
+                this.table.columns.splice(indexToRemove, 1);
             }
         }
 
-        if (options.vehicle) {
-            self.vehicle = { ...defaultOptions.vehicle, ...options.vehicle };
-        }
-
-        self.init();
+        this.init();
     }
 
     init() {
         const self = this;
 
+        // Inicializar contadores
+        self.updateCounters({
+            total: 0,
+            pagadas: 0,
+            vencidas: 0,
+            proximas: 0,
+            pendientes: 0
+        });
+
         if (self.table) {
             self.tbl_verificacion = $(self.table.id).DataTable({
                 ajax: {
                     url: self.table.ajax.url,
-                    dataSrc: self.table.ajax.dataSrc,
-                    data: self.table.ajax.data,
+                    data: function(d) {
+                        const baseData = typeof self.table.ajax.data === 'function' 
+                            ? self.table.ajax.data(d) 
+                            : self.table.ajax.data || {};
+                        return {
+                            ...d,
+                            ...baseData,
+                            tipo_carga: self.filtro_estado
+                        };
+                    },
+                    dataSrc: function(json) {
+                        // Actualizar contadores cuando se cargan los datos
+                        if (json.counters) {
+                            self.updateCounters(json);
+                        }
+                        return json.data;
+                    }
                 },
                 columns: self.table.columns,
-                order: [
-                    [0, "desc"],
-                    [1, "asc"],
-                ],
+                order: [[0, "desc"]],
                 language: {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
                 },
             });
-            delete self.table;
         }
+
+        // Configurar eventos de filtro
+        $(".filter-card").off("click").on("click", function() {
+            const status = $(this).data("status");
+            $(".filter-card").removeClass("active");
+            $(this).addClass("active");
+            self.filtro_estado = status;
+            
+            if (self.tbl_verificacion) {
+                self.tbl_verificacion.ajax.reload();
+            }
+        });
 
         if (self.vehicle && self.vehicle.data.id) {
             $('#mdl_crud_verificacion [name="vehiculo_id"]').hide();
@@ -110,6 +151,7 @@ class VehiclesVerificacion {
             $('#mdl_crud_verificacion [name="vehiculo__name"]').hide();
         }
 
+        // Cargar calendario de verificación
         try {
             $.ajax({
                 type: "GET",
@@ -117,13 +159,26 @@ class VehiclesVerificacion {
                 success: function (response) {
                     self.cv = response["data"];
                 },
+                error: function() {
+                    console.error("Error al cargar calendario de verificación");
+                }
             });
         } catch (error) {
-            console.log("error al obtener calendario");
+            console.error("Error al obtener calendario:", error);
         }
 
         $('#mdl_crud_verificacion [name="vehiculo__name"]').prop("readonly", true);
         self.setupEventHandlers();
+    }
+
+    updateCounters(data) {
+        const counters = data.counters || data;
+        
+        $('#counter-todas').text(counters.total || 0);
+        $('#counter-pagadas').text(counters.pagadas || 0);
+        $('#counter-vencidas').text(counters.vencidas || 0);
+        $('#counter-proximas').text(counters.proximas || 0);
+        $('#counter-pendientes').text(counters.pendientes || 0);
     }
 
     setupEventHandlers() {
@@ -136,15 +191,17 @@ class VehiclesVerificacion {
 
             switch (option) {
                 case "refresh-table":
-                    self.tbl_verificacion.ajax.reload();
+                    if (self.tbl_verificacion) {
+                        self.tbl_verificacion.ajax.reload();
+                    }
                     break;
+                    
                 case "add-item":
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Registrar verificacionoria vehicular");
+                    obj_modal.find(".modal-header").html("Registrar verificación vehicular");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
-                    obj_modal.find('[name="actions[]"]').trigger("change");
 
                     if (self.vehicle && self.vehicle.data.id) {
                         obj_modal.find('[name="vehiculo_id"]').hide();
@@ -154,15 +211,12 @@ class VehiclesVerificacion {
                         obj_modal.find('[name="vehiculo__name"]').hide();
                     }
 
-                    obj_modal
-                        .find("[name='vehiculo_id']")
-                        .val(self.vehicle.data.vehicle_id || null);
-                    obj_modal
-                        .find("[name='vehiculo__name']")
-                        .val(self.vehicle.data.vehicle__name || null);
+                    obj_modal.find("[name='vehiculo_id']").val(self.vehicle.data.vehicle_id || null);
+                    obj_modal.find("[name='vehiculo__name']").val(self.vehicle.data.vehicle__name || null);
                     $('select[name="vehiculo_id"]').trigger("change");
                     $("select[name='engomado']").trigger("change");
                     break;
+                    
                 case "update-item":
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
@@ -175,7 +229,6 @@ class VehiclesVerificacion {
 
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
-
                         if (!isFileInput) {
                             obj_modal.find(`[name='${index}']`).val(value);
                         }
@@ -185,6 +238,7 @@ class VehiclesVerificacion {
                     obj_modal.find('[name="vehiculo__name"]').show();
                     obj_modal.find('[name="engomado"]').trigger("change");
                     break;
+                    
                 case "delete-item":
                     var url = "/delete_vehicle_verificacion/";
                     var fila = $(this).closest("tr");
@@ -196,15 +250,16 @@ class VehiclesVerificacion {
 
                     deleteItem(url, data)
                         .then((message) => {
-                            Swal.fire("Exito", message, "success");
+                            Swal.fire("Éxito", message, "success");
                             self.tbl_verificacion.ajax.reload();
                         })
                         .catch((error) => {
                             Swal.fire("Error", error, "error");
                         });
                     break;
+                    
                 default:
-                    console.log("Opcion dezconocida:" + option);
+                    console.log("Opción desconocida:", option);
             }
         });
 
@@ -221,19 +276,20 @@ class VehiclesVerificacion {
         });
 
         $(document).on("change", "[name='vehiculo_id']", function (e) {
-            // e.preventDefault();
             const obj = $(this);
             const option = obj.find("option:selected");
             var plate = option.data("plate");
             var d = self.getUltimoDigito(plate);
-            var datos = self.cv[d];
-
-            obj_modal.find("[name='engomado']").val(datos["engomado_ES"]).trigger("change");
-            obj_modal.find(".col-alert-verifiacion .message").html(`
-                Verificación:
-                1er semestre (${datos["s1"][0]["month_name_ES"]} - ${datos["s1"][1]["month_name_ES"]}) y
-                2do semestre (${datos["s2"][0]["month_name_ES"]} - ${datos["s2"][1]["month_name_ES"]})
-            `);
+            
+            if (self.cv && self.cv[d]) {
+                var datos = self.cv[d];
+                obj_modal.find("[name='engomado']").val(datos["engomado_ES"]).trigger("change");
+                obj_modal.find(".col-alert-verifiacion .message").html(`
+                    Verificación:<br>
+                    1er semestre (${datos["s1"][0]["month_name_ES"]} - ${datos["s1"][1]["month_name_ES"]})<br>
+                    2do semestre (${datos["s2"][0]["month_name_ES"]} - ${datos["s2"][1]["month_name_ES"]})
+                `);
+            }
         });
 
         obj_modal.find("form").on("submit", function (e) {
@@ -249,18 +305,14 @@ class VehiclesVerificacion {
                 processData: false,
                 contentType: false,
                 success: function (response) {
-                    if (!response.success && response.error) {
-                        Swal.fire("Error", response.error["message"], "error");
-                        return;
-                    } else if (!response.success && response.warning) {
-                        Swal.fire("Advertencia", response.warning["message"], "warning");
-                        return;
-                    } else if (!response.success) {
-                        
-                        Swal.fire("Error", "Ocurrio un error inesperado", "error");
+                    if (!response.success) {
+                        const message = response.error?.message || response.warning?.message || "Ocurrió un error inesperado";
+                        const type = response.error ? "error" : "warning";
+                        Swal.fire(type === "error" ? "Error" : "Advertencia", message, type);
                         return;
                     }
-                    Swal.fire("Exito", "Se han guardado los datos con exito", "success");
+                    
+                    Swal.fire("Éxito", "Se han guardado los datos correctamente", "success");
                     self.tbl_verificacion.ajax.reload();
                     obj_modal.modal("hide");
                 },
@@ -275,21 +327,15 @@ class VehiclesVerificacion {
         });
     }
 
-    calcEngomado() {}
-
     getUltimoDigito(plate) {
-        // Obtener el valor de la propiedad 'plate' del objeto diccionario
-        var plate = plate || "";
-
-        // Recorrer la cadena 'plate' en reversa
+        if (!plate) return "0"; // Valor por defecto
+        
         for (var i = plate.length - 1; i >= 0; i--) {
             var char = plate[i];
-            // Verificar si el carácter es un dígito
             if (/\d/.test(char)) {
                 return char;
             }
         }
-        // Devolver false si no se encuentra ningún dígito
-        return false;
+        return "0"; // Valor por defecto si no encuentra dígitos
     }
 }
