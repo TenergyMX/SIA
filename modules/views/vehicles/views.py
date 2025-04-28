@@ -1479,50 +1479,50 @@ def get_vehicles_verificacion(request):
 
     # Consulta base con todos los registros según permisos
     base_query = Vehicle_Verificacion.objects.all()
-    
+
     # Filtros por permisos
     if context["role"]["id"] in [1, 2, 3]:
         base_query = base_query.filter(vehiculo__company_id=context["company"]["id"])
     else:
         base_query = base_query.filter(vehiculo__responsible_id=context["user"]["id"])
 
-    # Calcular contadores usando el campo status y fechas
+    # Calcular contadores
     response["counters"] = {
         "total": base_query.count(),
         "pagadas": base_query.filter(status='PAGADO').count(),
         "proximas": base_query.filter(
             status='PROXIMO',
-            fecha_pago__range=[hoy, un_mes_despues]
+            fecha_pago__gt=hoy
         ).count(),
         "vencidas": base_query.filter(
             status='PROXIMO',
             fecha_pago__lt=hoy
         ).count(),
         "pendientes": base_query.filter(
-            status='PROXIMO',
-            fecha_pago__gt=un_mes_despues
+            status='PROXIMO'
+        ).filter(
+            Q(fecha_pago__isnull=True) | Q(fecha_pago__gt=un_mes_despues)
         ).count()
     }
 
-    # Filtrar la lista según el tipo_carga
+    # Lista de resultados
     lista = base_query.values(
         "id", "engomado", "periodo", "lugar", "status",
         "vehiculo_id", "vehiculo__name",
         "monto", "fecha_pago", "comprobante_pago"
     ).order_by('-fecha_pago')
 
+    # Filtro por vehículo
     if vehicle_id:
         lista = lista.filter(vehiculo_id=vehicle_id)
 
-
-    print("todas las verificacion", lista)
-    # Filtros optimizados usando el campo status
+    # Filtro por tipo_carga
     if tipo_carga == "pagadas":
         lista = lista.filter(status='PAGADO')
     elif tipo_carga == "vencidas":
         lista = lista.filter(status='PROXIMO', fecha_pago__lt=hoy)
     elif tipo_carga == "proximas":
-        lista = lista.filter(status='PROXIMO', fecha_pago__range=[hoy, un_mes_despues])
+        lista = lista.filter(status='PROXIMO', fecha_pago__gt=hoy)
     elif tipo_carga == "pendientes":
         lista = lista.filter(status='PROXIMO').filter(
             Q(fecha_pago__isnull=True) | Q(fecha_pago__gt=un_mes_despues)
@@ -1533,33 +1533,39 @@ def get_vehicles_verificacion(request):
     access = access["data"]["access"]
 
     # Preparar datos de respuesta
+    result = []
     for item in lista:
-        # Determinar estado para frontend basado en status y fechas
+        # Estado
         if item["status"] == 'PAGADO':
             item["estado"] = "pagada"
         elif item["status"] == 'PROXIMO':
-            if item["fecha_pago"] and item["fecha_pago"] < hoy:
-                item["estado"] = "vencida"
-            elif item["fecha_pago"] and item["fecha_pago"] <= un_mes_despues:
-                item["estado"] = "proxima"
+            if item["fecha_pago"]:
+                if item["fecha_pago"] < hoy:
+                    item["estado"] = "vencida"
+                elif item["fecha_pago"] > hoy:
+                    item["estado"] = "proxima"
+                # Aquí ya no limitamos a un mes
             else:
                 item["estado"] = "pendiente"
-
-        # Botones de acción según permisos
+        
+        # Botones de acción
         item["btn_action"] = ""
-        if access["update"]:
-            item["btn_action"] += """<button class="btn btn-primary btn-sm" data-vehicle-verificacion="update-item">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
-        if access["delete"]:
-            item["btn_action"] += """<button class="btn btn-danger btn-sm" data-vehicle-verificacion="delete-item">
-                <i class="fa-solid fa-trash"></i>
-            </button>"""
+        if access.get("update", False):
+            item["btn_action"] += """
+                <button class="btn btn-primary btn-sm" data-vehicle-verificacion="update-item">
+                    <i class="fa-solid fa-pen"></i>
+                </button>\n"""
+        if access.get("delete", False):
+            item["btn_action"] += """
+                <button class="btn btn-danger btn-sm" data-vehicle-verificacion="delete-item">
+                    <i class="fa-solid fa-trash"></i>
+                </button>"""
 
-    response["data"] = list(lista)
+        result.append(item)
+
+    response["data"] = result
     response["success"] = True
     return JsonResponse(response, safe=False)
-
 def update_vehicle_verificacion(request):
     response = {"success": False}
     dt = request.POST
