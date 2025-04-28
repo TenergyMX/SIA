@@ -3393,7 +3393,7 @@ def sendEmail_UpdateKilometer(request, subject, to_send, vehicle):
     </head>
     <body>
         <div class="container">
-            <img src="{domain}/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
+            <img src="{domain}/staticfiles/assets/images/brand-logos/CS_LOGO.png" alt="Logo">
             <h2>{vehicle.name}</h2>
             <p>Responsable del vehiculo: {responsable}</p>
             <p>El vehículo está próximo a alcanzar el kilometraje para su revisión, por lo que es necesario programar el mantenimiento correspondiente</p>
