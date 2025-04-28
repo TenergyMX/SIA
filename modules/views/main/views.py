@@ -635,8 +635,8 @@ def get_notifications(request):
                     "alert": "danger",
                     "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
                     "title": "Vehículo sin seguro",
-                    "text": f"Vehículo: {vehicle['name']}",  
-                    "link": f"/vehicles/info/{vehicle['id']}/" 
+                    "text": f"Vehículo: {vehicle['name']}",
+                    "link": f"/vehicles/info/{vehicle['id']}/"
                 })
 
                 vehicle_instance = Vehicle.objects.get(id=vehicle["id"])
