@@ -1,14 +1,24 @@
 $(document).ready(function () {});
 
 //Función para mostrar la tabla del historial de pagos de servicios
-function show_history_payments(button) {
-    var row = $(button).closest("tr");
-    var data = $("#table_services").DataTable().row(row).data();
-    if (!data || !data.id) {
-        console.error("No se pudo obtener datos o el ID del servicio no está disponible.");
-        return; // Termina la ejecución de la función si no hay datos válidos
+// Función para mostrar la tabla del historial de pagos de servicios
+function show_history_payments(serviceIdOrButton) {
+    var serviceId;
+
+    // Determinar si el parámetro es un botón (elemento DOM) o un ID directo
+    if (typeof serviceIdOrButton === "object" && serviceIdOrButton.nodeType === 1) {
+        // Es un elemento DOM (botón)
+        var row = $(serviceIdOrButton).closest("tr");
+        var data = $("#table_services").DataTable().row(row).data();
+        if (!data || !data.id) {
+            console.error("No se pudo obtener datos o el ID del servicio no está disponible.");
+            return;
+        }
+        serviceId = data.id;
+    } else {
+        // Asumimos que es el serviceId directamente
+        serviceId = serviceIdOrButton;
     }
-    var serviceId = data.id;
 
     $.ajax({
         url: "/get_payment_history/" + serviceId + "/",
@@ -17,26 +27,14 @@ function show_history_payments(button) {
             var tbody = $("#table-history-payments tbody");
             tbody.empty();
 
+            // Guardar el serviceId en la tabla para usarlo luego en editPayment
+            $("#table-history-payments").data("service-id", serviceId);
+
             if (response.length > 0) {
                 response.forEach(function (payment) {
-                    var actionButton = "";
-
-                    if (!payment.proof_payment) {
-                        actionButton = `
-                            <button class="btn btn-primary" onclick="uploadDocument(${payment.id})">
-                                <i class="fa-solid fa-upload"></i> Cargar Comprobante
-                            </button>
-                        `;
-                    } else if (payment.status_payment) {
-                        actionButton = `
-                            <a href="${payment.proof_payment}" target="_blank" class="btn btn-info">
-                                <i class="fa-solid fa-eye"></i> Ver Comprobante
-                            </a>
-                        `;
-                    }
-
                     // Determinar el texto que se debe mostrar para el estado de pago
                     var statusText = "";
+                    var badgeClass = "";
                     switch (payment.status_payment) {
                         case "pending":
                             statusText = "Pendiente";
@@ -61,21 +59,35 @@ function show_history_payments(button) {
                     }
                     statusText = `<span class="badge ${badgeClass}">${statusText}</span>`;
 
+                    // Botón para ver comprobante si existe
+                    var proofButton = payment.proof_payment
+                        ? `<a href="${payment.proof_payment}" target="_blank" class="btn btn-info btn-sm">
+                                <i class="fa-solid fa-eye"></i> Ver
+                            </a>`
+                        : '<span class="text-muted">Sin comprobante</span>';
+
                     tbody.append(
                         `<tr>
                             <td>${payment.id}</td>
                             <td>${
                                 payment.name_service_payment__name_service || "Nombre no disponible"
                             }</td>
-                            <td>${actionButton}</td>
+                            <td>${proofButton}</td>
                             <td>${payment.total_payment}</td>
                             <td>${payment.next_date_payment}</td>
                             <td>${statusText}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editPayment(${
+                                    payment.id
+                                }, ${serviceId})">  <!-- Pasamos serviceId aquí -->
+                                <i class="fa-solid fa-pen-to-square"></i> Editar
+                                </button>
+                            </td>
                         </tr>`
                     );
                 });
             } else {
-                tbody.html('<tr><td colspan="6">No hay historial de pagos.</td></tr>');
+                tbody.html('<tr><td colspan="7">No hay historial de pagos.</td></tr>');
             }
         },
         error: function () {
@@ -87,163 +99,157 @@ function show_history_payments(button) {
     $("#table-history-payments").show();
 }
 
-function uploadDocument(paymentId) {
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "application/pdf, image/*";
+// Función para editar el pago (modificada para aceptar serviceId)
+function editPayment(paymentId, serviceId) {
+    Swal.fire({
+        title: "Editar Pago",
+        html: `
+            <div class="mb-3">
+                <label for="edit-total" class="form-label">Costo total</label>
+                <input type="number" step="0.01" class="form-control" id="edit-total" placeholder="Ingrese el costo">
+            </div>
+            <div class="mb-3">
+                <label for="edit-proof" class="form-label">Comprobante de pago</label>
+                <input type="file" class="form-control" id="edit-proof" accept="application/pdf, image/*">
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Guardar",
+        cancelButtonText: "Cancelar",
+        preConfirm: () => {
+            const total = document.getElementById("edit-total").value;
+            const fileInput = document.getElementById("edit-proof");
+            const file = fileInput.files[0];
 
-    fileInput.onchange = function () {
-        const file = fileInput.files[0];
-        if (file) {
+            if (!total && !file) {
+                Swal.showValidationMessage("Debe ingresar al menos un valor a actualizar");
+                return false;
+            }
+
             const formData = new FormData();
-            formData.append("proof_payment", file);
+            if (total) formData.append("total_payment", total);
+            if (file) formData.append("proof_payment", file);
 
-            $.ajax({
-                url: "/upload-payment-proof/" + paymentId + "/",
+            return fetch(`/update-payment/${paymentId}/`, {
                 method: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    if (response.success) {
-                        Swal.fire({
-                            title: "¡Éxito!",
-                            text: "Comprobante subido correctamente.",
-                            icon: "success",
-                            timer: 1500,
-                        });
-
-                        // Actualizar el botón directamente en la tabla
-                        const row = $("#table-history-payments tbody tr").filter(function () {
-                            return $(this).find("td").first().text() == paymentId;
-                        });
-
-                        // Cambiar el contenido del enlace del botón temporalmente
-                        const loadingHtml = `<button class="btn btn-secondary" disabled>Procesando...</button>`;
-                        row.find("td:eq(2)").html(loadingHtml);
-
-                        // Validar el enlace del comprobante después de un breve retraso
-                        setTimeout(function () {
-                            validatePaymentLink(paymentId);
-                        }, 2000);
-                    } else {
-                        Swal.fire({
-                            title: "¡Error!",
-                            text: response.message,
-                            icon: "error",
-                            showConfirmButton: false,
-                        });
+                body: formData,
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(response.statusText);
                     }
-                },
-                error: function () {
-                    alert("Error al subir el comprobante.");
-                    Swal.fire({
-                        title: "¡Error!",
-                        text: "Error al subir el comprobante.",
-                        icon: "error",
-                        showConfirmButton: false,
-                    });
-                },
-            });
-        } else {
+                    return response.json();
+                })
+                .catch((error) => {
+                    Swal.showValidationMessage(`Error: ${error}`);
+                });
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
             Swal.fire({
-                title: "¡Error!",
-                text: "No se seleccionó ningún archivo.",
-                icon: "error",
-                showConfirmButton: false,
+                title: "¡Éxito!",
+                text: "Pago actualizado correctamente",
+                icon: "success",
+                timer: 1500,
+            }).then(() => {
+                // Recargar la tabla usando el serviceId que recibimos como parámetro
+                show_history_payments(serviceId);
             });
         }
-    };
-
-    fileInput.click();
+    });
 }
 
-function validatePaymentLink(paymentId) {
-    $.ajax({
-        url: "/get-proof-payment/" + paymentId + "/",
-        method: "GET",
-        success: function (response) {
-            if (response.success) {
-                // Actualizar el botón con el enlace correcto
-                const row = $("#table-history-payments tbody tr").filter(function () {
-                    return $(this).find("td").first().text() == paymentId;
-                });
+// Función para editar el pago (costo y documento)
+function editPayment(paymentId, serviceId) {
+    Swal.fire({
+        title: "Editar Pago",
+        html: `
+            <div class="mb-3">
+                <label for="edit-total" class="form-label">Costo total</label>
+                <input type="number" step="0.01" class="form-control" id="edit-total" placeholder="Ingrese el costo">
+            </div>
+            <div class="mb-3">
+                <label for="edit-proof" class="form-label">Comprobante de pago</label>
+                <input type="file" class="form-control" id="edit-proof" accept="application/pdf, image/*">
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Guardar",
+        cancelButtonText: "Cancelar",
+        preConfirm: () => {
+            const total = document.getElementById("edit-total").value;
+            const fileInput = document.getElementById("edit-proof");
+            const file = fileInput.files[0];
 
-                const linkHtml = `
-                    <a href="${response.proof_payment}" target="_blank" class="btn btn-info">
-                        <i class="fa-solid fa-eye"></i> Ver Comprobante
-                    </a>
-                `;
-                row.find("td:eq(2)").html(linkHtml);
-                row.find("td:eq(5)").text("Pagado");
-            } else {
-                console.error("El comprobante aún no está disponible.");
+            if (!total && !file) {
+                Swal.showValidationMessage("Debe ingresar al menos un valor a actualizar");
+                return false;
             }
+
+            const formData = new FormData();
+            if (total) formData.append("total_payment", total);
+            if (file) formData.append("proof_payment", file);
+
+            return fetch(`/update-payment/${paymentId}/`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(response.statusText);
+                    }
+                    return response.json();
+                })
+                .catch((error) => {
+                    Swal.showValidationMessage(`Error: ${error}`);
+                });
         },
-        error: function () {
-            console.error("Error al validar el enlace del comprobante.");
-        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: "¡Éxito!",
+                text: "Pago actualizado correctamente",
+                icon: "success",
+                timer: 1500,
+            }).then(() => {
+                // Refrescar la tabla después de editar
+                show_history_payments(serviceId);
+            });
+        }
     });
+}
+
+// Función auxiliar para obtener el token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 //funcion para el boton de regresar
 function show_services_table() {
-    // Ocultar la sección del historial de pagos
     $("#table-history-payments").hide();
-
-    // Mostrar la tabla de servicios
     $("#table_services").closest(".card").show();
-
-    // Recargar la tabla de servicios, si es necesario
     $("#table_services").DataTable().ajax.reload();
 }
 
 function exportToExcel() {
     const table = document.getElementById("table-history-payments");
-
-    // Crear un libro de trabajo
     const wb = XLSX.utils.table_to_book(table, { sheet: "Historial de Pagos" });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-
-    // Aplicar formato a los encabezados
-    const range = XLSX.utils.decode_range(ws["!ref"]);
-    for (let col = range.s.c; col <= range.e.c; col++) {
-        const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
-        if (cell) {
-            cell.s = {
-                fill: {
-                    fgColor: { rgb: "FFFF00" }, // Color de fondo amarillo
-                },
-                font: {
-                    bold: true,
-                    color: { rgb: "000000" }, // Color de fuente negro
-                    sz: 12, // Tamaño de fuente
-                    name: "Arial", // Tipo de fuente
-                },
-                alignment: {
-                    horizontal: "center",
-                    vertical: "center",
-                },
-                border: {
-                    top: { style: "thin", color: { rgb: "000000" } },
-                    bottom: { style: "thin", color: { rgb: "000000" } },
-                    left: { style: "thin", color: { rgb: "000000" } },
-                    right: { style: "thin", color: { rgb: "000000" } },
-                },
-            };
-        }
-    }
-
-    // Ajustar el ancho de las columnas
-    ws["!cols"] = [
-        { wpx: 80 }, // Id de pago
-        { wpx: 150 }, // Nombre del servicio
-        { wpx: 120 }, // Comprobante de Pago
-        { wpx: 80 }, // Costo total
-        { wpx: 100 }, // Fecha de pago
-        { wpx: 100 }, // Estado de pago
-    ];
-
-    // Escribir el archivo
     XLSX.writeFile(wb, "historial_pagos.xlsx");
 }
