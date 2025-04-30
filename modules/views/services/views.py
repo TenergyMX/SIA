@@ -54,6 +54,71 @@ def category_services(request):
     return render(request, template , context) 
 
 
+def update_payment(request, payment_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método no permitido'}, status=405)
+    
+    try:
+        payment = get_object_or_404(Payments_Services, id=payment_id)
+        is_new_upload = False  # Flag para saber si es una nueva carga
+
+        # 1. Actualizar monto si está presente
+        if 'total_payment' in request.POST:
+            payment.total_payment = request.POST['total_payment']
+
+        # 2. Procesar archivo solo si se subió uno nuevo
+        if 'proof_payment' in request.FILES:
+            load_file = request.FILES['proof_payment']
+            is_new_upload = True
+
+            # Validar tipo de archivo
+            allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+            file_ext = os.path.splitext(load_file.name)[1].lower()
+            if file_ext not in allowed_extensions:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Solo se permiten archivos PDF, JPG, JPEG o PNG'
+                }, status=400)
+
+            # Eliminar archivo anterior si existe
+            if payment.proof_payment:
+                try:
+                    # Asumiendo que usas django-storages y S3
+                    payment.proof_payment.delete(save=False)
+                except Exception as e:
+                    print(f"Error al eliminar archivo anterior: {str(e)}")
+
+            # Generar ruta estructurada en S3
+            company_id = payment.name_service_payment.company.id
+            service_name = payment.name_service_payment.name_service.replace(' ', '_')
+            current_date = datetime.now().strftime('%Y%m%d_%H%M%S')  # Agregamos hora para mayor unicidad
+            
+            folder_path = f"docs/{company_id}/services/proof_payment/{service_name}/"
+            file_name = f"comprobante_{service_name}_{current_date}{file_ext}"
+            s3_path = folder_path + file_name
+
+            # Subir a S3
+            upload_to_s3(load_file, AWS_BUCKET_NAME, s3_path)
+            
+            # Guardar nueva ruta en la base de datos
+            payment.proof_payment = s3_path
+            payment.status_payment = 'paid'  # Actualizar estado automáticamente
+
+        payment.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Pago actualizado correctamente',
+            'is_new_upload': is_new_upload,
+            'proof_url': payment.proof_payment.url if payment.proof_payment else None
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al actualizar: {str(e)}'
+        }, status=500)
+
 #submodulo de servicios 
 @login_required
 def services(request):

@@ -54,5 +54,8 @@ urlpatterns = [
     path('get_services_categories_payments/', views.get_services_categories_payments),
     path('get_payment_history_grafic/', views.get_payment_history_grafic),
 
+    path('update-payment/<int:payment_id>/', views.update_payment, name='update_payment'),
+
+
 ]
 
