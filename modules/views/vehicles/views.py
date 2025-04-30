@@ -4252,9 +4252,6 @@ def update_vehicle_responsiva(request):
             return JsonResponse(response)
                 # Verificamos que el kilmetraje sea coherente
         mileage = Decimal(dt.get("final_mileage")) if dt.get("final_mileage") else None
-        print(mileage)
-        print(obj_vehicle.mileage)
-        print("estos son los kilometrajes")
         if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
             response["status"] = "warning"
             response["type"] = "kilometraje"
@@ -4266,59 +4263,74 @@ def update_vehicle_responsiva(request):
         return JsonResponse(response)
 
     # Iniciar transacción
-    try:
-        with transaction.atomic():
-            obj = Vehicle_Responsive.objects.get(id=dt.get("id"))
-            obj.final_mileage = dt.get("final_mileage")
-            obj.final_fuel = dt.get("final_fuel")
-            obj.end_date = dt.get("end_date")
+    #try:
+    #    with transaction.atomic():
+    obj = Vehicle_Responsive.objects.get(id=107)
+    obj.final_mileage = dt.get("final_mileage")
+    obj.final_fuel = dt.get("final_fuel")
+    obj.end_date = dt.get("end_date")
 
-            # Verificar si se recibió una firma para actualizar
-            if 'signature' in request.FILES and request.FILES['signature']:
-                load_file = request.FILES.get('signature')
-                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
-                file_name, extension = os.path.splitext(load_file.name)
+    # Verificar si se recibió una firma para actualizar
+    if 'signature' in request.FILES and request.FILES['signature']:
+        load_file = request.FILES.get('signature')
+        folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+        file_name, extension = os.path.splitext(load_file.name)
 
-                new_name = f"signature{extension}"
-                # Crear el hilo para cargar la imagen
-                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
-                thread.start()
+        new_name = f"signature{extension}"
+        # Crear el hilo para cargar la imagen
+        thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+        thread.start()
 
-                obj.signature = folder_path + new_name
+        obj.signature = folder_path + new_name
 
-            # Verificar si se recibió la primera imagen de salida
-            if 'image_path_entry_1' in request.FILES and request.FILES['image_path_entry_1']:
-                load_file = request.FILES.get('image_path_entry_1')
-                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
-                file_name, extension = os.path.splitext(load_file.name)
+    # Verificar si se recibió la primera imagen de salida
+    if 'image_path_entry_1' in request.FILES and request.FILES['image_path_entry_1']:
+        load_file = request.FILES.get('image_path_entry_1')
+        folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+        file_name, extension = os.path.splitext(load_file.name)
 
-                new_name = f"entrada_1{extension}"
-                # Crear el hilo para cargar la imagen
-                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
-                thread.start()
+        new_name = f"entrada_1{extension}"
+        # Crear el hilo para cargar la imagen
+        thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+        thread.start()
 
-                obj.image_path_entry_1 = folder_path + new_name
+        obj.image_path_entry_1 = folder_path + new_name
 
-            # Verificar si se recibió la segunda imagen de salida
-            if 'image_path_entry_2' in request.FILES and request.FILES['image_path_entry_2']:
-                load_file = request.FILES.get('image_path_entry_2')
-                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
-                file_name, extension = os.path.splitext(load_file.name)
+    # Verificar si se recibió la segunda imagen de salida
+    if 'image_path_entry_2' in request.FILES and request.FILES['image_path_entry_2']:
+        load_file = request.FILES.get('image_path_entry_2')
+        folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/{obj.id}/"
+        file_name, extension = os.path.splitext(load_file.name)
 
-                new_name = f"entrada_2{extension}"
-                # Crear el hilo para cargar la imagen
-                thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
-                thread.start()
+        new_name = f"entrada_2{extension}"
+        # Crear el hilo para cargar la imagen
+        thread = threading.Thread(target=upload_images_in_background, args=(load_file, folder_path, new_name, AWS_BUCKET_NAME))
+        thread.start()
 
-                obj.image_path_entry_2 = folder_path + new_name
-            obj.save()
+        obj.image_path_entry_2 = folder_path + new_name
+    
+    obj.save()
+    
+    #Conditional, Check if the initial-final mileage diff +- 5
+    print("aqui entro")
+    if abs(int(obj.initial_mileage) - int(dt.get("final_mileage"))) <= 5:
+        Vehicle_Responsive(
+            vehicle = obj.vehicle,
+            responsible = obj.responsible,
+            initial_mileage = obj.final_mileage,
+            initial_fuel = obj.final_fuel,
+            destination = obj.destination,
+            trip_purpose = obj.trip_purpose,
+            start_date = obj.start_date
+        ).save()
+    print("aqui salgo")
 
-            response["id"] = obj.id
-            response["success"] = True
+    response["id"] = obj.id
+    response["success"] = True
 
-    except Exception as e:
-        response["success"] = False
-        response["error"] = {"message": str(e)}
+    #except Exception as e:
+    #    response["success"] = False
+    #    response["error"] = {"message": str(e)}
 
     return JsonResponse(response)
 
