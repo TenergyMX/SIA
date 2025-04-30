@@ -1257,7 +1257,141 @@ def delete_vehicle_refrendo(request):
     return JsonResponse(response)
 
 
+
+
 def add_vehicle_verificacion(request):
+    response = {"success": False}
+    dt = request.POST
+    vehicle_id = dt.get("vehiculo_id")
+
+    # 1) Obtener vehículo y compañía
+    try:
+        veh = Vehicle.objects.get(id=vehicle_id)
+        company_id = veh.company.id
+    except Vehicle.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "error": {"message": f"Vehículo {vehicle_id} no encontrado"}
+        })
+
+    # 2) Crear registro PAGADO
+    try:
+        pago = Vehicle_Verificacion.objects.create(
+            vehiculo=veh,
+            monto=dt.get("monto"),
+            engomado=dt.get("engomado"),
+            periodo=dt.get("periodo"),
+            fecha_pago=dt.get("fecha_pago"),
+            lugar=dt.get("lugar"),
+            status='PAGADO'
+        )
+
+        # 3) Subir comprobante (si existe) a S3
+        if 'comprobante_pago' in request.FILES:
+            f = request.FILES['comprobante_pago']
+            _, ext = os.path.splitext(f.name)
+            key = f"docs/{company_id}/vehicle/{vehicle_id}/verificacion/comprobante_{pago.id}{ext}"
+            upload_to_s3(f, bucket_name, key)
+            pago.comprobante_pago = key
+            pago.save()
+
+        # 4) Generar próximo pago con status='PROXIMO'
+        fecha_ref = pago.fecha_pago or timezone.now().date()
+        fecha_next, periodo_next = obtener_siguiente_pago(veh, fecha_ref)
+
+        Vehicle_Verificacion.objects.create(
+            vehiculo=veh,
+            monto=pago.monto,
+            engomado=pago.engomado,
+            periodo=periodo_next,
+            fecha_pago=fecha_next,
+            lugar=pago.lugar,
+            status='PROXIMO'
+        )
+
+        response["success"] = True
+        response["id"] = pago.id
+
+    except Exception as e:
+        response["error"] = {"message": str(e)}
+
+    return JsonResponse(response)
+
+_CALENDARIO = None
+def get_calendario_verificacion():
+    """
+    Carga una sola vez el JSON y lo deja cacheado en _CALENDARIO.
+    Imprime cuándo comienza y termina el proceso de lectura del JSON.
+    """
+    global _CALENDARIO
+    if _CALENDARIO is None:
+        print("==> Iniciando lectura del JSON calendario_de_verificacion.json...")
+        path = os.path.join(
+            settings.BASE_DIR,
+            "modules", "static", "assets", "json",
+            "calendario_de_verificacion.json"
+        )
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+            _CALENDARIO = data.get("data", {})
+        print("==> Lectura del JSON completada con éxito.")
+    return _CALENDARIO
+
+
+def obtener_siguiente_pago(vehiculo, fecha_referencia):
+    print(f"\n==> Obteniendo siguiente pago para vehículo con placa: {vehiculo.plate}")
+    calendario = get_calendario_verificacion()
+    placa = vehiculo.plate.strip().upper()
+
+    digitos = re.findall(r'\d', placa)
+    if not digitos:
+        raise ValueError(f"No se encontró dígito numérico en la placa '{vehiculo.plate}'")
+    ultimo_digito = digitos[-1]
+    print(f" - Último dígito de placa: {ultimo_digito}")
+
+    entry = calendario.get(ultimo_digito)
+    if not entry:
+        raise ValueError(f"No existe calendario para placa terminada en '{ultimo_digito}'")
+
+    print(f" - Engomado: {entry.get('engomado_ES', 'No definido')}")
+    print(f" - Meses S1: {[m.get('month_name_ES', '') for m in entry.get('s1', [])]}")
+    print(f" - Meses S2: {[m.get('month_name_ES', '') for m in entry.get('s2', [])]}")
+
+    sem1 = [m["month_code"] for m in entry["s1"]]
+    sem2 = [m["month_code"] for m in entry["s2"]]
+    
+    # Parsear fecha de referencia (acepta string o date)
+    fecha_ref = datetime.strptime(fecha_referencia, "%Y-%m-%d").date() if isinstance(fecha_referencia, str) else fecha_referencia
+    mes_ref = fecha_ref.month
+    anio_ref = fecha_ref.year
+
+    if mes_ref in sem1:
+        target_months = sem2
+        periodo = "2do semestre"  # Cambiado a texto descriptivo
+        anio_target = anio_ref
+    elif mes_ref in sem2:
+        target_months = sem1
+        periodo = "1er semestre"  # Cambiado a texto descriptivo
+        anio_target = anio_ref + 1
+    else:
+        # Si el mes actual no está en ningún semestre, elegir el próximo sem1 o sem2 más cercano
+        if mes_ref < min(sem1):
+            target_months = sem1
+            periodo = "1er semestre"
+            anio_target = anio_ref
+        else:
+            target_months = sem1
+            periodo = "1er semestre"
+            anio_target = anio_ref + 1
+
+    mes_target = min(target_months)
+    fecha_pago = date(anio_target, mes_target, 1)
+
+    print(f"==> Próxima verificación será en: {fecha_pago} para el {periodo} del {anio_target}\n")
+    return fecha_pago, periodo
+
+
+def add_vehicle_verificacion_BACK(request):
     response = {"success": False, "data": []}
     dt = request.POST
     vehicle_id = dt.get("vehiculo_id")
@@ -1314,7 +1448,7 @@ def get_vehicle_verificacion(request):
     ).values(
         "id", "engomado", "periodo", "lugar",
         "vehiculo_id", "vehiculo__name",
-        "monto", "fecha_pago", "comprobante_pago"
+        "monto", "fecha_pago", "comprobante_pago", "status"
     )
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
@@ -1333,83 +1467,203 @@ def get_vehicle_verificacion(request):
 
 def get_vehicles_verificacion(request):
     context = user_data(request)
-    response = {"success": False, "data": []}
+    response = {"success": False, "data": [], "counters": {}}
     dt = request.GET
     vehicle_id = dt.get("vehiculo_id", None)
+    tipo_carga = dt.get("tipo_carga", "todos")
     subModule_id = 7
 
-    lista = Vehicle_Verificacion.objects.values(
-        "id","engomado", "periodo", "lugar",
-        "vehiculo_id", "vehiculo__name",
-        "monto", "fecha_pago", "comprobante_pago"
-    )
+    # Obtener fechas de referencia
+    hoy = timezone.now().date()
+    un_mes_despues = hoy + timedelta(days=30)
 
-    if context["role"]["id"] in [1,2,3]:
-        lista = lista.filter(
-            vehiculo__company_id = context["company"]["id"]
-        )
+    # Consulta base con todos los registros según permisos
+    base_query = Vehicle_Verificacion.objects.all()
+
+    # Filtros por permisos
+    if context["role"]["id"] in [1, 2, 3]:
+        base_query = base_query.filter(vehiculo__company_id=context["company"]["id"])
     else:
-        lista = lista.filter(vehiculo__responsible_id = context["user"]["id"])
+        base_query = base_query.filter(vehiculo__responsible_id=context["user"]["id"])
 
+    # Calcular contadores
+    response["counters"] = {
+        "total": base_query.count(),
+        "pagadas": base_query.filter(status='PAGADO').count(),
+        "proximas": base_query.filter(
+            status='PROXIMO',
+            fecha_pago__gt=hoy
+        ).count(),
+        "vencidas": base_query.filter(
+            status='PROXIMO',
+            fecha_pago__lt=hoy
+        ).count(),
+        "pendientes": base_query.filter(
+            status='PROXIMO'
+        ).filter(
+            Q(fecha_pago__isnull=True) | Q(fecha_pago__gt=un_mes_despues)
+        ).count()
+    }
+
+    # Lista de resultados
+    lista = base_query.values(
+        "id", "engomado", "periodo", "lugar", "status",
+        "vehiculo_id", "vehiculo__name",
+        "monto", "fecha_pago", "comprobante_pago", "status"
+    ).order_by('-fecha_pago')
+
+    # Filtro por vehículo
+    if vehicle_id:
+        lista = lista.filter(vehiculo_id=vehicle_id)
+
+    # Filtro por tipo_carga
+    if tipo_carga == "pagadas":
+        lista = lista.filter(status='PAGADO')
+    elif tipo_carga == "vencidas":
+        lista = lista.filter(status='PROXIMO', fecha_pago__lt=hoy)
+    elif tipo_carga == "proximas":
+        lista = lista.filter(status='PROXIMO', fecha_pago__gt=hoy)
+    elif tipo_carga == "pendientes":
+        lista = lista.filter(status='PROXIMO').filter(
+            Q(fecha_pago__isnull=True) | Q(fecha_pago__gt=un_mes_despues)
+        )
+
+    # Obtener permisos del módulo
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
 
+    # Preparar datos de respuesta
+    result = []
     for item in lista:
+        # Estado
+        if item["status"] == 'PAGADO':
+            item["estado"] = "pagada"
+        elif item["status"] == 'PROXIMO':
+            if item["fecha_pago"]:
+                if item["fecha_pago"] < hoy:
+                    item["estado"] = "vencida"
+                elif item["fecha_pago"] > hoy:
+                    item["estado"] = "proxima"
+                # Aquí ya no limitamos a un mes
+            else:
+                item["estado"] = "pendiente"
+        
+        # Botones de acción
         item["btn_action"] = ""
-        if access["update"]:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-verificacion=\"update-item\">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
-        if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-verificacion=\"delete-item\">
-                <i class="fa-solid fa-trash"></i>
-            </button>"""
-    response["data"] = list(lista)
+        if access.get("update", False):
+            item["btn_action"] += """
+                <button class="btn btn-primary btn-sm" data-vehicle-verificacion="update-item">
+                    <i class="fa-solid fa-pen"></i>
+                </button>\n"""
+        if access.get("delete", False):
+            item["btn_action"] += """
+                <button class="btn btn-danger btn-sm" data-vehicle-verificacion="delete-item">
+                    <i class="fa-solid fa-trash"></i>
+                </button>"""
+
+        result.append(item)
+
+    response["data"] = result
     response["success"] = True
-    return JsonResponse(response)
+    return JsonResponse(response, safe=False)
 
 def update_vehicle_verificacion(request):
-    response = {"success": False, "data": []}
+    response = {"success": False}
     dt = request.POST
     
     id = dt.get("id", None)
-    vehicle_id = dt.get("vehicle_id"),
-
-    if id is None:
+    if not id:
         response["error"] = {"message": "No se proporcionó un ID válido para actualizar."}
         return JsonResponse(response)
     
     try:
         obj = Vehicle_Verificacion.objects.get(id=id)
     except Vehicle_Verificacion.DoesNotExist:
-        response["error"] = {"message": f"No existe ningún resgitro con el ID '{id}'"}
+        response["error"] = {"message": f"No existe ningún registro con el ID '{id}'"}
         return JsonResponse(response)
 
+    print(f"==> Registro encontrado: {obj.id}, Estado actual: {obj.status}")
+
     try:
-        obj.monto = dt.get("monto")
-        obj.fecha_pago = dt.get("fecha_pago")
-        obj.save()
-        vehicle_id = obj.vehiculo_id
+        # VERIFICACIÓN CORREGIDA: Excluir el registro actual de la búsqueda
+        proximo_registro = Vehicle_Verificacion.objects.filter(
+            vehiculo=obj.vehiculo,
+            status='PROXIMO'
+        ).exclude(id=obj.id).first()  # <- Esta es la línea clave
         
-        # Guardar el archivo en caso de existir
-        if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES.get('comprobante_pago')
-            company_id = request.session.get('company').get('id')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/verificacion/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-            file_name, extension = os.path.splitext(load_file.name)                
+        if proximo_registro:
+            print(f"==> Ya existe un registro próximo con ID: {proximo_registro.id}")
+        else:
+            print("==> No se encontró un registro 'PROXIMO', se creará uno nuevo.")
+
+        # Actualizar datos básicos
+        obj.monto = dt.get("monto", obj.monto)
+        obj.fecha_pago = dt.get("fecha_pago", obj.fecha_pago)
+        obj.lugar = dt.get("lugar", obj.lugar)
+        
+        print(f"==> Datos actualizados: Monto: {obj.monto}, Fecha de pago: {obj.fecha_pago}, Lugar: {obj.lugar}")
+        
+        # Manejo del comprobante
+        nuevo_comprobante = request.FILES.get('comprobante_pago')
+        if nuevo_comprobante:
+            print(f"==> Se está subiendo un nuevo comprobante: {nuevo_comprobante.name}")
             
+            if obj.comprobante_pago:
+                try:
+                    print(f"==> Eliminando comprobante anterior: {obj.comprobante_pago}")
+                    delete_s3_object(bucket_name, obj.comprobante_pago)
+                except Exception as e:
+                    print(f"Error al eliminar comprobante anterior: {str(e)}")
+            
+            company_id = request.session.get('company', {}).get('id')
+            if not company_id:
+                raise ValueError("No se pudo obtener el company_id de la sesión")
+                
+            _, extension = os.path.splitext(nuevo_comprobante.name)
             new_name = f"comprobante_pago_{id}{extension}"
-            s3Name = folder_path + new_name
-            #fs.save(folder_path + new_name, load_file)
+            s3_path = f"docs/{company_id}/vehicle/{obj.vehiculo_id}/verificacion/{new_name}"
             
-            obj.comprobante_pago = folder_path + new_name
-            upload_to_s3(load_file, bucket_name, s3Name)
-            obj.save()
-        
+            print(f"==> Subiendo comprobante a S3: {s3_path}")
+            upload_to_s3(nuevo_comprobante, bucket_name, s3_path)
+            obj.comprobante_pago = s3_path
+
+        # Cambiar estado a PAGADO
+        print(f"==> Estado actual: {obj.status}, Nuevo comprobante: {nuevo_comprobante}, Monto: {dt.get('monto')}")
+        if not obj.status == 'PAGADO' and (nuevo_comprobante or dt.get('monto')):
+            print("==> Cambiando estado a PAGADO.")
+            obj.status = 'PAGADO'
+            
+            # Solo crear nuevo registro si no existe uno próximo (excluyendo el actual)
+            if not proximo_registro:
+                print("==> Creando nuevo registro PROXIMO.")
+                fecha_next, periodo_next = obtener_siguiente_pago(obj.vehiculo, obj.fecha_pago or timezone.now().date())
+                Vehicle_Verificacion.objects.create(
+                    vehiculo=obj.vehiculo,
+                    engomado=obj.engomado,
+                    periodo=periodo_next,
+                    fecha_pago=fecha_next,
+                    status='PROXIMO'
+                )
+                print(f"==> Nuevo registro PROXIMO creado para fecha: {fecha_next}")
+
+        obj.save()
+        print(f"==> Registro actualizado con éxito: {obj.id}, Estado final: {obj.status}")
+
         response["success"] = True
+        response["data"] = {
+            "id": obj.id,
+            "status": obj.status,
+            "has_comprobante": bool(obj.comprobante_pago),
+            "nuevo_proximo_creado": not proximo_registro and obj.status == 'PAGADO'
+        }
+
     except Exception as e:
+        print(f"==> ERROR: {str(e)}")
         response["error"] = {"message": str(e)}
+        if 'obj' in locals() and obj.pk:
+            print(f"==> Revirtiendo cambios para el registro ID: {obj.id}")
+            obj.save()
+
     return JsonResponse(response)
 
 
@@ -1803,8 +2057,8 @@ def get_vehicles_insurance(request):
         item["btn_action"] = ""
         if item["doc"] != None:
             tempDoc = generate_presigned_url(bucket_name, item["doc"])
-            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
-                <i class="fa-solid fa-file"></i> Descargar
+            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                <i class="fa-solid fa-file"></i> Ver documento
             </a>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-insurance=\"update-item\">
@@ -1849,7 +2103,7 @@ def get_vehicle_insurance(request):
         if item["doc"] != None:
             tempDoc = generate_presigned_url(bucket_name, item["doc"])
             item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
-                <i class="fa-solid fa-file"></i> Descargar
+                <i class="fa-solid fa-file"></i> Ver seguro
             </a>\n"""
         if access["update"]:
             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-insurance=\"update-item\">
@@ -2722,17 +2976,11 @@ def add_vehicle_fuel(request):
             if 'payment_receipt' in request.FILES and request.FILES['payment_receipt']:
                 load_file = request.FILES.get('payment_receipt')
                 folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
-                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
                 file_name, extension = os.path.splitext(load_file.name)                
                 new_name = f"payment_receipt_{id}{extension}"
 
-                # Eliminar archivos anteriores usando glob
-                #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, f"payment_receipt{id}.*"))
-                #for old_file_path in old_files:
-                #    if os.path.exists(old_file_path):
-                #        os.remove(old_file_path)
-                #fs.save(folder_path + new_name, load_file)
+            
                 upload_to_s3(load_file, AWS_BUCKET_NAME, folder_path + new_name)
                 obj.payment_receipt = folder_path + new_name
                 obj.save()
@@ -2775,6 +3023,9 @@ def get_vehicles_fuels(request):
         access = access["data"]["access"]
 
         for item in datos:
+            if item["payment_receipt"]:
+                item["payment_receipt"] = generate_presigned_url(bucket_name, item["payment_receipt"])
+
             item["btn_action"] = ""
             if access["update"]:
                 item["btn_action"] += (
@@ -3026,12 +3277,6 @@ def generate_qr(request, qr_type, vehicle_id):
     company_id = context["company"]["id"]
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
 
-    # Obtener la URL base dinámicamente
-    # protocol = 'https' if request.is_secure() else 'http' 
-    # host = request.get_host()  
-    # BASE_URL = f"{protocol}:{{
-    # 
-    # //{host}"  
 
     # Verificar si el QR ya ha sido generado
     if qr_type == "consulta":
@@ -3074,9 +3319,7 @@ def generate_qr(request, qr_type, vehicle_id):
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
-    # Convertir el buffer en un ContentFile y darle un nombre
-    # content_file = ContentFile(buffer.read())
-    # content_file.name = f"qr_{vehicle_id}.png"  # Establecer un nombre para el archivo
+  
     
     # Definir la ruta del archivo en S3
     s3Path = f'docs/{company_id}/vehicle/{vehicle_id}/qr/'
@@ -3151,7 +3394,7 @@ def sendEmail_UpdateKilometer(request, subject, to_send, vehicle):
     </head>
     <body>
         <div class="container">
-            <img src="{domain}/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
+            <img src="{domain}/staticfiles/assets/images/brand-logos/CS_LOGO.png" alt="Logo">
             <h2>{vehicle.name}</h2>
             <p>Responsable del vehiculo: {responsable}</p>
             <p>El vehículo está próximo a alcanzar el kilometraje para su revisión, por lo que es necesario programar el mantenimiento correspondiente</p>
@@ -4205,6 +4448,19 @@ def add_vehicle_responsiva(request):
                 trip_purpose=dt.get("trip_purpose"),
                 start_date=dt.get("start_date")
             )
+            
+            #conditional last register
+            item = Vehicle_Responsive.objects.filter(vehicle__id=dt.get("vehicle_id")).order_by("-created_at").first()
+            if item:
+                if (int(dt.get("initial_mileage")) - int(item.final_mileage)) > 5:
+                    #TODO SE CUMPLIO LA CONDICIONAL")
+                    obj.initial_mileage = item.final_mileage
+                    obj.initial_fuel = item.final_fuel
+                    obj.start_date = item.end_date
+                    obj.final_mileage = dt.get("initial_mileage")
+                    obj.final_fuel = dt.get("initial_fuel")
+                    obj.end_date = dt.get("start_date")
+                    
             obj.save()
             obj_vehicle.mileage = dt.get("initial_mileage")
             obj_vehicle.save()

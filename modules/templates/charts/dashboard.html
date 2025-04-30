@@ -1,0 +1,104 @@
+{% extends 'ynex/base.html' %}
+
+{% block content %}
+{% load static %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Vehículos
+    </h1>
+    <div class="ms-md-1 ms-0"></div>
+</div>
+
+<div class="">
+    <div class="row">
+        <div class="col-md-4 col-xxl-3">
+            <div class="card custom-card">
+                <div class="card-body align-items-center justify-content-between">
+                    <div class="table-response">
+                        <table id="vehiclesTable" class="table table-bordered w-100 placeholder-glow">
+                            <thead>
+                                <tr>
+                                    <th><i class="fa-solid fa-clipboard-check"></i></th>
+                                    <th>Vehículo</th>
+                                    <th>Área</th>
+                                    <th>Responsable</th>
+                                    <th>Marca</th>
+                                    <th>Seguro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vehicle in vehicles %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="checkbox-resaltado" data-vehicle-id="{{vehicle.id}}">
+                                    </td>
+                                    <td>
+                                        {{vehicle.name}}
+                                    </td>
+                                    <td>
+                                        {{vehicle.area.area__name|default:"S/A"}}
+                                    </td>
+                                    <td>
+                                        {{vehicle.responsible__first_name}}
+                                    </td>
+                                    <td>
+                                        {{vehicle.brand}}
+                                    </td>
+                                    <td>
+                                        {{vehicle.insurance_company}}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8 col-xxl-9">
+            <div class="row">
+                <div class="card custom-card">
+                    <div class="card-body align-items-center justify-content-between">
+                        <form method="POST" onsubmit="return handleFormSubmit(event)">
+                            {% csrf_token %}
+                            <div class="row">
+                                <!-- Select con botón al lado -->
+                                <div class="col-md-8 mb-3">
+                                    <select class="form-select" name="option" id="opcion" onchange="lf_end_date(event);" required>
+                                        <option value="" selected disabled>Selecciona una opción</option>
+                                        <option value="fuel">RECARGA DE COMBUSTIBLE</option>
+                                        <option value="kilometer-record">KILOMETRAJE RECORRIDO</option>
+                                        <option value="kilometer-record-per-day">KILOMETRAJE POR DÍA</option>
+                                        <option value="in-out-travels">ENTRADAS Y SALIDAS</option>
+                                        <option value="verification">VERIFICACIÓN</option>
+                                        <option value="tenencia">TENENCIA</option>
+                                        <option value="refrendo">REFRENDO</option>
+                                        <option value="insurance">SEGURO</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3 d-grid">
+                                    <button type="submit" class="btn btn-secondary">GRAFICAR</button>
+                                </div>
+                        
+                                <!-- Fechas -->
+                                <div class="col-md-6 mb-3">
+                                    <input class="form-control input-date" type="text" placeholder="Fecha Inicial" onfocus="(this.type='date')" onblur="(this.type='text')" name="start_date" value="2025-04-01">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <input class="form-control input-date" type="text" placeholder="Fecha Final" onfocus="(this.type='date')" onblur="(this.type='text')" name="end_date" value="2025-04-30">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div id="chartsContainer" class="row">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}{% endblock %}
+<script src="{% static 'assets/js/charts/vehicles-charts.js' %}"></script>
+{% endblock %}

@@ -64,4 +64,4 @@ python manage.py dumpdata users.Role --indent 2 > roles.json
 
 ---
 ## Creado por
-Luis Ulices Gutierrez
+Tenergy

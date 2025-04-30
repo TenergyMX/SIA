@@ -8,15 +8,24 @@
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>SIA</title>
+    <title>CS</title>
     <link rel="stylesheet" type="text/css" href="static/assets/css/landing.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar">
+        <div class="top-container">
+            <ul class="navbar-links-top" id="navbar-links-top">
+                <li><a href="/computers-equipment/">Equipos de Cómputo</a><span class="hover-rect"></span></li>
+                <li><a href="/infrastructure/">Infraestructura</a><span class="hover-rect"></span></li>
+                <li><a href="/vehicles/">Vehículos</a><span class="hover-rect"></span></li>
+                <li><a href="/equipments_and_tools/">Equipos y Herramientas</a><span class="hover-rect"></span></li>
+                <li><a href="/category_services/">Servicios</a><span class="hover-rect"></span></li>
+            </ul>
+        </div>
         <div class="navbar-container">
         <div class="navbar-logo">
-            <img src="/static/assets/images/landing/logoBlack.png" alt="Logo">
+            <img src="/staticfiles/assets/images/brand-logos/CS_LOGO.png" alt="Logo">
         </div>
         <!-- Botón de menú para dispositivos móviles -->
         <div class="navbar-toggle" id="navbar-toggle">
@@ -31,7 +40,7 @@
             <li><a href="#pricing">Planes</a><span class="hover-rect"></span></li>
             <li><a href="#contact">Contacto</a><span class="hover-rect"></span></li>
             {% if user.is_authenticated %}
-                <li><a>{{user.username}}<span class="hover-rect"></span></a></li>
+                <li class="name"><a>{{user.username}}<span class="hover-rect"></span></a></li>
             {% else %}
                 <li><a href="/login">Inicio de sesión<span class="hover-rect"></span></a></li>
             {% endif %}
@@ -39,55 +48,147 @@
         </div>
     </nav>
     
-    <section class="landing-section" id="home">
-        <div class="container">
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgComputer.png" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+    <section class="landing-section">
+        <!-- <div class="container">
+            <div class="card">
+                <div class="imgbx">
+                    <img src="/static/assets/images/landing/bgComputer.png" class="card-img" alt="Computo">
+                </div>
+                <div class="card-content">
                     <h3>Equipo de Computo</h3>
-                    <!--p>Mejora la gestión de tus equipos de cómputo mediante un seguimiento exhaustivo.</p-->
                     <a href="/computers-equipment/" class="cta">Ingresar</a>
                 </div>
             </div>
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgInfraestructura.jpeg" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+            <div class="card">
+                <div class="imgbx">
+                    <img src="/static/assets/images/landing/bgInfraestructura.jpeg" class="card-img" alt="Infraestructura">
+                </div>
+                <div class="card-content">
                     <h3>Infraestructura</h3>
-                    <!--p>Mantén tu infraestructura bajo control con herramientas que proporcionan un monitoreo constante.</p-->
                     <a href="/infrastructure/" class="cta">Ingresar</a>
                 </div>
             </div>
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgVehiculos.jpg" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+            <div class="card">
+                <div class="imgbx">
+                    <img src="/static/assets/images/landing/bgVehiculos.jpg" class="card-img" alt="Vehículos">
+                </div>
+                <div class="card-content">
                     <h3>Vehículos</h3>
-                    <!--p>Supervisa el uso, el mantenimiento y el estado de cada unidad para asegurar un funcionamiento seguro.</p-->
                     <a href="/vehicles/" class="cta">Ingresar</a>
                 </div>
             </div>
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgTools.jpg" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+            <div class="card">
+                <div class="imgbx">
+                    <img src="/static/assets/images/landing/bgTools.jpg" class="card-img" alt="Herramientas">
+                </div>
+                <div class="card-content">
                     <h3>Equipos y Herramientas</h3>
-                    <!--p>Controla un inventario actualizado de tus equipos y herramientas, permitiendo un acceso rápido y un uso eficiente.</p-->
                     <a href="/equipments_and_tools/" class="cta">Ingresar</a>
                 </div>
             </div>
-            <div class="feature">
-                <img src="/static/assets/images/landing/bgServicios.jpg" class="feature-img" alt="@Imagen generada con IA">
-                <div class="content">
+            <div class="card">
+                <div class="imgbx">
+                <img src="/static/assets/images/landing/bgServicios.jpg" class="card-img" alt="Servicios">
+                </div>
+                <div class="card-content">
                     <h3>Servicios</h3>
-                    <!--span>
-                        Registra de manera detallada los pagos realizados por tus servicios, simplificando el seguimiento y la gestión eficiente de tus egresos.
-                    </span-->
                     <a href="/category_services/" class="cta">Ingresar</a>
+                </div>
+            </div>
+        </div> -->
+        <div class="card-container">
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgComputer.png')">
+                <div class="overlay"></div>
+                <div class="title">Equipos de Cómputo</div>
+                <div class="content">
+                    <div class="info">Administración de Equipo de Cómputo</div>
+                    <a href="/computers-equipment/" class="btn">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgInfraestructura.jpeg')">
+                <div class="overlay"></div>
+                <div class="title">Infraestructura</div>
+                <div class="content">
+                    <div class="info">Administración de Infraestructura</div>
+                    <a href="/infrastructure/" class="btn">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgVehiculos.jpg')">
+                <div class="overlay"></div>
+                <div class="title">Vehículos</div>
+                <div class="content">
+                    <div class="info">Adminnistración de Vehiculos Empresariales</div>
+                    <a href="/vehicles/" class="btn">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgTools.jpg')">
+                <div class="overlay"></div>
+                <div class="title">Equipos y Herramientas</div>
+                <div class="content">
+                    <div class="info">Administración de Equipos y Herramientas</div>
+                    <a href="/equipments_and_tools/" class="btn">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgServicios.jpg')">
+                <div class="overlay"></div>
+                <div class="title">Servicios</div>
+                <div class="content">
+                    <div class="info">Gestor de servicios y proveedores</div>
+                    <a href="/category_services/" class="btn">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
                 </div>
             </div>
         </div>
     </section>
 
+    <div class="info-banner">
+        <div class="info-options">
+            <h2>Quiero hacer mi empresa más eficiente!</h2>
+            <p>Selecciona lo que estás buscando</p>
+            <div class="button-group-portal">
+                <button data-portals="technology">TECH</button>
+                <button data-portals="data">DATA</button>
+                <button data-portals="transports">TRANSPORT</button>
+                <button data-portals="assets-and-tools">ASSETS</button>
+                <button data-portals="services">SERVICES</button>
+                
+            </div>
+            <div class="button-group">
+                <button data-personal="sm">2-9 Empleados</button>
+                <button data-personal="md">10-29 Empleados</button>
+                <button data-personal="lg">+30 Empleados</button>   
+            </div>
+            <div class="button-group">
+                <button data-stock="minimum">1000 Unidades de almacenamiento</button>
+                <button data-stock="medio">5000 Unidades de almacenamiento</button>
+                <button data-stock="unlimited">Almacenamiento Ilimitado</button>
+            </div>
+            <div class="button-group">
+                <button data-business="local">Sucursal</button>
+                <button data-business="store">Tienda</button>
+                <button data-business="corporation">Corporativo</button>
+                <button data-business="storage">Almacén</button>
+                <button data-business="multinational">Multinacional</button>
+            </div>
+            <button class="cta open-quotation">Cotizar mi plataforma</button>
+        </div>
+        
+        <div class="info-image">
+            <div class="info-text">
+                <h1>Connected tools.<br>Better business.</h1>
+                <p>Simplify the financial side so you can focus on the bigger picture.</p>
+                <a href="#contact" class="cta">See plans & pricing</a>
+            </div>
+                <img src="/static/assets/images/landing/info-banner.jpg" alt="Person working in cafe">
+            </div>
+        </div>
+
     <section class="pricing-section" id="pricing">
-        <h2 class="pricing-title">¡Consulta nuestros planes y empieza a rentar!</h2>
+        <h2 class="pricing-title">¡Consulta nuestros planes y despega!</h2>
         <div class="pricing-container">
             <div class="pricing-plan">
                 <div class="plan">
@@ -206,6 +307,35 @@
     </footer>
 
 </body>
+
+<!-- M O D A L  Q U O T A T I O N -->
+<div class="quotation-modal" id="quotationModal">
+    <div class="quotation-modal-content">
+        <span class="quotation-close" id="quotationClose">&times;</span>
+        <h2>Solicitar Cotización</h2>
+        <form action="{% url 'enviar_cotizacion' %}" method="POST" class="quotation-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <input type="text" name="name" required>
+            <div class="contact_labelline">Nombre</div>
+        </div>
+        <div class="form-group">
+            <input type="text" name="company" required>
+            <div class="contact_labelline">Empresa</div>
+        </div>
+        <div class="form-group">
+            <input type="email" name="email" required>
+            <div class="contact_labelline">Correo electrónico</div>
+        </div>
+        <div class="form-group">
+            <textarea name="details"></textarea>
+            <div class="contact_labelline">Detalles de la cotización.</div>
+        </div>
+        <button type="submit" class="cta">Enviar Cotización</button>
+        </form>
+    </div>
+</div>
+
 {% if sendEmail %}
     <script>
         setTimeout(function(){
@@ -216,7 +346,98 @@
 
 
 <script>
+    let options_quotations = ""
+    document.querySelector('.quotation-form').addEventListener('submit', async function(e) {
+        e.preventDefault(); // Evitar que el formulario se envíe de manera tradicional
+        const form = e.target;
+        let formData = new FormData(form);
+        formData.append("options_quotations", options_quotations);
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                // Aquí podrías mostrar un mensaje de éxito
+                alert('Cotización enviada con éxito.');
+                options_quotations = "";
+                document.querySelectorAll("button.filled").forEach(button => 
+                    button.classList.remove("filled")
+                );
+                form.reset();
+            } else {
+                console.error('Error al enviar el formulario.');
+                alert('Ocurrió un error al enviar la cotización.');
+            }
+        } catch (error) {
+            console.error('Error en la solicitud:', error);
+            alert('Error de conexión al enviar la cotización.');
+        }
+    });
+
+
     document.addEventListener('DOMContentLoaded', function () {
+        /*STYLE AND ANIMATION FOR THE MODALS QUOTATION*/
+        const quotationModal = document.getElementById('quotationModal');
+        const quotationClose = document.getElementById('quotationClose');
+        const openQuotationBtns = document.querySelectorAll('.open-quotation');
+    
+        openQuotationBtns.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                quotationModal.style.display = 'block';
+                const filledButtons = document.querySelectorAll("button.filled");
+                const selectedValues = {};
+                let i = 0;
+                filledButtons.forEach(button => {
+                    const dataset = button.dataset;
+                    for (const key in dataset){
+                        options_quotations += `${dataset[key]},`;
+                        i++;
+                    }
+                });
+            });
+        });
+    
+        quotationClose.addEventListener('click', function () {
+            quotationModal.style.display = 'none';
+        });
+    
+        window.addEventListener('click', function (e) {
+            if (e.target == quotationModal) {
+                quotationModal.style.display = 'none';
+            }
+        });
+
+        /*ADD ACTIVE STYLE IN BUTTON GROUP*/
+        const buttons = document.querySelectorAll(".button-group-portal button");
+
+        buttons.forEach(function(button) {
+            button.addEventListener("click", function(e) {
+                e.target.classList.toggle("filled");
+            });
+        });
+
+        document.querySelectorAll('.button-group').forEach(group => {
+            group.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON') {
+                    // Limpiamos 'filled' solo dentro del grupo clickeado
+                    group.querySelectorAll('button').forEach(button => {
+                        button.classList.remove('filled');
+                    });
+                    // Añadimos 'filled' solo al botón presionado
+                    e.target.classList.add('filled');
+                }
+            });
+        });
+
+
         /*THIS FOR THE PANNEL VIEWS, WHEN THE VIEW IS IN PHONE*/
         const view_features = document.querySelectorAll('.landing-section .feature');
         const observer = new IntersectionObserver((entries, observer) => {

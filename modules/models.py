@@ -114,6 +114,12 @@ class Vehicle_Verificacion(models.Model):
     comprobante_pago = models.FileField(upload_to='docs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     email_verificacion = models.BooleanField(default=False)
+    STATUS_CHOICES = [
+        ('PENDIENTE','Pendiente'),
+        ('PAGADO','Pagado'),
+        ('PROXIMO','Próximo'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDIENTE')
 
     def __str__(self):
         return f"Verificación vehicular para {self.vehiculo}"
@@ -255,7 +261,7 @@ class ComputerSystem(models.Model):
     last_maintenance_date = models.DateField(blank=True, null=True, verbose_name="Fecha del Último Mantenimiento")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
     qr_info_computer = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
-    identifier = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name="Identificador")
+    identifier = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name="Identificador")
     adquisition_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Adquisición")
 
     class Meta:
@@ -330,7 +336,7 @@ class ComputerPeripheral(models.Model):
     responsible = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Responsable")
     peripheral_status = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Periférico")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
-    identifier = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name="Identificador")
+    identifier = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name="Identificador")
 
     class Meta:
         verbose_name = "Periférico de Equipo de Computo"
@@ -411,7 +417,7 @@ class Software(models.Model):
     
 class SoftwareInstallation(models.Model):
     software = models.ForeignKey('Software', on_delete=models.CASCADE, verbose_name="Software", blank=True, null=True)
-    software_identifier = models.CharField(max_length=100, verbose_name="Identificador del Software", help_text="Identificador del software proporcionado por el proveedor")
+    software_identifier = models.CharField(max_length=255, verbose_name="Identificador del Software", help_text="Identificador del software proporcionado por el proveedor")
     computerSystem = models.ForeignKey('ComputerSystem', on_delete=models.CASCADE, verbose_name="Equipo")
     installation_date = models.DateField(auto_now_add=True, verbose_name="Fecha de Instalación")
 

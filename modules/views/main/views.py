@@ -85,7 +85,7 @@ def home_view(request):
         </head>
         <body>
             <div class="container">
-            <img src="{domain}/staticfiles/assets/images/brand-logos/logo.png" alt="Logo">
+            <img src="{domain}/staticfiles/assets/images/brand-logos/CS_LOGO.png" alt="Logo">
             <h2>Nuevo mensaje de {form.get("name", "Nombre no proporcionado")}</h2>
             <p><strong>Empresa:</strong> {form.get("name_company", "Empresa no especificada")}</p>
             <p><strong>Correo:</strong> {form.get("email", "sin correo")}</p>
@@ -449,8 +449,8 @@ def get_notifications(request):
 
 
             
-            vehicles_without_refrendo = obj_vehicles.exclude(id__in=vehicles_with_refrendo).values_list('name', flat=True)
-            for name in vehicles_without_refrendo:
+            vehicles_without_refrendo = obj_vehicles.exclude(id__in=vehicles_with_refrendo).values('id','name')
+            for vehicle in vehicles_without_refrendo:
                 response["data"].append({
                     "alert": "danger",
                     "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
@@ -635,8 +635,8 @@ def get_notifications(request):
                     "alert": "danger",
                     "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
                     "title": "Vehículo sin seguro",
-                    "text": f"Vehículo: {vehicle['name']}",  
-                    "link": f"/vehicles/info/{vehicle['id']}/" 
+                    "text": f"Vehículo: {vehicle['name']}",
+                    "link": f"/vehicles/info/{vehicle['id']}/"
                 })
 
                 vehicle_instance = Vehicle.objects.get(id=vehicle["id"])
@@ -968,3 +968,102 @@ def Send_Email(subject, recipient, model_instance, message_data, model_name, fie
     except Exception as e:
         print(f"Error al enviar el correo o actualizar el campo: {e}")
 
+
+
+def enviar_cotizacion(request):
+    body_response = {
+        "technology" : "Acceso a la plataforma de Equipos de cómputo",
+        "data" : "Acceso a la plataforma de Infraestructura",
+        "transports" : "Acceso a la plataforma de Vehículos",
+        "assets-and-tools" : "Acceso a la plataforma de Equipos y herramientas",
+        "services" : "Acceso a la plataforma de Servicios",
+        "sm" : "Gestión para 10 trabajadores",
+        "md" : "Gestión para 29 trabajadores",
+        "lg" : "Gestión ilimitada",
+        "minimum" : "Solo 1000 recursos administrables",
+        "medio" : "Solo 5000 recursos administrables",
+        "unlimited" : "recursos ilimitados administrables",        
+        "local" : "Administración para un local",
+        "store" : "Administración para una Sucursal",
+        "corporation" : "Administración para un Corporativo",
+        "storage" : "Administración para un Almacén",
+        "multinational" : "Administración para una empresa"
+    }
+
+    form = request.POST
+    details = form.get("details") if form.get("details") != "" else "Sin información adicional"
+    body = form.get("options_quotations")[:-1].split(",")
+    
+    html_quotation = ""
+    for item in body:
+        print(item)
+        html_quotation += f'<p>{body_response[item]}</p>'
+    
+    print(html_quotation)
+    asunto = f'Correo enviado por {form.get("email", "sin correo")}'
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [settings.EMAIL_HOST_USER]
+    
+    #body-text
+    text_content = f'{form.get("name", "Nombre no proporcionado")}, de la empresa {form.get("name_company", "Empresa no especificada")}: {form.get("message", "Sin mensaje")}'
+
+    #html
+    html_content = f"""
+    <html>
+        <head>
+            <style>
+                body {{
+                    background-color: #FFFAFA;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    font-family: Arial, sans-serif;
+                }}
+                .container {{
+                    background-color: #A5C334;
+                    padding: 36px;
+                    border-radius: 18px;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                    text-align: center;
+                    width: 80%;
+                    max-width: 600px;
+                }}
+                img {{
+                    max-width: 150px;
+                    margin-bottom: 20px;
+                }}
+                h2 {{
+                    color: #333333;
+                }}
+                p {{
+                    color: #555555;
+                    line-height: 1.5;
+                    font-weight: 500;
+                }}
+                strong {{
+                    color: #000000;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+            <img src="https://sia-tenergy.com/staticfiles/assets/images/brand-logos/CS_LOGO.png" alt="Logo">
+            <h2>Nuevo mensaje de {form.get("name", "Nombre no proporcionado")}</h2>
+            <p><strong>Empresa:</strong> {form.get("company", "Empresa no especificada")}</p>
+            <p><strong>Correo:</strong> {form.get("email", "sin correo")}</p>
+            <p><strong>Detalles de cotización:</strong></p>
+            {html_quotation}
+            <p><strong>Información adicional:</strong></p>
+            <p>{details}</p>
+            </div>
+        </body>
+    </html>"""
+
+
+    #Crear el email
+    email = EmailMultiAlternatives(asunto, text_content, from_email, recipient_list)
+    email.attach_alternative(html_content, "text/html")
+    email.send()
+    return JsonResponse({'mensaje': 'Cotización enviada correctamente'})
