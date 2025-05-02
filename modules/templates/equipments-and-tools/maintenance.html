@@ -28,18 +28,18 @@
                 </div>
                 <div class="">
                     {% if access.create %}
-                    <button type="button" class="btn btn-sm btn-primary" data-sia-vehicle-maintenance="add-item"
+                    <button type="button" class="btn btn-sm btn-primary" data-sia-equipment-maintenance="add-item"
                         title="Agregar Mantenimiento">
                         <i class="fa-solid fa-plus me-1"></i>
                         Agregar
                     </button>
-                    <button type="button" class="btn btn-sm btn-primary" data-sia-vehicle-maintenance="schedule-item"
+                    <button type="button" class="btn btn-sm btn-primary" data-sia-equipment-maintenance="schedule-item"
                         title="programar Mantenimiento">
                         <i class="fa-solid fa-bell-plus me-1"></i>
                         Programar
                     </button>
                     {% endif %}
-                    <button type="button" class="btn btn-sm btn-info-light" data-sia-vehicle-maintenance="refresh-table"
+                    <button type="button" class="btn btn-sm btn-info-light" data-sia-equipment-maintenance="refresh-table"
                         title="Refrescar tabla">
                         <i class="fa-solid fa-arrows-rotate me-1"></i>
                     </button>
@@ -59,7 +59,7 @@
     <div class="info-details" style="display: none;">
         <div class="row g-3">
             <div class="col-md-4 col-xxl-3">
-                {% include "vehicles/cards/vehicle_info.html" %}
+                {% include "equipments-and-tools/cards/equipment_info.html" %}
             </div>
             <div class="col-md-8 col-xxl-9">
                 <div class="card mb-3">
@@ -68,7 +68,7 @@
                             <button
                                 type="button"
                                 class="btn btn-info"
-                                data-sia-vehicle-maintenance="show-info"
+                                data-sia-equipment-maintenance="show-info"
                                 title="Regresar"
                             >
                                 <i class="fa-solid fa-arrow-left me-1"></i>
@@ -78,7 +78,7 @@
                     </div>
                 </div>
                 <!-- 2 -->
-                {% include "vehicles/cards/maintenance_info.html" %}
+                {% include "equipments-and-tools/cards/maintenance_info.html" %}
                 <!-- end -->
             </div>
         </div>
@@ -89,8 +89,8 @@
 {% load static %}
 
 {% block modals %}
-    {% include "vehicles/modals/mdl_crud_maintenance.html" %}
-    {% include "vehicles/modals/mdl_crud_option_maintenance.html" %}
+    {% include "equipments-and-tools/modals/mdl_crud_maintenance.html" %}
+    {% include "equipments-and-tools/modals/mdl_crud_option_maintenance.html" %}
 {% endblock %}
 
 {% block offcanvas %} {% endblock %}
@@ -98,20 +98,17 @@
 {% block head %} {% endblock %}
 
 {% block scripts %}
-    <script src="{% static 'assets/js/vehicles/vehicles.js' %}"></script>
+    <script src="{% static 'assets/js/equipment-and-tools/maintenance.js' %}"></script>
     <script src="{% static 'assets/js/users/providers.js' %}"></script>
-    <script src="{% static 'assets/js/vehicles/maintenance.js' %}"></script>
+    <script src="{% static 'assets/js/equipment-and-tools/maintenance.js' %}"></script>
     <script>
         const mantenimiento = new EquipmentsMaintenance({
             table: {
                 id: '#table_maintenance',
             },
-            vehicle: new equipments({
-                infoCard: {},
-                list: { id: ".modal [name='vehicle_id']" }
-            }),
+        
             provider: new Providers({
-                list: { id: "select[name='provider_id']" }
+                list: { id: "select[name='equipment_id']" }
             })
         });
     </script>

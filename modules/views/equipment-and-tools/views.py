@@ -1341,3 +1341,116 @@ def generate_pdf(request, responsiva_id):
     except Equipment_Tools_Responsiva.DoesNotExist:
         logger.error("Responsiva no encontrada. ")
         return JsonResponse({'success': False, 'message': 'Responsiva no encontrada.'})
+
+
+#mantenimiento
+
+@login_required
+
+def module_equipment_and_tools_maintenance(request):
+    context = user_data(request)
+    module_id = 6
+    submodule_id = 39
+
+    if not check_user_access_to_module(request, module_id, submodule_id):
+        return render(request, "error/access_denied.html")
+
+    access = get_module_user_permissions(context, submodule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+
+    if context["access"]["read"]:
+        template = "equipments-and-tools/maintenance.html"
+    else:
+        template = "error/access_denied.html"
+    return render(request, template, context)
+
+def get_equipment_maintenance(request):
+    context = user_data(request)
+    response = {"success": False, "data": []}
+    dt = request.GET
+    vehicle_id = dt.get("vehicle_id", None)
+    subModule_id = 11
+    
+    lista = Vehicle_Maintenance.objects.filter(
+        vehicle_id = vehicle_id).values(
+        "id", "vehicle_id", "vehicle__name",
+        "provider_id", "provider__name",
+        "date", "type", "cost", 
+        "mileage","time", "general_notes", "actions", "comprobante", "status"
+    )
+
+    if context["role"] in [2,3]:
+        data = lista.filter(vehicle__company_id = context["company"]["id"])
+    else:
+        data = lista.filter(vehicle__responsible_id = context["user"]["id"])
+
+    access = get_module_user_permissions(context, subModule_id)
+    access = access["data"]["access"]
+    for item in lista:
+        check = item["cost"] is not None and item["mileage"] is not None
+        item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-sia-equipments-maintenance=\"show-info-details\">
+            <i class="fa-sharp fa-solid fa-eye"></i>
+        </button>\n"""
+        if not check:
+            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-sia-equipments-maintenance=\"check\" title="Check">
+            <i class="fa-regular fa-list-check"></i>
+        </button>\n"""
+        if access["update"]:
+            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-sia-equipments-maintenance=\"update-item\">
+                <i class="fa-solid fa-pen"></i>
+            </button>\n"""
+        if access["delete"]:
+            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-sia-equipments-maintenance=\"delete-item\">
+                <i class="fa-solid fa-trash"></i>
+            </button>\n"""
+
+    response["data"] = list(lista)
+    response["success"] = True
+    return JsonResponse(response)
+
+def get_equipments_maintenance(request):
+    context = user_data(request)
+    response = {"success": False, "data": []}
+    dt = request.GET
+    subModule_id = 11
+    
+    lista = Vehicle_Maintenance.objects.values(
+        "id", "vehicle_id", "vehicle__name",
+        "provider_id", "provider__name",
+        "date", "type", "cost", 
+        "mileage","time", "general_notes", "actions", "comprobante", "status"
+    )
+
+    print(context["role"])
+    if context["role"]["id"] in [1,2]:
+        lista = lista.filter(vehicle__company_id = context["company"]["id"])
+    else:
+        lista = lista.filter(vehicle__responsible_id = context["user"]["id"])
+    
+    access = get_module_user_permissions(context, subModule_id)
+    access = access["data"]["access"]
+    
+    for item in lista:
+        check = item["mileage"] is not None
+        item["btn_action"] = """<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-equipments-maintenance=\"show-info-details\">
+            <i class="fa-sharp fa-solid fa-eye"></i>
+        </button>\n"""
+        if not check:
+            item["btn_action"] += """<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-equipments-maintenance=\"check\" title="Check">
+            <i class="fa-regular fa-list-check"></i>
+        </button>\n"""
+        if access["update"]:
+            item["btn_action"] += """<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-equipments-maintenance=\"update-item\">
+                <i class="fa-solid fa-pen"></i>
+            </button>\n"""
+        if access["delete"]:
+            item["btn_action"] += """<button class=\"btn btn-icon btn-sm btn-danger-light\" data-sia-equipments-maintenance=\"delete-item\">
+                <i class="fa-solid fa-trash"></i>
+            </button>\n"""
+
+    response["data"] = list(lista)
+    response["success"] = True
+    return JsonResponse(response)

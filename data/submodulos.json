@@ -1,14 +1,14 @@
 [
     {
         "model": "users.submodule",
-        "pk": 37,
+        "pk": 39,
         "fields": {
             "is_active": true,
-            "name": "Historial de pagos",
+            "name": "Mantenimiento",
             "description": null,
-            "module": 5,
+            "module": 6,
             "icon": "<i class='fa-regular fa-chart-line side-menu__icon'></i>",
-            "link": "/payments_history/",
+            "link": "/mantenimiento/",
             "created_at": "2025-04-30T02:26:14.570Z",
             "superUserExclusive": false
         }
