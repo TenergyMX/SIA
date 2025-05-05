@@ -368,10 +368,7 @@ def drivers_details(request, driver_id = None):
 def get_vehicle_maintenance_kilometer(request):
     dt = request.GET.get
     response = {"success":True}
-    print(dt("id"))
     obj = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo_id=dt("id")).order_by("-kilometer").values("id", "kilometer")
-    print("esto contiene la lista de mantenimientos",obj)
-    print("hola")
     for item in obj:
         id = str(item["id"])
         item["kilometer"] = str(item["kilometer"])+" km"
@@ -3405,7 +3402,9 @@ def sendEmail_UpdateKilometer(request, subject, to_send, vehicle):
     #AGREGANDO LOS CORREOS DEL ENCARGADO DEL VEHICULO Y DEL RESPONSABLE DE ALMACEN
     to_send.append(vehicle.responsible.email)
     qsUser = User_Access.objects.filter(company__id = request.session["company"]["id"], area__company__id = request.session["company"]["id"],
-    area__name = 'Almacén', role__name = "Encargado").first()
+    area__name__in = ['Almacén', 'RRHH'], role__name = "Encargado").first()
+    for item in qsUser:
+        to_send.append(item.user.email)
     # if qsUser:
     #    to_send.append(qsUser.user.email)
     email = EmailMultiAlternatives(subject, text_content, from_send, to_send)
@@ -3435,10 +3434,6 @@ def create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance
 
 def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=None):
     response = {"status": "success"}
-    print("llegamos a checar el kilometraje")
-    print(obj_vehicle)
-    print(kilometer)
-    print(date_set)
 
     # Check if maintenance kilometer records exist
     obj_maintenance_kilometer = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo=obj_vehicle)
@@ -3453,7 +3448,7 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         response["status"] = "error"
         response["error"] = {"message": "El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."}
         return JsonResponse(response)
-    print("esta es la resta del mantenimiento")
+
     # Check if there is an active maintenance alert for the vehicle
     flag_new = Vehicle_Maintenance.objects.filter(vehicle=obj_vehicle, type="preventivo").order_by("-id").first()
     
@@ -3481,8 +3476,6 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
 
         sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
-        print("se ha enviado el correo")
-    print("llegamos al final de checar el kilometraje")
     return JsonResponse(response)
 
 
