@@ -1,8 +1,27 @@
 class VehiclesInsurance {
     constructor(options) {
         const self = this;
+        self.filtro_estado = "todos";
         const defaultOptions = {
             data: {},
+            infoCard: {
+                id: null,
+                vehicle: {
+                    id: null,
+                },
+                ajax: {
+                    url: function () {
+                        return "/get_vehicles_verificacion/";
+                    },
+                    data: function (d) {
+                        return {
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado,
+                        };
+                    },
+                },
+            },
             table: {
                 id: "#table_responsiva",
                 vehicle: {
@@ -11,7 +30,13 @@ class VehiclesInsurance {
                 ajax: {
                     url: "/get_vehicles_insurance/",
                     dataSrc: "data",
-                    data: {},
+                    data: function (d) {
+                        return {
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado,
+                        };
+                    },
                 },
                 columns: [
                     { title: "ID", data: "id", visible: false },
@@ -27,6 +52,7 @@ class VehiclesInsurance {
                         },
                     },
                     { title: "Costo", data: "cost" },
+                    { title: "Estatus", data: "status" },
                     {
                         title: "Responsable",
                         data: function (d) {
@@ -42,7 +68,9 @@ class VehiclesInsurance {
         };
 
         self.data = defaultOptions.data;
-
+        if (options.infoCard) {
+            this.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
+        }
         if (options.table) {
             self.table = { ...defaultOptions.table, ...options.table };
 
@@ -73,26 +101,57 @@ class VehiclesInsurance {
 
     init() {
         const self = this;
-
+        // Inicializar contadores
+        self.updateCounters({
+            total: 0,
+            pagadas: 0,
+            vencidas: 0,
+            proximas: 0,
+            pendientes: 0,
+        });
         if (self.table) {
             self.tbl_insurance = $(self.table.id).DataTable({
                 ajax: {
                     url: self.table.ajax.url,
-                    dataSrc: self.table.ajax.dataSrc,
-                    data: self.table.ajax.data,
+                    data: function (d) {
+                        const baseData =
+                            typeof self.table.ajax.data === "function"
+                                ? self.table.ajax.data(d)
+                                : self.table.ajax.data || {};
+                        return {
+                            ...d,
+                            ...baseData,
+                            tipo_carga: self.filtro_estado,
+                        };
+                    },
+                    dataSrc: function (json) {
+                        // Actualizar contadores cuando se cargan los datos
+                        if (json.counters) {
+                            self.updateCounters(json);
+                        }
+                        return json.data;
+                    },
                 },
                 columns: self.table.columns,
-                order: [
-                    [0, "desc"],
-                    [1, "asc"],
-                ],
+                order: [[0, "desc"]],
                 language: {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
                 },
             });
-            delete self.table;
         }
+        // Configurar eventos de filtro
+        $(".filter-card")
+            .off("click")
+            .on("click", function () {
+                const status = $(this).data("status");
+                $(".filter-card").removeClass("active");
+                $(this).addClass("active");
+                self.filtro_estado = status;
 
+                if (self.tbl_insurance) {
+                    self.tbl_insurance.ajax.reload();
+                }
+            });
         if (self.vehicle && self.vehicle.data.id) {
             $('#mdl_crud_insurance [name="vehicle_id"]').hide();
             $('#mdl_crud_insurance [name="vehicle__name"]').show();
@@ -102,6 +161,15 @@ class VehiclesInsurance {
         }
 
         self.setupEventHandlers();
+    }
+    updateCounters(data) {
+        const counters = data.counters || data;
+
+        $("#counter-todas").text(counters.total || 0);
+        $("#counter-pagadas").text(counters.pagadas || 0);
+        $("#counter-vencidas").text(counters.vencidas || 0);
+        $("#counter-proximas").text(counters.proximas || 0);
+        $("#counter-pendientes").text(counters.pendientes || 0);
     }
 
     setupEventHandlers() {
@@ -250,7 +318,6 @@ class VehiclesInsurance {
         });
 
         obj_modal.find("form").on("submit", function (e) {
-            alert("prueba");
             e.preventDefault();
             var submit = $("button[type='submit']:focus", this).attr("name");
             var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_insurance/";
@@ -270,7 +337,6 @@ class VehiclesInsurance {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

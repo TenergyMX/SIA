@@ -150,6 +150,16 @@ class Vehicle_Responsive(models.Model):
         verbose_name_plural = "Responsivas de Vehículos"
 
 class Vehicle_Insurance(models.Model):
+    """
+    Modelo optimizado para seguros vehiculares con nuevos estados
+    """
+    ESTADOS = (
+        ('PAGADO', 'PAGADO'),
+        ('PROXIMO', 'PROXIMO'),
+        ('VENCIDO', 'VENCIDO'),
+        ('PENDIENTE', 'PENDIENTE'),
+        ('HISTORICO', 'HISTORICO')
+    )
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     policy_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Número de póliza")
     insurance_company = models.CharField(max_length=100)
@@ -161,9 +171,13 @@ class Vehicle_Insurance(models.Model):
     doc = models.FileField(upload_to='docs/', blank=True, null=True) 
     created_at = models.DateTimeField(auto_now_add=True)
     email_insurance = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.policy_number
+    status = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
+    class Meta:
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['end_date']),
+            models.Index(fields=['vehicle', 'policy_number']),
+        ]
 
 class Vehicle_Audit(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)

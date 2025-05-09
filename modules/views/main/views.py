@@ -772,7 +772,6 @@ def get_notifications(request):
                     continue
 
                 date = getattr(mantenimiento, "date", None)
-                print("esta es la fecha programada:", date)
                 if date:
                     dias_restantes = (date - fecha_actual).days
 

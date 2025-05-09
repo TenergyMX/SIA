@@ -2022,52 +2022,102 @@ def add_vehicle_insurance(request):
 
     return JsonResponse(response)
 
+
 def get_vehicles_insurance(request):
     context = user_data(request)
-    response = {"success": False, "data": []}
+    response = {"success": False, "data": [], "counters": {}}
     dt = request.GET
     vehicle_id = dt.get("vehicle_id", None)
     subModule_id = 9
 
+    # Obtener fechas de referencia
+    hoy = timezone.now().date()
+    un_mes_despues = hoy + timedelta(days=30)
 
-    lista = Vehicle_Insurance.objects \
-    .filter(vehicle__company_id = context["company"]["id"]) \
-    .values(
-        "id", 
-        "vehicle_id", "vehicle__name",
-        "responsible_id", "responsible__first_name", "responsible__last_name",
-        "policy_number", "insurance_company", "cost", "validity", "doc", "start_date", "end_date"
-    )
+    # Consulta base con todos los registros según permisos
+    base_query = Vehicle_Insurance.objects.filter(vehicle__company_id=context["company"]["id"])
 
-
-    if context["role"]["id"] not in [1,2,3]:
-        lista = lista.filter(
-            vehicle__responsible_id=context["user"]["id"]
-        ) | lista.filter(
-            responsible_id=context["user"]["id"]
+    # Filtros por permisos
+    if context["role"]["id"] not in [1, 2, 3]:
+        base_query = base_query.filter(
+            Q(vehicle__responsible_id=context["user"]["id"]) |
+            Q(responsible_id=context["user"]["id"])
         )
-    
+
+    # Filtro por vehículo
+    if vehicle_id:
+        base_query = base_query.filter(vehicle_id=vehicle_id)
+
+    # Obtener el último seguro por vehículo
+    subquery = base_query.values('vehicle_id').annotate(
+        max_id=Max('id')
+    ).values('max_id')
+
+    print("estos son los seguor")
+    print(subquery)
+
+    ultimos_seguros = Vehicle_Insurance.objects.filter(id__in=subquery)
+    print(ultimos_seguros[0].status)
+
+    # Calcular contadores basados en los últimos seguros
+    response["counters"] = {
+        "total": ultimos_seguros.count(),
+        "pagados_vigentes": ultimos_seguros.filter(status='PAGADO', end_date__gte=hoy).count(),
+        "b": ultimos_seguros.filter(status='VENCIDOS').count(),
+        "proximos": ultimos_seguros.filter(status='PROXIMO', end_date__lte=un_mes_despues, end_date__gte=hoy).count()
+    }
+
+    # Preparar datos de respuesta (mantenemos todos los registros para la tabla)
+    lista = base_query.values(
+        "id", "vehicle_id", "vehicle__name",
+        "responsible_id", "responsible__first_name", "responsible__last_name",
+        "policy_number", "insurance_company", "cost", "validity", "doc",
+        "start_date", "end_date", "status"
+    ).order_by('-end_date')
+
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
 
     for item in lista:
         item["btn_action"] = ""
-        if item["doc"] != None:
+        if item["doc"]:
             tempDoc = generate_presigned_url(bucket_name, item["doc"])
             item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
                 <i class="fa-solid fa-file"></i> Ver documento
             </a>\n"""
+
         if access["update"]:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-insurance=\"update-item\">
+            item["btn_action"] += """<button class="btn btn-primary btn-sm" data-vehicle-insurance="update-item">
                 <i class="fa-solid fa-pen"></i>
             </button>\n"""
+
         if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-insurance=\"delete-item\">
+            item["btn_action"] += """<button class="btn btn-danger btn-sm" data-vehicle-insurance="delete-item">
                 <i class="fa-solid fa-trash"></i>
             </button>\n"""
+
     response["data"] = list(lista)
     response["success"] = True
     return JsonResponse(response)
+
+# Función auxiliar para generar nuevos registros (NUEVA FUNCIONALIDAD)
+def generar_proximos_pagos(queryset, fecha_referencia):
+    for seguro in queryset.filter(end_date__gt=fecha_referencia):
+        # Verificar si ya existe un registro para el próximo período
+        existe = Vehicle_Insurance.objects.filter(
+            vehicle_id=seguro['vehicle_id'],
+            policy_number=seguro['policy_number'],
+            start_date__gt=seguro['end_date']
+        ).exists()
+        
+        if not existe:
+            nuevo_seguro = Vehicle_Insurance(
+                vehicle_id=seguro['vehicle_id'],
+                start_date=seguro['end_date'] + timedelta(days=1),
+
+                status='PROXIMO'
+            )
+            nuevo_seguro.save()
 
 
 def get_vehicle_insurance(request):
@@ -2081,7 +2131,7 @@ def get_vehicle_insurance(request):
         "id", 
         "vehicle_id", "vehicle__name",
         "responsible_id", "responsible__first_name", "responsible__last_name",
-        "policy_number", "insurance_company", "cost", "validity", "doc", "start_date", "end_date"
+        "policy_number", "insurance_company", "cost", "validity", "doc", "start_date", "end_date","status"
     )
 
 
@@ -2232,7 +2282,6 @@ def get_vehicle_audit(request):
         "id", "vehicle_id", "vehicle__name", 
         "audit_date", "general_notes",
         "checks", "is_visible", "is_checked"  # Asegúrate de incluir estos campos
-
     )
 
     if context["role"]["id"] in [1,2,3]:
@@ -2245,7 +2294,7 @@ def get_vehicle_audit(request):
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
-   # Botones de acción
+    # Botones de acción
     
     for item in lista:
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"show-info-details\">
@@ -2554,8 +2603,6 @@ def update_vehicle_audit(request):
 
     return JsonResponse(response)
 
-
-
 def delete_vehicle_audit(request):
     response = {"success": False, "data": []}
     dt = request.POST
@@ -2574,8 +2621,6 @@ def delete_vehicle_audit(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
-
-    
 
 def add_vehicle_maintenance(request):
     context = user_data(request)
@@ -2865,8 +2910,6 @@ def delete_vehicle_maintenance(request):
     response["success"] = True
     return JsonResponse(response)
 
-
-
 def get_vehicles_calendar(request):
     context = user_data(request)
     response = {"status": "error", "message": "sin procesar", "data": []}
@@ -2929,8 +2972,6 @@ def get_vehicles_calendar(request):
     response["message"] = "eventos cargados exitosamente"
     return JsonResponse(response)
 
-
-
 def add_vehicle_fuel(request):
     context = user_data(request)
     response = {"status": "error", "message": "sin procesar","data": []}
@@ -2990,7 +3031,6 @@ def add_vehicle_fuel(request):
         response["message"] = str(e)
     return JsonResponse(response)
 
-
 def get_vehicles_fuels(request):
     context = user_data(request)
     response = {"status": "error", "message": "sin procesar", "data": []}
@@ -3044,7 +3084,6 @@ def get_vehicles_fuels(request):
         response["message"] = str(e)
 
     return JsonResponse(response)
-
 
 def get_vehicles_fuels_charts(request):
     context = user_data(request)
@@ -3165,8 +3204,6 @@ def delete_vehicle_fuel(request):
     response["success"] = True
     return JsonResponse(response)
 
-
-
 @csrf_exempt
 def add_option(request):
     if request.method == 'POST':
@@ -3227,7 +3264,6 @@ def add_option(request):
 
     return JsonResponse({'status': 'error', 'message': 'Método no permitido'},status=405)
 
-
 def obtener_opciones(request):
     directorio_actual = os.path.dirname(os.path.abspath(__file__))
     directorio_json = os.path.join(directorio_actual, '..', '..', 'static', 'assets', 'json', 'vehicles-maintenance.json')
@@ -3266,7 +3302,6 @@ def delete_vehicle_verificacion(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
-
 
 #función para generar el código qr
 def generate_qr(request, qr_type, vehicle_id):
@@ -3478,7 +3513,6 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
     return JsonResponse(response)
 
-
 #funcion para descargar el qr
 def descargar_qr(request):
     id_vehicle = request.GET.get("id_vehicle")
@@ -3501,9 +3535,12 @@ def validar_vehicle_en_sa(request):
     dt = request.POST
     id_vehicle = dt.get("id_vehicle", None)
     
-    responsiva = Vehicle_Responsive.objects.filter(vehicle_id=id_vehicle).order_by("-start_date").first() 
+    responsiva = Vehicle_Responsive.objects.filter(vehicle_id=id_vehicle).order_by("-id").first() 
     fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")  # Obtiene la fecha y hora actual
-
+    print("esta es la fecha actual", fecha_actual)
+    print("este es el id del vehiculo", responsiva.id)
+    print("este es el id del vehiculo", id_vehicle)
+    print("este es el id del vehiculo", responsiva.start_date)
     if responsiva:  # Verifica que haya un registro
         if responsiva.end_date:  # Verifica si el campo end_date tiene un valor
             km_final = responsiva.final_mileage
@@ -3610,7 +3647,6 @@ def alerta_conductor(id_conductor):
     except Exception as e:
         # En caso de algún error, devuelve False
         return False
-
 
 # Funcion para obtener los nombres de los usuarios que ya han sido cargados para agregar un equipo 
 @login_required

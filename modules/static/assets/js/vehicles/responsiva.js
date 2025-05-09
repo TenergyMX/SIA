@@ -594,9 +594,30 @@ document.querySelectorAll('.form-control[name^="image_path_"]').forEach((input) 
                 img.onload = function () {
                     const canvas = document.createElement("canvas");
                     const ctx = canvas.getContext("2d");
-                    canvas.width = 400;
-                    canvas.height = 600;
-                    ctx.drawImage(img, 0, 0, 400, 600);
+
+                    // Determinar orientación de la imagen
+                    const isHorizontal = img.width > img.height;
+
+                    // Definir dimensiones según orientación
+                    let newWidth, newHeight;
+
+                    if (isHorizontal) {
+                        // Para imágenes horizontales: 600x400
+                        newWidth = 2000;
+                        newHeight = 1400;
+                    } else {
+                        // Para imágenes verticales: 400x600
+                        newWidth = 1000;
+                        newHeight = 1500;
+                    }
+
+                    // Configurar canvas con las dimensiones adecuadas
+                    canvas.width = newWidth;
+                    canvas.height = newHeight;
+
+                    // Dibujar imagen redimensionada
+                    ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
                     canvas.toBlob(
                         function (blob) {
                             const newFile = new File([blob], file.name, {
@@ -608,7 +629,7 @@ document.querySelectorAll('.form-control[name^="image_path_"]').forEach((input) 
                             dataTransfer.items.add(newFile);
                             Swal.fire({
                                 title: "Imagen Procesada",
-                                text: "La imagen se ha redimensionado correctamente.",
+                                text: `La imagen se ha redimensionado a ${newWidth}x${newHeight}.`,
                                 icon: "success",
                                 confirmButtonText: "OK",
                             });
