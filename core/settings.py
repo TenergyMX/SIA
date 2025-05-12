@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     'users',
     # otros
     'django_sass',
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -192,3 +194,32 @@ LOGIN_URL = '/user/login/'
 
 # ! PWA
 # PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR,'..','static','pwa', 'sw.js')
+
+
+
+# # ! PWA
+# # PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR,'..','static','pwa', 'sw.js')
+
+
+# STATIC_URL = '/static/'
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+
+
+# Celery settings
+
+#CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+#CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+CELERY_BROKER_URL = 'redis://sia-redis:6379/0'
+
+#CELERY_BROKER_URL = "redis://redis:6379"
+
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+
+#CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+#CELERY_RESULT_BACKEND = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+
+# Celery beat
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
