@@ -5,7 +5,7 @@ urlpatterns = [
     # Vistas
     path("infrastructure/", views.infrastructure_item_view),
     path("infrastructure/category/", views.infrastructure_category_view),
-    path("infrastructure/review/", views.infrastructure_review_view),
+    path("infrastructure/maintenance/", views.infrastructure_maintenance_view),
 
     # Peticiones
     path("get-infrastructure-categorys/", views.get_infrastructure_categorys),
@@ -18,17 +18,32 @@ urlpatterns = [
     path("update-infrastructure-item/", views.update_infrastructure_item),
     path("delete-infrastructure-item/", views.delete_infrastructure_item),
 
-    path("add-infrastructure-review/", views.add_infrastructure_review),
-    path("get-infrastructure-reviews/", views.get_infrastructure_reviews),
-    path("update-infrastructure-review/", views.update_infrastructure_review),
-    path("delete-infrastructure-review/", views.delete_infrastructure_review),
+    # path("add-infrastructure-review/", views.add_infrastructure_review),
+    # path("get-infrastructure-reviews/", views.get_infrastructure_reviews),
+    # path("update-infrastructure-review/", views.update_infrastructure_review),
+    # path("delete-infrastructure-review/", views.delete_infrastructure_review),
 
-    path("generates_review/", views.generates_review),
+    # path("generates_review/", views.generates_review),
 
     #codigo qr
     path('generate_qr_infraestructure/<str:qr_type>/<int:itemId>/', views.generate_qr_infraestructure),
     path('check_qr_infraestructure/<int:itemId>/', views.check_qr_infraestructure),
     path('descargar_qr_infraestructure/', views.descargar_qr_infraestructure),
     path('delete_qr_infraestructure/<str:qr_type>/<int:itemId>/', views.delete_qr_infraestructure),
+
+    path('get_items_locations/', views.get_items_locations),
+    path('get_company_items/', views.get_company_items),
+    path('add_item_location/', views.add_item_location),	
+    path('get_infrastructure_item_details/', views.get_infrastructure_item_details),
+    path('obtener_usuarios/', views.obtner_usuarios),
+    path('asignar_responsable/', views.asignar_responsable),
+
+
+    path('get_identifier/', views.get_identifier),
+    path('get_items_providers/', views.get_items_providers),
+    path('get_maintenance_actions/', views.get_maintenance_actions),
+    path('add_new_maintenance_option/', views.add_new_maintenance_option),
+
+    path('get_table_item_maintenance/', views.get_table_item_maintenance),
 
 ]

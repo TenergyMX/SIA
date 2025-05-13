@@ -1,0 +1,79 @@
+<div class="modal fade effect-scale" id="mdl-crud-infrastructure-maintenance" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    
+                    <div class="col-md-4">
+                        <label for="">Identificador</label>
+                        <select id="identifier_id" name="identifier_id" class="form-select"></select>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <label for="">Tipo de manteniento</label>
+                        <select name="type" class="form-control">
+                            <option value="preventivo">Preventivo</option>
+                            <option value="correctivo">Correctivo</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-lg-4 schedule-item">
+                        <label for="">Fecha</label>
+                        <input type="date" name="date" class="form-control">
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <label for="">Tipo de registro</label>
+                        <select name="is_new_register" class="form-select">
+                            <option value="1">Nuevo</option>
+                            <option value="0">Previo</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <label for="">Proveedor</label>
+                        <select id="provider_id" name="provider_id"  class="form-select">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <label for="">Costo</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="cost" class="form-control" placeholder="1500">
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-12">
+                        <label for="">Nota general</label>
+                        <input type="text" name="general_notes" class="form-control" placeholder="Nota general">
+                    </div>
+                    
+                    <div class="col-12 col-lg-12">
+                        <label for="">Manteniento</label>
+                        <select name="actions[]" class="form-select" data-placeholder="Acciones" multiple id="select-field-infraestructure" style="z-index: 99999;">
+                            <option value="" selected>
+                                <i class="fa-duotone fa-loader fa-spin"></i> Cargando...
+                            </option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

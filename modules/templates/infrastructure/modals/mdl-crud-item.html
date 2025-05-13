@@ -28,28 +28,32 @@
                         <input type="number" name="quantity" class="form-control" placeholder="Cantidad" step="0.01">
                     </div>
                     <div class="col-md-4">
-                        <label for="">Activo</label>
-                        <select name="is_active" class="form-select">
-                            <option value="1">SI</option>
-                            <option value="0">NO</option>
-                        </select>
+                        <label for="cost">Costo</label>
+                        <input type="text" id="cost" name="cost" class="form-control" placeholder="Costo" maxlength="255" required>
                     </div>
                     <div class="col-md-4">
-                        <label for="">Fecha de inicio</label>
+                        <label for="">Fecha de adquisición</label>
                         <input type="date" name="start_date" class="form-control" placeholder="Fecha de inicio">
                     </div>
                     <div class="col-md-4">
-                        <label for="">Periodo (cantidad)</label>
-                        <input type="number" name="time_quantity" class="form-control" placeholder="Cantidad. Ej. 1">
-                    </div>
+                        <label for="formFileFicha" class="form-label">Ficha técnica</label>
+                        <input class="form-control" type="file" id="formFileFicha" name="technical_sheet">
+                    </div>   
                     <div class="col-md-4">
-                        <label for="">Periodo (Unidad)</label>
-                        <select name="time_unit" class="form-select">
-                            <option value="day">Día(s)</option>
-                            <option value="month">Mes(e)</option>
-                            <option value="year">Año(s)</option>
+                        <label for="formFileFactura" class="form-label">Factura</label>
+                        <input class="form-control" type="file" id="formFileFactura" name="invoice">
+                    </div>   
+                    <div class="col-md-4">
+                        <label for="item_location">Ubicación</label>
+                        <select name="item_location" id="item_location" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una de las ubicaciones</option>
                         </select>
                     </div>
+                    <div class="col-md-4">
+                        <label for="formFileImage" class="form-label">Imagen</label>
+                        <input class="form-control" type="file" id="formFileImage" name="image">
+                    </div>
+                    
                 </div>
             </div>
             <div class="modal-footer">
