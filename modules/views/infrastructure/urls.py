@@ -45,5 +45,6 @@ urlpatterns = [
     path('add_new_maintenance_option/', views.add_new_maintenance_option),
 
     path('get_table_item_maintenance/', views.get_table_item_maintenance),
+    path('add_or_update_infrastructure_maintenance/', views.add_or_update_infrastructure_maintenance),
 
 ]

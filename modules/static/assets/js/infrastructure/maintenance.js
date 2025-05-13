@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    $("select-field-infraestructure").select2();
     table_item_maintenance();
 });
 
@@ -169,8 +170,28 @@ function get_maintenance_actions(tipoSeleccionado) {
                 }
             });
 
-            //$(".select-field-infraestructure").select2();
+            select.select2({
+                placeholder: "Seleccione acciones",
+                width: "100%",
+                dropdownParent: $("#mdl-crud-infrastructure-maintenance"),
+
+                search: true,
+                closeOnSelect: false,
+            });
+
+            select.on("change", function (e) {
+                setTimeout(() => {
+                    $(
+                        ".select2-container--default .select2-selection--multiple .select2-selection__choice"
+                    ).css({
+                        "background-color": "var(--primary-color)",
+                        border: "1px solid var(--primary-color)",
+                        color: "#fff",
+                    });
+                }, 0);
+            });
         },
+
         error: function (error) {
             console.error("Error al cargar acciones de mantenimiento:", error);
         },
@@ -231,6 +252,70 @@ $("#form_option_maintenance").on("submit", function (e) {
                 text: "Error al guardar la nueva opción.",
                 icon: "error",
                 showConfirmButton: false,
+            });
+            console.error(xhr);
+        },
+    });
+});
+
+$("#mdl-crud-infrastructure-maintenance form").on("submit", function (e) {
+    e.preventDefault();
+
+    const form = $(this);
+    const data = {
+        id: form.find('[name="id"]').val(),
+        identifier_id: form.find('[name="identifier_id"]').val(),
+        type: form.find('[name="type"]').val(),
+        date: form.find('[name="date"]').val(),
+        is_new_register: form.find('[name="is_new_register"]').val(),
+        provider_id: form.find('[name="provider_id"]').val(),
+        cost: form.find('[name="cost"]').val(),
+        general_notes: form.find('[name="general_notes"]').val(),
+        actions: form.find('[name="actions[]"]').val(),
+    };
+
+    if (!data.identifier_id || !data.type || !data.date || !data.provider_id || !data.cost) {
+        Swal.fire({
+            title: "¡Advertencia!",
+            text: "Por favor complete todos los campos obligatorios.",
+            icon: "warning",
+            timer: 1800,
+        });
+        return;
+    }
+
+    $.ajax({
+        url: "/add_or_update_infrastructure_maintenance/",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(data),
+        headers: {
+            "X-CSRFToken": $("[name=csrfmiddlewaretoken]").val(),
+        },
+        success: function (response) {
+            if (response.status === "success") {
+                form[0].reset();
+                $("#mdl-crud-infrastructure-maintenance").modal("hide");
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                });
+                item - maintenance - table();
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message,
+                    icon: "error",
+                });
+            }
+        },
+        error: function (xhr) {
+            Swal.fire({
+                title: "¡Error!",
+                text: "Ocurrió un error al guardar el mantenimiento.",
+                icon: "error",
             });
             console.error(xhr);
         },

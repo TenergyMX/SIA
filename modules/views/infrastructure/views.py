@@ -1012,3 +1012,61 @@ def get_table_item_maintenance(request):
     response["status"] = "success"
     response["success"] = True
     return JsonResponse(response)
+
+
+
+@csrf_exempt
+def add_or_update_infrastructure_maintenance(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            maintenance_id = data.get('id')
+            identifier_id = data.get('identifier_id')
+            provider_id = data.get('provider_id')
+            maintenance_type = data.get('type')
+            date = data.get('date')
+            cost = data.get('cost')
+            general_notes = data.get('general_notes')
+            actions = data.get('actions', [])
+
+            # Validación básica
+            if not identifier_id or not provider_id or not maintenance_type or not date or cost is None:
+                return JsonResponse({'status': 'error', 'message': 'Faltan campos obligatorios.'}, status=400)
+
+            identifier = get_object_or_404(InfrastructureItemDetail, id=identifier_id)
+            provider = get_object_or_404(Provider, id=provider_id)
+
+            if maintenance_id and str(maintenance_id) != "0":
+                # Actualizar
+                maintenance = get_object_or_404(Infrastructure_maintenance, id=maintenance_id)
+                maintenance.identifier = identifier
+                maintenance.provider = provider
+                maintenance.type_maintenance = maintenance_type
+                maintenance.date = date
+                maintenance.cost = cost
+                maintenance.general_notes = general_notes
+                maintenance.save()
+                maintenance.actions.set(MaintenanceAction.objects.filter(id__in=actions))
+                message = "Registro actualizado correctamente."
+            else:
+                # Crear
+                maintenance = Infrastructure_maintenance.objects.create(
+                    identifier=identifier,
+                    provider=provider,
+                    type=maintenance_type,
+                    date=date,
+                    cost=cost,
+                    general_notes=general_notes
+                )
+                if actions:
+                    maintenance.actions.set(MaintenanceAction.objects.filter(id__in=actions))
+                message = "Registro guardado correctamente."
+
+            return JsonResponse({'status': 'success', 'message': message})
+
+        except Exception as e:
+            print(f"Error en mantenimiento: {e}")
+            return JsonResponse({'status': 'error', 'message': 'Error interno del servidor.'}, status=500)
+
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)
