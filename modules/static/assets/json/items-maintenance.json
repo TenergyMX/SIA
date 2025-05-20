@@ -52,6 +52,14 @@
                 {
                     "id": 4,
                     "descripcion": "2"
+                },
+                {
+                    "id": 5,
+                    "descripcion": "345"
+                },
+                {
+                    "id": 6,
+                    "descripcion": "MANTENIEMIENTO 1"
                 }
             ]
         }

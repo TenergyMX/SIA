@@ -124,11 +124,11 @@ class InfrastructureItem {
 
     init() {
         const self = this;
-    
+
         if (self.list) {
             self.list.ajax.reload();
         }
-    
+
         if (self.table) {
             self.tbl_infraesstructure_items = $(self.table.id).DataTable({
                 ajax: {
@@ -159,14 +159,12 @@ class InfrastructureItem {
                 ],
                 initComplete: function (settings, json) {},
             });
-    
+
             delete self.table;
         }
-    
+
         self.setupEventHandlers();
     }
-    
-
 
     setupEventHandlers() {
         const self = this;
@@ -192,29 +190,28 @@ class InfrastructureItem {
                 case "update-item":
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_infraesstructure_items.row(fila).data(); // <-- Primero se obtiene
-                
+
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
                     obj_modal.find(".modal-header").html("Actualizar item de infraestructura");
-                
+
                     get_items_locations(datos["location_id"]); // <-- Ya tienes datos["location_id"]
-                
+
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='update']").show();
-                
+
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_modal.find(`[name="${index}"]`).is(":file");
                         if (!isFileInput) {
                             obj_modal.find(`[name="${index}"]`).val(value || null);
                         }
                     });
-                
+
                     obj_modal
                         .find("[name='is_active']")
                         .val(datos["is_active"] == true ? "1" : "0");
                     break;
-                
-            
+
                 case "delete-item":
                     var url = "/delete-infrastructure-item/";
                     var fila = $(this).closest("tr");
@@ -233,7 +230,7 @@ class InfrastructureItem {
                             Swal.fire("Error", error, "error");
                         });
                     break;
-                    
+
                 default:
                     console.log("Opción dezconocida: " + option);
                     break;
@@ -282,8 +279,6 @@ class InfrastructureItem {
     }
 }
 
-
-
 //funcion para mostrar las opciones en el select al momento de cargar el modal para agregar una nueva ubicacion
 function get_items_locations(selectedLocationId) {
     $.ajax({
@@ -310,15 +305,16 @@ function get_items_locations(selectedLocationId) {
     });
 }
 
-
 //fucion para mostrar el modal de una nueva ubicacion
 document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("item_location").addEventListener("change", function () {
         if (this.value === "add_new") {
-            var locationModal = new bootstrap.Modal(document.getElementById("mdl-crud-item-location"));
+            var locationModal = new bootstrap.Modal(
+                document.getElementById("mdl-crud-item-location")
+            );
             locationModal.show();
             this.value = ""; // Resetear el select a vacío
-            get_company_items(); 
+            get_company_items();
         }
     });
 });
@@ -348,8 +344,8 @@ function get_company_items(selectedCompanyId) {
 
 // Función para agregar una nueva ubicación
 function add_item_location() {
-    var form = $("#form_item_location")[0]; 
-    var formData = new FormData(form); 
+    var form = $("#form_item_location")[0];
+    var formData = new FormData(form);
 
     $.ajax({
         url: "/add_item_location/",
@@ -358,9 +354,9 @@ function add_item_location() {
         contentType: false,
         processData: false,
         success: function (response) {
-             // Verifica la respuesta
+            // Verifica la respuesta
             if (response.success) {
-                $("#form_item_location")[0].reset(); 
+                $("#form_item_location")[0].reset();
                 $("#mdl-crud-item-location").modal("hide"); // Cierra el modal
 
                 // Actualiza el select de ubicaciones
@@ -396,35 +392,30 @@ function add_item_location() {
     });
 }
 
+$(document).on("click", "button[data-infrastructure-item='view-identifiers']", function () {
+    console.log("entramos a la funcion de ver identificadores");
+    console.log("este es eñ id del boton", $(this).data("id"));
+    const itemId = $(this).data("id");
 
-
-
-$(document).on('click', "button[data-infrastructure-item='view-identifiers']", function () {
-
-    console.log("entramos a la funcion de ver identificadores")
-    console.log("este es eñ id del boton", $(this).data('id'))
-    const itemId = $(this).data('id');
-
-    $('#mdl-crud-detaill').data('item-id', itemId);
+    $("#mdl-crud-detaill").data("item-id", itemId);
 
     $.ajax({
-        url: '/get_infrastructure_item_details/',  
-        method: 'GET',
+        url: "/get_infrastructure_item_details/",
+        method: "GET",
         data: { id: itemId },
-        
+
         success: function (response) {
             if (response.success) {
-                const table = $('#item-detail-table');
-        
-           
+                const table = $("#item-detail-table");
+
                 if ($.fn.DataTable.isDataTable(table)) {
                     table.DataTable().destroy();
                 }
-        
-                const tbody = table.find('tbody');
+
+                const tbody = table.find("tbody");
                 tbody.empty();
-        
-                response.data.forEach(item => {
+
+                response.data.forEach((item) => {
                     const responsableHTML = item.tiene_responsable
                         ? `<span>${item.responsable}</span>
                         <button class="btn btn-sm btn-warning ms-2 assign-responsible" data-id="${item.id}" data-responsable-id="${item.responsable_id}">
@@ -434,12 +425,13 @@ $(document).on('click', "button[data-infrastructure-item='view-identifiers']", f
                             <i class="fas fa-user-plus me-1"></i> Asignar responsable
                         </button>`;
 
-                    const fechaHTML = item.fecha_asignacion !== ""
-                        ? item.fecha_asignacion
-                        : `<span class="text-muted">Sin fecha</span>`;
+                    const fechaHTML =
+                        item.fecha_asignacion !== ""
+                            ? item.fecha_asignacion
+                            : `<span class="text-muted">Sin fecha</span>`;
 
                     const qrHTML = item.btn_qr || "";
-        
+
                     tbody.append(`
                         <tr>
                             <td>${item.id}</td>
@@ -450,29 +442,27 @@ $(document).on('click', "button[data-infrastructure-item='view-identifiers']", f
                         </tr>
                     `);
                 });
-        
+
                 // Inicializa DataTables con traducción en español
                 table.DataTable({
                     responsive: true,
                     autoWidth: false,
                     language: {
                         url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-                    }
+                    },
                 });
-        
-                $('#mdl-crud-detaill').modal('show');
+
+                $("#mdl-crud-detaill").modal("show");
             } else {
                 alert("No se pudieron obtener los detalles.");
             }
-        }
-
+        },
     });
 });
 
-
 $(document).on("click", ".assign-responsible", function () {
     const id = $(this).data("id");
-    const responsableId = $(this).data("responsable-id"); 
+    const responsableId = $(this).data("responsable-id");
 
     $("#detalle_id").val(id);
 
@@ -481,17 +471,16 @@ $(document).on("click", ".assign-responsible", function () {
     $("#modalAsignarResponsableLabel").text(modalTitle);
 
     // Cargar usuarios disponibles
-    $.get("/obtener_usuarios/", function(data) {
+    $.get("/obtener_usuarios/", function (data) {
         const select = $("#responsable").empty();
-        data.forEach(u => {
-            const selected = (u.id === responsableId) ? "selected" : "";
+        data.forEach((u) => {
+            const selected = u.id === responsableId ? "selected" : "";
             select.append(`<option value="${u.id}" ${selected}>${u.name}</option>`);
         });
     });
 
     $("#mdl-crud-responsable").modal("show");
 });
-
 
 $("#formAsignarResponsable").submit(function (e) {
     e.preventDefault();
@@ -505,7 +494,7 @@ $("#formAsignarResponsable").submit(function (e) {
         data: {
             id: detalleId,
             responsable: responsableId,
-            csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val()
+            csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val(),
         },
         success: function (res) {
             if (res.success) {
@@ -516,21 +505,21 @@ $("#formAsignarResponsable").submit(function (e) {
                     title: "¡Éxito!",
                     text: res.message,
                     icon: "success",
-                    timer: 1500
+                    timer: 1500,
                 });
                 // Volver a cargar los datos
-                const itemId = $('#mdl-crud-detaill').data('item-id');
+                const itemId = $("#mdl-crud-detaill").data("item-id");
                 if (itemId) {
                     $.ajax({
-                        url: '/get_infrastructure_item_details/',
-                        method: 'GET',
+                        url: "/get_infrastructure_item_details/",
+                        method: "GET",
                         data: { id: itemId },
                         success: function (response) {
                             if (response.success) {
-                                const tbody = $('#mdl-crud-detaill tbody');
+                                const tbody = $("#mdl-crud-detaill tbody");
                                 tbody.empty();
 
-                                response.data.forEach(item => {
+                                response.data.forEach((item) => {
                                     const responsableHTML = item.tiene_responsable
                                         ? `<span>${item.responsable}</span>
                                         <button class="btn btn-sm btn-warning ms-2 assign-responsible" data-id="${item.id}" data-responsable-id="${item.responsable_id}">
@@ -540,9 +529,10 @@ $("#formAsignarResponsable").submit(function (e) {
                                             <i class="fas fa-user-plus me-1"></i> Asignar responsable
                                         </button>`;
 
-                                    const fechaHTML = item.fecha_asignacion !== ""
-                                        ? item.fecha_asignacion
-                                        : `<span class="text-muted">Sin fecha</span>`;
+                                    const fechaHTML =
+                                        item.fecha_asignacion !== ""
+                                            ? item.fecha_asignacion
+                                            : `<span class="text-muted">Sin fecha</span>`;
 
                                     tbody.append(`
                                         <tr>
@@ -555,14 +545,14 @@ $("#formAsignarResponsable").submit(function (e) {
                                     `);
                                 });
                             }
-                        }
+                        },
                     });
                 }
             } else {
                 Swal.fire({
                     title: "¡Error!",
                     text: res.message,
-                    icon: "error"
+                    icon: "error",
                 });
             }
         },
@@ -571,22 +561,22 @@ $("#formAsignarResponsable").submit(function (e) {
             Swal.fire({
                 title: "¡Error!",
                 text: "Hubo un error inesperado. Intenta nuevamente.",
-                icon: "error"
+                icon: "error",
             });
-        }
+        },
     });
 });
-
 
 $(document).on("click", ".generate-qr", function () {
     const itemId = $(this).data("id");
 
-    
     $("#infra-item-id").val(itemId);
 
-    $('#mdl-crud-qr').modal({
-        backdrop: false,  
-        focus: true,
-        keyboard: true
-    }).css("z-index", 1065);
+    $("#mdl-crud-qr")
+        .modal({
+            backdrop: false,
+            focus: true,
+            keyboard: true,
+        })
+        .css("z-index", 1065);
 });

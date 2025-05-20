@@ -1,6 +1,6 @@
 <div class="modal fade effect-scale" id="mdl-crud-infrastructure-maintenance" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
-        <form name="" class="modal-content">
+        <form name="" class="modal-content" data-acction="create" id="form-crud-infrastructure-maintenance">
             <div class="modal-header">
                 <h1 class="modal-title fs-5">Agregar</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -30,8 +30,8 @@
                     <div class="col-12 col-lg-4">
                         <label for="">Tipo de registro</label>
                         <select name="is_new_register" class="form-select">
-                            <option value="1">Nuevo</option>
-                            <option value="0">Previo</option>
+                            <option value="nuevo">Nuevo</option>
+                            <option value="previo">Previo</option>
                         </select>
                     </div>
                     <div class="col-12 col-lg-4">
@@ -64,10 +64,6 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="submit" name="add" class="btn btn-primary">
-                    <i class="fa-solid fa-plus me-1"></i>
-                    Agregar
-                </button>
                 <button type="submit" name="update" class="btn btn-primary">
                     <i class="fa-solid fa-floppy-disk me-1"></i>
                     Guardar

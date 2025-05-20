@@ -30,7 +30,12 @@ from django.views.decorators.csrf import csrf_exempt
 import subprocess
 
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.exceptions import ObjectDoesNotExist
 
+
+from django.http import JsonResponse, Http404
+# dotenv_path = join(dirname(dirname(dirname(_file_))), 'awsCred.env')
+# load_dotenv(dotenv_path)
 AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
 bucket_name=AWS_BUCKET_NAME
 
@@ -969,7 +974,7 @@ def add_new_maintenance_option(request):
     return JsonResponse({'status': 'error', 'message': 'Método no permitido'},status=405)
 
 
-
+#tabla de mantenimiento
 def get_table_item_maintenance(request):
     response = {"success": False}
     context = user_data(request)
@@ -984,11 +989,10 @@ def get_table_item_maintenance(request):
         identifier__item__company_id=company_id
     ).values(
         "id",
+        "identifier__identifier", 
         "identifier__item__name", 
         "type_maintenance",
         "date",
-        "record_type",
-        "checked",
         "provider__name",
         "cost",
         "general_notes"
@@ -998,12 +1002,15 @@ def get_table_item_maintenance(request):
     for item in datos:
         row = dict(item)
         row["btn_action"] = ""
+        
+        row["btn_action"] += "<button type='button' name='view' class='btn btn-icon btn-sm btn-info-light' data-maintenance-action='view-maintenance' data-id='{0}'>" \
+                             "<i class='fa-solid fa-eye'></i></button>\n".format(item["id"])
 
         if access.get("update"):
-            row["btn_action"] += "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light' data-maintenance-action='update' data-id='{0}'>" \
+            row["btn_action"] += "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light' data-maintenance-action='update-maintenance' data-id='{0}'>" \
                                  "<i class='fa-solid fa-pen'></i></button>\n".format(item["id"])
         if access.get("delete"):
-            row["btn_action"] += "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light' data-maintenance-action='delete' data-id='{0}'>" \
+            row["btn_action"] += "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light' data-maintenance-action='delete-maintenance' data-id='{0}'>" \
                                  "<i class='fa-solid fa-trash'></i></button>\n".format(item["id"])
 
         data_list.append(row)
@@ -1016,16 +1023,17 @@ def get_table_item_maintenance(request):
 
 
 @csrf_exempt
-def add_or_update_infrastructure_maintenance(request):
+def add_infrastructure_maintenance(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
 
             maintenance_id = data.get('id')
             identifier_id = data.get('identifier_id')
+            date = data.get('date')
+            new_regiter = data.get('is_new_register')
             provider_id = data.get('provider_id')
             maintenance_type = data.get('type')
-            date = data.get('date')
             cost = data.get('cost')
             general_notes = data.get('general_notes')
             actions = data.get('actions', [])
@@ -1037,31 +1045,19 @@ def add_or_update_infrastructure_maintenance(request):
             identifier = get_object_or_404(InfrastructureItemDetail, id=identifier_id)
             provider = get_object_or_404(Provider, id=provider_id)
 
-            if maintenance_id and str(maintenance_id) != "0":
-                # Actualizar
-                maintenance = get_object_or_404(Infrastructure_maintenance, id=maintenance_id)
-                maintenance.identifier = identifier
-                maintenance.provider = provider
-                maintenance.type_maintenance = maintenance_type
-                maintenance.date = date
-                maintenance.cost = cost
-                maintenance.general_notes = general_notes
-                maintenance.save()
-                maintenance.actions.set(MaintenanceAction.objects.filter(id__in=actions))
-                message = "Registro actualizado correctamente."
-            else:
-                # Crear
-                maintenance = Infrastructure_maintenance.objects.create(
-                    identifier=identifier,
-                    provider=provider,
-                    type=maintenance_type,
-                    date=date,
-                    cost=cost,
-                    general_notes=general_notes
-                )
-                if actions:
-                    maintenance.actions.set(MaintenanceAction.objects.filter(id__in=actions))
-                message = "Registro guardado correctamente."
+            maintenance = Infrastructure_maintenance.objects.create(
+                identifier=identifier,
+                provider=provider,
+                type_maintenance=maintenance_type,
+                date=date,
+                cost=cost,
+                general_notes=general_notes,
+                actions = actions,
+                status = new_regiter
+            )
+               
+                   
+            message = "Registro guardado correctamente."
 
             return JsonResponse({'status': 'success', 'message': message})
 
@@ -1070,3 +1066,224 @@ def add_or_update_infrastructure_maintenance(request):
             return JsonResponse({'status': 'error', 'message': 'Error interno del servidor.'}, status=500)
 
     return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)
+
+def get_infrastructure_maintenance_detail(request):
+    response = {"status": "error"}
+    id = request.GET.get("id")
+
+    try:
+        obj = Infrastructure_maintenance.objects.get(id=id)
+
+        # Procesar acciones
+        acciones_str = ""
+        if obj.actions:
+            try:
+                acciones_data = eval(obj.actions)
+                if isinstance(acciones_data, dict):
+                    acciones_list = list(acciones_data.keys())
+                elif isinstance(acciones_data, list):
+                    acciones_list = acciones_data
+                else:
+                    acciones_list = []
+            except Exception:
+                acciones_list = []
+        else:
+            acciones_list = []
+
+
+        response["status"] = "success"
+        print("estas son las acciones:", acciones_data)
+        response["data"] = {
+            "id": obj.id,
+            "date": obj.date.strftime("%Y-%m-%d"),
+            "type_maintenance": obj.type_maintenance,
+            "cost": str(obj.cost),
+            "general_notes": obj.general_notes,
+            "identifier_id": obj.identifier_id,
+            "provider_id": obj.provider_id,
+            "actions": acciones_list
+        }
+
+    except Infrastructure_maintenance.DoesNotExist:
+        response["message"] = "No se encontró el mantenimiento"
+
+    return JsonResponse(response)
+
+
+@csrf_exempt
+def update_infraestructure_maintenance(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            maintenance_id = data.get('id')
+            identifier_id = data.get('identifier_id')
+            date = data.get('date')
+            provider_id = data.get('provider_id')
+            maintenance_type = data.get('type')
+            cost = data.get('cost')
+            general_notes = data.get('general_notes')
+            actions = data.get('actions', [])
+
+            if not maintenance_id:
+                return JsonResponse({'status': 'error', 'message': 'ID de mantenimiento requerido.'}, status=400)
+
+            maintenance = get_object_or_404(Infrastructure_maintenance, id=maintenance_id)
+
+            maintenance.identifier_id = identifier_id
+            maintenance.provider_id = provider_id
+            maintenance.type_maintenance = maintenance_type
+            maintenance.date = date
+            maintenance.cost = cost
+            maintenance.general_notes = general_notes
+            maintenance.actions = actions
+            maintenance.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Mantenimiento actualizado correctamente.'})
+
+        except Exception as e:
+            print(f"Error en mantenimiento: {e}")
+            return JsonResponse({'status': 'error', 'message': 'Error interno del servidor.'}, status=500)
+
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)
+
+#funcion para eliminar el mantenimiento
+@login_required
+@csrf_exempt
+def delete_maintenance_infraestructure(request):
+    if request.method == 'POST':
+        form = request.POST
+        _id = form.get('id')
+
+        if not _id:
+            return JsonResponse({'success': False, 'message': 'No ID provided'})
+
+        try:
+            maintenance = Infrastructure_maintenance.objects.get(id=_id)
+        except Services.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Service not found'})
+
+        maintenance.delete()
+
+        return JsonResponse({'success': True, 'message': 'Servicio eliminado correctamente!'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+
+
+@csrf_exempt 
+def update_status_mantenance(request):
+    if request.method == 'POST':
+        # Obtener los datos enviados
+        maintenance_id = request.POST.get('id')
+        new_status = request.POST.get('status')
+
+        try:
+            # Obtener el mantenimiento
+            maintenance = Infrastructure_maintenance.objects.get(id=maintenance_id)
+            
+            # Verificar si la fecha ya pasó y si el estado no es "Proceso" o "Finalizado"
+            current_date = timezone.now().date()
+            maintenance_date = maintenance.date
+            if maintenance_date < current_date and maintenance.status not in ["Proceso", "Finalizado"]:
+                new_status = "Retrasado"  # Si la fecha ya pasó, marcar como "Retrasado"
+            
+            # Actualizar el estado
+            maintenance.status = new_status
+            maintenance.save()
+
+            # Responder con éxito
+            return JsonResponse({'status': 'success', 'message': 'Estado actualizado correctamente.'})
+
+        except Vehicle_Maintenance.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Mantenimiento no encontrado.'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Método no permitido.'})
+
+
+def get_infrastructure_info_from_maintenance(request, maintenance_id):
+    try:
+        maintenance = Infrastructure_maintenance.objects.select_related('identifier__item').get(id=maintenance_id)
+        detail = maintenance.identifier
+        mantenimientos = Infrastructure_maintenance.objects.filter(identifier=detail).select_related('provider').order_by('-date')
+
+        detail_html = render_to_string("infrastructure/cards/infraestructure_info.html", {
+            'detail': detail,
+            'item': detail.item
+        })
+
+        maintenance_html = render_to_string("infrastructure/cards/maintenance_infraestructure_info.html", {
+            'mantenimientos': mantenimientos
+        })
+
+        return JsonResponse({
+            'detail_html': detail_html,
+            'maintenance_html': maintenance_html,
+        })
+
+    except Infrastructure_maintenance.DoesNotExist:
+        return JsonResponse({'error': 'Mantenimiento no encontrado'}, status=404)
+
+
+
+
+def mostrar_informacion(request, maintenance_id):
+    try:
+        mantenimiento = Infrastructure_maintenance.objects.select_related(
+            "identifier", "identifier__item", "identifier__responsible"
+        ).get(id=maintenance_id)
+
+        detalle = mantenimiento.identifier
+        item = detalle.item
+
+        image_url = None
+        if item.image:
+            image_url = generate_presigned_url(bucket_name, item.image.name)
+        
+        print("este es el id del mantenimiento:", mantenimiento.id)
+        response_data = {
+            "maintenance_id": mantenimiento.id,  # ID del mantenimiento
+            # "item_id": item.id,  # ID del ítem
+            "identifier": detalle.identifier,
+            "name": detalle.name,
+            "responsible": f"{detalle.responsible.first_name} {detalle.responsible.last_name}" if detalle.responsible else "Sin responsable",
+            "assignment_date": detalle.assignment_date.strftime("%Y-%m-%d") if detalle.assignment_date else "Sin fecha",
+            "image_url": image_url,
+        }
+
+        return JsonResponse({"success": True, "data": response_data})
+
+    except ObjectDoesNotExist:
+        return JsonResponse({"success": False, "error": "Mantenimiento no encontrado"})
+
+
+
+
+def mostrar_informacion_mantenimiento(request, maintenance_id):
+    try:
+        mantenimiento = Infrastructure_maintenance.objects.select_related(
+            "identifier", "provider"
+        ).get(id=maintenance_id)
+
+        detalle = mantenimiento.identifier
+
+        print("este es el id del mantenimiento para mostrar su informacion:", mantenimiento.id)
+
+        response_data = {
+            "identifier": detalle.identifier,
+            "type_maintenance": mantenimiento.type_maintenance,
+            "name": detalle.name,
+            "provider": mantenimiento.provider.name if mantenimiento.provider else "Sin proveedor",
+            "date": mantenimiento.date.strftime("%Y-%m-%d") if mantenimiento.date else "Sin fecha",
+            "cost": mantenimiento.cost,
+            "general_notes": mantenimiento.general_notes,
+            "actions": mantenimiento.actions,
+        }
+
+        print("esta es la informacion enviada:", response_data)
+
+        return JsonResponse({"success": True, "data": response_data})
+
+    except ObjectDoesNotExist:
+        return JsonResponse({"success": False, "error": "Mantenimiento no encontrado"})

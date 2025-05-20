@@ -45,6 +45,24 @@ urlpatterns = [
     path('add_new_maintenance_option/', views.add_new_maintenance_option),
 
     path('get_table_item_maintenance/', views.get_table_item_maintenance),
-    path('add_or_update_infrastructure_maintenance/', views.add_or_update_infrastructure_maintenance),
+    path('add_infrastructure_maintenance/', views.add_infrastructure_maintenance),
+    path("get_infrastructure_maintenance_detail/", views.get_infrastructure_maintenance_detail),
+
+    path("delete_maintenance_infraestructure/", views.delete_maintenance_infraestructure),
+    # path('get_infraestructure_details/<int:id>/', views.get_infraestructure_details),
+    path('update_infrastructure_maintenance/', views.update_infraestructure_maintenance),
+
+    path('update_status_mantenance/', views.update_status_mantenance),
+
+
+    path('ajax/infra-info-by-maintenance/<int:maintenance_id>/', views.get_infrastructure_info_from_maintenance),
+    path('mostrar_informacion/<int:maintenance_id>/', views.mostrar_informacion),
+    path('mostrar_informacion_mantenimiento/<int:maintenance_id>/', views.mostrar_informacion_mantenimiento),
+
+
+
+
+
+
 
 ]

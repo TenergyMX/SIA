@@ -653,11 +653,13 @@ class Infrastructure_maintenance(models.Model):
     identifier = models.ForeignKey(InfrastructureItemDetail, on_delete=models.CASCADE, verbose_name="Item")
     type_maintenance = models.CharField(max_length=32, blank=True, null=True)
     date = models.DateField(blank=True, null=True)
-    record_type =  models.CharField(max_length=32, blank=True, null=True)
-    checked = models.CharField(blank=True, null=True, max_length=20, default='Regular', verbose_name="Check")
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, blank=True, null=True)
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     general_notes = models.TextField(max_length=255, blank=True, null=True)
+    actions = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=255, null=False, default="blank")
+    comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de pago o de matenimiento")
+
 
 
 class MaintenanceAction(models.Model):

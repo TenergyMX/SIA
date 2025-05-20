@@ -91,7 +91,7 @@ def get_sidebar(data={}, module_ids=None):
         if module_name not in modules:
             modules[module_name] = []
         modules[module_name].append({
-            "title": submodule.subModule.short_name if hasattr(submodule, 'subModule') else submodule.name,
+            "title": submodule.subModule.name if hasattr(submodule, 'subModule') else submodule.name,
             "icon": submodule.subModule.icon if hasattr(submodule, 'subModule') else submodule.icon,
             "link": submodule.subModule.link if hasattr(submodule, 'subModule') else submodule.link
         })

@@ -15,8 +15,8 @@ class VehiclesMaintenance {
                     },
                     data: function () {
                         return {
-                            vehicle_id: defaultOptions.infoCard.id || defaultOptions.infoCard.vehicle.id,
-
+                            vehicle_id:
+                                defaultOptions.infoCard.id || defaultOptions.infoCard.vehicle.id,
                         };
                     },
                     reload: function () {
@@ -201,15 +201,13 @@ class VehiclesMaintenance {
             ajax: {
                 url: "/get_vehicle_maintenance_kilometer/",
                 dataSrc: "data",
-        
 
-                data: function(d) {
-                    const vehicleId = self.vehicle?.id || self.vehicle?.data?.id || self.table?.vehicle?.id;
+                data: function (d) {
+                    const vehicleId =
+                        self.vehicle?.id || self.vehicle?.data?.id || self.table?.vehicle?.id;
                     console.log("Enviando ID:", vehicleId);
                     d.id = vehicleId;
                 },
-                
-                
             },
             columns: [
                 { data: "kilometer", title: "Kilometraje", orderable: false },
@@ -475,7 +473,6 @@ class VehiclesMaintenance {
                         function (result) {
                             let opciones = result; // Usamos el resultado directamente
 
-                            
                             // Recorrer los <li> dentro de #card_maintenance_info y cambiar su color si su texto está en opciones
                             $(
                                 "#card_maintenance_info .list-group-item.list-group-item-action"
@@ -558,9 +555,9 @@ class VehiclesMaintenance {
             } else {
                 id_edit = ""; // Si no hay valor en el campo, asegúrate de que sea una cadena vacía
             }
-            
+
             verificar_mantenimiento(selectedOption, vehicle_man, tipo, id_edit, "MODAL");
-            
+
             if (selectedOption.includes("Nuevo")) {
                 // Abrir el modal para agregar un nuevo tipo
                 $("#mdl-crud-option-maintenance").modal("show");
@@ -792,7 +789,6 @@ function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo,
         success: function (data) {
             // Declarar 'opciones' fuera del bloque if
             let opciones = [];
-            
 
             if (data.status == "info") {
                 // Separar el mensaje en opciones sin modificar el contenido
@@ -800,7 +796,7 @@ function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo,
             }
 
             if (modulo == "MODAL") {
-                console.log("se seleccionan varias opciones")
+                console.log("se seleccionan varias opciones");
                 $(
                     ".select2-container--default .select2-selection--multiple .select2-selection__choice"
                 ).each(function () {

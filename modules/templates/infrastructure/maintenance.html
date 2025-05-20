@@ -48,7 +48,38 @@
             </div>
         </div>
     </div>
+
+
+    <div class="info-details" style="display: none;">
+        <div class="row g-3">
+            <div class="col-md-4 col-xxl-3">
+                {% include "infrastructure/cards/infraestructure_info.html" %}
+            </div>
+            <div class="col-md-8 col-xxl-9">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="mb-0">
+                            <button
+                                type="button"
+                                class="btn btn-info"
+                                data-sia-infraestructure-maintenance="show-info"
+                                title="Regresar"
+                            >
+                                <i class="fa-solid fa-arrow-left me-1"></i>
+                                Regresar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 2 -->
+                {% include "infrastructure/cards/maintenance_infraestructure_info.html" %}
+                <!-- end -->
+            </div>
+        </div>
+    </div>
 </section>
+
+
 
 
 {% endblock %}
@@ -57,7 +88,6 @@
 {% block modals %}
 {% include "infrastructure/modals/mdl-crud-maintenance.html" %}
 {% include "infrastructure/modals/mdl-crud-option-maintenance-item.html" %}
-
 {% endblock %}
 
 {% block head %} {% endblock %}
