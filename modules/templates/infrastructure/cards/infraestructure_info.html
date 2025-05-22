@@ -1,12 +1,16 @@
 <div class="card custom-card card-infraestructure-info">
     <div class="card-body placeholder-glow">
-        <div class="card-img text-center mb-2" style="min-height: 9rem;">
+        <div class="card-img text-center mb-2" style="min-height: 4rem;">
             <picture>
-                <img src="" alt="Imagen de infraestructura" class="card-img" style="
+                <img alt="Imagen de infraestructura" class="card-img" style="
                 border: 5px dotted #cccccc;
                 border-radius: 10px;
                 cursor: crosshair;
-                ">
+                "
+                {% if image %}
+                    src = "{{image}}"
+                {% endif %}
+                >
             </picture>
         </div>
         <div class="row g-2">
@@ -14,7 +18,7 @@
                 <span class="fw-bolder">ID Mantenimiento:</span>
             </div>
             <div class="col-md-9 col-lg-6" data-info="maintenance_id">
-                <span class="" data-key-value="maintenance_id"></span>
+                <span class="" data-key-value="maintenance_id">{{id}}</span>
             </div>
 
 
@@ -22,22 +26,20 @@
                 <span class="fw-bolder">Identificador:</span>
             </div>
             <div class="col-md-9 col-lg-6" data-info="name">
-                <span class="" data-key-value="identifier_id"></span>
+                <span class="" data-key-value="identifier_id">{{detail}}</span>
             </div>
 
             <div class="col-md-3 col-lg-6" data-info="name">
                 <span class="fw-bolder">Nombre:</span>
             </div>
             <div class="col-md-9 col-lg-6" data-info="name">
-                <span class="" data-key-value="name"></span>
+                <span class="" data-key-value="name">{{detail.item.name}}</span>
             </div>
-            
-           
             <div class="col-md-3 col-lg-6" data-info="responsible">
                 <span class="fw-bolder">Responsable:</span>
             </div>
             <div class="col-md-9 col-lg-6" data-info="responsible">
-                <span class="" data-key-value="responsible"></span>
+                <span class="" data-key-value="responsible">{{detail.item.responsable_temporal|default:"Sin responsable"}}</span>
             </div>
             <div class="col-md-3 col-lg-6" data-info="date">
                 <span class="fw-bolder">Fecha:</span>

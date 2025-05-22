@@ -1,44 +1,62 @@
-<form action="" class="" id="form_maintenance_infraestructure_info">
+<form method="POST" class="" id="form_maintenance_infraestructure_info" enctype="multipart/form-data">
     {% csrf_token %}
-    <input type="hidden" name="id">
-    <input type="hidden" name="infraestructure_id">
-    <input type="hidden" name="infraestructure__name">
+    <input type="hidden" name="id" value="{{detail.id}}">
+    <input type="hidden" name="infraestructure_id" value="{{detail.item.id}}">
+    <input type="hidden" name="infraestructure__name" value="{{detail.identifier}}">
     <!-- ! card -->
     <div class="card custom-card info-card" id="card_maintenance_infaestructure_info">
         <div class="card-body">
             <div class="row g-1 mb-3">
+                <div class="card-img text-center mb-2" style="min-height: 3rem;">
+                    <picture>
+                        <img id="preview_comprobante" alt="Imagen de infraestructura" class="card-img" style="
+                        border: 5px dotted #cccccc;
+                        border-radius: 10px;
+                        cursor: crosshair;
+                        width: auto;
+                        "
+                        {% if image %}
+                            src = "{{image}}"
+                        {% endif %}
+                        >
+                    </picture>
+                </div>
+            </div>
+            <div class="row g-1 mb-3">
                 <div class="col-12">
-                    <span class="fw-bolder">Identificador: </span>
-                    <span class="placeholder col-10 col-md-2" data-key-value="infraestructure__name"></span>
+                    <span class="fw-bolder">Identificador:</span>
+                    <span class="col-10 col-md-2" data-key-value="infraestructure__name">{{detail.identifier}}</span>
                 </div>
                 <div class="col-12">
                     <span class="fw-bolder">Tipo de Manteniento: </span>
-                    <span class="placeholder col-10 col-md-2" data-key-value="type"></span>
+                    <span class="col-10 col-md-2" data-key-value="type">{{detail.type_maintenance}}</span>
                 </div>
                 <div class="col-12">
                     <span class="fw-bolder">Fecha de mantenimiento: </span>
-                    <span class="placeholder col-10 col-md-4" data-key-value="date"></span>
+                    <span class="col-10 col-md-4" data-key-value="date">{{detail.date}}</span>
                 </div>
-           
+                {% if not image %}
                 <div class="col-12 comprobante">
                     <span class="fw-bolder me-2">Comprobante: </span>
-                    <input type="file" name="comprobante" class="form-control form-control-sm d-inline-block" style="width: auto;">
+                    <input type="file" name="comprobante" class="form-control form-control-sm d-inline-block" style="width: auto;" onchange="handleFileChange(this)">
                     <a href="#" class="btn btn-sm btn-info" download="" style="display: none;">
                         <i class="fa-solid fa-download me-1"></i>
                         Comprobante
                     </a>
                 </div>
+                {%endif%}
             </div>
             <ol class="list-group list-group-numbered placeholder-glow mb-3">
-                <li class="list-group-item">
-                    <span class="placeholder col-10 col-md-6"></span>
+                {% for action in actions %}
+                <li class="list-group-item list-group-item-action">
+                    {{action.name}}
+                    <select name="{{action.name}}" class="form-select form-select-sm d-inline-block float-end action-item" style="width:auto" disabled>
+                        <option value="MALO" {%if action.status == "MALO" %}selected{%endif%}>MALO</option>
+                        <option value="REGULAR" {%if action.status == "REGULAR" %}selected{%endif%}>REGULAR</option>
+                        <option value="BUENO" {%if action.status == "BUENO" %}selected{%endif%}>BUENO</option>
+                    </select>
                 </li>
-                <li class="list-group-item">
-                    <span class="placeholder col-10 col-md-4"></span>
-                </li>
-                <li class="list-group-item">
-                    <span class="placeholder col-10 col-md-5"></span>
-                </li>
+                {% endfor %}
             </ol>
             <div class="text-end d-none">
                 <button type="button" class="btn btn-success-light">
@@ -49,15 +67,15 @@
             <div class="row g-1">
                 <div class="col-sm-6">
                     <span class="fw-bolder">Proveedor: </span>
-                    <span class="placeholder col-10 col-md-4" data-key-value="provider__name"></span>
+                    <span class="col-10 col-md-4" data-key-value="provider__name">{{detail.provider.name}}</span>
                 </div>
                 <div class="col-sm-6">
                     <span class="fw-bolder">Costo: </span>
-                    <span class="placeholder col-10 col-md-4" data-key-value="cost"></span>
+                    <span class="col-10 col-md-4" data-key-value="cost">{{detail.cost}}</span>
                 </div>
                 <div class="col-sm-12">
                     <span class="fw-bolder d-block">Notas generales: </span>
-                    <span class="placeholder col-10 col-md-4" data-key-value="general_notes"></span>
+                    <span class="col-10 col-md-4" data-key-value="general_notes">{{detail.general_notes}}</span>
                 </div>
             </div>
             <div class="text-center mt-4 form-btn">
@@ -65,10 +83,12 @@
                     <i class="fa-solid fa-rotate-right me-1"></i>
                     Restablecer
                 </button>
-                <button type="submit" class="btn btn-primary-light">
+                {% if detail.status != "Finalizado" %}
+                <button type="submit" class="btn btn-primary-light" onclick="update_status_man(); return false;">
                     <i class="fa-solid fa-floppy-disk me-1"></i>
                     Guardar
                 </button>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -112,7 +112,6 @@ function get_identifier(selectedId = null) {
 
 //Función para cargar los nombres de los proveedores han sido registrados
 function get_items_providers(selectedProviderId) {
-    console.log("se cargan los proveedores");
     $.ajax({
         url: "/get_items_providers/",
         type: "GET",
@@ -164,19 +163,14 @@ function add_item_maintenance(button) {
 }
 
 function get_maintenance_actions(tipoSeleccionado) {
-    console.log("Obteniendo acciones de mantenimiento...");
     $.ajax({
         url: "/get_maintenance_actions/",
         type: "GET",
         success: function (response) {
-            console.log("Respuesta:", response);
-
             const select = $("#select-field-infraestructure");
             const previouslySelected = select.val() || [];
-
             // Limpiar opciones actuales
             select.empty();
-
             if (!response.data || response.data.length === 0) {
                 select.append(`<option disabled selected>No hay acciones disponibles</option>`);
                 return;
@@ -206,7 +200,7 @@ function get_maintenance_actions(tipoSeleccionado) {
                         ? "selected"
                         : "";
                     select.append(
-                        `<option value="${item.id}" ${selected}>${item.descripcion}</option>`
+                        `<option value="${item.descripcion}" ${selected}>${item.descripcion}</option>`
                     );
                 });
             } else {
@@ -322,6 +316,14 @@ $("#mdl-crud-infrastructure-maintenance form").on("submit", function (e) {
     e.preventDefault();
 
     const form = $(this);
+
+    actions2 = {};
+    form.find('[name="actions[]"]')
+        .val()
+        .forEach((opcion) => {
+            actions2[opcion] = "MALO";
+        });
+
     const data = {
         id: form.find('[name="id"]').val(),
         identifier_id: form.find('[name="identifier_id"]').val(),
@@ -331,9 +333,8 @@ $("#mdl-crud-infrastructure-maintenance form").on("submit", function (e) {
         provider_id: form.find('[name="provider_id"]').val(),
         cost: form.find('[name="cost"]').val(),
         general_notes: form.find('[name="general_notes"]').val(),
-        actions: form.find('[name="actions[]"]').val(),
+        actions: actions2,
     };
-
     if (!data.identifier_id || !data.type || !data.date || !data.provider_id || !data.cost) {
         Swal.fire({
             title: "¡Advertencia!",
@@ -389,7 +390,6 @@ $("#mdl-crud-infrastructure-maintenance form").on("submit", function (e) {
 });
 
 $(document).on("click", "[data-maintenance-action='update-maintenance']", function () {
-    console.log("Editando mantenimiento");
     var maintenanceId = $(this).data("id");
     edit_item_maintenance(maintenanceId);
 });
@@ -561,85 +561,98 @@ function update_status_mantenance(id, newStatus) {
 
 //boton de regresar
 $(document).on("click", '[data-sia-infraestructure-maintenance="show-info"]', function () {
-    console.log("Mostrando información de mantenimiento");
-    const maintenanceId = $(this).data("id");
-    $(".info-details").hide();
-    $(".info").show();
+    hideShow("#v-deliverie-pane .info-details", "#v-deliverie-pane .info");
 });
 
 // Mostrar detalles de mantenimiento al hacer clic en el botón "Ver Mantenimiento"
 $(document).on("click", '[data-maintenance-action="view-maintenance"]', function () {
     const maintenanceId = $(this).data("id");
-
     $.get(`/ajax/infra-info-by-maintenance/${maintenanceId}/`, function (response) {
         if (response.detail_html && response.maintenance_html) {
             // Cargar info en los bloques correspondientes
             $(".info-details .col-md-4").html(response.detail_html);
             $(".info-details .col-md-8").find(".card.mb-3").next().remove(); // Limpia mantenimiento anterior
             $(".info-details .col-md-8").append(response.maintenance_html);
-            $(".info-details").show(); // Muestra el panel con la info
-            $(".info").hide(); // Oculta la tabla
+            hideShow("#v-deliverie-pane .info", "#v-deliverie-pane .info-details");
         } else {
             alert("No se pudo cargar la información del mantenimiento.");
         }
     });
-
-    $.get(`/mostrar_informacion/${maintenanceId}/`, function (response) {
-        if (response.success) {
-            const data = response.data;
-
-            $(".card-img img").attr("src", data.image_url || "/ruta/default.jpg");
-            $('[data-key-value="maintenance_id"]').text(data.maintenance_id);
-            $('[data-key-value="name"]').text(data.name || "-");
-            $('[data-key-value="identifier_id"]').text(data.identifier || "-");
-            $('[data-key-value="responsible"]').text(data.responsible || "-");
-            $('[data-key-value="date"]').text(data.assignment_date || "-");
-
-            $('[data-info="id"]').removeClass("d-none");
-        } else {
-            alert("No se pudo obtener la información del mantenimiento.");
-        }
-    });
-
-    $.get(`/mostrar_informacion_mantenimiento/${maintenanceId}/`, function (response) {
-        if (response.success) {
-            const data = response.data;
-
-            // Llenar los campos ocultos si los necesitas
-            $("#form_maintenance_infraestructure_info input[name='id']").val(data.id || "");
-            $("#form_maintenance_infraestructure_info input[name='infraestructure_id']").val(
-                data.infraestructure_id || ""
-            );
-            $("#form_maintenance_infraestructure_info input[name='infraestructure__name']").val(
-                data.name || ""
-            );
-
-            // Rellenar los spans
-            $('[data-key-value="infraestructure__name"]').text(data.name || "-");
-            $('[data-key-value="type"]').text(data.type_maintenance || "-");
-            $('[data-key-value="date"]').text(data.date || "-");
-            $('[data-key-value="provider__name"]').text(data.provider || "-");
-            $('[data-key-value="cost"]').text(data.cost || "-");
-            $('[data-key-value="general_notes"]').text(data.general_notes || "-");
-
-            // Comprobante
-            const comprobanteLink = $(".comprobante a");
-            if (data.voucher_url) {
-                comprobanteLink.attr("href", data.voucher_url).show();
-            } else {
-                comprobanteLink.hide();
-            }
-
-            // Mostrar el formulario/card si está oculto
-            $("#form_maintenance_infraestructure_info, #card_maintenance_infaestructure_info")
-                .removeClass("d-none")
-                .css({
-                    display: "block",
-                    opacity: 1,
-                    visibility: "visible",
-                });
-        } else {
-            alert("No se pudo obtener la información detallada del mantenimiento.");
-        }
-    });
 });
+
+function update_status_man() {
+    var url = "/update_infraestructure_status_man/";
+    var datos = new FormData($("#form_maintenance_infraestructure_info")[0]);
+    datos.append("csrfmiddlewaretoken", $('input[name="csrfmiddlewaretoken"]').val());
+    Swal.fire({
+        title: "Estás seguro?",
+        text: "Solo se podra guardar cambios una sola vez",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Si, adelante",
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        let actionsformat2 = { action: [] };
+        $("#form_maintenance_infraestructure_info .action-item").each(function () {
+            let name = $(this).attr("name");
+            let value = $(this).val();
+            actionsformat2["action"].push({ name: name, value: value });
+        });
+        datos.append("actions", JSON.stringify(actionsformat2));
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: datos,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                var message = response.message || "Ocurrió un error inesperado";
+                if (response.status == "error") {
+                    Swal.fire("Error", response.message, "error");
+                    return;
+                } else if (response.status == "warning") {
+                    Swal.fire("Advertencia", response.message, "warning");
+                    return;
+                } else if (response.status != "success") {
+                    Swal.fire("Oops", message, "error");
+                    return;
+                }
+                message = response.message || "Se han guardado los datos con éxito";
+                Swal.fire("Éxito", message, "success");
+                $("#form_maintenance_infraestructure_info .action-item").attr("disabled", true);
+            },
+            error: function (xhr, status, error) {
+                let errorMessage = "Ocurrió un error inesperado";
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                Swal.fire("Error", errorMessage, "error");
+            },
+        });
+    });
+}
+
+function handleFileChange(input) {
+    const files = input.files;
+    if (files.length > 0) {
+        const file = files[0];
+
+        // Validar si es una imagen
+        if (file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                $("#preview_comprobante").attr("src", e.target.result).show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $("#preview_comprobante").hide().attr("src", "");
+            alert("Por favor selecciona un archivo de imagen válido.");
+        }
+        $("#form_maintenance_infraestructure_info .action-item").removeAttr("disabled");
+    } else {
+        $("#form_maintenance_infraestructure_info .action-item").each(function () {
+            $(this).find("option:first").prop("selected", true);
+        });
+        $("#form_maintenance_infraestructure_info .action-item").attr("disabled", true);
+    }
+}

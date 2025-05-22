@@ -19,6 +19,7 @@
 </div>
 
 <section id="v-deliverie-pane">
+    {% csrf_token %}
     <div class="info">
         <div class="card custom-card">
             <div class="card-header justify-content-between">
@@ -53,7 +54,7 @@
     <div class="info-details" style="display: none;">
         <div class="row g-3">
             <div class="col-md-4 col-xxl-3">
-                {% include "infrastructure/cards/infraestructure_info.html" %}
+               
             </div>
             <div class="col-md-8 col-xxl-9">
                 <div class="card mb-3">
@@ -71,8 +72,9 @@
                         </div>
                     </div>
                 </div>
+                
                 <!-- 2 -->
-                {% include "infrastructure/cards/maintenance_infraestructure_info.html" %}
+                
                 <!-- end -->
             </div>
         </div>

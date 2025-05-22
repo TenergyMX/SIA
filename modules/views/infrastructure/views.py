@@ -1125,6 +1125,7 @@ def update_infraestructure_maintenance(request):
             general_notes = data.get('general_notes')
             actions = data.get('actions', [])
 
+            print(actions)
             if not maintenance_id:
                 return JsonResponse({'status': 'error', 'message': 'ID de mantenimiento requerido.'}, status=400)
 
@@ -1203,25 +1204,39 @@ def update_status_mantenance(request):
 
 
 def get_infrastructure_info_from_maintenance(request, maintenance_id):
+    import ast
     try:
         maintenance = Infrastructure_maintenance.objects.select_related('identifier__item').get(id=maintenance_id)
         detail = maintenance.identifier
-        mantenimientos = Infrastructure_maintenance.objects.filter(identifier=detail).select_related('provider').order_by('-date')
-
-        detail_html = render_to_string("infrastructure/cards/infraestructure_info.html", {
+        image_url = None
+        
+        if detail.item.image:
+            image_url = generate_presigned_url(AWS_BUCKET_NAME, str(detail.item.image))
+        detail_html = render_to_string("infrastructure/cards/infraestructure_info.html", context = {
             'detail': detail,
-            'item': detail.item
+            'item': detail.item,
+            'id': maintenance.id,
+            'image' : image_url
         })
-
-        maintenance_html = render_to_string("infrastructure/cards/maintenance_infraestructure_info.html", {
-            'mantenimientos': mantenimientos
+        
+        action2 = []
+        for key, value in ast.literal_eval(maintenance.actions).items():
+            action2.append({ "name":key, "status" : value})
+            
+        image_url = None
+        if maintenance.comprobante:
+            image_url = generate_presigned_url(AWS_BUCKET_NAME, str(maintenance.comprobante))
+        maintenance_html = render_to_string("infrastructure/cards/maintenance_infraestructure_info.html", context = {
+            'detail': maintenance,
+            'item': detail.item,
+            'actions' : action2,
+            'image': image_url
         })
-
+        
         return JsonResponse({
             'detail_html': detail_html,
-            'maintenance_html': maintenance_html,
+            'maintenance_html': maintenance_html
         })
-
     except Infrastructure_maintenance.DoesNotExist:
         return JsonResponse({'error': 'Mantenimiento no encontrado'}, status=404)
 
@@ -1239,51 +1254,72 @@ def mostrar_informacion(request, maintenance_id):
 
         image_url = None
         if item.image:
-            image_url = generate_presigned_url(bucket_name, item.image.name)
+            image_url = generate_presigned_url(AWS_BUCKET_NAME, str(item.image))
         
         print("este es el id del mantenimiento:", mantenimiento.id)
         response_data = {
-            "maintenance_id": mantenimiento.id,  # ID del mantenimiento
-            # "item_id": item.id,  # ID del ítem
-            "identifier": detalle.identifier,
+            #Id
+            "maintenance_id": mantenimiento.id,
             "name": detalle.name,
+            #Identificador
+            "identifier": detalle.identifier,
+            #Tipo de mantenimiento
+            "type_maintenance" : mantenimiento.type_maintenance,
+            #Fecha de mantenimiento
+            "date_maintenance" : mantenimiento.date.strftime("%Y-%m-%d") if mantenimiento.date else "Sin fecha",
+            #Comprobante
+            "voucher" : "mantenimiento.comprobante",
+            #Proveedor
+            "provider" : mantenimiento.provider.name,
             "responsible": f"{detalle.responsible.first_name} {detalle.responsible.last_name}" if detalle.responsible else "Sin responsable",
+            #Costo
+            "cost" : mantenimiento.cost,
+            #Notas generales
+            "general_notes" : mantenimiento.general_notes,
             "assignment_date": detalle.assignment_date.strftime("%Y-%m-%d") if detalle.assignment_date else "Sin fecha",
+            
             "image_url": image_url,
+            "actions" : mantenimiento.actions
         }
 
+        print(response_data)
         return JsonResponse({"success": True, "data": response_data})
 
     except ObjectDoesNotExist:
         return JsonResponse({"success": False, "error": "Mantenimiento no encontrado"})
-
-
-
-
-def mostrar_informacion_mantenimiento(request, maintenance_id):
+    
+def update_infraestructure_status_man(request):
     try:
-        mantenimiento = Infrastructure_maintenance.objects.select_related(
-            "identifier", "provider"
-        ).get(id=maintenance_id)
-
-        detalle = mantenimiento.identifier
-
-        print("este es el id del mantenimiento para mostrar su informacion:", mantenimiento.id)
-
-        response_data = {
-            "identifier": detalle.identifier,
-            "type_maintenance": mantenimiento.type_maintenance,
-            "name": detalle.name,
-            "provider": mantenimiento.provider.name if mantenimiento.provider else "Sin proveedor",
-            "date": mantenimiento.date.strftime("%Y-%m-%d") if mantenimiento.date else "Sin fecha",
-            "cost": mantenimiento.cost,
-            "general_notes": mantenimiento.general_notes,
-            "actions": mantenimiento.actions,
-        }
-
-        print("esta es la informacion enviada:", response_data)
-
-        return JsonResponse({"success": True, "data": response_data})
-
-    except ObjectDoesNotExist:
-        return JsonResponse({"success": False, "error": "Mantenimiento no encontrado"})
+        context = {}
+        fd = request.POST.get
+        obj = Infrastructure_maintenance.objects.get(pk = fd("id"))
+        temporal = user_data(request)
+        company_id = temporal["company"]["id"]
+        if "comprobante" in request.FILES:
+            file = request.FILES["comprobante"]
+            folder_path = f'docs/{company_id}/infrastructure_maintenance/{fd("id")}/voucher/'
+            file_name, extension = os.path.splitext(file.name)
+            new_name = f'voucher_{fd("id")}{extension}'
+            s3_path = folder_path + new_name
+            
+            print(AWS_SECRET_ACCESS_KEY)
+            print(AWS_ACCESS_KEY_ID)
+            print(AWS_BUCKET_NAME)
+            
+            upload_to_s3(file, AWS_BUCKET_NAME, s3_path)
+            obj.comprobante = s3_path
+        print(obj.comprobante)
+        action = {}
+        for item in json.loads(fd("actions"))["action"]:
+            action[item["name"]] = item["value"]
+        obj.status = "Finalizado"
+        obj.actions = action
+        obj.save()
+        context["status"] = "success"
+        context["message"] = "Mantenimiento Realizado"
+        print(request.FILES)
+        return JsonResponse(context, safe=False)
+    except Exception as e:
+        context["status"] = "error"
+        context["message"] = e
+        return JsonResponse(context, safe=False)

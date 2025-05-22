@@ -53,12 +53,9 @@ urlpatterns = [
     path('update_infrastructure_maintenance/', views.update_infraestructure_maintenance),
 
     path('update_status_mantenance/', views.update_status_mantenance),
-
+    path('update_infraestructure_status_man/', views.update_infraestructure_status_man),
 
     path('ajax/infra-info-by-maintenance/<int:maintenance_id>/', views.get_infrastructure_info_from_maintenance),
-    path('mostrar_informacion/<int:maintenance_id>/', views.mostrar_informacion),
-    path('mostrar_informacion_mantenimiento/<int:maintenance_id>/', views.mostrar_informacion_mantenimiento),
-
 
 
 

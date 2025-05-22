@@ -60,6 +60,14 @@
                 {
                     "id": 6,
                     "descripcion": "MANTENIEMIENTO 1"
+                },
+                {
+                    "id": 7,
+                    "descripcion": "MANTENIMIENTO CUATRO"
+                },
+                {
+                    "id": 8,
+                    "descripcion": "MANTENIMIENTO CUATRO"
                 }
             ]
         }
