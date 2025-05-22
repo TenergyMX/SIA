@@ -1,0 +1,103 @@
+{% extends 'ynex/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Mantenimientos
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Infraestructura</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Mantenimientos
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section id="v-deliverie-pane">
+    {% csrf_token %}
+    <div class="info">
+        <div class="card custom-card">
+            <div class="card-header justify-content-between">
+                <div class="card-title">
+                    Mantenimientos
+                </div>
+                <div class="">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="add_item_maintenance()" data-infrastructure-maintenance="add-maintenance" title="Agregar Mantenimiento" aria-label="add">
+                        <i class="fa-solid fa-plus"></i>
+                        Agregar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-info-light" data-infrastructure-maintenance="refresh-table"
+                        title="Refrescar tabla" aria-label="refresh">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Refrescar
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive w-100">
+                    <table class="table table-bordered w-100" id="item-maintenance-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="info-details" style="display: none;">
+        <div class="row g-3">
+            <div class="col-md-4 col-xxl-3">
+               
+            </div>
+            <div class="col-md-8 col-xxl-9">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="mb-0">
+                            <button
+                                type="button"
+                                class="btn btn-info"
+                                data-sia-infraestructure-maintenance="show-info"
+                                title="Regresar"
+                            >
+                                <i class="fa-solid fa-arrow-left me-1"></i>
+                                Regresar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 2 -->
+                
+                <!-- end -->
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+{% endblock %}
+
+
+{% block modals %}
+{% include "infrastructure/modals/mdl-crud-maintenance.html" %}
+{% include "infrastructure/modals/mdl-crud-option-maintenance-item.html" %}
+{% endblock %}
+
+{% block head %} {% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/infrastructure/category.js' %}"></script>
+<script src="{% static 'assets/js/infrastructure/items.js' %}"></script>
+<script src="{% static 'assets/js/infrastructure/maintenance.js' %}"></script>
+
+{% endblock %}

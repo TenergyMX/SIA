@@ -8,8 +8,9 @@ class Company {
         this.loadCompanys(); // Llenar el select al inicializar
     }
 
+    // Inicialización de la tabla
     table_companys() {
-        $("#table_companys").DataTable({
+        this.table = $("#table_companys").DataTable({
             id: null,
             destroy: true,
             processing: true,
@@ -22,15 +23,22 @@ class Company {
                 { title: "Id", data: "id" },
                 { title: "Nombre", data: "name" },
                 { title: "Dirección", data: "address" },
+                { title: "Correo", data: "email_company" }, 
                 {
                     title: "Acciones",
                     data: null,
                     render: (data, type, row) => {
                         return `
-                            <button onclick="company.edit_companys(this)" class="btn btn-sm btn-primary btn-sm mb-1">Editar</button>
+                            <button onclick="company.edit_companys(this)" class="btn btn-sm btn-primary mb-1">Editar</button>
                             <button onclick="company.delete_company(this)" class="btn btn-danger btn-sm mb-1">Eliminar</button>
                         `;
                     },
+                },
+            ],
+            columnDefs: [
+                {
+                    targets: 3, // El índice de la columna del email
+                    visible: false, // Ocultar la columna del correo si no quieres mostrarlo
                 },
             ],
             language: {
@@ -40,6 +48,7 @@ class Company {
         });
     }
 
+    // Cargar las empresas en el select
     loadCompanys() {
         $.ajax({
             url: "/get_companys/",
@@ -62,12 +71,14 @@ class Company {
         });
     }
 
+    // Mostrar el modal para agregar una empresa
     add_companys(button) {
         $("#mdl_crud_company").modal("show");
         let row = $(button).closest("tr");
-        let data = $("#table_companys").DataTable().row(row).data();
+        let data = this.table.row(row).data();
     }
 
+    // Función para agregar una empresa
     add_company() {
         let form = $("#form_add_company")[0];
         let formData = new FormData(form);
@@ -84,7 +95,7 @@ class Company {
                     $("#form_add_company")[0].reset();
                     $("#mdl_crud_company").modal("hide");
                     Swal.fire("¡Éxito!", response.message, "success");
-                    $("#table_companys").DataTable().ajax.reload();
+                    this.reloadTable(); // Recargar la tabla
                     this.loadCompanys(); // Recargar el select
                 } else {
                     Swal.fire("¡Error!", response.message, "error");
@@ -97,19 +108,21 @@ class Company {
         });
     }
 
+    // Mostrar el modal para editar una empresa
     edit_companys(button) {
         let row = $(button).closest("tr");
-        let data = $("#table_companys").DataTable().row(row).data();
+        let data = this.table.row(row).data();
         $("#mdl_crud_company").modal("show");
         $("#mdl_crud_company .modal-title").text("Editar Empresa");
 
         $('#form_add_company [name="id"]').val(data.id);
         $('#form_add_company [name="name"]').val(data.name);
         $('#form_add_company [name="address"]').val(data.address);
-
+        $('#form_add_company [name="email_company"]').val(data.email_company);
         $("#form_add_company").attr("onsubmit", "company.edit_company(); return false;");
     }
 
+    // Función para editar una empresa
     edit_company() {
         let form = $("#form_add_company")[0];
         let formData = new FormData(form);
@@ -126,7 +139,7 @@ class Company {
                     $("#form_add_company")[0].reset();
                     $("#mdl_crud_company").modal("hide");
                     Swal.fire("¡Éxito!", response.message, "success");
-                    $("#table_companys").DataTable().ajax.reload();
+                    this.reloadTable(); // Recargar la tabla
                     this.loadCompanys(); // Recargar el select
                 } else {
                     Swal.fire("¡Error!", response.message, "error");
@@ -141,9 +154,10 @@ class Company {
         });
     }
 
+    // Función para eliminar una empresa
     delete_company(button) {
         let row = $(button).closest("tr");
-        let data = $("#table_companys").DataTable().row(row).data();
+        let data = this.table.row(row).data();
 
         Swal.fire({
             title: "¿Estás seguro?",
@@ -164,7 +178,7 @@ class Company {
                     success: (response) => {
                         if (response.success) {
                             Swal.fire("¡Eliminado!", response.message, "success").then(() => {
-                                $("#table_companys").DataTable().ajax.reload();
+                                this.reloadTable(); // Recargar la tabla
                                 this.loadCompanys(); // Recargar el select
                             });
                         } else {
@@ -178,6 +192,11 @@ class Company {
                 });
             }
         });
+    }
+
+    // Función para recargar la tabla
+    reloadTable() {
+        this.table.ajax.reload(null, false); // Mantener la página actual
     }
 }
 

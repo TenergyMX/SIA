@@ -1,0 +1,26 @@
+<div class="modal fade effect-scale" id="mdl-crud-responsable" tabindex="-1" aria-labelledby="modalAsignarResponsableLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form id="formAsignarResponsable">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modalAsignarResponsableLabel">Asignar responsable</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="detalle_id">
+                    <div class="mb-3">
+                        <label for="responsable" class="form-label">Responsable</label>
+                        <select id="responsable" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un responsable</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

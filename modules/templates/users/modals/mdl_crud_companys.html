@@ -1,6 +1,6 @@
 <div class="modal fade" id="mdl_crud_company" data-bs-backdrop="static" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-xxl modal-fullscreen-lg-down">
-        <form name="form-vrt" class="modal-content" id="form_add_company" onsubmit="add_company(); return false" method="POST">
+        <form name="form-vrt" class="modal-content" id="form_add_company" onsubmit="company.add_company(); return false" method="POST">
             <div class="modal-header">
                 <h1 class="modal-title fs-5">Agregar Empresa</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -22,7 +22,7 @@
                     
                     <div class="col-md-6">
                         <label for="email_company">Correo electrónico </label>
-                        <input type="email_company" name="email_company" class="form-control" placeholder="Email" />
+                        <input type="email" name="email_company" class="form-control" placeholder="Email" required>
                     </div>
 
                 </div>

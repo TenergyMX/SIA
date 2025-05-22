@@ -40,10 +40,17 @@ class InfrastructureItemAdmin(admin.ModelAdmin):
     list_filter = ('company', 'is_active', 'created_at', 'category')
     search_fields = ('name', 'description')
 
-@admin.register(Infrastructure_Review)
-class InfrastructureReviewAdmin(admin.ModelAdmin):
-    list_filter = ('category', 'checked')
-    search_fields = ('checked', 'notes')
+
+@admin.register(InfrastructureItemDetail)
+class InfrastructureItemDetailAdmin(admin.ModelAdmin):
+    list_display = ('id',)
+    search_fields = ('id',)
+
+
+# @admin.register(Infrastructure_Review)
+# class InfrastructureReviewAdmin(admin.ModelAdmin):
+#     list_filter = ('category', 'checked')
+#     search_fields = ('checked', 'notes')
 
 #tabla-equipos y herramientas
 admin.site.register(Equipement_category)
@@ -65,3 +72,9 @@ admin.site.register(Checks)
 
 
 admin.site.register(Plans)
+
+admin.site.register(Items_locations)
+
+admin.site.register(Infrastructure_maintenance)
+
+admin.site.register(MaintenanceAction)

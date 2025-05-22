@@ -1,0 +1,34 @@
+<div class="modal fade effect-scaleform_location" id="mdl-crud-item-location" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content" id="form_item_location" onsubmit="add_item_location(); return false" method="POST" >
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar ubicación</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+     
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="name">Nombre de la ubicación</label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="Nombre de la ubicación" required>
+                    </div>  
+
+                    <div class="col-md-4">
+                        <label for="company">Empresa </label>
+                        <select name="company" id="company" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una empresa</option>
+                        </select>
+                    </div> 
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>

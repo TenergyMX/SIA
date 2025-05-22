@@ -614,24 +614,29 @@ class Infrastructure_Category(models.Model):
 
     def _str_(self):
         return f"Infraestructura de {self.short_name}"
-    
+
+class Items_locations(models.Model):
+    name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre")
+    status = models.BooleanField(default=True, verbose_name="¿Está activa la ubicación?")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True) 
+  
+
 class Infrastructure_Item(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     category = models.ForeignKey(Infrastructure_Category, on_delete=models.CASCADE, verbose_name="categoría", related_name='items')
     name = models.CharField(max_length=128, verbose_name="Nombre")
     description = models.TextField(blank=True, null=True, verbose_name="Descripción")
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
-    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
     start_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Inicio")
-    time_quantity = models.PositiveIntegerField(blank=True, null=True, default=1, verbose_name="Cantidad de Tiempo")
-    time_unit = models.CharField(max_length=50, blank=True, null=True, choices=[
-        ('day', 'Día(s)'),
-        ('month', 'Mes(es)'),
-        ('year', 'Año(s)')
-    ], verbose_name="Unidad de Tiempo")
+    technical_sheet = models.FileField(upload_to='docs/Equipments_tools', blank=True, null=True, verbose_name="Ficha tecnica")
+    invoice = models.FileField(upload_to='docs/Equipments_tools', blank=True, null=True, verbose_name="Factura")
+    image = models.FileField(upload_to='docs/Equipments_tools', blank=True, null=True, verbose_name="Factura")
+
+    location = models.ForeignKey(Items_locations, on_delete=models.CASCADE, verbose_name="Ubicación" ,blank=True, null=True)
+    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
-    qr_info_infrastructure = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
 
     class Meta:
         verbose_name = "Item de Infraestructura"
@@ -640,25 +645,48 @@ class Infrastructure_Item(models.Model):
 
     def _str_(self):
         return f"{self.category.name}: {self.name} ({self.quantity}) para {self.time_quantity} {self.time_unit}"
-    
-class Infrastructure_Review(models.Model):
-    category = models.ForeignKey(Infrastructure_Category, on_delete=models.CASCADE, verbose_name="Categoría" ,related_name='reviews')
-    item = models.ForeignKey(Infrastructure_Item, on_delete=models.CASCADE, verbose_name="Item" ,related_name='reviews')
-    checked = models.CharField(blank=True, null=True, max_length=20, default='Regular', verbose_name="Check")
-    notes = models.TextField(blank=True, null=True, verbose_name="Notas")
-    date = models.DateField(blank=True, null=True, verbose_name="Fecha")
-    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='Crítico')
-    file = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Archivo")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+
+class InfrastructureItemDetail(models.Model):
+    item = models.ForeignKey(Infrastructure_Item, on_delete=models.CASCADE, related_name='details')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255) 
+    identifier = models.CharField(max_length=255, unique=True)  
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal", blank=True, null=True)
+    assignment_date = models.DateField(blank=True, null=True, verbose_name="Fecha de asignación")
+    created_at = models.DateTimeField(auto_now_add=True)
+    qr_info_infrastructure = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
 
     class Meta:
-        verbose_name = "revisión de la Infraestructura"
-        verbose_name_plural = "revisiónes de la Infraestructura"
+        verbose_name = "Detalle de Item de Infraestructura"
+        verbose_name_plural = "Detalles de Items de Infraestructura"
 
-    def _str_(self):
-        return f"{self.category.name}: {self.item.name} ({self.checked}) ({self.date})"
-    
+    def __str__(self):
+        return f"{self.name} - {self.identifier}"
+
+
+
+class Infrastructure_maintenance(models.Model):
+    identifier = models.ForeignKey(InfrastructureItemDetail, on_delete=models.CASCADE, verbose_name="Item")
+    type_maintenance = models.CharField(max_length=32, blank=True, null=True)
+    date = models.DateField(blank=True, null=True)
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, blank=True, null=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    general_notes = models.TextField(max_length=255, blank=True, null=True)
+    actions = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=255, null=False, default="blank")
+    comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de pago o de matenimiento")
+
+
+
+class MaintenanceAction(models.Model):
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=50, choices=[('preventivo', 'Preventivo'), ('correctivo', 'Correctivo')])
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
 
 #tablas de datos para el modulo de servicios--modulo 5 
 #tabla categorias de servicios submodulo num.32
