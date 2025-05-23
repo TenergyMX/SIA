@@ -1,0 +1,52 @@
+<div class="modal fade effect-scale" id="mdl-category-items" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Elegir submodulos y registros</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <label>Lista de submodulos</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <select class="form-select" id="mci-slt-submodulos" name="submodulos[]" multiple="multiple">
+                                <option value="seguridad">Seguridad</option>
+                                <option value="informatica">Informatica</option>
+                                <option value="gastos-medicos">Gastos Médicos</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label>Lista de registros</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <select class="form-select" id="mci-slt-items" name="items[]" multiple="multiple">
+                                <option value="item-zero">ITEM-zero</option>
+                                <option value="item-one">ITEM-one</option>
+                                <option value="item-two">ITEM-two</option>
+                                <option value="item-trhee">ITEM-trhee</option>
+                                <option value="item-four">ITEM-four</option>
+                                <option value="item-five">ITEM-five</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-hard-drive"></i>
+                    Seleccionar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
