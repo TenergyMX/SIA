@@ -320,9 +320,11 @@ def get_infrastructure_items(request):
                 item["technical_sheet"] = None
             if item["invoice"]:
                 item["invoice"] = generate_presigned_url(bucket_name, item["invoice"])
+            
+            item["btn_action"] = ""            
 
             item["row_id"] = item["id"] 
-            item["btn_action"] = ""
+            
             if access["update"]:
                 item["btn_action"] += "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light' data-infrastructure-item='update-item' aria-label='info'>" \
                     "<i class=\"fa-solid fa-pen\"></i>" \
@@ -336,6 +338,12 @@ def get_infrastructure_items(request):
             item["btn_action"] += f"<button type='button' name='identifiers' class='btn btn-icon btn-sm btn-success-light' data-infrastructure-item='view-identifiers' data-id='{item['id']}' aria-label='identifiers'>" \
                     "<i class=\"fa-solid fa-list\"></i>"\
                 "</button>\n"
+            
+            if item["image"]:
+                img_url = generate_presigned_url(bucket_name, item["image"])
+                item["btn_action"] += f"<a href='{img_url}' target='_blank' class='btn btn-icon btn-sm btn-info-light' aria-label='view-image'>" \
+                    "<i class='fa-solid fa-image'></i>" \
+                    "</a>\n"
 
 
 
@@ -360,63 +368,101 @@ def update_infrastructure_item(request):
         return JsonResponse(response)
 
     try:
-        # Obtener el objeto principal
-        obj = Infrastructure_Item.objects.get(id=item_id)
-        old_quantity = obj.quantity  # Cantidad anterior
+        with transaction.atomic():
+            # Obtener el objeto principal
+            obj = Infrastructure_Item.objects.get(id=item_id)
+            old_quantity = obj.quantity  # Cantidad anterior
 
-        # Actualizar campos
-        obj.category_id = category_id
-        obj.name = dt.get("name")
-        obj.quantity = int(dt.get("quantity"))
-        obj.description = dt.get("description")
-        obj.is_active = is_active
-        obj.start_date = dt.get("start_date")
-        obj.time_quantity = dt.get("time_quantity")
-        obj.time_unit = dt.get("time_unit")
-        obj.save()
+            # Actualizar campos
+            obj.category_id = category_id
+            obj.name = dt.get("name")
+            obj.quantity = int(dt.get("quantity"))
+            obj.description = dt.get("description")
+            obj.is_active = is_active
+            obj.start_date = dt.get("start_date")
+            obj.time_quantity = dt.get("time_quantity")
+            obj.time_unit = dt.get("time_unit")
 
-        new_name = obj.name
-        new_quantity = obj.quantity
+            if 'technical_sheet' in request.FILES and request.FILES['technical_sheet']:
+                load_file = request.FILES.get('technical_sheet')
+                folder_path = f"docs/{company_id}/infrastructure_items/{obj.id}/technical_sheet/"
+                file_name, extension = os.path.splitext(load_file.name)
+                new_name = f"technical_sheet_{obj.id}{extension}"
+                s3_path = folder_path + new_name
 
-        # Manejo de detalles
-        current_details = InfrastructureItemDetail.objects.filter(item=obj)
-        current_count = current_details.count()
+                print(f"Subiendo technical_sheet a: {s3_path}")
+                upload_to_s3(load_file, bucket_name, s3_path)
+                obj.technical_sheet = s3_path
+                print("Technical sheet subida exitosamente.")
 
-        if new_quantity < current_count:
-            # Eliminar excedente
-            to_delete = current_details.order_by('-id')[:current_count - new_quantity]
-            to_delete.delete()
+            if 'invoice' in request.FILES and request.FILES['invoice']:
+                load_file = request.FILES.get('invoice')
+                folder_path = f"docs/{company_id}/infrastructure_items/{obj.id}/invoice/"
+                file_name, extension = os.path.splitext(load_file.name)
+                new_name = f"invoice_{obj.id}{extension}"
+                s3_path = folder_path + new_name
 
-        elif new_quantity > current_count:
-            # Agregar los que faltan
-            base_name = new_name.replace(" ", "").upper()[:3]
-            company_code = str(company_id).zfill(3)
-            prefix = f"{company_code}-{base_name}-"
+                print(f"Subiendo invoice a: {s3_path}")
+                upload_to_s3(load_file, bucket_name, s3_path)
+                obj.invoice = s3_path
+                print("Invoice subida exitosamente.")
 
-            existing_identifiers = (
-                InfrastructureItemDetail.objects
-                .filter(identifier__startswith=prefix)
-                .values_list("identifier", flat=True)
-            )
+            if 'image' in request.FILES and request.FILES['image']:
+                load_file = request.FILES.get('image')
+                folder_path = f"docs/{company_id}/infrastructure_items/{obj.id}/image/"
+                file_name, extension = os.path.splitext(load_file.name)
+                new_name = f"image_{obj.id}{extension}"
+                s3_path = folder_path + new_name
 
-            existing_numbers = []
-            for ident in existing_identifiers:
-                try:
-                    num = int(ident.split("-")[-1])
-                    existing_numbers.append(num)
-                except ValueError:
-                    pass
+                print(f"Subiendo image a: {s3_path}")
+                upload_to_s3(load_file, bucket_name, s3_path)
+                obj.image = s3_path
+                print("Image subida exitosamente.")
 
-            next_number = max(existing_numbers, default=0) + 1
+            obj.save()
 
-            for i in range(new_quantity - current_count):
-                identifier = f"{prefix}{str(next_number + i).zfill(4)}"
-                InfrastructureItemDetail.objects.create(
-                    item=obj,
-                    company_id=company_id,
-                    name=new_name,
-                    identifier=identifier
+            new_name = obj.name
+            new_quantity = obj.quantity
+
+            # Manejo de detalles
+            current_details = InfrastructureItemDetail.objects.filter(item=obj)
+            current_count = current_details.count()
+
+            if new_quantity < current_count:
+                # Eliminar excedente
+                to_delete = current_details.order_by('-id')[:current_count - new_quantity]
+                to_delete.delete()
+
+            elif new_quantity > current_count:
+                # Agregar los que faltan
+                base_name = new_name.replace(" ", "").upper()[:3]
+                company_code = str(company_id).zfill(3)
+                prefix = f"{company_code}-{base_name}-"
+
+                existing_identifiers = (
+                    InfrastructureItemDetail.objects
+                    .filter(identifier__startswith=prefix)
+                    .values_list("identifier", flat=True)
                 )
+
+                existing_numbers = []
+                for ident in existing_identifiers:
+                    try:
+                        num = int(ident.split("-")[-1])
+                        existing_numbers.append(num)
+                    except ValueError:
+                        pass
+
+                next_number = max(existing_numbers, default=0) + 1
+
+                for i in range(new_quantity - current_count):
+                    identifier = f"{prefix}{str(next_number + i).zfill(4)}"
+                    InfrastructureItemDetail.objects.create(
+                        item=obj,
+                        company_id=company_id,
+                        name=new_name,
+                        identifier=identifier
+                    )
 
         response["id"] = obj.id
         response["status"] = "success"
