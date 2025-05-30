@@ -1,6 +1,7 @@
 <div class="modal fade effect-scale" id="mdl-category-items" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
-        <form name="" class="modal-content">
+        <form id="swal-form-data-information" class="modal-content" method="POST">
+            <input type="text" hidden/>
             <div class="modal-header">
                 <h1 class="modal-title fs-5">Elegir submodulos y registros</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -14,11 +15,7 @@
                     </div>
                     <div class="row">
                         <div class="col">
-                            <select class="form-select" id="mci-slt-submodulos" name="submodulos[]" multiple="multiple">
-                                <option value="seguridad">Seguridad</option>
-                                <option value="informatica">Informatica</option>
-                                <option value="gastos-medicos">Gastos Médicos</option>
-                            </select>
+                            <select class="form-select" id="mci-slt-submodulos" name="submodulos[]" multiple="multiple"></select>
                         </div>
                     </div>
                     <div class="row">
@@ -28,14 +25,7 @@
                     </div>
                     <div class="row">
                         <div class="col">
-                            <select class="form-select" id="mci-slt-items" name="items[]" multiple="multiple">
-                                <option value="item-zero">ITEM-zero</option>
-                                <option value="item-one">ITEM-one</option>
-                                <option value="item-two">ITEM-two</option>
-                                <option value="item-trhee">ITEM-trhee</option>
-                                <option value="item-four">ITEM-four</option>
-                                <option value="item-five">ITEM-five</option>
-                            </select>
+                            <select class="form-select" id="mci-slt-items" name="items[]" multiple="multiple"></select>
                         </div>
                     </div>
                 </div>

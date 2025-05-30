@@ -106,3 +106,15 @@ class SubModule_Permission(models.Model):
 
     def __str__(self):
         return f"Permisos de {self.user} en el submódulo: {self.subModule}"
+
+class Notification_System(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
+    usuario = models.CharField(max_length=255, null=True, blank=True)
+    mods = models.CharField(max_length=255, null=True, blank=True)
+    cats = models.CharField(max_length=255, null=True, blank=True)
+    itemsID = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
+    status = models.CharField(max_length=255, null=True, blank=True, default="create")
+    def __str__(self):
+        return f"Notificaciónes de {self.usuario} para {self.mods}"
