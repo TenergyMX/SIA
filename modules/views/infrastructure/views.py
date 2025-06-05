@@ -1217,8 +1217,6 @@ def delete_maintenance_infraestructure(request):
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
-
-
 @csrf_exempt 
 def update_status_mantenance(request):
     if request.method == 'POST':
