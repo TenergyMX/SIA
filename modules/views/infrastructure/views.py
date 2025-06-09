@@ -1344,12 +1344,7 @@ def update_infraestructure_status_man(request):
             folder_path = f'docs/{company_id}/infrastructure_maintenance/{fd("id")}/voucher/'
             file_name, extension = os.path.splitext(file.name)
             new_name = f'voucher_{fd("id")}{extension}'
-            s3_path = folder_path + new_name
-            
-            print(AWS_SECRET_ACCESS_KEY)
-            print(AWS_ACCESS_KEY_ID)
-            print(AWS_BUCKET_NAME)
-            
+            s3_path = folder_path + new_name            
             upload_to_s3(file, AWS_BUCKET_NAME, s3_path)
             obj.comprobante = s3_path
         print(obj.comprobante)
