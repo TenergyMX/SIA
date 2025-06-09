@@ -81,7 +81,64 @@
                                             Códigos QR <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
                                         </button>
                                     </li>
-                                    {% endif %}                                
+                                    {% endif %} 
+                                   
+
+                                    {% if permiso.4.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-placa" data-bs-toggle="tab" data-bs-target="#v-placa-pane" type="button" role="tab" aria-controls="v-placa-pane" aria-selected="true">
+                                            Placa <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+
+                                    {% if permiso.4.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-letter-factura" data-bs-toggle="tab" data-bs-target="#v-letter-factura-pane" type="button" role="tab" aria-controls="v-letter-factura-pane" aria-selected="true">
+                                             Carta Factura <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+
+                                    {% if permiso.4.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-factura" data-bs-toggle="tab" data-bs-target="#v-factura-pane" type="button" role="tab" aria-controls="v-factura-pane" aria-selected="true">
+                                            Factura <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+
+                                    {% if permiso.4.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-card" data-bs-toggle="tab" data-bs-target="#v-card-pane" type="button" role="tab" aria-controls="v-card-pane" aria-selected="true">
+                                            Tarjetas <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+
+                                    {% if permiso.4.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-contract" data-bs-toggle="tab" data-bs-target="#v-contract-pane" type="button" role="tab" aria-controls="v-contract-pane" aria-selected="true">
+                                            Contrato y Cartas Finiquito <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+
+                                    {% if permiso.4.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-hologram" data-bs-toggle="tab" data-bs-target="#v-hologram-pane" type="button" role="tab" aria-controls="v-hologram-pane" aria-selected="true">
+                                            Holograma para vehiculo eléctricos <span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
+
+                                    {% if permiso.4.read %}
+                                    <li class="nav-item" role="presentation" style="display: none;">
+                                        <button class="nav-link" id="v-carnet" data-bs-toggle="tab" data-bs-target="#v-carnet-pane" type="button" role="tab" aria-controls="v-carnet-pane" aria-selected="true">
+                                            Carnet de servicios<span class="alert-icon" style="position: relative; top: -5px; left: 3px;"></span>
+                                        </button>
+                                    </li>
+                                    {% endif %}
 
                                 </ul>
                             </div>
@@ -391,11 +448,233 @@
                                                     </div>
                                                 </div>
                                             </div>
-
-
-
                                         </div>
                                     </div>
+
+                                    <!--Contenido de tabla placas para vehiculos-->
+                                    <div class="tab-pane fade p-0 border-0" id="v-placa-pane" role="tabpanel" aria-labelledby="v-placa" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.4.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-placa="add-item"
+                                                    data-vehicle-id="{{ vehicle.id }}"  
+                                                    title="Agregar placa">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-primary" data-vehicle-placa="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_placa_vehicles">
+                                                <thead>
+                                                    <tr>
+                                                        <th>1</th>
+                                                        <th>2</th>
+                                                        <th>3</th>
+                                                        <th>4</th>
+                                                        <th>5</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!--Contenido de tabla carta factura para vehiculos-->
+                                    <div class="tab-pane fade p-0 border-0" id="v-letter-factura-pane" role="tabpanel" aria-labelledby="v-letter-factura" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.4.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-letter-factura="add-item"
+                                                    data-vehicle-id="{{ vehicle.id }}"  
+                                                    title="Agregar Carta Factura">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-primary" data-vehicle-letter-factura="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_letter_factura_vehicles">
+                                                <thead>
+                                                    <tr>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+
+                                    <!--Contenido de tabla factura para vehiculos-->
+                                    <div class="tab-pane fade p-0 border-0" id="v-factura-pane" role="tabpanel" aria-labelledby="v-factura" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.4.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-factura="add-item"
+                                                    data-vehicle-id="{{ vehicle.id }}"  
+                                                    title="Agregar Factura">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-primary" data-vehicle-factura="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_factura_vehicles">
+                                                <thead>
+                                                    <tr>
+                                                        <!-- <th>1</th>
+                                                        <th>2</th>
+                                                        <th>3</th>
+                                                        <th>4</th>
+                                                        <th>5</th> -->
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!--Contenido de tabla tarjeta para vehiculos-->
+                                    <div class="tab-pane fade p-0 border-0" id="v-card-pane" role="tabpanel" aria-labelledby="v-card" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.4.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-card="add-item"
+                                                    data-vehicle-id="{{ vehicle.id }}"  
+                                                    title="Agregar Tarjeta">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-primary" data-vehicle-card="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_card_vehicles">
+                                                <thead>
+                                                    <tr>
+                                                        <!-- <th>1</th>
+                                                        <th>2</th>
+                                                        <th>3</th>
+                                                        <th>4</th>
+                                                        <th>5</th> -->
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!--Contenido de tabla de contratos y cartas finiquito de vehiculos-->
+                                    <div class="tab-pane fade p-0 border-0" id="v-contract-pane" role="tabpanel" aria-labelledby="v-contract" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.4.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-contract="add-item"
+                                                    data-vehicle-id="{{ vehicle.id }}"  
+                                                    title="Agregar Contrato">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-primary" data-vehicle-contract="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_contract_vehicles">
+                                                <thead>
+                                                    <tr>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                     <!--Contenido de tabla de hologramas de vehiculos-->
+                                    <div class="tab-pane fade p-0 border-0" id="v-hologram-pane" role="tabpanel" aria-labelledby="v-hologram" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.4.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-hologram="add-item"
+                                                    data-vehicle-id="{{ vehicle.id }}"  
+                                                    title="Agregar Holograma">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-primary" data-vehicle-hologram="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_hologram_vehicles">
+                                                <thead>
+                                                    <tr>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!--Contenido de tabla de carnet de servicios de vehiculos-->
+                                    <div class="tab-pane fade p-0 border-0" id="v-carnet-pane" role="tabpanel" aria-labelledby="v-carnet" tabindex="0">
+                                        <div class="mb-3">
+                                            {% if permiso.4.create %}
+                                                <button type="button" class="btn btn-primary" data-vehicle-carnet="add-item"
+                                                    data-vehicle-id="{{ vehicle.id }}"  
+                                                    title="Agregar Carnet">
+                                                    <i class="fa-solid fa-plus me-1"></i>
+                                                    Agregar
+                                                </button>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-primary" data-vehicle-carnet="refresh-table"
+                                                title="Refrescar tabla" data-refresh-table>
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                                Refrescar tabla
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered w-100" id="table_carnet_vehicles">
+                                                <thead>
+                                                    <tr>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+
+
+
+                                    
+
                                 </div>
                             </div>
                         </div>
@@ -437,6 +716,18 @@
     {% include "vehicles/modals/mdl_crud_maintenance.html" %}
     {% include "vehicles/modals/mdl_crud_maintenance_kilometer.html" %}
     {% include "vehicles/modals/mdl_crud_option_maintenance.html" %}
+    {% include "vehicles/modals/mdl_crud_vehicle_placa.html" %}
+    {% include "vehicles/modals/mdl_crud_vehicle_letter_factura.html" %}
+    {% include "vehicles/modals/mdl_crud_vehicle_factura.html" %}
+    {% include "vehicles/modals/mdl_crud_vehicle_card.html" %}
+    {% include "vehicles/modals/mdl_crud_vehicle_contract.html" %}
+    {% include "vehicles/modals/mdl_crud_upload_letter_finiquito.html" %}
+    {% include "vehicles/modals/mdl_crud_vehicle_hologram.html" %}
+    {% include "vehicles/modals/mdl_crud_vehicle_carnet.html" %}
+
+
+
+
 
 {% endblock %}
 
@@ -607,8 +898,138 @@
 </script>
 {% endif %}
 
+
+{% if permiso.4.read %}
+<!-- ! placas  -->
+<script src="{% static 'assets/js/vehicles/placas.js' %}"></script>
 <script>
-    const provider = new Providers({
+    console.log("Valor desde Django:", "{{ vehicle.id }}");
+
+    table_placa_vehicle({
+        table: {
+            id: '#table_placa_vehicles',
+        },
+        vehicle: {
+            id: vehicle_id,
+            name: "Auto"
+        }
+    });
+</script>
+{% endif %}
+
+
+{% if permiso.4.read %}
+<!-- ! carta facturas  -->
+<script src="{% static 'assets/js/vehicles/letter_factura.js' %}"></script>
+<script>
+    console.log("Valor desde Django para carta factura:", "{{ vehicle.id }}");
+
+    table_letter_factura_vehicle({
+        table: {
+            id: '#table_letter_factura_vehicles',
+        },
+        vehicle: {
+            id: vehicle_id,
+            name: "Auto"
+        }
+    });
+</script>
+{% endif %}
+
+{% if permiso.4.read %}
+<!-- ! facturas  -->
+<script src="{% static 'assets/js/vehicles/factura.js' %}"></script>
+<script>
+    console.log("Valor desde Django para factura:", "{{ vehicle.id }}");
+
+    table_factura_vehicle({
+        table: {
+            id: '#table_factura_vehicles',
+        },
+        vehicle: {
+            id: vehicle_id,
+            name: "Auto"
+        }
+    });
+</script>
+{% endif %}
+
+{% if permiso.4.read %}
+<!-- ! tarjetas  -->
+<script src="{% static 'assets/js/vehicles/card.js' %}"></script>
+<script>
+    console.log("Valor desde Django para tarjeta:", "{{ vehicle.id }}");
+
+    table_card_vehicle({
+        table: {
+            id: '#table_card_vehicles',
+        },
+        vehicle: {
+            id: vehicle_id,
+            name: "Auto"
+        }
+    });
+</script>
+{% endif %}
+
+
+{% if permiso.4.read %}
+<!-- ! contratos y permisos  -->
+<script src="{% static 'assets/js/vehicles/contract.js' %}"></script>
+<script>
+    console.log("Valor desde Django para contrato:", "{{ vehicle.id }}");
+
+    table_contract_vehicle({
+        table: {
+            id: '#table_contract_vehicles',
+        },
+        vehicle: {
+            id: vehicle_id,
+            name: "Auto"
+        }
+    });
+</script>
+{% endif %}
+
+
+{% if permiso.4.read %}
+<!-- ! Hologranas de vehiculos  -->
+<script src="{% static 'assets/js/vehicles/hologram.js' %}"></script>
+<script>
+    console.log("Valor desde Django para holograma:", "{{ vehicle.id }}");
+
+    table_hologram_vehicle({
+        table: {
+            id: '#table_hologram_vehicles',
+        },
+        vehicle: {
+            id: vehicle_id,
+            name: "Auto"
+        }
+    });
+</script>
+{% endif %}
+
+{% if permiso.4.read %}
+<!-- ! Carnet de vehiculos  -->
+<script src="{% static 'assets/js/vehicles/carnet.js' %}"></script>
+<script>
+    console.log("Valor desde Django para carnet:", "{{ vehicle.id }}");
+
+    table_carnet_vehicle({
+        table: {
+            id: '#table_carnet_vehicles',
+        },
+        vehicle: {
+            id: vehicle_id,
+            name: "Auto"
+        }
+    });
+</script>
+{% endif %}
+
+<script>
+    const provider = new Providers({    
         list: {
             id: "select[name='provider_id']"
         }

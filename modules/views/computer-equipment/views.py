@@ -34,7 +34,7 @@ from io import BytesIO
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
 
-import qrcode
+# import qrcode
 from django.shortcuts import render, get_object_or_404
 from django.core.files.uploadedfile import InMemoryUploadedFile
 

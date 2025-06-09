@@ -250,30 +250,47 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
 #         ExpiresIn=expiration
 #     )
 
-
 def generate_presigned_url(bucket_name, object_name, expiration=3600):
-    try:
-        content_type, _ = mimetypes.guess_type(object_name)
-        if not content_type:
-            content_type = 'application/pdf'
-        disposition = 'inline'
+    content_type, _ = mimetypes.guess_type(object_name)
+    if not content_type:
+        content_type = 'application/pdf'
+    disposition = 'inline'
+    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+    return s3.generate_presigned_url(
+        'get_object',
+        Params={
+            'Bucket': bucket_name,
+            'Key': object_name,
+            'ResponseContentDisposition': disposition,
+            'ResponseContentType': content_type
+        },
+        ExpiresIn=expiration
+    )
 
-        s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 
-        url = s3.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': bucket_name,
-                'Key': object_name,
-                'ResponseContentDisposition': disposition,
-                'ResponseContentType': content_type
-            },
-            ExpiresIn=expiration
-        )
-        return url
-    except (BotoCoreError, ClientError) as e:
-        print(f"Error generating presigned URL: {e}")
-        return None
+# def generate_presigned_url(bucket_name, object_name, expiration=3600):
+#     try:
+#         content_type, _ = mimetypes.guess_type(object_name)
+#         if not content_type:
+#             content_type = 'application/pdf'
+#         disposition = 'inline'
+
+#         s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+
+#         url = s3.generate_presigned_url(
+#             'get_object',
+#             Params={
+#                 'Bucket': bucket_name,
+#                 'Key': object_name,
+#                 'ResponseContentDisposition': disposition,
+#                 'ResponseContentType': content_type
+#             },
+#             ExpiresIn=expiration
+#         )
+#         return url
+#     except (BotoCoreError, ClientError) as e:
+#         print(f"Error generating presigned URL: {e}")
+#         return None
 
 
 
