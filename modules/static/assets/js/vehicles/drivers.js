@@ -492,7 +492,7 @@ function get_table_multa() {
             { title: "ID", data: "id" },
             { title: "Nombre del conductor", data: "driver_name" },
             {
-                title: "Vehiculo",
+                title: "Vehículo",
                 data: "vehicle",
                 render: function (data, type, row) {
                     return data.modelo;
@@ -533,7 +533,7 @@ function btn_edit_multa(boton) {
     var vehicleId = data.vehicle.id;
     console.log("ID del vehículo:", vehicleId);
     var modelo = data.vehicle.modelo;
-    console.log("este es el modelo de l vehiculo seleccionado:", modelo);
+    console.log("este es el modelo del vehículo seleccionado:", modelo);
 
     // Mostrar el modal
     $("#mdl-crud-multa").modal("show");
@@ -661,14 +661,12 @@ function delete_multa(boton) {
     });
 }
 
-
 function regresar() {
     $(document).ready(function () {
-        $('#table_driver_vehicles').DataTable().ajax.reload();
+        $("#table_driver_vehicles").DataTable().ajax.reload();
     });
 
     console.log("tabla recargada correctamente");
     // Regresar a la página de la tabla de conductores
     window.location.href = "/driver_vehicles/";
 }
-

@@ -527,6 +527,8 @@ def add_vehicle_info(request):
             responsible_id = dt.get("responsible_id"),
             owner_id = dt.get("owner_id"),
             fuel_type_vehicle = dt.get("fuel_type_vehicle"),
+            apply_tenencia = dt.get("apply_tenencia") == "on",  
+   
         )
         obj.save()
         id = obj.id
@@ -869,6 +871,8 @@ def update_vehicle_info(request):
         obj.responsible_id = dt.get("responsible_id")
         obj.owner_id = dt.get("owner_id")
         obj.fuel_type_vehicle = dt.get("fuel_type_vehicle")
+        obj.apply_tenencia = dt.get("apply_tenencia") == "on"
+
 
         obj.save()
 
@@ -3569,7 +3573,7 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
     next_maintenance_km = next_maintenance.first().kilometer
     flag = next_maintenance_km - Decimal(kilometer)
     print("esta es la resta del mantenimiento")
-    if not flag_new and flag <= 200:
+    if not flag_new and flag <= 300:
         response["status"] = "warning"
         create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance_km)
         response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
@@ -3578,7 +3582,7 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
         diferencia = abs(int(next_maintenance_km)-int(flag_new.mileage))
     else:
         diferencia = abs(int(next_maintenance_km)-int(0))
-    if flag_new and flag <= 200 and flag_new.status != "ALERTA" and diferencia >= 200:
+    if flag_new and flag <= 300 and flag_new.status != "ALERTA" and diferencia >= 300:
         response["status"] = "warning"
         # Create a new maintenance record if necessary
         create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance_km)

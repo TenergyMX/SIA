@@ -499,7 +499,7 @@ class VehiclesResponsiva {
                                 ) {
                                     Swal.fire(
                                         "Warning",
-                                        "Vehiculo en proceso de mantenimiento \n" +
+                                        "Vehículo en proceso de mantenimiento \n" +
                                             "No se pudo realizar el registro, informe a la persona encargada",
                                         "warning"
                                     );
@@ -546,7 +546,7 @@ class VehiclesResponsiva {
                         if (response.status == "warning" && response.type == "mantenimiento") {
                             Swal.fire(
                                 "Warning",
-                                "Vehiculo en proceso de mantenimiento \n" +
+                                "Vehículo en proceso de mantenimiento \n" +
                                     "No se pudo realizar el registro, informe a la persona encargada",
                                 "warning"
                             );

@@ -14,7 +14,7 @@
                     <input type="file" name="filepond" class="filepond">
                 </div>
                 <div class="col-md-12">
-                    <label for="">Vehiculo</label>
+                    <label for="">Vehículo</label>
                     <input type="text" name="name" class="form-control" placeholder="Nombre u clave del vehiculo">
                 </div>
                 <div class="col-md-12">
@@ -34,7 +34,7 @@
                 </div>
                 <div class="col-md-12">
                     <label for="">Tipo de combustible</label>
-                    <select name="fuel_type_vehicle" class="form-select">
+                    <select name="0" class="form-select">
                         <option value="Gasolina">Gasolina</option>
                         <option value="Diésel">Diésel</option>
                         <option value="Gas natural para auto">
@@ -93,8 +93,15 @@
                 <div class="col-md-12">
                     <label for="">Responsable</label>
                     <select name="responsible_id" class="form-select"></select>
-                    <div class="form-text">Quien está usando el vehiculo</div>
+                    <div class="form-text">Quien está usando el vehículo</div>
                 </div>
+                <div class="col-md-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="apply_tenencia" id="apply_tenencia">
+                        <label class="form-check-label" for="apply_tenencia">Aplica tenencia</label>
+                    </div>
+                </div>
+
                 <div class="col-12 text-center">
                     <button type="submit" name="update" class="btn btn-primary">
                         Actualizar

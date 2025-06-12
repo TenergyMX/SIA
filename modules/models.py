@@ -38,6 +38,7 @@ class Vehicle(models.Model):
     email_verificacion_s2 = models.BooleanField(default=False)
     qr_fuel = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
     fuel_type_vehicle = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
+    apply_tenencia = models.BooleanField(default=False, verbose_name="Aplica tenencia") 
 
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,

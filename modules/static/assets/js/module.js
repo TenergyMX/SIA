@@ -196,7 +196,7 @@ function load_vehicle_info_card(vehicle_id = 1) {
         beforeSend: function () {},
         success: function (response) {
             if (!response["success"]) {
-                Swal.fire("Oops", "Informacion del vehiculo", "error");
+                Swal.fire("Oops", "Informacion del vehículo", "error");
                 return false;
             }
             let div = $(".card-vehicle-info");
