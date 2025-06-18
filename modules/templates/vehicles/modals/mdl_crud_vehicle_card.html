@@ -1,0 +1,57 @@
+<div class="modal fade effect-scale" id="mdl_crud_vehicle_card" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="form_add_card" class="modal-content" id="form_add_card"  data-acction="create" onsubmit="add_card(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+                    
+                <div class="col-md-4">
+                    <label for="number">Numero de tarjeta</label>
+                    <input type="text" id="number_card" name="number_card" class="form-control" placeholder="Numero o folio de tarjeta" maxlength="15" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="">Tipo de tarjeta</label>
+                    <select name="type_card" class="form-select">
+                        <option value="">-----</option>
+                        <option value="Particular">Particular</option>
+                        <option value="Privada">Privada</option>
+                        <option value="Pública">Pública</option>
+                        <option value="Empresarial">Empresarial</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="">Vehiculo</label>
+                    <select id="vehiculo_card" name="vehiculo_card" class="form-select"></select>
+                </div>
+               
+                <div class="col-md-4">
+                    <label for="">Usuario</label>
+                    <select id="name_user" name="name_user" class="form-select"></select>
+                </div>
+                <div class="col-md-4">
+                    <label for="">Fecha de vencimiento</label>
+                    <input type="date" name="fecha_vencimiento" class="form-control">
+                </div>
+              
+                <div class="col-md-4">
+                    <label for="">Archivo de tarjeta</label>
+                    <input type="file" name="document_card" class="form-control" >
+                </div>                  
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

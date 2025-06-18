@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from django.shortcuts import render, get_object_or_404
 from django.core.files.uploadedfile import InMemoryUploadedFile
-import qrcode
+# import qrcode
 
 from django.views.decorators.csrf import csrf_exempt
 import subprocess

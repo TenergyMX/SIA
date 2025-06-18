@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         qrAccessContainer.appendChild(qrImage);
                         $('button[data-vehicle-qr="delete-qraccess"]').show();
                         $('button[data-vehicle-qr="qr-access"]').hide();
-                        $('button[data-vehicle-qr="descargar-qr-access"]').show(); 
+                        $('button[data-vehicle-qr="descargar-qr-access"]').show();
                     } else if (type === "fuel") {
                         qrFuelContainer.innerHTML = "";
                         qrFuelContainer.appendChild(qrImage);
@@ -52,7 +52,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         $('button[data-vehicle-qr="qr-fuel"]').hide();
                         $('button[data-vehicle-qr="descargar-qr-fuel"]').show();
                     }
-                    
                 } else if (data.status == "generados") {
                     if (data.qr_url_info != null) {
                         const qrImage_info = document.createElement("img");
@@ -90,7 +89,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         $('button[data-vehicle-qr="descargar-qr-fuel"]').hide();
                         $('button[data-vehicle-qr="qr-fuel"]').show();
                     }
-                    
                 } else {
                     console.error("Error en la respuesta del servidor:", data.message);
                 }
@@ -182,7 +180,6 @@ document.addEventListener("DOMContentLoaded", function () {
             },
         });
 
- 
         setTimeout(() => {
             generateQR(vehicle_id, "info");
 
@@ -191,7 +188,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "El código QR de información se ha creado correctamente.",
                 "success"
             );
-        }, 2000); 
+        }, 2000);
     });
 
     // Botón para descargar QR de información
@@ -209,7 +206,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
             });
 
-            
             setTimeout(() => {
                 descargar_qr("info");
 
@@ -218,7 +214,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "El código QR de información se ha descargado correctamente.",
                     "success"
                 );
-            }, 1000); 
+            }, 1000);
         });
 
     // Botón para eliminar QR de información
@@ -263,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "El código QR de acceso se ha creado correctamente.",
                 "success"
             );
-        }, 2000); 
+        }, 2000);
     });
 
     // Botón para descargar QR de acceso
@@ -281,7 +277,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
             });
 
-            
             setTimeout(() => {
                 descargar_qr("access");
 
@@ -290,7 +285,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "El código QR de acceso se ha descargado correctamente.",
                     "success"
                 );
-            }, 1000); 
+            }, 1000);
         });
 
     // Botón para eliminar QR de acceso
@@ -314,7 +309,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-
     // Botón para generar QR de combustible
     document.querySelector('[data-vehicle-qr="qr-fuel"]').addEventListener("click", function () {
         Swal.fire({
@@ -328,7 +322,6 @@ document.addEventListener("DOMContentLoaded", function () {
             },
         });
 
- 
         setTimeout(() => {
             generateQR(vehicle_id, "fuel");
 
@@ -337,9 +330,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 "El código QR de información se ha creado correctamente.",
                 "success"
             );
-        }, 2000); 
+        }, 2000);
     });
-
 
     // Botón para descargar QR de combustible
     document
@@ -356,7 +348,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
             });
 
-            
             setTimeout(() => {
                 descargar_qr("fuel");
 
@@ -365,11 +356,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     "El código QR de combustible se ha descargado correctamente.",
                     "success"
                 );
-            }, 1000); 
+            }, 1000);
         });
 
-        // Botón para eliminar QR de combustible
-        document
+    // Botón para eliminar QR de combustible
+    document
         .querySelector('[data-vehicle-qr="delete-qrfuel"]')
         .addEventListener("click", function () {
             Swal.fire({

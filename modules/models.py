@@ -243,6 +243,65 @@ class Checks(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=64, blank=True, null=True)
 
+class Placas(models.Model):
+    plate = models.CharField(max_length=10)                                               
+    type_plate = models.CharField(max_length=64, blank=True, null=True)                        
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
+    fecha_emision = models.DateField()
+    fecha_vencimiento = models.DateField()
+    entidad_emisora= models.CharField(max_length=64, blank=True, null=True)                        
+    comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
+    status = models.CharField(max_length=255, null=False, default="blank")
+    document_placa = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de placa")
+
+class Letter_Facturas_Vehicle(models.Model):
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
+    date = models.DateField()
+    document_letter_factura = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
+
+class Facturas_Vehicle(models.Model):
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
+    name_user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)
+    fecha_vencimiento = models.DateField()
+    number = models.CharField(max_length=10)                                               
+    status = models.CharField(max_length=255, null=False, default="blank")
+    comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
+    document_factura = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
+
+class Card_Vehicle(models.Model):
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
+    number_card = models.CharField(max_length=20)      
+    type_card = models.CharField(max_length=64, blank=True, null=True)   
+    name_user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)                                                      
+    status = models.CharField(max_length=255, null=False, default="blank")
+    document_card = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de tarjeta") 
+    fecha_vencimiento = models.DateField(blank=True, null=True, verbose_name="Fecha")
+
+class Contract_Vehicle(models.Model):
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
+    type_contract = models.CharField(max_length=64, blank=True, null=True)  
+    fecha_contract = models.DateField()
+    fecha_finiquito = models.DateField()
+    status_modified = models.BooleanField(default=False, verbose_name="Estado modificado")  
+    document_contract = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de contrato") 
+    document_letter = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="carta de finiquito") 
+    is_canceled = models.BooleanField(default=False, verbose_name="Contrato cancelado")  # nuevo campo
+
+class Hologram_Vehicle(models.Model):
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
+    date_hologram = models.DateField()
+    document_hologram = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de holograma")
+
+class Carnet_Vehicle(models.Model):
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
+    date_carnet = models.DateField()
+    document_carnet = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de carnet")
+
+
+
+
+
+
 
 # Todo ----- [2] [ EQUIPOS DE COMPUTO ] -----
 class ComputerSystem(models.Model):

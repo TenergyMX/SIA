@@ -1,0 +1,39 @@
+<div class="modal fade effect-scale" id="mdl_crud_vehicle_hologram" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="form_add_hologram" class="modal-content" id="form_add_hologram"  data-acction="create" onsubmit="add_hologram(); return false" method="POST">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                <div class="row g-3">
+               
+                <div class="col-md-4">
+                    <label for="">Vehiculo</label>
+                    <select id="vehiculo_hologram" name="vehiculo_hologram" class="form-select"></select>
+                </div>
+                <div class="col-md-4">
+                    <label for="">Fecha</label>
+                    <input type="date" name="date_hologram" class="form-control">
+                </div>
+                
+            
+                <div class="col-md-4">
+                    <label for="">Archivo de holograma</label>
+                    <input type="file" name="document_hologram" class="form-control" >
+                </div>                  
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="GUARDAR">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
