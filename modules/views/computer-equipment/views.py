@@ -21,7 +21,7 @@ import glob
 from xhtml2pdf import pisa
 # py personalizado
 from modules.utils import *
-from helpers.enviar_correo import *
+# from helpers.enviar_correo import *
 import boto3
 import boto3.session
 import io

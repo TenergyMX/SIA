@@ -5,6 +5,6 @@ from django.http import JsonResponse
 from users.models import *
 
 from modules.utils import *
-from helpers.enviar_correo import *
+# from helpers.enviar_correo import *
 
 # Create your views here.
