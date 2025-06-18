@@ -88,7 +88,8 @@ urlpatterns = [
 
     path("get-vehicles-calendar/", views.get_vehicles_calendar),
 
-    path("add-vehicle-fuel/", views.add_vehicle_fuel),
+    path("add-vehicle-fuel/", views.add_vehicle_fuel, name="add_vehicle_fuel"),
+
     path("get-vehicle-fuels/", views.get_vehicles_fuels),
     path("get-vehicle-fuels-charts/", views.get_vehicles_fuels_charts),
     path("update-vehicle-fuel/", views.update_vehicle_fuel),
@@ -140,6 +141,7 @@ urlpatterns = [
     path('get_user_vehicles_for_edit/', views.get_user_vehicles_for_edit),
 
 
+    path("vehicles/fuel-form/", views.qr_vehicle_fuel_form),
 
 
     # #codigo qr combustible

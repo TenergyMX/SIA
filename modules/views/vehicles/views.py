@@ -649,6 +649,16 @@ def alertas(vehicle_id, detailed=False):
     - Si detailed=True: {"alert": bool, "missing_tables": list}
     - Si detailed=False: bool
     """
+        # Obtener el vehículo
+    try:
+        vehiculo = Vehicle.objects.get(id=vehicle_id)
+    except Vehicle.DoesNotExist:
+        if detailed:
+            return {"alert": False, "missing_tables": ["vehículo no encontrado"]}
+        return False
+
+    apply_tenencia = vehiculo.apply_tenencia
+
     tables = [
         ("tenencia", Vehicle_Tenencia, "vehiculo_id"),
         ("refrendo", Vehicle_Refrendo, "vehiculo_id"),
@@ -664,6 +674,12 @@ def alertas(vehicle_id, detailed=False):
     for table_name, table, field_name in tables:
         try:
             filter_kwargs = {field_name: vehicle_id}
+
+            #  Evita verificar tenencia si no aplica
+            if table_name == "tenencia" and not apply_tenencia:
+                continue
+
+
             if not table.objects.filter(**filter_kwargs).exists():
                 if table_name != "maintenance":
                     missing_tables.append(table_name)
@@ -785,6 +801,7 @@ def get_vehicles_info(request):
             "responsible_id", "responsible__first_name", "responsible__last_name",
             "owner_id", "owner__first_name",
             "transmission_type",
+            "fuel_type_vehicle",
             "policy_number"
         )
         data = data.filter(company_id=context["company"]["id"])
@@ -870,8 +887,8 @@ def update_vehicle_info(request):
         obj.brand = dt.get("brand", obj.brand)
         obj.responsible_id = dt.get("responsible_id")
         obj.owner_id = dt.get("owner_id")
-        obj.fuel_type_vehicle = dt.get("fuel_type_vehicle")
-        obj.apply_tenencia = dt.get("apply_tenencia") == "on"
+        obj.fuel_type_vehicle = dt.get("fuel_type_vehicle", obj.fuel_type_vehicle)
+        obj.apply_tenencia = "apply_tenencia" in dt
 
 
         obj.save()
@@ -3107,6 +3124,7 @@ def add_vehicle_fuel(request):
     except Exception as e:
         response["status"] = "error"
         response["message"] = str(e)
+    response["success"] = response["status"] == "success"
     return JsonResponse(response)
 
 def get_vehicles_fuels(request):
@@ -3402,13 +3420,16 @@ def generate_qr(request, qr_type, vehicle_id):
         })
      
     # Contenido
-    domain = request.build_absolute_uri('/')[:-1]  # Obtiene el dominio dinámicamente
+   #domain = request.build_absolute_uri('/')[:-1]
+    domain = "http://192.168.100.106"
+
     if qr_type == 'info':
         qr_content = f"{domain}/vehicles/info/{vehicle_id}/"
     elif qr_type == 'access':
         qr_content = f"{domain}/vehicles/responsiva/qr/{vehicle_id}"
     elif qr_type == 'fuel':
-        qr_content = f"{domain}/vehicles/fuel/{vehicle_id}/"
+        qr_content = f"{domain}/vehicles/fuel-form/?vehicle_id={vehicle_id}"
+
 
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid QR type'}, status=400)
@@ -3450,9 +3471,9 @@ def generate_qr(request, qr_type, vehicle_id):
     # Subir el archivo a S3 y obtener la URL
     upload_to_s3(img, AWS_BUCKET_NAME, s3Path + s3Name)
         
-    vehicle.save()  # Asegurarse de guardar los cambios en el modelo
+    vehicle.save()  
     qr_url = generate_presigned_url(AWS_BUCKET_NAME, str(s3Path + s3Name))
-    return JsonResponse({'status': 'success', 'qr_url': qr_url})
+    return JsonResponse({'status': 'success', 'qr_url': qr_url, 'qr_type': qr_type})
 
 #funcion para eliminar el qr
 def delete_qr(request, qr_type, vehicle_id):
@@ -4940,6 +4961,21 @@ def check_qr_fuel(request, vehicle_id):
     except Vehicle.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'vehiculo no encontrado'}, status=404)
 
+@login_required
+def qr_vehicle_fuel_form(request):
+    context = user_data(request)
+    
+    vehicle_id = request.GET.get("vehicle_id", None)
+
+    if not vehicle_id:
+        return JsonResponse({"success": False, "message": "Vehicle ID is required"}, status=400)
+
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+    context["vehicle"] = vehicle
+    context["today"] = date.today().isoformat()
+    context["fuel_type"] = vehicle.fuel_type_vehicle  
+
+    return render(request, "vehicles/fuel_form_qr.html", context)
 
 
 
