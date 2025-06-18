@@ -26,3 +26,4 @@ postgres/siaDB.pgsql
 modules/.DS_Store
 .DS_Store
 modules/static/assets/json/
+modules/migrations/
