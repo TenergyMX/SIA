@@ -250,11 +250,14 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
 #         ExpiresIn=expiration
 #     )
 
-def generate_presigned_url(bucket_name, object_name, expiration=3600):
+def generate_presigned_url(bucket_name, object_name, expiration=3600, force_download=False):
     content_type, _ = mimetypes.guess_type(object_name)
     if not content_type:
         content_type = 'application/pdf'
-    disposition = 'inline'
+    #Cambia el modo de visualización según el parámetro
+    disposition = f'attachment; filename="{object_name}"' if force_download else 'inline'
+
+    #disposition = 'inline'
     s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
     return s3.generate_presigned_url(
         'get_object',

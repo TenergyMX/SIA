@@ -18,7 +18,7 @@ urlpatterns = [
     path("vehicles/maintenance/", views.module_vehicle_maintenance),
     path("vehicles/calendar/", views.vehicles_calendar_views),
     path("vehicles/fuel/", views.vehicles_fuel_views),
-    # path("vehicles_placas/", views.vehicles_placas),
+
     # TODO ---------- [ REQUEST ] ----------
 
     # TODO ----- [ Vehiculos ] -----
@@ -88,7 +88,8 @@ urlpatterns = [
 
     path("get-vehicles-calendar/", views.get_vehicles_calendar),
 
-    path("add-vehicle-fuel/", views.add_vehicle_fuel),
+    path("add-vehicle-fuel/", views.add_vehicle_fuel, name="add_vehicle_fuel"),
+
     path("get-vehicle-fuels/", views.get_vehicles_fuels),
     path("get-vehicle-fuels-charts/", views.get_vehicles_fuels_charts),
     path("update-vehicle-fuel/", views.update_vehicle_fuel),
@@ -139,59 +140,10 @@ urlpatterns = [
     path('get_user_vehicles/', views.get_user_vehicles),
     path('get_user_vehicles_for_edit/', views.get_user_vehicles_for_edit),
 
-    #placas
-    path('get_vehicles/', views.get_vehicles),
-    # path('table_placa_vehicles/', views.table_placa_vehicles),
-    path('add_placa/', views.add_placa),
-    path('update_status_placa/', views.update_status_placa),
-    path('delete_placa/', views.delete_placa),
-    path('edit_placa/', views.edit_placa),
-    path('table_placa_vehicle/', views.table_placa_vehicle),
-    path('get_vehicles_placa/', views.get_vehicles_placa),
 
-    # Cartas de factura
-    path('table_letter_factura_vehicle/', views.table_letter_factura_vehicle),
-    path('get_vehicles_letter_factura/', views.get_vehicles_letter_factura),
-    path('add_letter_factura/', views.add_letter_factura),
-    path('edit_letter_factura/', views.edit_letter_factura),
-    path('delete_letter_factura/', views.delete_letter_factura),
+    path("vehicles/fuel-form/", views.qr_vehicle_fuel_form),
 
 
-    # Facturas de Vehículos
-    path('table_factura_vehicle/', views.table_factura_vehicle),
-    path('add_factura/', views.add_factura),
-    path('edit_factura/', views.edit_factura),
-    path('delete_factura/', views.delete_factura),
-
-    #tarjeta de vehiculos
-    path('get_vehicles_card/', views.get_vehicles_card),
-    path('add_card/', views.add_card),
-    path('table_card_vehicle/', views.table_card_vehicle),
-    path('edit_card/', views.edit_card),
-    path("delete_card/", views.delete_card),
-    
-    # contrato
-    path('table_contract_vehicle/', views.table_contract_vehicle),
-    path('get_vehicles_contract/', views.get_vehicles_contract),
-    path('add_contract/', views.add_contract),
-    path('edit_contract/', views.edit_contract),
-    path('delete_contract/', views.delete_contract),
-    path('upload_letter_finiquito/', views.upload_letter_finiquito),
-    path('cancel_contract_vehicle/', views.cancel_contract_vehicle),
-
-    # Hologramas
-    path('get_vehicles_hologram/', views.get_vehicles_hologram),
-    path('table_hologram_vehicle/', views.table_hologram_vehicle),
-    path('add_hologram/', views.add_hologram),
-    path('edit_hologram/', views.edit_hologram),
-    path('delete_hologram/', views.delete_hologram),
-
-    # Carnet de servicios
-    path('get_vehicles_carnet/', views.get_vehicles_carnet),
-    path('table_carnet_vehicle/', views.table_carnet_vehicle),
-    path('add_carnet/', views.add_carnet),
-    path('edit_carnet/', views.edit_carnet),
-    path('delete_carnet/', views.delete_carnet),
     # #codigo qr combustible
     # path('generate_qr_fuel/<str:qr_type>/<int:vehicle_id>/', views.generate_qr_fuel),
     # path('check_qr_fuel/<int:vehicle_id>/', views.check_qr_fuel),
