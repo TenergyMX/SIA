@@ -124,10 +124,13 @@ class VehiclesResponsiva {
         }
 
         self.setupEventHandlers();
+        alert("esto es qr: " + qr);
         // Si `QR` está presente en la URL, esperar a que el modal se cargue y luego abrirlo
+
         if (qr) {
+            var acess_qr = true;
             self.esperarModal("#mdl_crud_responsiva")
-                .then(() => self.openResponsivaModal(qr))
+                .then(() => self.openResponsivaModal(qr, acess_qr))
                 .catch((error) => console.error(error));
         }
     }
@@ -151,7 +154,7 @@ class VehiclesResponsiva {
         });
     }
 
-    openResponsivaModal(id_vehicle) {
+    openResponsivaModal(id_vehicle, acess_qr = false) {
         const self = this;
         var obj_modal = $("#mdl_crud_responsiva");
         obj_modal.find("form")[0].reset();
@@ -165,12 +168,21 @@ class VehiclesResponsiva {
                 csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
             },
             success: function (response) {
+                alert("este es el estado actual: " + response.status);
                 console.log("Respuesta del servidor:", response);
                 var status = response.status;
                 if (status == "SALIDA") {
                     obj_modal.find(".modal-header").html("Registrar salida");
                     obj_modal.find(".final").hide().find(":input").prop("disabled", true);
                     obj_modal.find(".inicial").show().find(":input").prop("disabled", false);
+
+                    if (acess_qr) {
+                        $('#mdl_crud_responsiva [name="vehicle_id"]').hide();
+                        $('#mdl_crud_responsiva [name="vehicle__name"]').show();
+
+                        obj_modal.find("[name='vehicle__name']").val(response.vehicle_name || null);
+                    }
+
                     if (response.fecha_actual) {
                         $("input[name='start_date']").val(response.fecha_actual);
                     }
@@ -183,6 +195,11 @@ class VehiclesResponsiva {
                     obj_modal.find(".inicial").hide().find(":input").prop("disabled", true);
                     obj_modal.find(".final").show().find(":input").prop("disabled", false);
                     obj_modal.find("[name='id']").val(response.id_register || null);
+                    if (acess_qr) {
+                        $('#mdl_crud_responsiva [name="vehicle_id"]').hide();
+                        $('#mdl_crud_responsiva [name="vehicle__name"]').show();
+                        obj_modal.find("[name='vehicle__name']").val(response.vehicle_name || null);
+                    }
                     if (response.fecha_actual) {
                         $("input[name='end_date']").val(response.fecha_actual);
                     }

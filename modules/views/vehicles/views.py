@@ -3187,7 +3187,6 @@ def get_vehicles_fuels_charts(request):
     vehicle_id = dt.get("vehicle_id", None)
     tipo = dt.get("type", "Litros")
     year = dt.get("year")
-    print("esto contienela lista:", response)
     response = {
         "status": "error",
         "message": "sin procesar",
@@ -3199,7 +3198,6 @@ def get_vehicles_fuels_charts(request):
             }
         }
     }
-    print("estos son los datos:", datos)
     datos = Vehicle_fuel.objects.all()
     if year:
         datos = datos.filter(date__year=year)
@@ -3635,11 +3633,18 @@ def validar_vehicle_en_sa(request):
     id_vehicle = dt.get("id_vehicle", None)
     
     responsiva = Vehicle_Responsive.objects.filter(vehicle_id=id_vehicle).order_by("-id").first() 
-    fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")  # Obtiene la fecha y hora actual
-    print("esta es la fecha actual", fecha_actual)
-    print("este es el id del vehiculo", responsiva.id)
-    print("este es el id del vehiculo", id_vehicle)
-    print("este es el id del vehiculo", responsiva.start_date)
+    fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M") 
+    vehicle_name = "" 
+   
+    if id_vehicle:
+        try:
+            vehicle = Vehicle.objects.get(id=id_vehicle)
+            vehicle_name = vehicle.name 
+        except Vehicle.DoesNotExist:
+            vehicle_name = ""
+
+    responsiva = Vehicle_Responsive.objects.filter(vehicle_id=id_vehicle).order_by("-id").first() 
+
     if responsiva:  # Verifica que haya un registro
         if responsiva.end_date:  # Verifica si el campo end_date tiene un valor
             km_final = responsiva.final_mileage
@@ -3647,6 +3652,7 @@ def validar_vehicle_en_sa(request):
             return JsonResponse({
                 "success": "Todo bien",
                 "status": "SALIDA",
+                "vehicle_name": vehicle_name, 
                 "km_final":km_final,
                 "gasolina_final" : gasolina_final,
                 "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
@@ -3660,6 +3666,7 @@ def validar_vehicle_en_sa(request):
             return JsonResponse({
                 "success": "Todo bien",
                 "status": "ENTRADA",
+                "vehicle_name": vehicle_name,
                 "id_register": registro,
                 "id_responsable": responsable,
                 "fecha_actual": fecha_actual, # Agrega la fecha y hora actual
@@ -3669,6 +3676,7 @@ def validar_vehicle_en_sa(request):
         return JsonResponse({
             "success": "Todo bien",
             "status": "SALIDA",
+            "vehicle_name": vehicle_name,
             "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
         })
 
