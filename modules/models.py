@@ -234,7 +234,7 @@ class Licences_Driver(models.Model):
 class Multas(models.Model):
     name_driver = models.ForeignKey(Vehicle_Driver, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Vehiculo")
-    cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='Costo')
+    cost = models.DecimalField(max_digits=50, decimal_places=2, blank=True, null=True, verbose_name='Costo')
     notes = models.TextField(blank=True, null=True, verbose_name="Notas")
     reason = models.TextField(blank=True, null=True, verbose_name="Razón")
     date = models.DateField(blank=True, null=True, verbose_name="Fecha")
@@ -244,7 +244,7 @@ class Checks(models.Model):
     name = models.CharField(max_length=64, blank=True, null=True)
 
 class Placas(models.Model):
-    plate = models.CharField(max_length=10)                                               
+    plate = models.CharField(max_length=50)                                               
     type_plate = models.CharField(max_length=64, blank=True, null=True)                        
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     fecha_emision = models.DateField()
@@ -263,14 +263,14 @@ class Facturas_Vehicle(models.Model):
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     name_user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)
     fecha_vencimiento = models.DateField()
-    number = models.CharField(max_length=10)                                               
+    number = models.CharField(max_length=50)                                               
     status = models.CharField(max_length=255, null=False, default="blank")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
     document_factura = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
 
 class Card_Vehicle(models.Model):
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
-    number_card = models.CharField(max_length=20)      
+    number_card = models.CharField(max_length=50)      
     type_card = models.CharField(max_length=64, blank=True, null=True)   
     name_user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)                                                      
     status = models.CharField(max_length=255, null=False, default="blank")
