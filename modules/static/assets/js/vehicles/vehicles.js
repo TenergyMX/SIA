@@ -313,18 +313,35 @@ class Vehicles {
 
                     obj_offcanvas.find("[name='vehicle_id']").hide().prop("readonly", true);
                     obj_offcanvas.find("[name='vehicle__name']").show().prop("readonly", true);
-                    obj_offcanvas.find("[name='vehicle__fuel_type_vehicle']").show().prop("readonly", true);
+                    obj_offcanvas.find("[name='fuel_type_vehicle']").show().prop("readonly", false);
 
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_info.row(fila).data();
+                    console.log(
+                        "este es el tipo de combustible asignado para este vehiculo: ",
+                        datos["fuel_type_vehicle"]
+                    );
+                    console.log("Datos completos de la fila:", datos);
 
                     $.each(datos, function (index, value) {
-                        var isFileInput = obj_offcanvas.find(`[name='${index}']`).is(":file");
+                        const elemento = obj_offcanvas.find(`[name='${index}']`);
+                        if (!elemento.is(":file")) {
+                            if (elemento.is("select")) {
+                                console.log(`Asignando al select ${index}:`, value);
 
-                        if (!isFileInput) {
-                            obj_offcanvas.find(`[name='${index}']`).val(value);
+                                elemento.val(value);
+                            } else {
+                                elemento.val(value);
+                            }
                         }
                     });
+
+                    obj_offcanvas
+                        .find("[name='apply_tenencia']")
+                        .prop(
+                            "checked",
+                            ["true", "on", true, 1, "1"].includes(datos["apply_tenencia"])
+                        );
 
                     self.input.pond
                         .addFile(datos["image_path"])
@@ -366,6 +383,11 @@ class Vehicles {
             var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_info/";
             var datos = new FormData(this);
             var files = self.input.pond.getFiles();
+
+            if (!this.apply_tenencia.checked) {
+                datos.set("apply_tenencia", "off");
+            }
+
             if (files.length > 0) {
                 var fileInput = files[0].file;
                 if (fileInput && fileInput instanceof File) {
@@ -407,6 +429,5 @@ class Vehicles {
                 },
             });
         });
-        // end
     }
 }

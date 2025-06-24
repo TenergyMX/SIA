@@ -38,7 +38,8 @@ except KeyError as e:
 DEBUG = os.environ.get("DEBUG")
 print(DEBUG)
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS1', 'localhost').lower().split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').lower().split(',')
+print("esto contiene allowed_hosts", ALLOWED_HOSTS)
 
 # Build CSRF-trusted origins from ALLOWED_HOSTS
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host]

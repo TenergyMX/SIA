@@ -16,11 +16,11 @@
     <nav class="navbar">
         <div class="top-container">
             <ul class="navbar-links-top" id="navbar-links-top">
-                <li><a href="/computers-equipment/">Equipos de Cómputo</a><span class="hover-rect"></span></li>
-                <li><a href="/infrastructure/">Infraestructura</a><span class="hover-rect"></span></li>
+                <li><a>Equipos de Cómputo</a><span class="hover-rect"></span></li>
+                <li><a>Infraestructura</a><span class="hover-rect"></span></li>
                 <li><a href="/vehicles/">Vehículos</a><span class="hover-rect"></span></li>
-                <li><a href="/equipments_and_tools/">Equipos y Herramientas</a><span class="hover-rect"></span></li>
-                <li><a href="/category_services/">Servicios</a><span class="hover-rect"></span></li>
+                <li><a>Equipos y Herramientas</a><span class="hover-rect"></span></li>
+                <li><a>Servicios</a><span class="hover-rect"></span></li>
             </ul>
         </div>
         <div class="navbar-container">
@@ -49,7 +49,7 @@
     </nav>
     
     <section class="landing-section">
-        <div class="card-container">
+        <!-- <div class="card-container">
             <div class="card" style="background-image: url('/static/assets/images/landing/bgComputer.png')">
                 <div class="overlay"></div>
                 <div class="title">Equipos de Cómputo</div>
@@ -95,7 +95,64 @@
                     <a href="#" class="btnmas">Conoce más</a>
                 </div>
             </div>
+        </div> -->
+        <!-- ...existing code... -->
+        <div class="card-container">
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgComputer.png')">
+                <div class="overlay"></div>
+                <div class="card-opacity"></div>
+                <span class="proximamente-label" style="pointer-events:none;opacity:0.6;">Próximamente</span>
+                <div class="title">Equipos de Cómputo</div>
+                <div class="content">
+                    <div class="info">Administración de Equipo de Cómputo</div>
+                    <a href="#" class="btn" disabled style="pointer-events:none;opacity:0.6;">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgInfraestructura.jpeg')">
+                <div class="overlay"></div>
+                <div class="card-opacity"></div>
+                <span class="proximamente-label" style="pointer-events:none;opacity:0.6;">Próximamente</span>
+                <div class="title">Infraestructura</div>
+                <div class="content">
+                    <div class="info">Administración de Infraestructura</div>
+                    <a href="#" class="btn" disabled style="pointer-events:none;opacity:0.6;">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgVehiculos.jpg')">
+                <div class="overlay"></div>
+                <div class="title">Vehículos</div>
+                <div class="content">
+                    <div class="info">Adminnistración de Vehículos Empresariales</div>
+                    <a href="/vehicles/" class="btn">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgTools.jpg')">
+                <div class="overlay"></div>
+                <div class="card-opacity"></div>
+                <span class="proximamente-label" style="pointer-events:none;opacity:0.6;">Próximamente</span>
+                <div class="title">Equipos y Herramientas</div>
+                <div class="content">
+                    <div class="info">Administración de Equipos y Herramientas</div>
+                    <a href="#" class="btn" disabled style="pointer-events:none;opacity:0.6;">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
+            <div class="card" style="background-image: url('/static/assets/images/landing/bgServicios.jpg')">
+                <div class="overlay"></div>
+                <div class="card-opacity"></div>
+                <span class="proximamente-label" style="pointer-events:none;opacity:0.6;">Próximamente</span>
+                <div class="title">Servicios</div>
+                <div class="content">
+                    <div class="info">Gestor de servicios y proveedores</div>
+                    <a href="#" class="btn" disabled style="pointer-events:none;opacity:0.6;">Ingresar</a>
+                    <a href="#" class="btnmas">Conoce más</a>
+                </div>
+            </div>
         </div>
+        <!-- ...existing code... -->
     </section>
 
     <div class="info-banner">
@@ -363,7 +420,7 @@
                                 <p class="information-carousel">Todo incluido en el plan esencial</p>
                                 <p class="information-carousel"><strong>Adicional</strong></p>
                                 <p class="information-carousel">Incremento de registros</p>
-                                <p class="footer-carousel">Incluido en la compra del módulo vehiculos</p>
+                                <p class="footer-carousel">Incluido en la compra del módulo vehículos</p>
                             </div>
                             <div class="carousel-item">
                                 <p class="title-carousel">Equipos y herramientas</p>
@@ -556,6 +613,42 @@
     </div>
 </div>
 
+<style>
+.card-opacity {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1;
+    border-radius: 18px;
+    pointer-events: none;
+    display: none;
+}
+
+.card .proximamente-label {
+    position: absolute;
+    top: 12px;
+    left: 0; right: 0;
+    text-align: center;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.2em;
+    z-index: 3;
+    background: rgba(0,0,0,0.65);
+    border-radius: 8px;
+    margin: 0 20px;
+    padding: 8px 0;
+    display: none;
+    letter-spacing: 1px;
+}
+.card:not(:nth-child(3)) .card-opacity,
+.card:not(:nth-child(3)) .proximamente-label {
+    display: block;
+}
+.card {
+    position: relative;
+}
+</style>
+
 {% if sendEmail %}
     <script>
         setTimeout(function(){
@@ -566,7 +659,7 @@
 
 
 <script>
-    /*Boundle Carousel System*/
+    /Boundle Carousel System/
     document.querySelectorAll('.carousel').forEach((carousel, index) => {
         const track = carousel.querySelector('.carousel-track');
         const prevButton = carousel.querySelector('.carousel-button.prev');
@@ -576,7 +669,7 @@
     
         function updateCarousel() {
             const width = items[0].offsetWidth;
-            track.style.transform = `translateX(-${currentIndex * width}px)`;
+            track.style.transform = translateX(`-${currentIndex * width}px`);
         }
     
         function goToNext() {
@@ -599,10 +692,10 @@
             setInterval(goToNext, 10000); // cada carrusel avanza cada 7.5s
         }, delay);
     });
-    /*End*/
+    /End/
 
     document.addEventListener('DOMContentLoaded', function () {
-        /*STYLE AND ANIMATION FOR THE MODALS QUOTATION*/
+        /STYLE AND ANIMATION FOR THE MODALS QUOTATION/
         const quotationModal = document.getElementById('quotationModal');
         const quotationClose = document.getElementById('quotationClose');
         const openQuotationBtns = document.querySelectorAll('.open-quotation');
@@ -634,7 +727,7 @@
             }
         });
 
-        /*ADD ACTIVE STYLE IN BUTTON GROUP*/
+        /ADD ACTIVE STYLE IN BUTTON GROUP/
         const buttons = document.querySelectorAll(".button-group-portal button");
 
         buttons.forEach(function(button) {
@@ -657,7 +750,7 @@
         });
 
 
-        /*THIS FOR THE PANNEL VIEWS, WHEN THE VIEW IS IN PHONE*/
+        /THIS FOR THE PANNEL VIEWS, WHEN THE VIEW IS IN PHONE/
         const view_features = document.querySelectorAll('.landing-section .feature');
         const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
@@ -677,7 +770,7 @@
             observer.observe(view_feature);
         });
 
-        /*THIS FOR THE NAVBAR WHEN THE WEBSITE IT'S BEING SEE IN A PHONE*/
+        /THIS FOR THE NAVBAR WHEN THE WEBSITE IT'S BEING SEE IN A PHONE/
         const navbarToggle = document.getElementById('navbar-toggle');
         const navbarLinks = document.getElementById('navbar-links');
         navbarToggle.addEventListener('click', () => {
@@ -685,7 +778,7 @@
             navbarToggle.classList.toggle('active');
         });
 
-        /*THIS FOR THE PANNEL VIEWS, WHEN THE MOUSE IT'S OVER THE SECCTION, THIS SHOW THE IMAGE, TEXT, AND BUTTON*/
+        /THIS FOR THE PANNEL VIEWS, WHEN THE MOUSE IT'S OVER THE SECCTION, THIS SHOW THE IMAGE, TEXT, AND BUTTON/
         const features = document.querySelectorAll('.feature');
         const container = document.querySelector('.container');
         // Observar cada "feature"
@@ -707,7 +800,7 @@
             });
         });
 
-        /*AUTO SCROLL WITH THE NAVBAR DINAMIC AND FLUID*/
+        /AUTO SCROLL WITH THE NAVBAR DINAMIC AND FLUID/
         const navLinks = document.querySelectorAll('.navbar-links a');
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
@@ -725,7 +818,7 @@
             });
         });
 
-        /*NAVBAR DISAPPEAR WHEN THE SCROLL ITS DOWN BUT SHOW'S WHEN IT'S UP*/
+        /NAVBAR DISAPPEAR WHEN THE SCROLL ITS DOWN BUT SHOW'S WHEN IT'S UP/
         let lastScrollTop = 0;
         const navbar = document.querySelector('.navbar');
         window.addEventListener('scroll', function() {

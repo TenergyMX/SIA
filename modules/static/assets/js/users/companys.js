@@ -23,7 +23,6 @@ class Company {
                 { title: "Id", data: "id" },
                 { title: "Nombre", data: "name" },
                 { title: "Dirección", data: "address" },
-                { title: "Correo", data: "email_company" }, 
                 {
                     title: "Acciones",
                     data: null,
@@ -33,12 +32,6 @@ class Company {
                             <button onclick="company.delete_company(this)" class="btn btn-danger btn-sm mb-1">Eliminar</button>
                         `;
                     },
-                },
-            ],
-            columnDefs: [
-                {
-                    targets: 3, // El índice de la columna del email
-                    visible: false, // Ocultar la columna del correo si no quieres mostrarlo
                 },
             ],
             language: {
@@ -139,8 +132,8 @@ class Company {
                     $("#form_add_company")[0].reset();
                     $("#mdl_crud_company").modal("hide");
                     Swal.fire("¡Éxito!", response.message, "success");
-                    this.reloadTable(); // Recargar la tabla
-                    this.loadCompanys(); // Recargar el select
+                    this.reloadTable();
+                    this.loadCompanys();
                 } else {
                     Swal.fire("¡Error!", response.message, "error");
                 }
@@ -200,5 +193,4 @@ class Company {
     }
 }
 
-// Instanciar la clase y hacerla accesible globalmente
 const company = new Company();

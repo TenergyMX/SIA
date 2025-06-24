@@ -949,9 +949,9 @@ def get_companys(request):
         isList = request.GET.get("isList", "") == "true"
 
         if isList:
-            lista = Company.objects.values("id", "name", "address", "email_company")
+            lista = Company.objects.values("id", "name", "address")
         else:
-            lista = Company.objects.values("id", "name", "address", "email_company")
+            lista = Company.objects.values("id", "name", "address")
 
         datos = []
         for item in lista:
@@ -959,7 +959,6 @@ def get_companys(request):
                 "id": item["id"],
                 "name": item["name"],
                 "address": item["address"],
-                "email_company": item["email_company"],  # <-- Aquí lo agregamos
                 "btn_action": (
                     "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_companys(this)' aria-label='edit'>"
                     "<i class='fa-solid fa-pen'></i>"
@@ -990,7 +989,7 @@ def add_company(request):
             addres_company = request.POST.get('address')
             email_user = request.POST.get('email_company').strip()
             # Validaciones
-            if not name_company or not addres_company or not email_user:
+            if not name_company or not addres_company:
                 return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
             # Verificar duplicados (sin importar mayúsculas o minúsculas)
             if Company.objects.filter(
@@ -1006,7 +1005,7 @@ def add_company(request):
                 company = Company.objects.create(
                     name=name_company,
                     address=addres_company,
-                    email_company=email_user,
+                    #email_company=email_user,
 
                 )
 

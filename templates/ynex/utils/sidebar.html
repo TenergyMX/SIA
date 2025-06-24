@@ -47,43 +47,79 @@
                             </span>
                         </a>
                     </li>
-                    <li class="slide has-sub">
-                        <a href="javascript:void(0);" class="side-menu__item">
-                            <i class="fa-solid fa-house side-menu__icon"></i>
-                            <span class="side-menu__label">
-                                Menú Principal
-                            </span>
-                            <i class="fa-solid fa-angle-right side-menu__angle"></i>
-                        </a>
-                        <ul class="slide-menu child1" data-popper-placement="top" data-popper-reference-hidden=""
-                            data-popper-escaped="">
-                            <li class="slide">
-                                <a href="/computers-equipment/" class="side-menu__item">
-                                    Equipo de Cómputo
+                    
+                                        
+                
+                    {% with request.user.user_access_set.first as access %}
+                        {% if access and access.company %}
+                            <li class="slide has-sub">
+                                <a href="javascript:void(0);" class="side-menu__item">
+                                    <i class="fa-solid fa-house side-menu__icon"></i>
+                                    <span class="side-menu__label">Menú Principal</span>
+                                    <i class="fa-solid fa-angle-right side-menu__angle"></i>
                                 </a>
+
+                                <ul class="slide-menu child1">
+                                    <!-- Mostrar nombre de la empresa -->
+                                    <!-- <li class="slide">
+                                        <span class="side-menu__item text-primary">
+                                            <i class="fa-solid fa-building me-1"></i>
+                                            Empresa: {{ access.company.name }}
+                                        </span>
+                                    </li> -->
+
+                                    <li class="slide">
+                                        {% if access.company.name == "Tenergy" %}
+                                            <a href="/computers-equipment/" class="side-menu__item">Equipo de Cómputo</a>
+                                        {% else %}
+                                            <span class="side-menu__item text-muted" style="cursor: not-allowed;">
+                                                Equipo de Cómputo <small class="text-primary ms-1">(Próximamente)</small>
+                                            </span>
+                                        {% endif %}
+                                    </li>
+                                    <li class="slide">
+                                        {% if access.company.name == "Tenergy" %}
+                                            <a href="/infrastructure/category/" class="side-menu__item">Infraestructura</a>
+                                        {% else %}
+                                            <span class="side-menu__item text-muted" style="cursor: not-allowed;">
+                                                Infraestructura <small class="text-primary ms-1">(Próximamente)</small>
+                                            </span>
+                                        {% endif %}
+                                    </li>
+                                    <li class="slide">
+                                        <a href="/vehicles/" class="side-menu__item">Vehículos</a>
+                                    </li>
+                                    <li class="slide">
+                                        {% if access.company.name == "Tenergy" %}
+                                            <a href="/category_services/" class="side-menu__item">Servicios</a>
+                                        {% else %}
+                                            <span class="side-menu__item text-muted" style="cursor: not-allowed;">
+                                                Servicios <small class="text-primary ms-1">(Próximamente)</small>
+                                            </span>
+                                        {% endif %}
+                                    </li>
+                                    <li class="slide">
+                                        {% if access.company.name == "Tenergy" %}
+                                            <a href="/equipments_and_tools/" class="side-menu__item">Equipos y Herramientas</a>
+                                        {% else %}
+                                            <span class="side-menu__item text-muted" style="cursor: not-allowed;">
+                                                Equipos y Herramientas <small class="text-primary ms-1">(Próximamente)</small>
+                                            </span>
+                                        {% endif %}
+                                    </li>
+                                </ul>
                             </li>
+                        {% else %}
                             <li class="slide">
-                                <a href="/infrastructure/category/" class="side-menu__item">
-                                    Infraestructura
-                                </a>
+                                <span class="side-menu__item text-danger">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                                    Usuario sin empresa asignada
+                                </span>
                             </li>
-                            <li class="slide">
-                                <a href="/vehicles/" class="side-menu__item">
-                                    Vehículos
-                                </a>
-                            </li>
-                            <li class="slide">
-                                <a href="/category_services/" class="side-menu__item">
-                                    Servicios
-                                </a>
-                            </li>
-                            <li class="slide">
-                                <a href="/equipments_and_tools/" class="side-menu__item">
-                                    Equipos y Herramientas
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                        {% endif %}
+                    {% endwith %}
+
+
                     {% with "Seguros,Auditorías,Mantenimientos,Verificaciones,Vehículos,Tenencias,Refrendos,Vehículo,Areas o Departamentos,Usuarios,Proveedores,Empresas" as allowed_submodules %}
                     {% for module in sidebar %}
                         <li class="slide__category">

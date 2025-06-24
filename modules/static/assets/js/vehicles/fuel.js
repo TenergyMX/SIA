@@ -199,7 +199,7 @@ class ComputerEquipment_fuel {
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
 
-                    // Cargar vehículos 
+                    // Cargar vehículos
                     self.loadVehicles();
 
                     obj_modal.find("[name='computerSystem_id']").prop("disabled", false);
@@ -220,7 +220,6 @@ class ComputerEquipment_fuel {
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_fuel.row(fila).data();
 
-                
                     // Usar la función para cargar vehículos y seleccionar el actual
                     self.loadVehiclesForEdit(datos.vehicle_id);
 
@@ -409,30 +408,29 @@ class ComputerEquipment_fuel {
     loadVehicles() {
         console.log("Cargando vehículos disponibles...");
         const self = this;
-        const vehicleSelect = $("#fuel_vehicle_id"); 
-    
+        const vehicleSelect = $("#fuel_vehicle_id");
+
         $.ajax({
-            url: '/get_user_vehicles/', 
-            method: 'GET',
-            success: function(response) {
-                console.log('Vehículos cargados:', response.data);
-                const vehicles_fuel = response.data || []; 
-                const userVehicleId = String(response.user_vehicle_id || '');
-    
-                vehicleSelect.empty(); 
+            url: "/get_user_vehicles/",
+            method: "GET",
+            success: function (response) {
+                console.log("Vehículos cargados:", response.data);
+                const vehicles_fuel = response.data || [];
+                const userVehicleId = String(response.user_vehicle_id || "");
+
+                vehicleSelect.empty();
                 vehicleSelect.append('<option value="">Seleccionar vehículo</option>');
-    
+
                 // Agregar opciones al select
-                vehicles_fuel.forEach(function(vehicle) {
-                    const option = $('<option>')
-                        .val(String(vehicle.id))
-                        .text(vehicle.name);
+                vehicles_fuel.forEach(function (vehicle) {
+                    const option = $("<option>").val(String(vehicle.id)).text(vehicle.name);
                     vehicleSelect.append(option);
                 });
-    
+
                 // Seleccionar el vehículo asignado al usuario si existe
                 if (userVehicleId) {
-                    const optionExists = vehicleSelect.find('option[value="' + userVehicleId + '"]').length > 0;
+                    const optionExists =
+                        vehicleSelect.find('option[value="' + userVehicleId + '"]').length > 0;
                     if (optionExists) {
                         vehicleSelect.val(userVehicleId);
                         console.log("Vehículo seleccionado automáticamente:", userVehicleId);
@@ -441,41 +439,35 @@ class ComputerEquipment_fuel {
                     }
                 }
             },
-            error: function(error) {
-                console.error('Error al cargar vehículos:', error);
-            }
+            error: function (error) {
+                console.error("Error al cargar vehículos:", error);
+            },
         });
     }
-    
 
     loadVehiclesForEdit(selectedVehicleId) {
         const vehicleSelect = $("#fuel_vehicle_id");
         vehicleSelect.empty();
         vehicleSelect.append('<option value="">Seleccionar vehículo</option>');
-    
+
         $.ajax({
-            url: '/get_user_vehicles_for_edit/',
-            method: 'GET',
+            url: "/get_user_vehicles_for_edit/",
+            method: "GET",
             data: { vehicle_id: selectedVehicleId },
             success: function (response) {
                 response.data.forEach(function (vehicle) {
-                    const option = $('<option>')
-                        .val(String(vehicle.id))
-                        .text(vehicle.name);
-    
+                    const option = $("<option>").val(String(vehicle.id)).text(vehicle.name);
+
                     if (String(vehicle.id) === String(selectedVehicleId)) {
                         option.prop("selected", true);
                     }
-    
+
                     vehicleSelect.append(option);
                 });
             },
             error: function (err) {
                 console.error("Error al cargar vehículos para edición:", err);
-            }
+            },
         });
     }
-    
-
-
 }

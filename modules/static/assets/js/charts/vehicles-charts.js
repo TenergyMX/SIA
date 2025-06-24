@@ -50,7 +50,7 @@ function handleFormSubmit(event) {
     });
 
     if (vehicles.length == 0) {
-        alert("Ningun vehiculo fue seleccionado");
+        alert("Ningun vehículo fue seleccionado");
         return;
     }
 
@@ -76,7 +76,7 @@ function handleFormSubmit(event) {
             console.log(data);
             switch (data.key) {
                 case "kilometer-record":
-                    chart_line(data, "Kilometros Recorridos", "Vehiculos", "Kilometraje");
+                    chart_line(data, "Kilometros Recorridos", "Vehículos", "Kilometraje");
                     break;
                 case "in-out-travels":
                     chart_bar(data, "Entradas y Salidas", "Línea del tiempo", "Salidas");
