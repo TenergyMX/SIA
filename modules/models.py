@@ -245,7 +245,7 @@ class Checks(models.Model):
     name = models.CharField(max_length=64, blank=True, null=True)
 
 class Placas(models.Model):
-    plate = models.CharField(max_length=10)                                               
+    plate = models.CharField(max_length=255)                                               
     type_plate = models.CharField(max_length=64, blank=True, null=True)                        
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     fecha_emision = models.DateField()
@@ -264,7 +264,7 @@ class Facturas_Vehicle(models.Model):
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     name_user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)
     fecha_vencimiento = models.DateField()
-    number = models.CharField(max_length=10)                                               
+    number = models.CharField(max_length=255)                                               
     status = models.CharField(max_length=255, null=False, default="blank")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
     document_factura = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
