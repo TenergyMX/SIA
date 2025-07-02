@@ -935,6 +935,76 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
     return response
 
 
+#context_email = {
+#        "company" : context["company"]["name"],
+#        "subject" : "Prueba de correos",
+#        "modulo" : 2,
+#        "submodulo" : "Responsiva",
+#        "item" : 26,
+#        "title" : "Esta es una prueba para el sistema de notificaciones",
+#        "body" : "Este es el contenido que se mostrara",
+#    }
+#send_notification(context_email)
+def send_notification(context):
+    try:
+        #TODO GET module name
+        modulo = Module.objects.get(pk=context["modulo"]).name
+        
+        #FILTER by bussiness and module
+        emails = Notification_System.objects.filter(company__name=context["company"],mods=modulo)
+        #FILTER by id or joker
+        emails = emails.filter(Q(itemsID__contains=[context["item"]]) | Q(itemsID__contains=[0]))
+        #SPLIT general and spicify notifications
+        emails_all = emails.filter(cats="todos")
+        emails_one = emails.filter(cats=context["submodulo"])
+        #UNIFY emails
+        destinatarios = list(set(list(emails_all.values_list("usuario", flat=True)) + list(emails_one.values_list("usuario", flat=True))))
+        #VERIFY emails
+        if not destinatarios:
+            print("No hay destinatarios para esta notificación.")
+            return
+        #TODO CREATE html message
+        from_email = settings.EMAIL_HOST_USER
+        subject = context["title"]
+        html_content = f"""
+        <html>
+        <head>
+            <style>
+                body {{
+                    background-color: #FFFAFA;
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                }}
+                .container {{
+                    background-color: #A5C334;
+                    padding: 36px;
+                    border-radius: 18px;
+                    width: 80%;
+                    max-width: 600px;
+                    margin: auto;
+                }}
+                h2 {{ color: #333333; }}
+                p {{ color: #555555; line-height: 1.5; }}
+                strong {{ color: #000000; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>{context['title']}</h2>
+                <p>{context['body']}</p>
+            </div>
+        </body>
+        </html>
+        """
+        ##TODO send email
+        email = EmailMultiAlternatives(subject, "", from_email, destinatarios)
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        print(f"Correo enviado correctamente a: {destinatarios}")
+    except Exception as e:
+        print(f"Error al enviar el correo: {e}")
+
+
 def Send_Email(subject, recipient, model_instance, message_data, model_name, field_to_update):
     if isinstance(recipient, str):
         recipient = [recipient]

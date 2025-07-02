@@ -12,9 +12,6 @@ from django.core import serializers
 def notifications_views(request):
     if not request.user.is_superuser:
         return render(request, "error/access_denied.html")
-    
-    
-    
     context = {}
     context = user_data(request)
     qs_modules = Module.objects.exclude(short_name__iexact = "usuario").values("id", "name")
@@ -29,24 +26,30 @@ def notifications_views(request):
             area__id=area["id"]
         ).values("user__first_name", "user__last_name", "user__email", "id")
         area["correos"] = list(userAccess)
-    
     context["areas"] = qs_areas
-    template = "notifications/main_notification.html"
     
-    #context["areas"] = Area.objects.filter(company__name__iexact = context["company"]["name"])
+    context_email = {
+        "company" : context["company"]["name"],
+        "subject" : "Prueba de correos",
+        "modulo" : 2,
+        "submodulo" : "Responsiva",
+        "item" : 26,
+        "title" : "Esta es una prueba para el sistema de notificaciones",
+        "body" : "Este es el contenido que se mostrara",
+    }
+    send_notification(context_email)
+    
     #module_id = 3
     subModule_id = 3
     last_module_id = request.session.get("last_module_id", 3)
-    print("esto contiene el last module id:", last_module_id)
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, last_module_id])
-    #print("esto contiene el sidebar:", sidebar)
     context["access"] = access["data"]["access"]
-    #context["sidebar"] = sidebar["data"]
-    #if context["access"]["read"]:
-    #    template = "notifications/main_notification.html"
-    #else:
-    #    template = "error/access_denied.html"
+    context["sidebar"] = sidebar["data"]
+    if context["access"]["read"]:
+        template = "notifications/main_notification.html"
+    else:
+        template = "error/access_denied.html"
     return render(request, template, context)
 
 def notificationRead_modules(request):
@@ -92,36 +95,34 @@ def create_notification(request):
         
         for arr in arr_notification:
             body = arr.split("||")
-        
             for email in arr_users:
                 qs_notification = Notification_System()  # Instantiate here
                 
                 qs_notification.mods = body[0]
                 qs_notification.company = Company.objects.get(pk = init["company"]["id"])
+                items = [int(x) for x in body[2].split(',')]
                 if "0" in body[1]:
                     qs_notification.cats = "todos"
-                    qs_notification.itemsID = body[2]
+                    qs_notification.itemsID = items
                 else:
                     for cat in body[1].split(","):
                         qs_notification.cats = SubModule.objects.get(pk=cat).name
-                        qs_notification.itemsID = body[2]
+                        qs_notification.itemsID = items
                         qs_notification.usuario = email
                         bnd = Notification_System.objects.filter(mods=body[0], cats=SubModule.objects.get(pk=cat).name, usuario=email)
                         if bnd.exists():
                             obj = bnd.first()
-                            obj.itemsID = body[2]
+                            obj.itemsID = items
                             obj.status = "update"
                             obj.save()
                         else:
                             qs_notification.save()
                     continue
-                # Only reached if "0" in body[1]
                 qs_notification.usuario = email
                 bnd = Notification_System.objects.filter(mods=body[0], cats="todos", usuario=email)
                 if bnd.exists():
                     obj = bnd.first()
-                    obj.itemsID = body[2]
-                    print(body[2])
+                    obj.itemsID = items
                     obj.status = "update"
                     obj.save()
                 else:
