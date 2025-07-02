@@ -54,7 +54,7 @@ from django.core.exceptions import MultipleObjectsReturned
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
-
+import qrcode 
 import threading
 from PIL import Image
 
@@ -3643,7 +3643,6 @@ def validar_vehicle_en_sa(request):
         except Vehicle.DoesNotExist:
             vehicle_name = ""
 
-    responsiva = Vehicle_Responsive.objects.filter(vehicle_id=id_vehicle).order_by("-id").first() 
 
     if responsiva:  # Verifica que haya un registro
         if responsiva.end_date:  # Verifica si el campo end_date tiene un valor

@@ -124,7 +124,6 @@ class VehiclesResponsiva {
         }
 
         self.setupEventHandlers();
-        alert("esto es qr: " + qr);
         // Si `QR` está presente en la URL, esperar a que el modal se cargue y luego abrirlo
 
         if (qr) {
@@ -168,7 +167,6 @@ class VehiclesResponsiva {
                 csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
             },
             success: function (response) {
-                alert("este es el estado actual: " + response.status);
                 console.log("Respuesta del servidor:", response);
                 var status = response.status;
                 if (status == "SALIDA") {

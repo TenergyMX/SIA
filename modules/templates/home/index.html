@@ -11,6 +11,15 @@
     <title>CS</title>
     <link rel="stylesheet" type="text/css" href="static/assets/css/landing.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome/css/all.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome/css/sharp-thin.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome/css/sharp-solid.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome/css/sharp-regular.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome/css/sharp-light.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome/css/icons.css' %}" />
+
+
 </head>
 <body>
     <nav class="navbar">
@@ -31,6 +40,7 @@
         <div class="navbar-toggle" id="navbar-toggle">
             <span></span>
             <span></span>
+            
             <span></span>
         </div>
 
@@ -124,7 +134,7 @@
                 <div class="overlay"></div>
                 <div class="title">Vehículos</div>
                 <div class="content">
-                    <div class="info">Adminnistración de Vehículos Empresariales</div>
+                    <div class="info">Administración de Vehículos Empresariales</div>
                     <a href="/vehicles/" class="btn">Ingresar</a>
                     <a href="#" class="btnmas">Conoce más</a>
                 </div>
@@ -211,13 +221,30 @@
                             <div class="carousel-item">
                                 <p class="title-carousel">Vehículos</p>
                                 <p class="title-register">Registros 1-10</p>
-                                <p class="information-carousel">Registro de vehículos</p>
-                                <p class="information-carousel">Gestión de documentación a los vehículos</p>
-                                <p class="information-carousel">Gestión de entradas y salidas mediante código QR</p>
-                                <p class="information-carousel">Detección de mantenimientos preventivos según lo indicado en el manual del vehículo</p>
-                                <p class="information-carousel">Gestión de conductores, licencias y multas</p>
-                                <p class="information-carousel">Gestión de usuarios, áreas y proveedores</p>
-                                <p class="information-carousel">Notificaciones</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Registro de vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de documentación a los vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de entradas y salidas mediante código QR</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Detección de mantenimientos preventivos según lo indicado en el manual del vehículo</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de conductores, licencias y multas</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de usuarios, áreas y proveedores</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Notificaciones</p>
+
+                                <!-- Contenedor oculto -->
+                                <div class="extra-content">
+                                    <p class="information-carousel"><i class="fa-duotone fa-solid fa-minus icon-check-grey"></i>Incremento de registros</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-solid fa-minus icon-check-grey"></i>Módulo de reportes mediante gráficos</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-solid fa-minus icon-check-grey"></i>Módulo de control de gastos de gasolina</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-solid fa-minus icon-check-grey"></i>Notificaciones por correo</p>
+                                </div>
+
+                                <!-- Botón para desplegar -->
+                                <p class="toggle-extra" onclick="toggleExtraContent(this)">
+                                    <i class="fa-solid fa-chevron-down"></i> Ver más opciones
+                                </p>
+
+                      
+
+
                                 <p class="footer-carousel">250 / mes</p>
                             </div>
                             <div class="carousel-item">
@@ -263,7 +290,7 @@
                                 <p class="information-carousel">Gestión de mantenimientos</p>
                                 <p class="information-carousel">Gestión de usuarios, áreas y proveedores</p>
                                 <p class="information-carousel">Notificaciones</p>
-                                <p class="footer-carousel">Incluido en la ocmpra del módulo vehículos</p>
+                                <p class="footer-carousel">Incluido en la compra del módulo vehículos</p>
                             </div>
                         </div>
                         <button class="carousel-button prev">&#10094;</button>
@@ -285,10 +312,29 @@
                             <div class="carousel-item">
                                 <p class="title-carousel">Vehículos</p>
                                 <p class="title-register">Registros 11-25</p>
-                                <p class="information-carousel">Todo incluido en el plan básico</p>
-                                <p class="information-carousel"><strong>Adicional</strong></p>
-                                <p class="information-carousel">Módulo de reportes mediante gráficos</p>
-                                <p class="information-carousel">Incremento de registros</p>
+                                <!-- <p class="information-carousel">Todo incluido en el plan básico</p> -->
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Registro de vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de documentación a los vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de entradas y salidas mediante código QR</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Detección de mantenimientos preventivos según lo indicado en el manual del vehículo</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de conductores, licencias y multas</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de usuarios, áreas y proveedores</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Notificaciones</p>
+
+                                <!-- Contenedor oculto -->
+                                <div class="extra-content">
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Incremento de registros</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Módulo de reportes mediante gráficos</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-solid fa-minus icon-check-grey"></i>Módulo de control de gastos de gasolina</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-solid fa-minus icon-check-grey"></i>Notificaciones por correo</p>
+                                </div>
+
+                                <!-- Botón para desplegar -->
+                                <p class="toggle-extra" onclick="toggleExtraContent(this)">
+                                    <i class="fa-solid fa-chevron-down"></i> Ver más opciones
+                                </p>
+                                <!-- <p class="information-carousel"><strong>Adicional</strong></p> -->
+ 
                                 <p class="footer-carousel">525 / mes</p>
                             </div>
                             <div class="carousel-item">
@@ -347,11 +393,30 @@
                             <div class="carousel-item">
                                 <p class="title-carousel">Vehículos</p>
                                 <p class="title-register">Registros 25-50</p>
-                                <p class="information-carousel">Todo incluido en el plan esencial</p>
-                                <p class="information-carousel"><strong>Adicional</strong></p>
-                                <p class="information-carousel">Módulo de controls de gastos de gasolina</p>
-                                <p class="information-carousel">Notificaciones por correo</p>
-                                <p class="information-carousel">Incremento de registros</p>
+                                <!-- <p class="information-carousel">Todo incluido en el plan esencial</p>
+                                <p class="information-carousel"><strong>Adicional</strong></p> -->
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Registro de vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de documentación a los vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de entradas y salidas mediante código QR</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Detección de mantenimientos preventivos según lo indicado en el manual del vehículo</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de conductores, licencias y multas</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de usuarios, áreas y proveedores</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Notificaciones</p>
+
+                                <!-- Contenedor oculto -->
+                                <div class="extra-content">
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Incremento de registros</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Módulo de reportes mediante gráficos</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Módulo de control de gastos de gasolina</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Notificaciones por correo</p>
+                                </div>
+
+                                <!-- Botón para desplegar -->
+                                <p class="toggle-extra" onclick="toggleExtraContent(this)">
+                                    <i class="fa-solid fa-chevron-down"></i> Ver más opciones
+                                </p>
+
+
                                 <p class="footer-carousel">850 / mes</p>
                             </div>
                             <div class="carousel-item">
@@ -409,9 +474,28 @@
                             <div class="carousel-item">
                                 <p class="title-carousel">Vehículos</p>
                                 <p class="title-register">Registros 50-100</p>
-                                <p class="information-carousel">Todo incluido en el plan avanzado</p>
-                                <p class="information-carousel"><strong>Adicional</strong></p>
-                                <p class="information-carousel">Incremento de registros</p>
+                                <!-- <p class="information-carousel">Todo incluido en el plan avanzado</p> -->
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Registro de vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de documentación a los vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de entradas y salidas mediante código QR</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Detección de mantenimientos preventivos según lo indicado en el manual del vehículo</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de conductores, licencias y multas</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de usuarios, áreas y proveedores</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Notificaciones</p>
+
+                                <!-- Contenedor oculto -->
+                                <div class="extra-content">
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Incremento de registros</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Módulo de reportes mediante gráficos</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Módulo de control de gastos de gasolina</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Notificaciones por correo</p>
+                                </div>
+
+                                <!-- Botón para desplegar -->
+                                <p class="toggle-extra" onclick="toggleExtraContent(this)">
+                                    <i class="fa-solid fa-chevron-down"></i> Ver más opciones
+                                </p>
+
                                 <p class="footer-carousel">1500 / mes</p>
                             </div>
                             <div class="carousel-item">
@@ -466,9 +550,28 @@
                             <div class="carousel-item">
                                 <p class="title-carousel">Vehículos</p>
                                 <p class="title-register">Registros 100-250</p>
-                                <p class="information-carousel">Todo incluido en el plan pro</p>
-                                <p class="information-carousel"><strong>Adicional</strong></p>
-                                <p class="information-carousel">Incremento de registros</p>
+                                <!-- <p class="information-carousel">Todo incluido en el plan pro</p> -->
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Registro de vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de documentación a los vehículos</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de entradas y salidas mediante código QR</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Detección de mantenimientos preventivos según lo indicado en el manual del vehículo</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de conductores, licencias y multas</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Gestión de usuarios, áreas y proveedores</p>
+                                <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Notificaciones</p>
+
+                                <!-- Contenedor oculto -->
+                                <div class="extra-content">
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Incremento de registros</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Módulo de reportes mediante gráficos</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Módulo de control de gastos de gasolina</p>
+                                    <p class="information-carousel"><i class="fa-duotone fa-regular fa-badge-check icon-check-green"></i>Notificaciones por correo</p>
+                                </div>
+
+                                <!-- Botón para desplegar -->
+                                <p class="toggle-extra" onclick="toggleExtraContent(this)">
+                                    <i class="fa-solid fa-chevron-down"></i> Ver más opciones
+                                </p>
+
                                 <p class="footer-carousel">2500 / mes</p>
                             </div>
                             <div class="carousel-item">
@@ -831,5 +934,32 @@
             lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
         });
     });
+
+
+
+    
+
+
 </script>
+
+
+<script>
+function toggleExtraContent(button) {
+    const extraContent = button.previousElementSibling;
+    const icon = button.querySelector('i');
+
+    extraContent.classList.toggle('visible');
+
+    if (extraContent.classList.contains('visible')) {
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        button.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Ver menos opciones';
+    } else {
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        button.innerHTML = '<i class="fa-solid fa-chevron-down"></i> Ver más opciones';
+    }
+}
+</script>
+
 </html>
