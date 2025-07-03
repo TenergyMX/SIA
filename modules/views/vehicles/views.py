@@ -51,6 +51,7 @@ from django.template.loader import render_to_string
 from django.utils.timezone import localtime
 from django.core.exceptions import MultipleObjectsReturned
 
+from django.db.models import OuterRef, Subquery
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
@@ -1022,11 +1023,31 @@ def get_vehicles_tenencia(request):
     dt = request.GET
     subModule_id = 5
 
-    lista = Vehicle_Tenencia.objects.values(
+
+    # Crear queryset base
+    base_tenencia_qs = Vehicle_Tenencia.objects.all()
+
+    # Aplicar filtros por rol
+    if context["role"]["id"] in [1, 2, 3]:
+        base_tenencia_qs = base_tenencia_qs.filter(vehiculo__company_id=context["company"]["id"])
+    else:
+        base_tenencia_qs = base_tenencia_qs.filter(vehiculo__responsible_id=context["user"]["id"])
+
+    # Subquery para obtener la tenencia más reciente por vehículo
+    latest_tenencia = Vehicle_Tenencia.objects.filter(
+        vehiculo_id=OuterRef('vehiculo_id')
+    ).order_by('-fecha_pago')
+
+    # Aplicar el filtro para conservar solo la más reciente por vehículo
+    base_tenencia_qs = base_tenencia_qs.filter(id=Subquery(latest_tenencia.values('id')[:1]))
+
+    # Elegir campos específicos
+    lista = base_tenencia_qs.values(
         "id",
         "vehiculo_id", "vehiculo__name", "vehiculo__company_id",
         "monto", "fecha_pago", "comprobante_pago"
     )
+
 
     if context["role"]["id"] in [1,2,3]:
         lista = lista.filter(vehiculo__company_id = context["company"]["id"])
@@ -2096,15 +2117,21 @@ def get_vehicles_insurance(request):
         base_query = base_query.filter(vehicle_id=vehicle_id)
 
     # Obtener el último seguro por vehículo
-    subquery = base_query.values('vehicle_id').annotate(
-        max_id=Max('id')
-    ).values('max_id')
+    latest_insurance = Vehicle_Insurance.objects.filter(
+        vehicle_id=OuterRef('vehicle_id')
+    ).order_by('-end_date') 
 
-    print("estos son los seguor")
-    print(subquery)
+    base_query = base_query.filter(id=Subquery(latest_insurance.values('id')[:1]))
+    ultimos_seguros = base_query
+    # subquery = base_query.values('vehicle_id').annotate(
+    #     max_id=Max('id')
+    # ).values('max_id')
 
-    ultimos_seguros = Vehicle_Insurance.objects.filter(id__in=subquery)
-    print(ultimos_seguros[0].status)
+    # print("estos son los seguor")
+    # print(subquery)
+
+    # ultimos_seguros = Vehicle_Insurance.objects.filter(id__in=subquery)
+    # print(ultimos_seguros[0].status)
 
     # Calcular contadores basados en los últimos seguros
     response["counters"] = {
@@ -2506,11 +2533,34 @@ def get_vehicles_audit(request):
     subModule_id = 10
 
     # Obtener la lista de auditorías
-    lista = Vehicle_Audit.objects.values(
+
+    # Base sin valores aún
+    base_audit_qs = Vehicle_Audit.objects.all()
+
+    # Filtro según rol
+    if context["role"]["id"] in [1, 2, 3]:
+        base_audit_qs = base_audit_qs.filter(vehicle__company_id=context["company"]["id"])
+    else:
+        base_audit_qs = base_audit_qs.filter(vehicle__responsible_id=context["user"]["id"])
+
+    if not context["role"]["id"] in [1, 2, 3]:
+        base_audit_qs = base_audit_qs.exclude(is_visible=False)
+
+    # Subquery: obtener la auditoría más reciente por vehículo
+    latest_audit = Vehicle_Audit.objects.filter(
+        vehicle_id=OuterRef('vehicle_id')
+    ).order_by('-audit_date')
+
+    # Filtrar la base para obtener solo las auditorías más recientes por vehículo
+    base_audit_qs = base_audit_qs.filter(id=Subquery(latest_audit.values('id')[:1]))
+
+    # Seleccionar campos específicos
+    lista = base_audit_qs.values(
         "id", "vehicle_id", "vehicle__name", 
         "audit_date", "general_notes",
-        "checks", "is_visible", "is_checked"  # Asegúrate de incluir estos campos
+        "checks", "is_visible", "is_checked"  
     )
+
 
     if context["role"]["id"] in [1, 2, 3]:
         lista = lista.filter(vehicle__company_id=context["company"]["id"])
@@ -2851,11 +2901,30 @@ def get_vehicles_maintenance(request):
     dt = request.GET
     subModule_id = 11
     
-    lista = Vehicle_Maintenance.objects.values(
+
+    # Crear el queryset base
+    base_maintenance_qs = Vehicle_Maintenance.objects.all()
+
+    # Aplicar filtros según rol
+    if context["role"]["id"] in [1, 2]:
+        base_maintenance_qs = base_maintenance_qs.filter(vehicle__company_id=context["company"]["id"])
+    else:
+        base_maintenance_qs = base_maintenance_qs.filter(vehicle__responsible_id=context["user"]["id"])
+
+    # Subquery: seleccionar el mantenimiento más reciente por vehículo
+    latest_maintenance = Vehicle_Maintenance.objects.filter(
+        vehicle_id=OuterRef('vehicle_id')
+    ).order_by('-date')
+
+    # Filtrar el queryset base 
+    base_maintenance_qs = base_maintenance_qs.filter(id=Subquery(latest_maintenance.values('id')[:1]))
+
+    # Extraer solo los campos que se van a devolver
+    lista = base_maintenance_qs.values(
         "id", "vehicle_id", "vehicle__name",
         "provider_id", "provider__name",
         "date", "type", "cost", 
-        "mileage","time", "general_notes", "actions", "comprobante", "status"
+        "mileage", "time", "general_notes", "actions", "comprobante", "status"
     )
 
     print(context["role"])
