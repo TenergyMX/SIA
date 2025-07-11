@@ -213,7 +213,7 @@
                         <button class="carousel-button next">&#10095;</button>
                     </div>
                     <div class="pricing-plan-cta">
-                        <a href="#contact" class="cta">Cotizar</a>
+                        <a class="cta" data-stripe="basic">Cotizar</a>
                     </div>
                 </div>
             </div>
@@ -275,7 +275,7 @@
                         <button class="carousel-button next">&#10095;</button>
                     </div>
                     <div class="pricing-plan-cta">
-                        <a href="#contact" class="cta">Cotizar</a>
+                        <a class="cta" data-stripe="esential">Cotizar</a>
                     </div>
                 </div>
             </div>
@@ -337,7 +337,7 @@
                         <button class="carousel-button next">&#10095;</button>
                     </div>
                     <div class="pricing-plan-cta">
-                        <a href="#contact" class="cta">Cotizar</a>
+                        <a class="cta" data-stripe="advance">Cotizar</a>
                     </div>
                 </div>
             </div>
@@ -394,7 +394,7 @@
                         <button class="carousel-button next">&#10095;</button>
                     </div>
                     <div class="pricing-plan-cta">
-                        <a href="#contact" class="cta">Cotizar</a>
+                        <a class="cta" data-stripe="pro">Cotizar</a>
                     </div>
                 </div>
             </div>
@@ -451,7 +451,7 @@
                         <button class="carousel-button next">&#10095;</button>
                     </div>
                     <div class="pricing-plan-cta">
-                        <a href="#contact" class="cta">Cotizar</a>
+                        <a class="cta" data-stripe="elite">Cotizar</a>
                     </div>
                 </div>
             </div>
@@ -739,4 +739,12 @@
         });
     });
 </script>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script  src="{% static 'assets/js/siaStripe.js' %}"></script>
+<script>
+    window.app = new siaStripe();
+</script>
+
 </html>

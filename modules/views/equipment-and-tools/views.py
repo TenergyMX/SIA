@@ -45,9 +45,6 @@ def equipments_and_tools(request):
     subModule_id = 29
     request.session["last_module_id"] = module_id
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
 
@@ -60,12 +57,7 @@ def equipments_and_tools(request):
     context["tipo_user"] = context["role"]["name"].lower
 
 
-    if context["access"]["read"]:
-        print("esto contiene el context antes del html")
-        print(context)
-        template = "equipments-and-tools/equipments_and_tools.html"
-    else:
-        template = "error/access_denied.html"
+    template = "equipments-and-tools/equipments_and_tools.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
     
 #submodulo de equipos y herramientas
@@ -75,9 +67,6 @@ def equipments_tools(request):
     module_id = 6
     subModule_id = 30
     request.session["last_module_id"] = module_id
-
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -91,12 +80,8 @@ def equipments_tools(request):
     context["tipo_user"] = context["role"]["name"].lower
 
     
-    if context["access"]["read"]:
-        template = "equipments-and-tools/equipments_tools.html"
-    else:
-        template = "error/access_denied.html"
+    template = "equipments-and-tools/equipments_tools.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
-  
 #submodulo de responsivas
 @login_required
 def responsiva(request):
@@ -104,9 +89,6 @@ def responsiva(request):
     module_id = 6
     subModule_id = 31
     request.session["last_module_id"] = module_id
-
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -117,22 +99,12 @@ def responsiva(request):
 #permisos para agregar responssivas
     context["area"] = context["area"]["name"].lower()
     context["create"] = access["data"]["access"]["create"]
-    print("esto contiene mi create de responsivas")
-    print(context)
     context["tipo_user"] = context["role"]["name"].lower()
 
 
     tipo_user = context["role"]["name"].lower()
-    print("este es el rol de usuario con el que cuenta")
-    print(tipo_user)
     user_name = context["user"]["username"].lower()
-    print("este es el nombre del usuario con el que cuenta")
-    print(user_name)
-    
-    if context["access"]["read"]:
-        template = "equipments-and-tools/responsiva.html"
-    else:
-        template = "error/access_denied.html"
+    template = "equipments-and-tools/responsiva.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 #-------------------------------------------------------------

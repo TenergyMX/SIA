@@ -158,11 +158,7 @@ $(document).ready(function () {
                         Swal.fire("", result.message, result.status);
                     },
                     error: function (xhr, status, error) {
-                        Swal.fire(
-                            "Error del servidor",
-                            "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
-                            "error"
-                        );
+                        handleServerError(error);
                     },
                 });
             }
@@ -272,11 +268,7 @@ function mci_selects_items(option) {
             $("#mdl-category-items").modal("show");
         },
         error: function (xhr, status, error) {
-            Swal.fire(
-                "Error del servidor",
-                "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
-                "error"
-            );
+            handleServerError(error);
         },
     });
 }
@@ -292,15 +284,13 @@ function init_select() {
     });
 
     sltItems.on("change", function (e) {
-        setTimeout(() => {
-            $(
-                ".select2-container--default .select2-selection--multiple .select2-selection__choice"
-            ).css({
-                "background-color": "var(--primary-color)",
-                border: "1px solid var(--primary-color)",
-                color: "#fff",
-            });
-        }, 0);
+        $(
+            ".select2-container--default .select2-selection--multiple .select2-selection__choice"
+        ).css({
+            "background-color": "var(--primary-color)",
+            border: "1px solid var(--primary-color)",
+            color: "#fff",
+        });
     });
 
     const sltSubmodulos = $("#mci-slt-submodulos");
@@ -312,15 +302,13 @@ function init_select() {
     });
 
     sltSubmodulos.on("change", function (e) {
-        setTimeout(() => {
-            $(
-                ".select2-container--default .select2-selection--multiple .select2-selection__choice"
-            ).css({
-                "background-color": "var(--primary-color)",
-                border: "1px solid var(--primary-color)",
-                color: "#fff",
-            });
-        }, 0);
+        $(
+            ".select2-container--default .select2-selection--multiple .select2-selection__choice"
+        ).css({
+            "background-color": "var(--primary-color)",
+            border: "1px solid var(--primary-color)",
+            color: "#fff",
+        });
     });
 }
 
@@ -353,11 +341,7 @@ function deleteNotification(id) {
                 Swal.fire("", result.message, result.status);
             },
             error: function (xhr, status, error) {
-                Swal.fire(
-                    "Error del servidor",
-                    "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
-                    "error"
-                );
+                handleServerError(error);
             },
         });
     });
@@ -408,4 +392,12 @@ function updateNotification(id) {
 
     //Hide the table and show the create-form
     hideShow("#table-notifications-system", "#forms-notifications-system");
+}
+
+function handleServerError(error) {
+    Swal.fire(
+        "Error del servidor",
+        "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
+        "error"
+    );
 }

@@ -16,9 +16,6 @@ def vehicles_reports_view(request):
     module_id = 2
     subModule_id = 4
     request.session["last_module_id"] = module_id
-
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
     
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -44,8 +41,9 @@ def vehicles_reports_view(request):
         context["vehicles"] = list(data)
     except Exception as e:
         print(f"Error fetching vehicles info: {e}")
+    template = "charts/dashboard.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
         
-    return render(request, "charts/dashboard.html", context)
+    return render(request, template, context)
 
 def vehicle_statistic(request):
     context = {}

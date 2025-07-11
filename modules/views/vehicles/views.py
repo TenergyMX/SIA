@@ -75,23 +75,16 @@ def vehicles(request):
     subModule_id = 4
     request.session["last_module_id"] = module_id
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
-    access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
-
+    access = get_module_user_permissions(context, subModule_id)
     # Limpiar espacios en los títulos de los submódulos
     for module in sidebar["data"]:
         for submodule in module.get("submodules", []):
             submodule["title"] = submodule["title"].strip()  # Limpiar espacios al inicio y final
-
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
-
     print("estos son los modulos permitidos", context["sidebar"])
-
-    template = "vehicles/vechicles.html" if context["access"]["read"] else "error/access_denied.html"
+    template = "vehicles/vechicles.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
     
 
@@ -106,9 +99,6 @@ def vehicles_details(request, vehicle_id = None):
     subModule_id = 4
     request.session["last_module_id"] = module_id
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-    
     access = get_module_user_permissions(context, subModule_id)
     permisos = get_user_access(context)
     sidebar = get_sidebar(context, [1, module_id])
@@ -117,11 +107,7 @@ def vehicles_details(request, vehicle_id = None):
     context["permiso"] = permisos["data"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/vechicle_details.html"
-    else:
-        template = "error/access_denied.html"
-
+    template = "vehicles/vechicle_details.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required
@@ -129,20 +115,15 @@ def module_vehicle_tenencia(request):
     context = user_data(request)
     module_id = 2
     subModule_id = 5
-
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "vehicles/vehicles_tenencia.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/vehicles_tenencia.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    
     return render(request, template, context)
 
 @login_required
@@ -151,19 +132,13 @@ def module_vehicle_refrendo(request):
     module_id = 2
     subModule_id = 6
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "vehicles/vehicles_refrendo.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/vehicles_refrendo.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     
     return render(request, template, context)
 
@@ -173,20 +148,13 @@ def module_vehicle_verificacion(request):
     module_id = 2
     subModule_id = 7
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "vehicles/vehicles_verificacion.html"
-    else:
-        template = "error/access_denied.html"
-
+    template = "vehicles/vehicles_verificacion.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required
@@ -195,19 +163,13 @@ def module_vehicle_responsiva(request, qr="", vehicle_id = 0):
     module_id = 2
     submodule_id = 8
 
-    if not check_user_access_to_module(request, module_id, submodule_id):
-        return render(request, "error/access_denied.html")
-    
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/responsiva.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/responsiva.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
     
 @login_required
@@ -216,41 +178,30 @@ def module_vehicle_insurance(request):
     module_id = 2
     submodule_id = 9
 
-    if not check_user_access_to_module(request, module_id, submodule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/vehicle_insurance.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/vehicle_insurance.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required
-def module_vehicle_audit(request):
+def module_vehicle_audit(request):  
     context = user_data(request)
     module_id = 2
     submodule_id = 10
 
-    if not check_user_access_to_module(request, module_id, submodule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/audit.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/audit.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
+
 
 @login_required
 def module_vehicle_maintenance(request):
@@ -258,19 +209,13 @@ def module_vehicle_maintenance(request):
     module_id = 2
     submodule_id = 11
 
-    if not check_user_access_to_module(request, module_id, submodule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/maintenance.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/maintenance.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required
@@ -279,19 +224,13 @@ def vehicles_calendar_views(request):
     module_id = 2
     submodule_id = 21
 
-    if not check_user_access_to_module(request, module_id, submodule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/calendar.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/calendar.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required
@@ -300,19 +239,13 @@ def vehicles_fuel_views(request):
     module_id = 2
     submodule_id = 22
 
-    if not check_user_access_to_module(request, module_id, submodule_id):
-        return render(request, "error/access_denied.html")
-    
     access = get_module_user_permissions(context, submodule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/fuel.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/fuel.html"  if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 
@@ -328,10 +261,7 @@ def driver_vehicles(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/vehicles_driver.html"
-    else:
-        template = "error/access_denied.html"
+    template = "vehicles/vehicles_driver.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 
@@ -351,11 +281,7 @@ def drivers_details(request, driver_id = None):
     context["permiso"] = permisos["data"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "vehicles/driver_details.html"
-    else:
-        template = "error/access_denied.html"
-
+    template = "vehicles/driver_details.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html" 
     return render(request, template, context)
 
 

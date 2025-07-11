@@ -36,10 +36,7 @@ def companys_views(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "users/companys.html"
-    else:
-        template = "error/access_denied.html"
+    template = "users/companys.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required
@@ -55,10 +52,7 @@ def users_views(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    if context["access"]["read"]:
-        template = "users/users.html"
-    else:
-        template = "error/access_denied.html"
+    template = "users/users.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required
@@ -74,11 +68,8 @@ def providers_views(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-
-    if context["access"]["read"]:
-        template = "users/proviers.html"
-    else:
-        template = "error/access_denied.html"
+    #and check_user_access_to_module(request, module_id, subModule_id)
+    template = "users/proviers.html" if context["access"]["read"] else "error/access_denied.html"
     return render(request, template, context)
 
 def areas_views(request):
@@ -93,11 +84,8 @@ def areas_views(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-
-    if context["access"]["read"]:
-        template = "users/areas.html"
-    else:
-        template = "error/access_denied.html"
+    #and check_user_access_to_module(request, module_id, subModule_id)
+    template = "users/areas.html" if context["access"]["read"] else "error/access_denied.html"
     return render(request, template, context)
 
 # usuario
@@ -119,23 +107,20 @@ def users_profile_view(request):
 def plans_views(request):
     if not request.user.is_superuser:
         return render(request, "error/access_denied.html")
-                      
+    
     context = user_data(request)
     module_id = 3
     subModule_id = 3
     last_module_id = request.session.get("last_module_id", 3)
-    print("esto contiene el last module id:", last_module_id)
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, last_module_id])
-    print("esto contiene el sidebar:", sidebar)
+    
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
 
-    if context["access"]["read"]:
-        template = "users/plans.html"
-    else:
-        template = "error/access_denied.html"
+    template = "users/plans.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
 
 # TODO --------------- [ REQUEST ] ---------------

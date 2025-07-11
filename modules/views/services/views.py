@@ -33,9 +33,6 @@ def category_services(request):
     subModule_id = 32
     request.session["last_module_id"] = module_id
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -47,10 +44,7 @@ def category_services(request):
     context["create"] = access["data"]["access"]["create"]
     context["tipo_user"] = context["role"]["name"].lower
 
-    if context["access"]["read"]:
-        template = "services/category_services.html"
-    else:
-        template = "error/access_denied.html"
+    template = "services/category_services.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context) 
 
 
@@ -127,9 +121,6 @@ def services(request):
     subModule_id = 33
     request.session["last_module_id"] = module_id
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
@@ -141,12 +132,7 @@ def services(request):
     context["create"] = access["data"]["access"]["create"]
     context["tipo_user"] = context["role"]["name"].lower
 
-
-    
-    if context["access"]["read"]:
-        template = "services/services.html"
-    else:
-        template = "error/access_denied.html"
+    template = "services/services.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context) 
 
 
@@ -157,20 +143,14 @@ def dashboard_services(request):
     module_id = 5
     subModule_id = 34
     request.session["last_module_id"] = module_id
-
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
+    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "services/dashboard_services.html"
-    else:
-        template = "error/access_denied.html"
+    template = "services/dashboard_services.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context) 
 
 #submodulo de historial depagos de servicios 
@@ -187,10 +167,7 @@ def payments_history(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "services/payments_history.html"
-    else:
-        template = "error/access_denied.html"
+    template = "services/payments_history.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context) 
 
 # Función para la tabla categorias de servicios

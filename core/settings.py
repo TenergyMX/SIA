@@ -15,6 +15,7 @@ from os.path import join, dirname, abspath
 from dotenv import load_dotenv
 
 from django.conf import settings
+import stripe
 
 # Directorio base de tu proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -223,3 +224,11 @@ CELERY_TASK_SERIALIZER = 'json'
 
 # Celery beat
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+#STRIPE SESSION
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
+ID_ENC_SECRET_KEY = os.environ.get('ID_ENC_SECRET_KEY')
+
+stripe.api_key = STRIPE_SECRET_KEY
