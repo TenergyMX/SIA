@@ -984,7 +984,10 @@ def add_new_maintenance_option(request):
             def agregar_item(json_data, tipo_mantenimiento, nueva_descripcion):
                 for mantenimiento in json_data['data']:
                     if mantenimiento['tipo'].lower() == tipo_mantenimiento.lower():
-                        max_id = max([item['id'] for item in mantenimiento['items']])
+                        if mantenimiento['items']: 
+                            max_id = max([item['id'] for item in mantenimiento['items']])
+                        else:
+                            max_id = 0
                         nuevo_id = max_id + 1
                         nuevo_item = {
                             "id": nuevo_id,

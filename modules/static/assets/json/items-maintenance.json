@@ -11,15 +11,20 @@
             "id": 1,
             "tipo": "preventivo",
             "items": [
-                
+                {
+                    "id": 1,
+                    "descripcion": "LIMPIEZA"
+                },
+                {
+                    "id": 2,
+                    "descripcion": "LIMPIEZA 1"
+                }
             ]
         },
         {
             "id": 2,
             "tipo": "correctivo",
-            "items": [
-               
-            ]
+            "items": []
         }
     ]
 }
