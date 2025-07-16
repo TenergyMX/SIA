@@ -172,7 +172,7 @@ class Vehicle_Insurance(models.Model):
     doc = models.FileField(upload_to='docs/', blank=True, null=True) 
     created_at = models.DateTimeField(auto_now_add=True)
     email_insurance = models.BooleanField(default=False)
-    status = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
+    status = models.CharField(max_length=20, choices=ESTADOS, default='PROXIMO')
     class Meta:
         indexes = [
             models.Index(fields=['status']),

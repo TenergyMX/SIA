@@ -1019,44 +1019,84 @@ def get_vehicle_tenencia(request):
 
 def get_vehicles_tenencia(request):
     context = user_data(request)
-    response = {"success": False, "data": []}
+    response = {"success": False, "data": [], "counters": {}}
     dt = request.GET
+    tipo_carga = dt.get("tipo_carga", "todos")
+    vehicle_id = dt.get("vehicle_id")
     subModule_id = 5
 
 
-    # Crear queryset base
-    base_tenencia_qs = Vehicle_Tenencia.objects.all()
+    hoy = timezone.now().date()
+    un_mes_despues = hoy + timedelta(days=30)
 
-    # Aplicar filtros por rol
-    if context["role"]["id"] in [1, 2, 3]:
-        base_tenencia_qs = base_tenencia_qs.filter(vehiculo__company_id=context["company"]["id"])
-    else:
-        base_tenencia_qs = base_tenencia_qs.filter(vehiculo__responsible_id=context["user"]["id"])
+    # --- Vehículos según permisos ---
+    vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
+    if context["role"]["id"] not in [1, 2, 3]:
+        vehiculos = vehiculos.filter(responsible_id=context["user"]["id"])
+    if vehicle_id:
+        vehiculos = vehiculos.filter(id=vehicle_id)
 
-    # Subquery para obtener la tenencia más reciente por vehículo
-    latest_tenencia = Vehicle_Tenencia.objects.filter(
+    total_vehiculos_count = vehiculos.count()
+
+   # --- Última tenencia por vehículo ---
+    all_tenencias = Vehicle_Tenencia.objects.filter(vehiculo__in=vehiculos)
+    latest_qs = Vehicle_Tenencia.objects.filter(
         vehiculo_id=OuterRef('vehiculo_id')
     ).order_by('-fecha_pago')
+    latest_only = all_tenencias.filter(id=Subquery(latest_qs.values('id')[:1]))
 
-    # Aplicar el filtro para conservar solo la más reciente por vehículo
-    base_tenencia_qs = base_tenencia_qs.filter(id=Subquery(latest_tenencia.values('id')[:1]))
-
-    # Elegir campos específicos
-    lista = base_tenencia_qs.values(
-        "id",
-        "vehiculo_id", "vehiculo__name", "vehiculo__company_id",
+   
+    # Aplicar filtro tipo_carga
+    if tipo_carga == "pagadas":
+        lista_queryset = latest_only.filter(
+            Q(comprobante_pago__isnull=False) & ~Q(comprobante_pago="") & Q(fecha_pago__lte=hoy)
+        )
+    elif tipo_carga == "vencidas":
+        lista_queryset = latest_only.filter(
+            Q(fecha_pago__lt=hoy) & (Q(comprobante_pago__isnull=True) | Q(comprobante_pago=""))
+        )
+    elif tipo_carga == "proximas":
+        lista_queryset = latest_only.filter(
+            fecha_pago__gte=hoy, fecha_pago__lte=un_mes_despues
+        )
+    else:
+        lista_queryset = latest_only
+    # Traer datos
+    lista = lista_queryset.values(
+        "id", "vehiculo_id", "vehiculo__name", "vehiculo__company_id",
         "monto", "fecha_pago", "comprobante_pago"
     )
+    # Permisos del módulo
+    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
+    # Contadores
+    contadores = {
+        "total": 0,
+        "pagadas": 0,
+        "proximas": 0,
+        "vencidas": 0,
+    }
 
-    if context["role"]["id"] in [1,2,3]:
-        lista = lista.filter(vehiculo__company_id = context["company"]["id"])
-    else:
-        lista = lista.filter(vehiculo__responsible_id = context["user"]["id"])
-
-    access = get_module_user_permissions(context, subModule_id)
-    access = access["data"]["access"]
+    result = []
     for item in lista:
+        estado = None
+        fecha_pago = item["fecha_pago"]
+        comprobante = item["comprobante_pago"]
+
+        if comprobante and fecha_pago and fecha_pago <= hoy:
+            estado = "pagada"
+            contadores["pagadas"] += 1
+        elif not comprobante and fecha_pago and fecha_pago < hoy:
+            estado = "vencida"
+            contadores["vencidas"] += 1
+        elif fecha_pago and hoy <= fecha_pago <= un_mes_despues:
+            estado = "proxima"
+            contadores["proximas"] += 1
+            
+        item["estado"] = estado
+        contadores["total"] += 1
+
+    
         item["btn_action"] = ""
         if item["comprobante_pago"] :
             tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
@@ -1071,7 +1111,14 @@ def get_vehicles_tenencia(request):
             item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-tenencia=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>"""
-    response["data"] = list(lista)
+        
+        result.append(item)
+    response["counters"] = {
+        **contadores,
+        "total_vehiculos": total_vehiculos_count,
+    }
+
+    response["data"] = result
     response["success"] = True
     return JsonResponse(response)
 
@@ -1217,21 +1264,90 @@ def get_vehicle_refrendo(request):
 
 def get_vehicles_refrendo(request):
     context = user_data(request)
-    response = {"success": False, "data": []}
+    response = {"success": False, "data": [], "counters":{}}
     dt = request.GET
     vehicle_id = dt.get("vehicle_id", None)
+    tipo_carga = dt.get("tipo_carga", "todos")
     subModule_id = 6
 
-    lista = Vehicle_Refrendo.objects.values("id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago")
+    hoy = timezone.now().date()
+    un_mes_despues = hoy + timedelta(days=30)
 
-    if context["role"]["id"] in [1,2,3]:
-        lista = lista.filter(vehiculo__company_id = context["company"]["id"])
+
+    # Vehículos disponibles por permisos
+    total_vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
+    if context["role"]["id"] not in [1, 2, 3]:
+        total_vehiculos = total_vehiculos.filter(responsible_id=context["user"]["id"])
+    if vehicle_id:
+        total_vehiculos = total_vehiculos.filter(id=vehicle_id)
+    total_vehiculos_count = total_vehiculos.count()
+    
+    # base_refrendo_qs = Vehicle_Refrendo.objects.filter(vehiculo__in=total_vehiculos)
+
+    # Base de refrendos (solo el más reciente por vehículo)
+    all_refrendos = Vehicle_Refrendo.objects.filter(vehiculo__in=total_vehiculos)
+    latest_refrendo = Vehicle_Refrendo.objects.filter(vehiculo_id=OuterRef('vehiculo_id')).order_by('-fecha_pago')
+    latest_only = all_refrendos.filter(id=Subquery(latest_refrendo.values('id')[:1]))
+
+    # Filtrar por tipo_carga
+    if tipo_carga == "pagadas":
+        lista_queryset = latest_only.filter(
+            Q(comprobante_pago__isnull=False) & ~Q(comprobante_pago="") & Q(fecha_pago__lte=hoy)
+        )
+    elif tipo_carga == "vencidas":
+        lista_queryset = latest_only.filter(
+            Q(fecha_pago__lt=hoy) & (Q(comprobante_pago__isnull=True) | Q(comprobante_pago=""))
+        )
+    elif tipo_carga == "proximas":
+        lista_queryset = latest_only.filter(
+            Q(fecha_pago__gte=hoy) & Q(fecha_pago__lte=un_mes_despues)
+        )
     else:
-        lista = lista.filter(vehiculo__responsible_id = context["user"]["id"])
+        lista_queryset = latest_only
+
+    # Seleccionar campos finales
+    lista = lista_queryset.values(
+        "id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago"
+    )
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
+
+    # Clasificación por estado en base solo a lista_queryset
+    contadores = {
+        "total": 0,
+        "pagadas": 0,
+        "proximas": 0,
+        "vencidas": 0,
+    }
+
+     # preparar datos de respuesta
+    result =  []
     for item in lista:
+        estado = None
+        if item["comprobante_pago"]:
+            estado = "pagada"
+            contadores["pagadas"] += 1
+        elif item["fecha_pago"] < hoy:
+            estado = "vencida"
+            contadores["vencidas"] += 1
+        elif hoy <= item["fecha_pago"] <= un_mes_despues:
+            estado = "proxima"
+            contadores["proximas"] += 1
+        
+        item["estado"] = estado
+        contadores["total"] += 1    
+        
+  # Filtro por rol
+    # if context["role"]["id"] in [1, 2, 3]:
+    #     base_refrendo_qs = base_refrendo_qs.filter(vehiculo__company_id=context["company"]["id"])
+    # else:
+    #     base_refrendo_qs = base_refrendo_qs.filter(vehiculo__responsible_id=context["user"]["id"])
+    # if context["role"]["id"] in [1,2,3]:
+    #     lista = lista.filter(vehiculo__company_id = context["company"]["id"])
+    # else:
+    #     lista = lista.filter(vehiculo__responsible_id = context["user"]["id"])
+
         item["btn_action"] = ""
         if item["comprobante_pago"] :
             tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
@@ -1246,8 +1362,14 @@ def get_vehicles_refrendo(request):
             item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-refrendo=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>"""
-    response["data"] = list(lista)
 
+        result.append(item)
+    # Asignar contadores a la respuesta
+    response["counters"] = {
+        **contadores,
+        "total_vehiculos": total_vehiculos_count,
+    }
+    response["data"] = result
     response["success"] = True
     return JsonResponse(response)
 
@@ -1541,76 +1663,78 @@ def get_vehicles_verificacion(request):
     hoy = timezone.now().date()
     un_mes_despues = hoy + timedelta(days=30)
 
-    # Consulta base con todos los registros según permisos
-    base_query = Vehicle_Verificacion.objects.all()
+    # --- VEHÍCULOS DISPONIBLES SEGÚN PERMISOS ---
+    total_vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
+    if context["role"]["id"] not in [1, 2, 3]:
+        total_vehiculos = total_vehiculos.filter(responsible_id=context["user"]["id"])
 
-    # Filtros por permisos
-    if context["role"]["id"] in [1, 2, 3]:
-        base_query = base_query.filter(vehiculo__company_id=context["company"]["id"])
-    else:
-        base_query = base_query.filter(vehiculo__responsible_id=context["user"]["id"])
+    if vehicle_id:
+        total_vehiculos = total_vehiculos.filter(id=vehicle_id)
 
-    # Calcular contadores
-    response["counters"] = {
-        "total": base_query.count(),
-        "pagadas": base_query.filter(status='PAGADO').count(),
-        "proximas": base_query.filter(
-            status='PROXIMO',
-            fecha_pago__gt=hoy
-        ).count(),
-        "vencidas": base_query.filter(
-            status='PROXIMO',
-            fecha_pago__lt=hoy
-        ).count(),
-        "pendientes": base_query.filter(
-            status='PROXIMO'
-        ).filter(
-            Q(fecha_pago__isnull=True) | Q(fecha_pago__gt=un_mes_despues)
-        ).count()
-    }
+    total_vehiculos_count = total_vehiculos.count()
 
-    # Lista de resultados
-    lista = base_query.values(
+    # Base para todos los registros relacionados a los vehículos
+    all_verificaciones = Vehicle_Verificacion.objects.filter(vehiculo__in=total_vehiculos)
+
+    # Base solo con la última verificación por vehículo
+    latest_verificacion = Vehicle_Verificacion.objects.filter(
+        vehiculo_id=OuterRef('vehiculo_id')
+    ).order_by('-fecha_pago')
+    latest_only = all_verificaciones.filter(id=Subquery(latest_verificacion.values('id')[:1]))
+    
+    # Aplicar filtro según tipo_carga
+    if tipo_carga == "pagadas":
+        lista_queryset = latest_only.filter(status='PAGADO')
+    elif tipo_carga == "vencidas":
+        lista_queryset = latest_only.filter(
+            Q(status='PENDIENTE') |
+            Q(status='PROXIMO', fecha_pago__lt=hoy)
+        )
+    elif tipo_carga == "proximas":
+        lista_queryset = latest_only.filter(status='PROXIMO', fecha_pago__gt=hoy)
+    else:  # tipo_carga == "todos"
+        lista_queryset = latest_only
+
+        # Obtener datos
+    lista = lista_queryset.values(
         "id", "engomado", "periodo", "lugar", "status",
         "vehiculo_id", "vehiculo__name",
-        "monto", "fecha_pago", "comprobante_pago", "status"
-    ).order_by('-fecha_pago')
-
-    # Filtro por vehículo
-    if vehicle_id:
-        lista = lista.filter(vehiculo_id=vehicle_id)
-
-    # Filtro por tipo_carga
-    if tipo_carga == "pagadas":
-        lista = lista.filter(status='PAGADO')
-    elif tipo_carga == "vencidas":
-        lista = lista.filter(status='PROXIMO', fecha_pago__lt=hoy)
-    elif tipo_carga == "proximas":
-        lista = lista.filter(status='PROXIMO', fecha_pago__gt=hoy)
-    elif tipo_carga == "pendientes":
-        lista = lista.filter(status='PROXIMO').filter(
-            Q(fecha_pago__isnull=True) | Q(fecha_pago__gt=un_mes_despues)
-        )
-
+        "monto", "fecha_pago", "comprobante_pago"
+    )
+    
     # Obtener permisos del módulo
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
 
+    # Clasificación por estado en base solo a lista_queryset
+    contadores = {
+        "total": 0,
+        "pagadas": 0,
+        "proximas": 0,
+        "vencidas": 0,
+    }
+
     # Preparar datos de respuesta
     result = []
     for item in lista:
-        # Estado
+        estado = None
         if item["status"] == 'PAGADO':
-            item["estado"] = "pagada"
+            estado = "pagada"
+            contadores["pagadas"] += 1
         elif item["status"] == 'PROXIMO':
-            if item["fecha_pago"]:
-                if item["fecha_pago"] < hoy:
-                    item["estado"] = "vencida"
-                elif item["fecha_pago"] > hoy:
-                    item["estado"] = "proxima"
-                # Aquí ya no limitamos a un mes
+            if item["fecha_pago"] and item["fecha_pago"] >= hoy:
+                estado = "proxima"
+                contadores["proximas"] += 1
             else:
-                item["estado"] = "pendiente"
+                estado = "vencida"
+                contadores["vencidas"] += 1
+        elif item["status"] == 'PENDIENTE':
+            estado = "vencida"
+            contadores["vencidas"] += 1
+
+        item["estado"] = estado
+        contadores["total"] += 1
+
         
         # Botones de acción
         item["btn_action"] = ""
@@ -1628,7 +1752,14 @@ def get_vehicles_verificacion(request):
             item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-verificacion=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>"""
-    response["data"] = list(lista)
+        
+        result.append(item)
+    # Asignar contadores a la respuesta
+    response["counters"] = {
+        **contadores,
+        "total_vehiculos": total_vehiculos_count,
+    }
+    response["data"] = result
     response["success"] = True
     return JsonResponse(response, safe=False)
 
@@ -1730,8 +1861,6 @@ def update_vehicle_verificacion(request):
             obj.save()
 
     return JsonResponse(response)
-
-
 
 # cargar funcion completa
 def add_vehicle_responsiva_back(request):
@@ -2095,64 +2224,84 @@ def get_vehicles_insurance(request):
     context = user_data(request)
     response = {"success": False, "data": [], "counters": {}}
     dt = request.GET
-    vehicle_id = dt.get("vehicle_id", None)
+    vehicle_id = dt.get("vehicle_id")
+    tipo_carga = dt.get("tipo_carga", "todos")
     subModule_id = 9
 
     # Obtener fechas de referencia
     hoy = timezone.now().date()
     un_mes_despues = hoy + timedelta(days=30)
 
-    # Consulta base con todos los registros según permisos
-    base_query = Vehicle_Insurance.objects.filter(vehicle__company_id=context["company"]["id"])
-
-    # Filtros por permisos
+    vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
     if context["role"]["id"] not in [1, 2, 3]:
-        base_query = base_query.filter(
-            Q(vehicle__responsible_id=context["user"]["id"]) |
-            Q(responsible_id=context["user"]["id"])
-        )
-
-    # Filtro por vehículo
+        vehiculos = vehiculos.filter(responsible_id=context["user"]["id"])
     if vehicle_id:
-        base_query = base_query.filter(vehicle_id=vehicle_id)
+        vehiculos = vehiculos.filter(id=vehicle_id)
 
-    # Obtener el último seguro por vehículo
-    latest_insurance = Vehicle_Insurance.objects.filter(
-        vehicle_id=OuterRef('vehicle_id')
-    ).order_by('-end_date') 
+    total_vehiculos_count = vehiculos.count()
 
-    base_query = base_query.filter(id=Subquery(latest_insurance.values('id')[:1]))
-    ultimos_seguros = base_query
-    # subquery = base_query.values('vehicle_id').annotate(
-    #     max_id=Max('id')
-    # ).values('max_id')
+    # Último seguro por vehículo
+    base_qs = Vehicle_Insurance.objects.filter(vehicle__in=vehiculos)
+    latest_qs = Vehicle_Insurance.objects.filter(
+        vehicle_id=OuterRef("vehicle_id")
+    ).order_by("-end_date")
+    latest_only = base_qs.filter(id=Subquery(latest_qs.values("id")[:1]))
 
-    # print("estos son los seguor")
-    # print(subquery)
+    # Filtro según tipo_carga
+    if tipo_carga == "pagadas":
+        lista_queryset = latest_only.filter(status="PAGADO")
+    elif tipo_carga == "vencidas":
+        lista_queryset = latest_only.filter(status="VENCIDO")
+    elif tipo_carga == "proximas":
+        lista_queryset = latest_only.filter(
+            status="PROXIMO",
+            end_date__gte=hoy,
+            end_date__lte=un_mes_despues
+        )
+    else:
+        lista_queryset = latest_only
 
-    # ultimos_seguros = Vehicle_Insurance.objects.filter(id__in=subquery)
-    # print(ultimos_seguros[0].status)
-
-    # Calcular contadores basados en los últimos seguros
-    response["counters"] = {
-        "total": ultimos_seguros.count(),
-        "pagados_vigentes": ultimos_seguros.filter(status='PAGADO', end_date__gte=hoy).count(),
-        "b": ultimos_seguros.filter(status='VENCIDOS').count(),
-        "proximos": ultimos_seguros.filter(status='PROXIMO', end_date__lte=un_mes_despues, end_date__gte=hoy).count()
+    contadores = {
+        "total": 0,
+        "pagadas": 0,
+        "proximas": 0,
+        "vencidas": 0,
     }
+ 
 
-    # Preparar datos de respuesta (mantenemos todos los registros para la tabla)
-    lista = base_query.values(
+    lista = lista_queryset.values(
         "id", "vehicle_id", "vehicle__name",
         "responsible_id", "responsible__first_name", "responsible__last_name",
         "policy_number", "insurance_company", "cost", "validity", "doc",
         "start_date", "end_date", "status"
     ).order_by('-end_date')
 
+    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
 
+    result = []
     for item in lista:
+        estado = None
+        status = item["status"]
+        fecha_fin = item["end_date"]
+
+        # Clasificación por estado
+        if status == "PAGADO":
+            estado = "pagada"
+            contadores["pagadas"] += 1
+        elif status == "PROXIMO" and fecha_fin and hoy <= fecha_fin <= un_mes_despues:
+            estado = "proxima"
+            contadores["proximas"] += 1
+        elif status == "VENCIDO":
+            estado = "vencida"
+            contadores["vencidas"] += 1
+
+        contadores["total"] += 1
+        item["estado"] = estado
+
+        
         item["btn_action"] = ""
 
         if item["doc"] :
@@ -2171,7 +2320,13 @@ def get_vehicles_insurance(request):
                 <i class="fa-solid fa-trash"></i>
             </button>\n"""
 
-    response["data"] = list(lista)
+        result.append(item)
+
+    response["counters"] = {
+        **contadores,
+        "total_vehiculos": total_vehiculos_count
+    }
+    response["data"] = result
     response["success"] = True
     return JsonResponse(response)
 
@@ -2298,7 +2453,7 @@ def delete_vehicle_insurance(request):
     dt = request.POST
     id = dt.get("id", None)
 
-    if id == None:
+    if not id:
         response["error"] = {"message": "Proporcione un id valido"}
         return JsonResponse(response)
 
@@ -2307,9 +2462,15 @@ def delete_vehicle_insurance(request):
     except Vehicle_Insurance.DoesNotExist:
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
-    else:
-        delete_s3_object(AWS_BUCKET_NAME, str(obj.doc))
-        obj.delete()
+     # Validar existencia del documento antes de borrar en S3
+    if obj.doc:
+        try:
+            delete_s3_object(AWS_BUCKET_NAME, str(obj.doc))
+        except Exception as e:
+            response["error"] = {"message": f"Error al eliminar de S3: {str(e)}"}
+            return JsonResponse(response)
+
+    obj.delete()
     response["success"] = True
     return JsonResponse(response)
 
@@ -2527,15 +2688,36 @@ def get_vehicle_audit(request):
 
 def get_vehicles_audit(request):
     context = user_data(request)
-    response = {"success": False, "data": []}
+    response = {"success": False, "data": [], "counters": {}}
     dt = request.GET
     vehicle_id = dt.get("vehicle_id", None)
+    tipo_carga = dt.get("tipo_carga", "todas")
     subModule_id = 10
 
-    # Obtener la lista de auditorías
+    hoy = timezone.now().date()
+    un_mes_despues = hoy + timedelta(days=30)
 
-    # Base sin valores aún
-    base_audit_qs = Vehicle_Audit.objects.all()
+    # Vehículos disponibles según permisos
+    total_vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
+    if context["role"]["id"] not in [1, 2, 3]:
+        total_vehiculos = total_vehiculos.filter(responsible_id=context["user"]["id"])
+    if vehicle_id:
+        total_vehiculos = total_vehiculos.filter(id=vehicle_id)
+    total_vehiculos_count = total_vehiculos.count()
+
+    # Base auditorías vinculadas a vehículos
+    base_audit_qs = Vehicle_Audit.objects.filter(vehicle__in=total_vehiculos)
+
+   # Excluir no visibles para roles no administrativos
+    if context["role"]["id"] not in [1, 2, 3]:
+        base_audit_qs = base_audit_qs.exclude(is_visible=False)
+
+    # Subquery para obtener la auditoría más reciente por vehículo
+    latest_audit = Vehicle_Audit.objects.filter(
+        vehicle_id=OuterRef('vehicle_id')
+    ).order_by('-audit_date')
+
+    latest_only = base_audit_qs.filter(id=Subquery(latest_audit.values('id')[:1]))
 
     # Filtro según rol
     if context["role"]["id"] in [1, 2, 3]:
@@ -2543,24 +2725,43 @@ def get_vehicles_audit(request):
     else:
         base_audit_qs = base_audit_qs.filter(vehicle__responsible_id=context["user"]["id"])
 
+    if vehicle_id:
+        base_audit_qs = base_audit_qs.filter(vehicle_id=vehicle_id)
+
     if not context["role"]["id"] in [1, 2, 3]:
         base_audit_qs = base_audit_qs.exclude(is_visible=False)
 
-    # Subquery: obtener la auditoría más reciente por vehículo
-    latest_audit = Vehicle_Audit.objects.filter(
-        vehicle_id=OuterRef('vehicle_id')
-    ).order_by('-audit_date')
+  
+    # Filtrar según tipo_carga
+    if tipo_carga == "evaluadas":
+        lista_queryset = latest_only.filter(is_checked=True)
+    elif tipo_carga == "vencidas":
+        lista_queryset = latest_only.filter(audit_date__lt=hoy, is_checked=False)
+    elif tipo_carga == "proximas":
+        lista_queryset = latest_only.filter(
+            audit_date__gte=hoy, audit_date__lte=un_mes_despues, is_checked=False
+        )
+    else:  # todas
+        lista_queryset = latest_only
 
-    # Filtrar la base para obtener solo las auditorías más recientes por vehículo
-    base_audit_qs = base_audit_qs.filter(id=Subquery(latest_audit.values('id')[:1]))
+ 
+   # Contadores
+    response["counters"] = {
+        "total": lista_queryset.count(),
+        "total_vehiculos": total_vehiculos_count,
+        "evaluadas": latest_only.filter(is_checked=True).count(),
+        "vencidas": latest_only.filter(audit_date__lt=hoy, is_checked=False).count(),
+        "proximas": latest_only.filter(
+            audit_date__gte=hoy, audit_date__lte=un_mes_despues, is_checked=False
+        ).count(),
+    }
 
-    # Seleccionar campos específicos
-    lista = base_audit_qs.values(
-        "id", "vehicle_id", "vehicle__name", 
+    # Seleccionar campos para el listado
+    lista = lista_queryset.values(
+        "id", "vehicle_id", "vehicle__name",
         "audit_date", "general_notes",
-        "checks", "is_visible", "is_checked"  
+        "checks", "is_visible", "is_checked"
     )
-
 
     if context["role"]["id"] in [1, 2, 3]:
         lista = lista.filter(vehicle__company_id=context["company"]["id"])
@@ -4563,7 +4764,8 @@ def evaluate_audit(request):
 
             for check in audit_data:
                 check_name = check["id"]  # Aquí viene el nombre del check
-                status = check["status"]
+                status = check["" \
+                ""]
                 notas = check["notas"]
 
                 # Buscar el check en la base de datos por nombre y empresa
@@ -4601,6 +4803,7 @@ def evaluate_audit(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 def add_vehicle_responsiva(request):
     response = {"success": False}
     dt = request.POST

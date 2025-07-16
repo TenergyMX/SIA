@@ -92,6 +92,8 @@ class VehiclesVerificacion {
 
     init() {
         const self = this;
+        this.driverSia();
+        this.driverSiaFormulario();
 
         // Inicializar contadores
         self.updateCounters({
@@ -99,7 +101,7 @@ class VehiclesVerificacion {
             pagadas: 0,
             vencidas: 0,
             proximas: 0,
-            pendientes: 0,
+            // pendientes: 0,
         });
 
         if (self.table) {
@@ -118,8 +120,8 @@ class VehiclesVerificacion {
                         };
                     },
                     dataSrc: function (json) {
-                        // Actualizar contadores cuando se cargan los datos
-                        if (json.counters) {
+                        // Solo actualiza contadores si estás en "todos"
+                        if (json.counters && self.filtro_estado === "todos") {
                             self.updateCounters(json);
                         }
                         return json.data;
@@ -175,14 +177,138 @@ class VehiclesVerificacion {
         self.setupEventHandlers();
     }
 
+    driverSia() {
+        $(".btn-driver").on("click", function () {
+            const driver = window.driver.js.driver;
+            const driverObj = driver({
+                showProgress: true,
+                steps: [
+                    {
+                        element: ".drive-1",
+                        popover: {
+                            title: "Todas las verificaciones",
+                            description:
+                                "Se muestra un registro por vehiculo, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-2",
+                        popover: {
+                            title: "Verificaciones pagadas",
+                            description:
+                                "Se muestran todas las verificaciones pagadas, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-3",
+                        popover: {
+                            title: "Verificaciones vencidas",
+                            description:
+                                "Se muestran todos las verificaciones no pagadas, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-4",
+                        popover: {
+                            title: "Verificaciones próximas",
+                            description:
+                                "Se muestran las verificaciones proximas, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-5",
+                        popover: {
+                            title: "Agregar verificación",
+                            description: "Agrega una nueva verificación a traves del formulario.",
+                        },
+                    },
+                ],
+                nextBtnText: "Siguiente",
+                prevBtnText: "Anterior",
+                doneBtnText: "Listo",
+            });
+            driverObj.drive();
+        });
+    }
+
+    driverSiaFormulario() {
+        const modal = $("#mdl_crud_verificacion").length;
+        if (modal == 1) {
+            $(".btn-drive-form").on("click", function () {
+                const driver = window.driver.js.driver;
+                const driverObj = driver({
+                    showProgress: true,
+                    steps: [
+                        {
+                            element: ".drive-6",
+                            popover: {
+                                title: "Vehículo",
+                                description: "Selecciona un vehículo.",
+                            },
+                        },
+                        {
+                            element: ".drive-7",
+                            popover: {
+                                title: "Engomado",
+                                description: "Se coloca por defecto al vehiculo seleccionado.",
+                            },
+                        },
+                        {
+                            element: ".drive-8",
+                            popover: {
+                                title: "Periodo",
+                                description: "Selecciona si sera primer o segundo semestre.",
+                            },
+                        },
+                        {
+                            element: ".drive-9",
+                            popover: {
+                                title: "Lugar de la verificación",
+                                description: "Ingresa el lugar corresponiente a la verificación.",
+                            },
+                        },
+                        {
+                            element: ".drive-10",
+                            popover: {
+                                title: "Fecha de verificación",
+                                description: "Ingrese a fecha correspondiente a la verificación.",
+                            },
+                        },
+                        {
+                            element: ".drive-11",
+                            popover: {
+                                title: "Monto de pago",
+                                description: "Ingresa la cantidad a pagar.",
+                            },
+                        },
+                        {
+                            element: ".drive-12",
+                            popover: {
+                                title: "Comprobante de pago",
+                                description: "Adjunta el comprobante, en caso de tenerlo.",
+                            },
+                        },
+                    ],
+                    nextBtnText: "Siguiente",
+                    prevBtnText: "Anterior",
+                    doneBtnText: "Listo",
+                });
+                driverObj.drive();
+            });
+        }
+    }
+
     updateCounters(data) {
         const counters = data.counters || data;
+        const total = counters.total || 0;
+        const totalVehiculos = counters.total_vehiculos || 0;
 
-        $("#counter-todas").text(counters.total || 0);
+        $("#counter-todas").text(`${total} de ${totalVehiculos} vehículos`);
+
         $("#counter-pagadas").text(counters.pagadas || 0);
         $("#counter-vencidas").text(counters.vencidas || 0);
         $("#counter-proximas").text(counters.proximas || 0);
-        $("#counter-pendientes").text(counters.pendientes || 0);
+        // $("#counter-pendientes").text(counters.pendientes || 0);
     }
 
     setupEventHandlers() {

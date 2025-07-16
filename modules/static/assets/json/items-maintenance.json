@@ -10,16 +10,12 @@
         {
             "id": 1,
             "tipo": "preventivo",
-            "items": [
-                
-            ]
+            "items": []
         },
         {
             "id": 2,
             "tipo": "correctivo",
-            "items": [
-               
-            ]
+            "items": []
         }
     ]
 }

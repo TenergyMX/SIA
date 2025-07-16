@@ -1,9 +1,9 @@
 class VehiclesInsurance {
     constructor(options) {
         const self = this;
-        self.filtro_estado = "todos";
+        self.filtro_estado = "todas";
+
         const defaultOptions = {
-            data: {},
             infoCard: {
                 id: null,
                 vehicle: {
@@ -11,7 +11,7 @@ class VehiclesInsurance {
                 },
                 ajax: {
                     url: function () {
-                        return "/get_vehicles_verificacion/";
+                        return "/get_vehicles_insurance/";
                     },
                     data: function (d) {
                         return {
@@ -23,7 +23,7 @@ class VehiclesInsurance {
                 },
             },
             table: {
-                id: "#table_responsiva",
+                id: "#table_insurance",
                 vehicle: {
                     id: null,
                 },
@@ -100,7 +100,11 @@ class VehiclesInsurance {
     }
 
     init() {
+        this.driverSia();
+        this.driverSiaFormulario();
+
         const self = this;
+
         // Inicializar contadores
         self.updateCounters({
             total: 0,
@@ -124,9 +128,10 @@ class VehiclesInsurance {
                             tipo_carga: self.filtro_estado,
                         };
                     },
+
                     dataSrc: function (json) {
-                        // Actualizar contadores cuando se cargan los datos
-                        if (json.counters) {
+                        // Solo actualiza contadores si es = todos
+                        if (json.counters && self.filtro_estado === "todas") {
                             self.updateCounters(json);
                         }
                         return json.data;
@@ -152,6 +157,7 @@ class VehiclesInsurance {
                     self.tbl_insurance.ajax.reload();
                 }
             });
+
         if (self.vehicle && self.vehicle.data.id) {
             $('#mdl_crud_insurance [name="vehicle_id"]').hide();
             $('#mdl_crud_insurance [name="vehicle__name"]').show();
@@ -162,14 +168,70 @@ class VehiclesInsurance {
 
         self.setupEventHandlers();
     }
+
+    driverSia() {
+        $(".btn-driver").on("click", function () {
+            const driver = window.driver.js.driver;
+            const driverObj = driver({
+                showProgress: true,
+                steps: [
+                    {
+                        element: ".drive-1",
+                        popover: {
+                            title: "Todos los Seguros",
+                            description:
+                                "Se muestra un registro por vehiculo, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-2",
+                        popover: {
+                            title: "Seguros pagados",
+                            description:
+                                "Se muestran todos los seguros pagados, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-3",
+                        popover: {
+                            title: "Seguros vencidos",
+                            description:
+                                "Se muestran todos los seguros vencidos, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-4",
+                        popover: {
+                            title: "Seguros próximos",
+                            description:
+                                "Se muestran los seguros proximos a pagar, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-5",
+                        popover: {
+                            title: "Agregar seguro",
+                            description: "Agrega un nuevo seguro a traves del formulario.",
+                        },
+                    },
+                ],
+                nextBtnText: "Siguiente",
+                prevBtnText: "Anterior",
+                doneBtnText: "Listo",
+            });
+            driverObj.drive();
+        });
+    }
+
     updateCounters(data) {
         const counters = data.counters || data;
+        const total = counters.total || 0;
+        const totalVehiculos = counters.total_vehiculos || 0;
 
-        $("#counter-todas").text(counters.total || 0);
+        $("#counter-todos").text(`${total} de ${totalVehiculos} vehículos`);
         $("#counter-pagadas").text(counters.pagadas || 0);
         $("#counter-vencidas").text(counters.vencidas || 0);
         $("#counter-proximas").text(counters.proximas || 0);
-        $("#counter-pendientes").text(counters.pendientes || 0);
     }
 
     setupEventHandlers() {
@@ -233,7 +295,6 @@ class VehiclesInsurance {
 
                     deleteItem(url, data)
                         .then((message) => {
-                            console.log("success");
                             Swal.fire("Exito", message, "success");
                             self.tbl_insurance.ajax.reload();
                         })
@@ -286,7 +347,6 @@ class VehiclesInsurance {
                     }
                     break;
                 default:
-                    console.log("Opción dezconocida:", option);
                     break;
             }
         });
@@ -353,5 +413,79 @@ class VehiclesInsurance {
                 },
             });
         });
+    }
+
+    driverSiaFormulario() {
+        const modal = $("#mdl_crud_insurance").length;
+        if (modal == 1) {
+            $(".btn-drive-form").on("click", function () {
+                const driver = window.driver.js.driver;
+                const driverObj = driver({
+                    showProgress: true,
+                    steps: [
+                        {
+                            element: ".drive-6",
+                            popover: {
+                                title: "Vehículo",
+                                description: "Selecciona un vehículo.",
+                            },
+                        },
+                        {
+                            element: ".drive-7",
+                            popover: {
+                                title: "Responsable",
+                                description: "Selecciona un responsable.",
+                            },
+                        },
+                        {
+                            element: ".drive-8",
+                            popover: {
+                                title: "Numero de póliza",
+                                description: "Ingresa el número de póliza.",
+                            },
+                        },
+                        {
+                            element: ".drive-9",
+                            popover: {
+                                title: "Aseguradora",
+                                description: "Ingresa el nombre de la aseguradora.",
+                            },
+                        },
+                        {
+                            element: ".drive-10",
+                            popover: {
+                                title: "Costo",
+                                description: "Ingresa una cantidad real.",
+                            },
+                        },
+                        {
+                            element: ".drive-11",
+                            popover: {
+                                title: "Vigencia",
+                                description: "Ingresa la cantidad de meses de vigencia.",
+                            },
+                        },
+                        {
+                            element: ".drive-12",
+                            popover: {
+                                title: "Fecha de inicio",
+                                description: "Ingresa la fecha de inicio.",
+                            },
+                        },
+                        {
+                            element: ".drive-14",
+                            popover: {
+                                title: "Comprobante de pago",
+                                description: "Añade un documento.",
+                            },
+                        },
+                    ],
+                    nextBtnText: "Siguiente",
+                    prevBtnText: "Anterior",
+                    doneBtnText: "Listo",
+                });
+                driverObj.drive();
+            });
+        }
     }
 }

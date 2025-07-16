@@ -1,6 +1,8 @@
 class VehiclesAudit {
     constructor(options) {
         const self = this;
+        self.filtro_estado = "todas";
+
         const defaultOptions = {
             data: {},
             table: {
@@ -10,8 +12,19 @@ class VehiclesAudit {
                 },
                 ajax: {
                     url: "/get_vehicles_audit/",
-                    dataSrc: "data",
-                    data: {},
+                    dataSrc: function (json) {
+                        if (self.filtro_estado === "todas") {
+                            self.updateCounters(json);
+                        }
+                        return json.data;
+                    },
+                    data: function (d) {
+                        return {
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado,
+                        };
+                    },
                 },
                 columns: [
                     { title: "ID", data: "id", visible: false },
@@ -57,6 +70,17 @@ class VehiclesAudit {
 
     init() {
         const self = this;
+        this.driverSia();
+        this.driverSiaFormulario();
+
+        // Inicializar contadores
+        self.updateCounters({
+            total: 0,
+            evaluadas: 0,
+            vencidas: 0,
+            proximas: 0,
+            total_vehiculos: 0,
+        });
 
         if (self.table) {
             self.tbl_audit = $(self.table.id).DataTable({
@@ -77,7 +101,142 @@ class VehiclesAudit {
             delete self.table;
         }
 
+        // Filtros de estado
+        $(".filter-card")
+            .off("click")
+            .on("click", function () {
+                const status = $(this).data("status");
+                $(".filter-card").removeClass("active");
+                $(this).addClass("active");
+                self.filtro_estado = status;
+
+                if (self.tbl_audit) {
+                    self.tbl_audit.ajax.reload();
+                }
+            });
+
+        // Mostrar u ocultar campos en modal
+        if (self.vehicle && self.vehicle.data.id) {
+            $('#mdl_crud_audit [name="vehicle_id"]').hide();
+            $('#mdl_crud_audit [name="vehicle__name"]').show();
+        } else {
+            $('#mdl_crud_audit [name="vehicle_id"]').show();
+            $('#mdl_crud_audit [name="vehicle__name"]').hide();
+        }
+
         self.setupEventHandlers();
+    }
+
+    driverSia() {
+        $(".btn-driver").on("click", function () {
+            const driver = window.driver.js.driver;
+            const driverObj = driver({
+                showProgress: true,
+                steps: [
+                    {
+                        element: ".drive-1",
+                        popover: {
+                            title: "Todas las auditorías",
+                            description:
+                                "Se muestra un registro por vehiculo, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-2",
+                        popover: {
+                            title: "Auditorías evaluadas",
+                            description:
+                                "Se muestran todas las auditorias evaluadas, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-3",
+                        popover: {
+                            title: "Auditorías vencidas",
+                            description:
+                                "Se muestran todos las auditorias vencidas, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-4",
+                        popover: {
+                            title: "Auditorías próximas a evaluar",
+                            description:
+                                "Se muestran las auditorias proximas a evaluar, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-5",
+                        popover: {
+                            title: "Agregar auditoría",
+                            description: "Agrega una nueva auditoria a traves del formulario.",
+                        },
+                    },
+                ],
+                nextBtnText: "Siguiente",
+                prevBtnText: "Anterior",
+                doneBtnText: "Listo",
+            });
+            driverObj.drive();
+        });
+    }
+
+    driverSiaFormulario() {
+        const modal = $("#mdl_crud_audit").length;
+        if (modal == 1) {
+            $(".btn-drive-form").on("click", function () {
+                const driver = window.driver.js.driver;
+                const driverObj = driver({
+                    showProgress: true,
+                    steps: [
+                        {
+                            element: ".drive-6",
+                            popover: {
+                                title: "Vehículo",
+                                description: "Selecciona un vehículo a auditar.",
+                            },
+                        },
+                        {
+                            element: ".drive-7",
+                            popover: {
+                                title: "Fecha de auditoría",
+                                description: "Ingresa una fecha a realizar la auditoria.",
+                            },
+                        },
+                        {
+                            element: ".drive-8",
+                            popover: {
+                                title: "Nota general",
+                                description: "Comenta las observaciones que se tienen.",
+                            },
+                        },
+                        {
+                            element: ".drive-9",
+                            popover: {
+                                title: "Checks",
+                                description:
+                                    "Selecciona las opciones a tomar en cuenta durante la auditoria.",
+                            },
+                        },
+                    ],
+                    nextBtnText: "Siguiente",
+                    prevBtnText: "Anterior",
+                    doneBtnText: "Listo",
+                });
+                driverObj.drive();
+            });
+        }
+    }
+
+    updateCounters(data) {
+        const counters = data.counters || data;
+        const total = counters.total || 0;
+        const totalVehiculos = counters.total_vehiculos || 0;
+
+        $("#counter-todas").text(`${total} de ${totalVehiculos} vehículos`);
+        $("#counter-evaluadas").text(counters.evaluadas || 0);
+        $("#counter-vencidas").text(counters.vencidas || 0);
+        $("#counter-proximas").text(counters.proximas || 0);
     }
 
     setupEventHandlers() {

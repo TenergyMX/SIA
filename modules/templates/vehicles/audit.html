@@ -6,65 +6,137 @@
     <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
         <h1 class="page-title fw-semibold fs-18 mb-0">
             Auditoría
+            <button id="boton_driver" type="button" class="btn-driver" >?</button>
         </h1>
         <div class="ms-md-1 ms-0"></div>
     </div>
 </div>
-<div id="v-audit-pane" class="active show">
-    <div class="info">
-        <div class="card custom-card">
-            <div class="card-header justify-content-between">
-                <div class="card-title">
-                    Auditoría
-                </div>
-                <div class="">
-                    {% if role.id == 1 or role.id == 2 or role.id == 3 %}
-                    <button type="button" class="btn btn-sm btn-primary" data-vehicle-audit="add-item"
-                        title="Agregar Seguro">
-                        <i class="fa-solid fa-plus me-1"></i>
-                        Agregar
-                    </button>
-                    {% endif %}
-                    <button type="button" class="btn btn-icon btn-sm btn-info-light" data-vehicle-audit="refresh-table"
-                        title="Refrescar tabla">
-                        <i class="fa-solid fa-arrows-rotate me-1"></i>
-                    </button>
-                </div>
-            </div>
+<div class="row g-3">
+    <div class="col-sm-4 col-lg-3">
+        <div class="card mb-0 cursor-pointer filter-card" data-status="todas" style="cursor:pointer;">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered w-100" id="table_audit">
-                        <thead></thead>
-                        <tbody></tbody>
-                    </table>
+                <div class="d-flex align-items-top drive-1">
+                    <div class="me-3">
+                        <span class="avatar avatar-lg bg-primary">
+                            <i class="fa-solid fa-folder-open fa-xl"></i>
+                        </span>
+                    </div>
+                    <div class="">
+                        <p class="mb-1 text-muted">TODAS</p>
+                        <h5 id="counter-todas" class="fw-semibold mb-0">0</h5>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="info-details" style="display: none;">
-        <div class="row g-3">
-            <div class="col-md-4 col-xxl-3">
-                {% include "vehicles/cards/vehicle_info.html" %}
-            </div>
-            <div class="col-md-8 col-xxl-9">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="mb-0">
-                            <button
-                                type="button"
-                                class="btn btn-info"
-                                data-vehicle-audit="show-info"
-                                title="Regresar"
-                            >
-                                <i class="fa-solid fa-arrow-left me-1"></i>
-                                Regresar
-                            </button>
-                        </div>
+    <div class="col-sm-4 col-lg-3">
+        <div class="card mb-0 cursor-pointer filter-card" data-status="evaluadas" style="cursor:pointer;">
+            <div class="card-body">
+                <div class="d-flex align-items-top drive-2">
+                    <div class="me-3">
+                        <span class="avatar avatar-lg bg-primary">
+                            <i class="fa-sharp fa-solid fa-circle-dollar fa-xl"></i>
+                        </span>
+                    </div>
+                    <div class="">
+                        <p class="mb-1 text-muted">EVALUADAS</p>
+                        <h5 id="counter-evaluadas" class="fw-semibold mb-0">0</h5>
                     </div>
                 </div>
-                <!-- 2 -->
-                {% include "vehicles/cards/audit_info.html" %}
-                <!-- end -->
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4 col-lg-3">
+        <div class="card mb-0 cursor-pointer filter-card" data-status="vencidas" style="cursor:pointer;">
+            <div class="card-body">
+                <div class="d-flex align-items-top drive-3">
+                    <div class="me-3">
+                        <span class="avatar avatar-lg bg-primary">
+                            <i class="fa-solid fa-circle-xmark fa-xl"></i>
+                        </span>
+                    </div>
+                    <div class="">
+                        <p class="mb-1 text-muted">VENCIDAS</p>
+                        <h5 id="counter-vencidas" class="fw-semibold mb-0">0</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-4 col-lg-3">
+        <div class="card mb-0 cursor-pointer filter-card" data-status="proximas" style="cursor:pointer;">
+            <div class="card-body">
+                <div class="d-flex align-items-top drive-4">
+                    <div class="me-3">
+                        <span class="avatar avatar-lg bg-primary">
+                            <i class="fa-solid fa-calendar-circle-exclamation fa-xl"></i>
+                        </span>
+                    </div>
+                    <div class="">
+                        <p class="mb-1 text-muted">PROXIMAS A EVALUAR</p>
+                        <h5 id="counter-proximas" class="fw-semibold mb-0">0</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="v-audit-pane" class="active show">
+        <div class="info">
+            <div class="card custom-card">
+                <div class="card-header justify-content-between">
+                    <div class="card-title">
+                        Auditoría
+                    </div>
+                    <div class="">
+                        {% if role.id == 1 or role.id == 2 or role.id == 3 %}
+                        <button type="button" class="btn btn-sm btn-primary drive-5" data-vehicle-audit="add-item"
+                            title="Agregar Seguro">
+                            <i class="fa-solid fa-plus me-1"></i>
+                            Agregar
+                        </button>
+                        {% endif %}
+                        <button type="button" class="btn btn-icon btn-sm btn-info-light" data-vehicle-audit="refresh-table"
+                            title="Refrescar tabla">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered w-100" id="table_audit">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="info-details" style="display: none;">
+            <div class="row g-3">
+                <div class="col-md-4 col-xxl-3">
+                    {% include "vehicles/cards/vehicle_info.html" %}
+                </div>
+                <div class="col-md-8 col-xxl-9">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="mb-0">
+                                <button
+                                    type="button"
+                                    class="btn btn-info"
+                                    data-vehicle-audit="show-info"
+                                    title="Regresar"
+                                >
+                                    <i class="fa-solid fa-arrow-left me-1"></i>
+                                    Regresar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 2 -->
+                    {% include "vehicles/cards/audit_info.html" %}
+                    <!-- end -->
+                </div>
             </div>
         </div>
     </div>
@@ -80,11 +152,15 @@
 
 {% block offcanvas %} {% endblock %}
 
-{% block head %} {% endblock %}
+{% block head %} 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.css"/>
+{% endblock %}
 
 {% block scripts %}
 <script src="{% static 'assets/js/vehicles/vehicles.js' %}"></script>
 <script src="{% static 'assets/js/vehicles/audit.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.js.iife.js"></script>
+
 <script>
     const auditoria = new VehiclesAudit({
         table: { id: '#table_audit' },
