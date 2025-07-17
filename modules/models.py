@@ -873,6 +873,8 @@ class Plans(models.Model):
         ('basic', 'Basico'), 
         ('advanced', 'Avanzado'),  
         ('premium', 'Premium'),   
+        ('elite', 'Elite'),
+        ('esential', 'Esential')
     ]
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     module = models.ForeignKey(Module, on_delete=models.CASCADE, blank=True, null=True,verbose_name="Módulos")
@@ -887,7 +889,17 @@ class Plans(models.Model):
     ], verbose_name="Unidad de Tiempo")
     end_date_plan = models.DateField(blank=True, null=True, verbose_name="Fecha de fin")
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo total')
-
+    
+class StripeProducts(models.Model):
+    name = models.CharField(max_length=254, blank=True, null=True)
+    stripedID = models.CharField(max_length=44, blank=True, null=False)
+    description = models.CharField(max_length=254, blank=True, null=False)
+    tagPrice = models.DecimalField(max_digits=9, decimal_places=2, null=False)
+    price = models.DecimalField(max_digits=9, decimal_places=0, null=False)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"products {self.name}"
 #agregar a admin.py para poder visualizarlos en el administrador 
 
 

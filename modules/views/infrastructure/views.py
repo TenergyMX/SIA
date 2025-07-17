@@ -47,9 +47,6 @@ def infrastructure_category_view(request):
     module_id = 4
     subModule_id = 23
     request.session["last_module_id"] = module_id
-
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
     
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -57,10 +54,7 @@ def infrastructure_category_view(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "infrastructure/infrastructure-category.html"
-    else:
-        template = "error/access_denied.html"
+    template = "infrastructure/infrastructure-category.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -70,19 +64,13 @@ def infrastructure_item_view(request):
     subModule_id = 24
     request.session["last_module_id"] = module_id
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "infrastructure/infrastructure-items.html"
-    else:
-        template = "error/access_denied.html"
+    template = "infrastructure/infrastructure-items.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -92,19 +80,13 @@ def infrastructure_maintenance_view(request):
     subModule_id = 25
     request.session["last_module_id"] = module_id
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-    
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "infrastructure/maintenance.html"
-    else:
-        template = "error/access_denied.html"
+    template = "infrastructure/maintenance.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 

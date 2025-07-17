@@ -1,0 +1,40 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-sm text-center">
+                    <div class="card-body p-5">
+                        <div class="mb-4">
+                            <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#198754" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                    <path d="M15.854 7.646a.5.5 0 0 0-.708-.708L7 15.293 1.854 10.146a.5.5 0 1 0-.708.708l5.5 5.5a.5.5 0 0 0 .708 0l9-9z"/>
+                                    <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm0 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="text-success">¡Pago Exitoso!</h2>
+                        <p class="text-muted">Tu transacción se ha procesado correctamente.</p>
+
+                        <div class="alert alert-info mt-4 text-start">
+                            Se ha enviado un correo con tu <strong>usuario</strong> y <strong>contraseña inicial</strong>. <br>
+                            Revisa tu bandeja de entrada y asegúrate de cerrar cualquier sesión activa antes de iniciar sesión con las nuevas credenciales. <br>
+                            Luego, podrás cambiar tu contraseña si lo deseas.
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <a href="/" class="btn btn-success">Ir al Inicio</a>
+                            <a href="/" class="btn btn-outline-secondary">Contactar Soporte</a>
+                        </div>
+
+                        <div class="text-muted small mt-4 border-top pt-3">
+                            Si no recibiste el correo, revisa la carpeta de spam o <a href="/" class="text-decoration-underline">contáctanos</a>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

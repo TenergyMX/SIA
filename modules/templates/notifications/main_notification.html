@@ -1,0 +1,155 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">Sistema de notificaciones / {{company.name}}</h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Sistema de notificaciones</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Nuevos registros
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section>
+    <div class="row g-3">
+        <!-- T A B L E - C O N T A I N E R -->
+        <div class="col-12" id="forms-notifications-system" style="display: none;">
+            <div class="card custom-card">
+                <div class="card-header justify-content-between">
+                    <div class="card-title">Formulario de Notificaciones</div>
+                    <div>
+                        <button class="btn btn-info btn-sm" onclick="hideShow('#forms-notifications-system','#table-notifications-system');">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            Regresar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="container gap-3">
+                        <div class="row">
+                            <div class="col text-center">
+                                Acceso a notificaciones
+                            </div>
+                            <div class="col text-center">
+                                Usuario seleccionados
+                            </div>
+                        </div>
+                        <div class="row gap-1 flex-nowrap">
+                            <div class="col-6 text-bg-light rounded-2 p-2 fs-6" id="placeholder-notifications"></div>
+                            <div class="col-6 text-bg-light rounded-2 p-2 fs-6" id="placeholder-users"></div>
+                        </div>
+                        <div class="row gap-1 my-2">
+                            <div class="col text-bg-light rounded-2 p-2 overflow-y-auto" style="height:20rem;">
+                                <table class="table table-striped">
+                                    <tbody>
+                                        {% for module in modules %}
+                                            <tr>
+                                                <td><input class="chbox-{{module.path}}" type="checkbox" onclick="mci_selects_all('{{module.name}}', this)"></td>
+                                                <td>{{module.name}}</td>
+                                                <td><button class="btn btn-sm btn-success" onclick="mci_selects_items('{{module.name}}');">
+                                                    <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                                                </button></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col text-bg-light rounded-2 p-2">
+                                {% for area in areas %}
+                                    <div class="d-flex align-items-center p-1 mt-1" style="background-color: #FFFAFA">
+                                        <div class="col-1 text-center">
+                                            <input type="checkbox" name="area_correo" data-email="area-{{area.name}}" onclick="mci_selects_users(this)">
+                                        </div>
+                                        <div class="col">{{area.name}}</div>
+                                        <div class="col-1 text-center">
+                                            <button class="btn btn-sm btn-success" data-bs-toggle="collapse" data-bs-target="#smd-{{area.id}}" aria-expanded="false" aria-controls="smd-{{area.id}}">
+                                                <i class="fa-solid fa-square-caret-down"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="container p-0 m-0 collapse" id="smd-{{area.id}}">
+                                        {% for correo in area.correos %}
+                                            <div class="d-flex align-items-center p-1" style="background:#E1EDF2">
+                                                <div class="col-1 text-center">
+                                                    <input type="checkbox" name="correo" data-id="{{correo.id}}" data-email="{{ correo.user__email }}" onclick="mci_selects_users(this)">
+                                                </div>
+                                                <div class="col">{{ correo.user__first_name }} {{ correo.user__last_name }}</div>
+                                                <div class="col">{{ correo.user__email }}</div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col d-flex justify-content-end px-0 py-3">
+                                <button id="swal_buttonNotifications" class="btn btn-md btn-primary">Guardar notificaciones</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- F O R M S - C O N T A I N E R -->
+        <div class="col-12" id="table-notifications-system">
+            <div class="card custom-card">
+                <div class="card-header justify-content-between">
+                    <div class="card-title">Notificaciones registradas</div>
+                    <div>
+                        <button class="btn btn-info btn-sm" onclick="hideShow('#table-notifications-system', '#forms-notifications-system');">
+                            <i class="fa-solid fa-plus"></i>
+                            Agregar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="container gap-3">
+                        <div class="row">
+                            <table class="table table-bordered w-100" id="table-notifications">
+                                <thead>
+                                    <tr>
+                                        <th>Departamento / Usuarios</th>
+                                        <th>Módulo</th>
+                                        <th>Sub-módulo</th>
+                                        <th>Registros</th>
+                                        <th>¿activo?</th>
+                                        <th>State</th>
+                                        <th><i class="fa-solid fa-screwdriver-wrench"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+{% include "notifications/modals/mdl-category-items.html" %}
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{% static 'assets/js/notifications/notifications.js' %}"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+{% endblock %}

@@ -1,0 +1,42 @@
+<div class="modal fade effect-scale" id="mdl-category-items" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form id="swal-form-data-information" class="modal-content" method="POST">
+            <input type="text" hidden/>
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Elegir submodulos y registros</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <label>Lista de submodulos</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <select class="form-select" id="mci-slt-submodulos" name="submodulos[]" multiple="multiple"></select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label>Lista de registros</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <select class="form-select" id="mci-slt-items" name="items[]" multiple="multiple"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-hard-drive"></i>
+                    Seleccionar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

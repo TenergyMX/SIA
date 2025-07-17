@@ -1,5 +1,6 @@
 from django.urls import path, include
 from . import views
+from . import utils
 
 urlpatterns = [
     # mandamos llamar las url de las demas carpetas
@@ -12,5 +13,8 @@ urlpatterns = [
     path('', include('modules.views.equipment-and-tools.urls')),
     path('', include('modules.views.services.urls')),
     path('', include('modules.views.charts.urls')),
+    path('', include('modules.views.notifications.urls')),
+    #path('cancel/', views.CancelView.as_view(), name='cancel'),
+    #path('success_pago/', views.SuccessView.as_view(), name='success'),
 ]
 

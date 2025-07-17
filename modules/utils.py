@@ -1,4 +1,6 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views import View
+from itsdangerous import URLSafeSerializer
 from users.models import *
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -22,7 +24,7 @@ from django.core.exceptions import ValidationError
 from modules.models import *
 from botocore.exceptions import BotoCoreError, ClientError
 from os.path import join, abspath
-
+from django.views.decorators.csrf import csrf_exempt
 
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
@@ -30,6 +32,7 @@ from uritools import uridecode
 from django.db.models import F, Q, Value, Max, Sum, CharField, BooleanField
 from django.db import transaction
 import requests
+import stripe
 
 
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
@@ -71,6 +74,7 @@ def get_module_user_permissions(_datos, _subModule_id):
 def get_sidebar(data={}, module_ids=None):
     response = {"success": True, "data": {}}
     sidebar_data = []
+    print("cargando el sidebar de la plataforma")
 
     if data["role"]["id"] in [1,2]:
         submodules = SubModule.objects.filter(
@@ -110,6 +114,7 @@ def get_sidebar(data={}, module_ids=None):
     sidebar_data = [{"title": module_name, "submodules": submodules_data} for module_name, submodules_data in modules.items()]
 
     response["data"] = sidebar_data
+    print(response)
     return response
 
 def get_user_access(context = {}):
@@ -952,6 +957,76 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
     return response
 
 
+#context_email = {
+#        "company" : context["company"]["name"],
+#        "subject" : "Prueba de correos",
+#        "modulo" : 2,
+#        "submodulo" : "Responsiva",
+#        "item" : 26,
+#        "title" : "Esta es una prueba para el sistema de notificaciones",
+#        "body" : "Este es el contenido que se mostrara",
+#    }
+#send_notification(context_email)
+def send_notification(context):
+    try:
+        #TODO GET module name
+        modulo = Module.objects.get(pk=context["modulo"]).name
+        
+        #FILTER by bussiness and module
+        emails = Notification_System.objects.filter(company__name=context["company"],mods=modulo)
+        #FILTER by id or joker
+        emails = emails.filter(Q(itemsID__contains=[context["item"]]) | Q(itemsID__contains=[0]))
+        #SPLIT general and spicify notifications
+        emails_all = emails.filter(cats="todos")
+        emails_one = emails.filter(cats=context["submodulo"])
+        #UNIFY emails
+        destinatarios = list(set(list(emails_all.values_list("usuario", flat=True)) + list(emails_one.values_list("usuario", flat=True))))
+        #VERIFY emails
+        if not destinatarios:
+            print("No hay destinatarios para esta notificación.")
+            return
+        #TODO CREATE html message
+        from_email = settings.EMAIL_HOST_USER
+        subject = context["title"]
+        html_content = f"""
+        <html>
+        <head>
+            <style>
+                body {{
+                    background-color: #FFFAFA;
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                }}
+                .container {{
+                    background-color: #A5C334;
+                    padding: 36px;
+                    border-radius: 18px;
+                    width: 80%;
+                    max-width: 600px;
+                    margin: auto;
+                }}
+                h2 {{ color: #333333; }}
+                p {{ color: #555555; line-height: 1.5; }}
+                strong {{ color: #000000; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>{context['title']}</h2>
+                <p>{context['body']}</p>
+            </div>
+        </body>
+        </html>
+        """
+        ##TODO send email
+        email = EmailMultiAlternatives(subject, "", from_email, destinatarios)
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        print(f"Correo enviado correctamente a: {destinatarios}")
+    except Exception as e:
+        print(f"Error al enviar el correo: {e}")
+
+
 def Send_Email(subject, recipient, model_instance, message_data, model_name, field_to_update):
     if isinstance(recipient, str):
         recipient = [recipient]
@@ -1009,6 +1084,79 @@ def Send_Email(subject, recipient, model_instance, message_data, model_name, fie
         print("No se encontró un registro correspondiente en la base de datos.")
     except Exception as e:
         print(f"Error al enviar el correo o actualizar el campo: {e}")
+        
+def Send_Informative_Stripe(recipient, username, password, request):
+    """
+    Envía un correo electrónico informativo con el usuario y contraseña proporcionados.
+
+    Parámetros:
+        - recipient (str): Correo del destinatario.
+        - username (str): Nombre del usuario.
+        - password (str): Contraseña del usuario.
+    """
+    try:
+        from_email = settings.EMAIL_HOST_USER
+        subject = "Credenciales de acceso"
+        text_content = "Este es un mensaje con tus credenciales."
+
+        email = EmailMultiAlternatives(subject, text_content, from_email, [recipient])
+
+        url = request.build_absolute_uri('/')[:-1] 
+        html_content = f"""
+        <html>
+        <head>
+            <style>
+                body {{ background-color: #F8F8F8; font-family: Arial, sans-serif; }}
+                .container {{ background-color: #E0F7FA; padding: 30px; border-radius: 10px; width: 80%; max-width: 600px; margin: auto; }}
+                h2 {{ color: #00796B; }}
+                p {{ color: #333333; }}
+                strong {{ color: #000000; }}
+                .warning {{
+                    background-color: #fff3cd;
+                    color: #856404;
+                    border: 1px solid #ffeeba;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                }}
+                .button {{
+                    display: inline-block;
+                    padding: 10px 20px;
+                    margin-top: 20px;
+                    background-color: #00796B;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    font-weight: bold;
+                }}
+                .button:hover {{
+                    background-color: #005f56;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>Bienvenido, {username}</h2>
+                <p>Estas son tus credenciales de acceso:</p>
+                <p><strong>Usuario:</strong> {username}</p>
+                <p><strong>Contraseña:</strong> {password}</p>
+                <p>Por favor, cambia tu contraseña después de iniciar sesión.</p>
+
+                <div class="warning">
+                    ⚠️ Antes de continuar, asegúrate de cerrar cualquier sesión activa en el navegador.  
+                    Luego, inicia sesión por primera vez con el usuario y contraseña proporcionados arriba.  
+                    Después de iniciar sesión correctamente, puedes hacer clic en el botón de abajo para cambiar tu contraseña.
+                </div>
+
+                <a href="{url}/reset-password/" class="button">Cambiar contraseña</a>
+            </div>
+        </body>
+        </html>
+        """
 
 
-
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        print("Correo enviado exitosamente.")
+    except Exception as e:
+        print(f"Error al enviar el correo: {e}")

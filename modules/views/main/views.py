@@ -6,19 +6,23 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import F, Q, Value, Max, Sum, CharField, BooleanField
 from django.http import JsonResponse
-from core.settings import EMAIL_HOST_PASSWORD, EMAIL_HOST_USER
+from core.settings import EMAIL_HOST_PASSWORD, EMAIL_HOST_USER, STRIPE_PUBLISHABLE_KEY
 from django.apps import apps
 from django.db import transaction
 import json, os
 from datetime import datetime, timedelta
+from django.core.validators import EmailValidator
+from django.core.exceptions import ValidationError
+from django.views.generic import TemplateView
+from django.contrib.auth.models import User
 
 from uritools import uridecode
 from modules.models import *
 from users.models import *
 from modules.utils import *
 import requests
-from django.urls import resolve
-from unidecode import unidecode
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 
 from django.utils.timezone import now
 
@@ -137,7 +141,7 @@ def get_notifications(request):
 
     context = user_data(request)
 
-    print("********* context **************")
+    print("* ************** context **************")
     print(context)
 
 
@@ -404,3 +408,230 @@ def enviar_cotizacion(request):
     email.attach_alternative(html_content, "text/html")
     email.send()
     return JsonResponse({'mensaje': 'Cotización enviada correctamente'})
+
+@csrf_exempt
+def getPlan(request):
+    try:
+        context = {}
+        fd = request.POST.get
+        qs_plan = StripeProducts.objects.filter(name__iexact = fd("plan"))
+        if qs_plan.count() == 0:
+            return JsonResponse({
+                "error":"Plan no encontrado"
+            }, safe=False)
+        
+        plan = qs_plan.first()
+        context["plan"] = fd("plan")
+        context["id"] = plan.stripedID
+        
+        #YOUR_DOMAIN = "http://localhost" #para desarrollo
+        YOUR_DOMAIN = request.build_absolute_uri('/')[:-1]
+        if plan.description == "subscription":
+            method = ['card']
+            item = [{'price':plan.stripedID,'quantity':1}]
+        else:
+            pass
+        
+        prompts = verifiedPrompts(fd("company").lower(), fd("email"))
+        if "error" in prompts:
+            return JsonResponse(prompts, safe=False)
+        
+        serializer = URLSafeSerializer("ID_ENC_SECRET_KEY")
+        session = stripe.checkout.Session.create(
+            payment_method_types = method,
+            mode = plan.description,
+            line_items=item,
+            metadata={
+                'product_data':plan.description,
+                'company':fd("company"),
+                'email_address':fd("email"),
+                'address': fd("address"),
+                'name' : plan.name
+            },
+            success_url=f"{YOUR_DOMAIN}/stripe-success/",
+            cancel_url=f"{YOUR_DOMAIN}/stripe-cancel/",
+            subscription_data={},
+        )
+        context["id"] = session.id
+        context["STP_ID"] = settings.STRIPE_PUBLISHABLE_KEY
+    except Exception as e:
+        return JsonResponse({
+            "error":e
+        }, safe=False)
+        
+    return JsonResponse(context, safe=False)
+
+
+@csrf_exempt  # Webhooks no usan CSRF
+def stripWebHook(request):
+    payload = request.body
+    header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    webSecret = settings.STRIPE_WEBHOOK_SECRET
+
+    # Verificar la firma del webhook
+    try:
+        evt = stripe.Webhook.construct_event(payload, header, webSecret)
+    except (ValueError, stripe.error.SignatureVerificationError):
+        return HttpResponse(status=400)
+
+    if evt['type'] == "checkout.session.completed":
+        data = evt['data']['object']
+        print(data)
+        username = data['customer_details']['name']
+        email = data['customer_details']['email']
+
+        if data['metadata'].get('product_data') == 'subscription':
+            try:
+                with transaction.atomic():
+                    #create company
+                    company = Company.objects.create(
+                        name=data['metadata'].get('company'),
+                        address=data['metadata'].get('address')
+                    )
+
+                    #generate password
+                    password = passwordSecure()  # Asegúrate de tener esta función implementada
+
+                    #create user
+                    user = User.objects.create_user(
+                        username=f"admin_{company.name}",
+                        email=email,
+                        password=password
+                    )
+
+                    #create area
+                    areas = ["Sistemas", "Almacen", "Compras"]
+                    area_objs = []
+                    for area in areas:
+                        obj = Area.objects.create(
+                            company=company,
+                            name=area,
+                            code=area[:2].upper(),
+                            description=area
+                        )
+                        area_objs.append(obj)
+
+                    #get system area
+                    area_sistemas = next((a for a in area_objs if a.name.lower() == "sistemas"), None)
+
+                    #get administrator role
+                    rol_admin = Role.objects.filter(name__iexact="Administrador").first()
+
+                    #create access
+                    if rol_admin and area_sistemas:
+                        user_access = User_Access.objects.create(
+                            user=user,
+                            role=rol_admin,
+                            company=company,
+                            area=area_sistemas
+                        )
+                        
+                    qs_modules = Module.objects.filter(name__in = ["Usuarios", "Vehículo"])
+                    for module in qs_modules:
+                        subModules = SubModule.objects.filter(module = module)
+                        for subModule in subModules:
+                            SubModule_Permission(
+                                subModule = subModule,
+                                user = user_access,
+                                create = True,
+                                read = True,
+                                update = True,
+                                delete = True
+                            ).save()
+                            
+                        Plans(
+                            company = company,
+                            module = module,
+                            start_date_plan = datetime.now().date(),
+                            type_plan = data['metadata'].get('name'),
+                            status_payment_plan = True,
+                            time_quantity_plan = 1,
+                            time_unit_plan = 'month',
+                            end_date_plan = datetime.now().date() + timedelta(days=30),
+                            total = data['amount_total']
+                        ).save()
+                    Send_Informative_Stripe(email, f"admin_{company.name}", password, request)
+            except Exception as e:
+                print(f"Error en webhook: {e}")
+                return HttpResponse(status=500)
+    return HttpResponse(status=200)
+
+def verifiedPrompts(company, email):
+    context = {}
+
+    #Email Validation
+    validator = EmailValidator()
+    try:
+        validator(email)
+    except ValidationError:
+        context["error"] = "El correo electrónico no es válido"
+        return context
+
+    #Verified if company exists
+    if Company.objects.filter(name__iexact=company).exists():
+        context["error"] = "Esta empresa ya fue registrada en la plataforma"
+        return context
+
+    #Verified if email exists
+    if User.objects.filter(email__iexact=email).exists():
+        context["error"] = "Este correo electrónico ya está en uso"
+        return context
+
+    context["success"] = True
+    return context
+
+class SuccessView(TemplateView):
+    template_name = "home/stripe-success.html"
+
+class CancelView(TemplateView):
+    template_name = "home/stripe-cancel.html"
+
+def passwordSecure(longitud=12):
+    import random
+    import string   
+    if longitud < 3:
+        raise ValueError("La longitud mínima recomendada es 3")
+
+    # Caracteres permitidos
+    mayusculas = string.ascii_uppercase
+    minusculas = string.ascii_lowercase
+    numeros = string.digits
+
+    # Aseguramos al menos una mayúscula y un número
+    obligatorios = [
+        random.choice(mayusculas),
+        random.choice(numeros)
+    ]
+
+    # El resto se completa con cualquier carácter permitido
+    restantes = random.choices(mayusculas + minusculas + numeros, k=longitud - len(obligatorios))
+
+    # Mezclamos todos para que no estén siempre al inicio
+    caracteres = obligatorios + restantes
+    random.shuffle(caracteres)
+
+    return ''.join(caracteres)
+
+@login_required
+def siaChangePassword(request):
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+
+        user = request.user
+
+        if not user.check_password(old_password):
+            messages.error(request, 'La contraseña actual es incorrecta.')
+        elif new_password1 != new_password2:
+            messages.error(request, 'Las nuevas contraseñas no coinciden.')
+        elif len(new_password1) < 8:
+            messages.error(request, 'La nueva contraseña debe tener al menos 8 caracteres.')
+        else:
+            user.set_password(new_password1)
+            user.save()
+            update_session_auth_hash(request, user)  # Mantiene la sesión iniciada
+            messages.success(request, 'Tu contraseña ha sido actualizada correctamente.')
+            return redirect('/reset-password/')
+
+    return render(request, 'home/reset-password.html')

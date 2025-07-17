@@ -62,9 +62,6 @@ def computer_equipment_view(request):
     module_id = 3
     subModule_id = 13
     request.session["last_module_id"] = module_id
-
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
     
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
@@ -73,10 +70,7 @@ def computer_equipment_view(request):
     context["sidebar"] = sidebar["data"]
     print("estos son los modulos permitidos", context["sidebar"])
 
-    if context["access"]["read"]:   
-        template = "computer-equipment/computer_equipment.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/computer_equipment.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -84,9 +78,6 @@ def computer_system_details(request, equipment_id = None):
     context = user_data(request)
     module_id = 3
     subModule_id = 13
-
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
 
     context["computerSystem_id"] = equipment_id
     access = get_module_user_permissions(context, subModule_id)
@@ -97,13 +88,7 @@ def computer_system_details(request, equipment_id = None):
     context["sidebar"] = sidebar["data"]
     context["permiso"] = permisos["data"]
 
-    print("Los permisos son")
-    print(context["permiso"])
-
-    if context["access"]["read"]:
-        template = "computer-equipment/computer_system_details.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/computer_system_details.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -112,19 +97,13 @@ def computer_peripherals(request):
     module_id = 3
     subModule_id = 14
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "computer-equipment/computer_peripherals.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/computer_peripherals.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -133,19 +112,13 @@ def computer_software(request):
     module_id = 3
     subModule_id = 15
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "computer-equipment/softwares.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/softwares.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 
@@ -155,19 +128,13 @@ def computer_equipment_audit_view(request):
     module_id = 3
     subModule_id = 16
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "computer-equipment/audit.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/audit.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -176,19 +143,13 @@ def computer_equipment_maintenance_view(request):
     module_id = 3
     subModule_id = 17
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "computer-equipment/maintenance.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/maintenance.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -197,19 +158,13 @@ def assigned_computer_equipment_view(request):
     module_id = 3
     subModule_id = 18
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "computer-equipment/assigned.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/assigned.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -218,19 +173,13 @@ def computer_equipment_responsiva_view(request):
     module_id = 3
     subModule_id = 19
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "computer-equipment/responsiva.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/responsiva.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 @login_required
@@ -297,19 +246,13 @@ def computer_equipment_deliverie_view(request):
     module_id = 3
     subModule_id = 20
 
-    if not check_user_access_to_module(request, module_id, subModule_id):
-        return render(request, "error/access_denied.html")
-
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
-    if context["access"]["read"]:
-        template = "computer-equipment/deliverie.html"
-    else:
-        template = "error/access_denied.html"
+    template = "computer-equipment/deliverie.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
 def computer_equipment_deliverie_pdf_view(request):

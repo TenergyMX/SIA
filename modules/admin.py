@@ -67,7 +67,6 @@ admin.site.register(Payments_Services)
 admin.site.register(Vehicle_Driver)
 admin.site.register(Licences_Driver)
 admin.site.register(Multas)
-
 admin.site.register(Checks)
 
 
@@ -75,6 +74,25 @@ admin.site.register(Plans)
 admin.site.register(Items_locations)
 admin.site.register(Infrastructure_maintenance)
 admin.site.register(MaintenanceAction)
+
+@admin.register(Plans)
+class PlansAdmin(admin.ModelAdmin):
+    list_display = (
+        'company', 'module', 'type_plan', 'status_payment_plan',
+        'start_date_plan', 'end_date_plan', 'total'
+    )
+    list_filter = ('type_plan', 'status_payment_plan', 'time_unit_plan', 'start_date_plan')
+    search_fields = ('company__name', 'module__name')  # Asume que Company y Module tienen campo 'name'
+    date_hierarchy = 'start_date_plan'
+    ordering = ('-start_date_plan',)
+
+@admin.register(StripeProducts)
+class StripeProductsAdmin(admin.ModelAdmin):
+    list_display = ('name', 'stripedID', 'description', 'tagPrice', 'price', 'active', 'created_at')
+    list_filter = ('active', 'created_at')
+    search_fields = ('name', 'description', 'stripedID')
+    ordering = ('-created_at',)
+
 admin.site.register(Placas)
 admin.site.register(Facturas_Vehicle)
 admin.site.register(Card_Vehicle)
