@@ -253,7 +253,9 @@ class VehiclesAudit {
                 case "add-item":
                     obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
-                    obj_modal.find(".modal-header").html("Registrar Auditoria vehicular");
+                    obj_modal
+                        .find(".modal-header  .modal-title")
+                        .html("Registrar Auditoria vehicular");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
                     if (self.vehicle && self.vehicle.data.vehicle_id) {

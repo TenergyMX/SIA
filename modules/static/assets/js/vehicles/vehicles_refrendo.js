@@ -229,107 +229,6 @@ class VehiclesRefrendo {
     }
 
     driverSiaFormulario() {
-        const modal = $("#mdl_crud_audit").length;
-        if (modal == 1) {
-            $(".btn-drive-form").on("click", function () {
-                const driver = window.driver.js.driver;
-                const driverObj = driver({
-                    showProgress: true,
-                    steps: [
-                        {
-                            element: ".drive-6",
-                            popover: {
-                                title: "Vehículo",
-                                description: "Selecciona un vehículo a auditar.",
-                            },
-                        },
-                        {
-                            element: ".drive-7",
-                            popover: {
-                                title: "Fecha de auditoría",
-                                description: "Ingresa una fecha a realizar la auditoria.",
-                            },
-                        },
-                        {
-                            element: ".drive-8",
-                            popover: {
-                                title: "Nota general",
-                                description: "Comenta las observaciones que se tienen.",
-                            },
-                        },
-                        {
-                            element: ".drive-9",
-                            popover: {
-                                title: "Checks",
-                                description:
-                                    "Selecciona las opciones a tomar en cuenta durante la auditoria.",
-                            },
-                        },
-                    ],
-                    nextBtnText: "Siguiente",
-                    prevBtnText: "Anterior",
-                    doneBtnText: "Listo",
-                });
-                driverObj.drive();
-            });
-        }
-    }
-
-    driverSia() {
-        $(".btn-driver").on("click", function () {
-            const driver = window.driver.js.driver;
-            const driverObj = driver({
-                showProgress: true,
-                steps: [
-                    {
-                        element: ".drive-1",
-                        popover: {
-                            title: "Todos los refrendos",
-                            description:
-                                "Se muestra un registro por vehiculo, con sus respectivos datos.",
-                        },
-                    },
-                    {
-                        element: ".drive-2",
-                        popover: {
-                            title: "Refrendos pagados",
-                            description:
-                                "Se muestran todas los refrendos pagados, con sus respectivos datos.",
-                        },
-                    },
-                    {
-                        element: ".drive-3",
-                        popover: {
-                            title: "Refrendos vencidos",
-                            description:
-                                "Se muestran todos los refrendos vencidos, con sus respectivos datos.",
-                        },
-                    },
-                    {
-                        element: ".drive-4",
-                        popover: {
-                            title: "Refrendos próximos a pagar",
-                            description:
-                                "Se muestran las auditorias proximas a evaluar, con sus respectivos datos.",
-                        },
-                    },
-                    {
-                        element: ".drive-5",
-                        popover: {
-                            title: "Agregar Refrendo",
-                            description: "Agrega un nuevo refrendo a traves del formulario.",
-                        },
-                    },
-                ],
-                nextBtnText: "Siguiente",
-                prevBtnText: "Anterior",
-                doneBtnText: "Listo",
-            });
-            driverObj.drive();
-        });
-    }
-
-    driverSiaFormulario() {
         const modal = $("#mdl_crud_refrendo").length;
         if (modal == 1) {
             $(".btn-drive-form").on("click", function () {
@@ -341,28 +240,28 @@ class VehiclesRefrendo {
                             element: ".drive-6",
                             popover: {
                                 title: "Vehículo",
-                                description: "Selecciona un vehículo.",
+                                description: "Selecciona un vehículo para agregar un refrendo.",
                             },
                         },
                         {
                             element: ".drive-7",
                             popover: {
                                 title: "Fecha de pago",
-                                description: "Ingresa una fecha de pago.",
+                                description: "Ingresa una fecha a realizar el pago del refrendo.",
                             },
                         },
                         {
                             element: ".drive-8",
                             popover: {
-                                title: "Monto de pago",
-                                description: "Ingresa la cantidad a pagar.",
+                                title: "Monto pagado",
+                                description: "Ingrese el monto pagado por el refrendo.",
                             },
                         },
                         {
                             element: ".drive-9",
                             popover: {
                                 title: "Comprobante de pago",
-                                description: "Adjunta el comprobante, en caso de tenerlo.",
+                                description: "Adjunta un comprobante de pago en caso de tenerlo.",
                             },
                         },
                     ],
@@ -402,7 +301,9 @@ class VehiclesRefrendo {
                 case "add-item":
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Registrar refrendo vehicular");
+                    obj_modal
+                        .find(".modal-header .modal-title")
+                        .html("Registrar refrendo vehicular");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
                     obj_modal.find('[name="actions[]"]').trigger("change");

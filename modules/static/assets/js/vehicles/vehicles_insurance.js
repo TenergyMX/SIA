@@ -249,7 +249,7 @@ class VehiclesInsurance {
                 case "add-item":
                     obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
-                    obj_modal.find(".modal-header").html("Registrar Seguro");
+                    obj_modal.find(".modal-header .modal-title").html("Registrar Seguro");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
 

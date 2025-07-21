@@ -264,7 +264,7 @@ class VehiclesVerificacion {
                             element: ".drive-9",
                             popover: {
                                 title: "Lugar de la verificación",
-                                description: "Ingresa el lugar corresponiente a la verificación.",
+                                description: "Ingresa el lugar correspondiente a la verificación.",
                             },
                         },
                         {
@@ -329,7 +329,9 @@ class VehiclesVerificacion {
                 case "add-item":
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Registrar verificación vehicular");
+                    obj_modal
+                        .find(".modal-header .modal-title")
+                        .html("Registrar verificación vehicular");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
 
