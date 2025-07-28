@@ -2,6 +2,8 @@ class Vehicles {
     constructor(options) {
         "use strict";
         const self = this;
+        self.filtro_estado = "todos";
+
         const defaultOptions = {
             data: {
                 id: null,
@@ -17,12 +19,13 @@ class Vehicles {
                     url: function () {
                         return "/get_vehicles_info/";
                     },
-                    data: function () {
+                    data: function (d) {
                         return {
-                            vehicle_id: defaultOptions.info.id || defaultOptions.info.vehicle_id,
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado,
                         };
                     },
-                    reload: function () {},
                 },
             },
             list: {
@@ -31,8 +34,14 @@ class Vehicles {
                     id: null,
                 },
                 ajax: {
-                    url: function () {
-                        return "/get_vehicles_info/";
+                    url: "/get_vehicles_info/",
+                    dataSrc: "data",
+                    data: function (d) {
+                        return {
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado,
+                        };
                     },
                 },
             },
@@ -172,6 +181,7 @@ class Vehicles {
                     url: "/get_vehicles_info/",
                     data: {
                         isList: true,
+                        is_active: true,
                     },
                     beforeSend: function () {},
                     success: function (response) {
@@ -194,6 +204,13 @@ class Vehicles {
             this.table = { ...defaultOptions.table, ...options.table };
             this.table.ajax.dataSrc = function (d) {
                 $("span.vehicle-info-recordsTotal").html(d["recordsTotal"] || 0);
+
+                if (d.counters) {
+                    $("#counter-todos").text(d.counters.total || 0);
+                    $("#counter-activo").text(d.counters.activos || 0);
+                    $("#counter-inactivos").text(d.counters.inactivos || 0);
+                }
+
                 return d["data"];
             };
         }
@@ -229,7 +246,10 @@ class Vehicles {
                 ajax: {
                     url: self.table.ajax.url,
                     dataSrc: self.table.ajax.dataSrc,
-                    data: self.table.ajax.data,
+                    data: function (d) {
+                        d.tipo_carga = self.filtro_estado;
+                        return d;
+                    },
                 },
                 columns: self.table.columns,
                 order: [
@@ -281,7 +301,29 @@ class Vehicles {
             // delete self.table;
         }
 
+        // Configurar eventos de filtro
+        $(".filter-card")
+            .off("click")
+            .on("click", function () {
+                const status = $(this).data("status");
+                $(".filter-card").removeClass("active");
+                $(this).addClass("active");
+                self.filtro_estado = status;
+
+                if (self.tbl_info) {
+                    self.tbl_info.ajax.reload();
+                }
+            });
+
         self.setupEventHandlers();
+    }
+
+    updateCounters(data) {
+        const counters = data.counters || data;
+
+        $("#counter-todos").text(counters.total || 0);
+        $("#counter-activo").text(counters.activos || 0);
+        $("#counter-inactivos").text(counters.inactivos || 0);
     }
 
     setupEventHandlers() {
@@ -371,6 +413,52 @@ class Vehicles {
                             Swal.fire("Error", error, "error");
                         });
                     break;
+                case "deactivate-item":
+                    var url = "/deactivate_vehicle/";
+                    var fila = $(this).closest("tr");
+                    var datos = self.tbl_info.row(fila).data();
+                    var data = new FormData();
+
+                    data.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
+                    data.append("id", datos["id"]);
+
+                    Swal.fire({
+                        title: "¿Desactivar vehículo?",
+                        text: `¿Estás seguro de que deseas desactivar el vehículo "${datos["name"]}"?`,
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#d33",
+                        cancelButtonColor: "#3085d6",
+                        confirmButtonText: "Sí, desactivar",
+                        cancelButtonText: "Cancelar",
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: data,
+                                processData: false,
+                                contentType: false,
+                                success: function (response) {
+                                    if (response.status === "success") {
+                                        Swal.fire("Desactivado", response.message, "success");
+                                        self.tbl_info.ajax.reload();
+                                    } else {
+                                        Swal.fire("Error", response.message, "error");
+                                    }
+                                },
+                                error: function () {
+                                    Swal.fire(
+                                        "Error del servidor",
+                                        "Ocurrió un problema en el servidor. Inténtalo más tarde.",
+                                        "error"
+                                    );
+                                },
+                            });
+                        }
+                    });
+                    break;
+
                 default:
                     console.log("Opcion dezconocida:" + option);
             }

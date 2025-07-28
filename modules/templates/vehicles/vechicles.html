@@ -2,65 +2,125 @@
 
 {% block content %}
 {% load static %}
-<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-    <h1 class="page-title fw-semibold fs-18 mb-0">
-        Vehículos
-    </h1>
-    <div class="ms-md-1 ms-0"></div>
-</div>
-
 <div class="">
-    <div class="row">
-        <div class="col-12">
-            <div class="card custom-card">
-                <div class="card-body d-sm-flex align-items-center justify-content-between">
-                    <div class="fs-15 mb-3 mb-sm-0 text-center text-md-start">
-                        Total
-                        <span class="badge bg-success vehicle-info-recordsTotal">3</span>
-                        de vehículos
-                    </div>
-                    <div class="text-center text-sm-end">
-                        {% if access.create %}
-                        <button type="button" class="btn btn-primary" data-vehicle-info="add-item"
-                            title="Agregar usuario">
-                            <i class="fa-solid fa-plus me-1"></i>
-                            Agregar
-                        </button>
-                        {% endif %}
-                        <button type="button" class="btn btn-primary" data-vehicle-info="refresh-table"
-                            title="Actualizar registros">
-                            <i class="fa-solid fa-arrows-rotate me-1"></i>
-                            Refrescar datos
-                        </button>
-                    </div>
-                    <div class="d-none"></div>
-                </div>
-            </div>
-        </div>
+    <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+        <h1 class="page-title fw-semibold fs-18 mb-0">
+            Vehículos
+        </h1>
+        <div class="ms-md-1 ms-0"></div>
     </div>
 
-    <div id="container-table">
-        <div class="card custom-card">
-            <div class="card-body">
-                <div class="w-100">
-                    <table class="table table-bordered w-100" id="table_vehicles_info">
-                        <thead></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+    <section>
 
-    <div class="container-box" style="display: none;">
-        <div class="row">
-            <div class="col-sm-6 col-xxl-3">
-                <div class="card">
-                    <div class="card-body"></div>
+        <div class="row g-3">
+            <div class="col-sm-4 col-lg-3">
+                <div class="card mb-0 cursor-pointer filter-card" data-status="todos" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-top">
+                            <div class="me-3">
+                                <span class="avatar avatar-lg bg-primary">
+                                    <i class="fa-solid fa-folder-open fa-xl"></i>
+                                </span>
+                            </div>
+                            <div class="">
+                                <p class="mb-1 text-muted">TODOS</p>
+                                <h5 id="counter-todos" class="fw-semibold mb-0">0</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4 col-lg-3">
+                <div class="card mb-0 cursor-pointer filter-card" data-status="activos" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-top">
+                            <div class="me-3">
+                                <span class="avatar avatar-lg bg-primary">
+                                    <i class="fa-sharp fa-solid fa-circle-dollar fa-xl"></i>
+                                </span>
+                            </div>
+                            <div class="">
+                                <p class="mb-1 text-muted">ACTIVOS</p>
+                                <h5 id="counter-activo" class="fw-semibold mb-0">0</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4 col-lg-3">
+                <div class="card mb-0 cursor-pointer filter-card" data-status="inactivos" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-top">
+                            <div class="me-3">
+                                <span class="avatar avatar-lg bg-primary">
+                                    <i class="fa-solid fa-circle-xmark fa-xl"></i>
+                                </span>
+                            </div>
+                            <div class="">
+                                <p class="mb-1 text-muted">INACTIVOS</p>
+                                <h5 id="counter-inactivos" class="fw-semibold mb-0">0</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+            <div class="">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card custom-card">
+                            <div class="card-body d-sm-flex align-items-center justify-content-between">
+                                <div class="fs-15 mb-3 mb-sm-0 text-center text-md-start">
+                                    Total
+                                    <span class="badge bg-success vehicle-info-recordsTotal">3</span>
+                                    de vehículos
+                                </div>
+                                <div class="text-center text-sm-end">
+                                    {% if access.create %}
+                                    <button type="button" class="btn btn-primary" data-vehicle-info="add-item"
+                                        title="Agregar usuario">
+                                        <i class="fa-solid fa-plus me-1"></i>
+                                        Agregar
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-primary" data-vehicle-info="refresh-table"
+                                        title="Actualizar registros">
+                                        <i class="fa-solid fa-arrows-rotate me-1"></i>
+                                        Refrescar datos
+                                    </button>
+                                </div>
+                                <div class="d-none"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="container-table">
+                    <div class="card custom-card">
+                        <div class="card-body">
+                            <div class="w-100">
+                                <table class="table table-bordered w-100" id="table_vehicles_info">
+                                    <thead></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="container-box" style="display: none;">
+                    <div class="row">
+                        <div class="col-sm-6 col-xxl-3">
+                            <div class="card">
+                                <div class="card-body"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 </div>
 {% endblock %}
 

@@ -36,7 +36,8 @@ def companys_views(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    template = "users/companys.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    #template = "users/companys.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    template = "users/companys.html" if context["access"]["read"] else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required
@@ -52,7 +53,8 @@ def users_views(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-    template = "users/users.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    #template = "users/users.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    template = "users/users.html" if context["access"]["read"] else "error/access_denied.html"
     return render(request, template, context)
 
 @login_required

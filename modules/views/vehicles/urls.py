@@ -194,6 +194,10 @@ urlpatterns = [
     path('add_carnet/', views.add_carnet),
     path('edit_carnet/', views.edit_carnet),
     path('delete_carnet/', views.delete_carnet),
+
+    # desactivar un vehiculo
+    path("deactivate_vehicle/", views.deactivate_vehicle),
+
     # #codigo qr combustible
     # path('generate_qr_fuel/<str:qr_type>/<int:vehicle_id>/', views.generate_qr_fuel),
     # path('check_qr_fuel/<int:vehicle_id>/', views.check_qr_fuel),

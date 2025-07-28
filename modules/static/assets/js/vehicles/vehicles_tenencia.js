@@ -40,11 +40,10 @@ class VehiclesTenencia {
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
-            vehicle: { 
+            vehicle: {
                 data: { id: null },
             },
         };
-
 
         if (options.infoCard) {
             self.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
@@ -293,7 +292,6 @@ class VehiclesTenencia {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

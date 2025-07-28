@@ -86,8 +86,6 @@ def vehicles(request):
     print("estos son los modulos permitidos", context["sidebar"])
     template = "vehicles/vechicles.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
-    
-
 
 @login_required
 def vehicles_details(request, vehicle_id = None):
@@ -202,7 +200,6 @@ def module_vehicle_audit(request):
     template = "vehicles/audit.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
 
-
 @login_required
 def module_vehicle_maintenance(request):
     context = user_data(request)
@@ -247,7 +244,6 @@ def vehicles_fuel_views(request):
 
     template = "vehicles/fuel.html"  if context["access"]["read"] and check_user_access_to_module(request, module_id, submodule_id) else "error/access_denied.html"
     return render(request, template, context)
-
 
 @login_required
 def driver_vehicles(request):
@@ -737,6 +733,16 @@ def get_vehicles_info(request):
                 Q(responsible_id=context["user"]["id"]) |
                 Q(owner_id=context["user"]["id"])
             )
+        # Filtro por tipo_carga (activos, inactivos, todos)
+        tipo_carga = dt.get("tipo_carga", "todos")
+        if tipo_carga == "activos":
+            data = data.filter(is_active=True)
+        elif tipo_carga == "inactivos":
+            data = data.filter(is_active=False)
+            
+        is_active = dt.get("is_active", None)
+        if is_active in ["true", "True", "1"]:
+            data = data.filter(is_active=True)
         
         if isList:
             data = data.values("id", "name", "plate")
@@ -759,23 +765,50 @@ def get_vehicles_info(request):
                         item["image_path"] = None
                     
                     item["btn_action"] = f"""
-                    <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1">
+                    <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1" title="Ver información">
                         <i class="fa-solid fa-eye"></i>
                     </a>\n
                     """
+
                     
-                    if access["update"]:
-                        item["btn_action"] += """<button class=\"btn btn-primary btn-sm mb-1\" data-vehicle-info=\"update-item\">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>\n"""
-                    
-                    if access["delete"]:
-                        item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-info=\"delete-item\">
-                            <i class="fa-solid fa-trash"></i>
+                    if item["is_active"]:
+                        if access["update"]:
+                            item["btn_action"] += """<button class=\"btn btn-primary btn-sm mb-1\" data-vehicle-info=\"update-item\" title="Editar información">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>\n"""
+                        
+                        if access["delete"]:
+                            item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-info=\"delete-item\" title="Eliminar vehículo">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>\n"""
+                        item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-info=\"deactivate-item\" title="Desactivar vehículo">
+                            <i class="fa-solid fa-power-off"></i>
                         </button>"""
+
                 except Exception as e:
                     print(f"Error processing vehicle with ID {item['id']}: {e}")
         
+        # Filtro por estado
+        is_active = dt.get("is_active", None)
+        if is_active in ["true", "True", "1"]:
+            data = data.filter(is_active=True)
+        elif is_active in ["false", "False", "0"]:
+            data = data.filter(is_active=False)
+
+        # Calcular contadores globales (sin aplicar filtros)
+        base_queryset = Vehicle.objects.filter(company_id=context["company"]["id"])
+        if context["role"]["id"] == 4:
+            base_queryset = base_queryset.filter(
+                Q(responsible_id=context["user"]["id"]) |
+                Q(owner_id=context["user"]["id"])
+            )
+
+        response["counters"] = {
+            "total": base_queryset.count(),
+            "activos": base_queryset.filter(is_active=True).count(),
+            "inactivos": base_queryset.filter(is_active=False).count()
+        }
+
         response["recordsTotal"] = data.count()
         response["data"] = list(data)
         response["success"] = True
@@ -861,7 +894,8 @@ def delete_vehicle_info(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
-        delete_s3_object(AWS_BUCKET_NAME, str(obj.image_path))
+        if obj.image_path:
+            delete_s3_object(AWS_BUCKET_NAME, str(obj.image_path))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -1039,12 +1073,11 @@ def delete_vehicle_tenencia(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
-        delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
+        if obj.comprobante_pago:
+            delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
-
-
 
 def add_vehicle_refrendo(request):
     response = {"success": False, "data": []}
@@ -1215,13 +1248,11 @@ def delete_vehicle_refrendo(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
-        delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
+        if obj.comprobante_pago:
+            delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
-
-
-
 
 def add_vehicle_verificacion(request):
     response = {"success": False}
@@ -2207,7 +2238,8 @@ def delete_vehicle_insurance(request):
         response["error"] = {"message": "El objeto no existe"}
         return JsonResponse(response)
     else:
-        delete_s3_object(AWS_BUCKET_NAME, str(obj.doc))
+        if obj.doc:
+            delete_s3_object(AWS_BUCKET_NAME, str(obj.doc))
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
@@ -4843,7 +4875,8 @@ def get_user_vehicles(request):
             return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
 
         # Obtener todos los vehículos de la empresa
-        vehicles_fuel = Vehicle.objects.filter(company_id=company_id).values('id', 'name')
+        vehicles_fuel = Vehicle.objects.filter(company_id=company_id, is_active=True).values('id', 'name')
+
         data = list(vehicles_fuel)
         print("Vehículos encontrados:", data)
 
@@ -4868,7 +4901,7 @@ def get_user_vehicles_for_edit(request):
         context = user_data(request)
         company_id = context["company"]["id"]
         vehicle_id = request.GET.get("vehicle_id")
-        vehicles = Vehicle.objects.filter(company_id=company_id)
+        vehicles = Vehicle.objects.filter(company_id=company_id, is_active=True)
 
         if vehicle_id:
             vehicles = vehicles | Vehicle.objects.filter(id=vehicle_id)
@@ -6811,6 +6844,35 @@ def delete_carnet(request):
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
+
+
+@csrf_exempt
+def deactivate_vehicle(request):
+    if request.method == "POST":
+        vehicle_id = request.POST.get("id")
+        try:
+            vehicle = Vehicle.objects.get(id=vehicle_id)
+            vehicle.is_active = False
+            vehicle.save()
+            return JsonResponse({
+                "status": "success",
+                "message": f"Vehículo '{vehicle.name}' desactivado correctamente."
+            })
+        except Vehicle.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "Vehículo no encontrado."
+            })
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": f"Error al desactivar el vehículo: {e}"
+            })
+    else:
+        return JsonResponse({
+            "status": "error",
+            "message": "Método no permitido. Solo se acepta POST."
+        })
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

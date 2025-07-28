@@ -6,8 +6,7 @@ from django.contrib.auth.decorators import login_required
 from modules.models import *
 from users.models import *
 from modules.utils import *
-from django.core import serializers
-
+from django.core import serializers 
 @login_required
 def notifications_views(request):
     if not request.user.is_superuser:
@@ -30,10 +29,10 @@ def notifications_views(request):
     
     context_email = {
         "company" : context["company"]["name"],
-        "subject" : "Prueba de correos",
-        "modulo" : 2,
-        "submodulo" : "Responsiva",
-        "item" : 26,
+        "subject" : "Prueba de correos",#Titulo del mensaje
+        "modulo" : 2,#modulo de sia
+        "submodulo" : "Responsiva",#tipo
+        "item" : 26,#id del vehiculo a registrar 
         "title" : "Esta es una prueba para el sistema de notificaciones",
         "body" : "Este es el contenido que se mostrara",
     }

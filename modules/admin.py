@@ -70,7 +70,7 @@ admin.site.register(Multas)
 admin.site.register(Checks)
 
 
-admin.site.register(Plans)
+# admin.site.register(Plans)
 admin.site.register(Items_locations)
 admin.site.register(Infrastructure_maintenance)
 admin.site.register(MaintenanceAction)

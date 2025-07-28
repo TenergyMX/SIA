@@ -425,6 +425,30 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     model_name=Equipment_Tools_Responsiva,
                     field_to_update="email_responsiva"
                 )
+                context_email = {
+                    "company": Company.objects.get(id=company_id).name,
+                    "subject": "Correo de notificación",
+                    "modulo": 6,
+                    "submodulo": "Responsiva",
+                    "item": responsiva.equipment_name.id,
+                    "title": message_data["title"],
+                    "body": message_data["body"]
+                }
+                send_notification(context_email)
+                print("Contexto del correo enviado (responsiva solicitada):", context_email)
+
+                    
+                # context_email = {
+                #     "company" : Company.objects.get(id=company_id).name,
+                #     "subject" : "Prueba de correos",#Titulo del mensaje
+                #     "modulo" : 2,#modulo de sia
+                #     "submodulo" : "Responsiva",#tipo
+                #     "item" : 26,#id del vehiculo a registrar 
+                #     "title" : "Esta es una prueba para el sistema de notificaciones",
+                #     "body" : "Este es el contenido que se mostrara",
+                # }
+                # send_notification(context_email)
+    
 
         # Notificaciones cuando la solicitud es aceptada
         for responsiva in obj_responsivas.filter(status_equipment__iexact='Aceptado'): 
@@ -449,6 +473,17 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     model_name=Equipment_Tools_Responsiva,
                     field_to_update="email_responsiva_aceptada"
                 )
+                context_email = {
+                    "company": Company.objects.get(id=company_id).name,
+                    "subject": "Correo de notificación",
+                    "modulo": 6,
+                    "submodulo": "Responsiva",
+                    "item": responsiva.equipment_name.id,
+                    "title": message_data["title"],
+                    "body": message_data["body"]
+                }
+                send_notification(context_email)
+                print("Contexto del correo enviado (responsiva aceptada):", context_email)
 
     # SERVICIOS (Módulo 5)
     elif id_module == 5:
@@ -493,6 +528,18 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         field_to_update="email_payment"
                     )
 
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Correo de notificación",
+                        "modulo": 5,
+                        "submodulo": "Servicio",
+                        "item": pago.name_service_payment.id,
+                        "title": message_data["title"],
+                        "body": message_data["body"]
+                    }
+                    send_notification(context_email)
+                    print("Contexto del correo enviado (servicio próximo):", context_email)
+
             # Notificaciones para servicios con pago "no pagado"
             for pago in obj_pagos_servicios.filter(status_payment='unpaid'):
                 response["data"].append({
@@ -516,6 +563,18 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         model_name=Payments_Services,
                         field_to_update="email_payment_unpaid"
                     )
+
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Correo de notificación",
+                        "modulo": 5,
+                        "submodulo": "Servicio",
+                        "item": pago.name_service_payment.id,
+                        "title": message_data["title"],
+                        "body": message_data["body"]
+                    }
+                    send_notification(context_email)
+                    print("Contexto del correo enviado (servicio no pagado):", context_email)
 
 
     # VEHÍCULOS (Módulo 2)
@@ -551,7 +610,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 
         # TENENCIA
         if 5 in access and access[5]["read"]:
-            obj_tenencia = Vehicle_Tenencia.objects.filter(vehiculo__company_id=company_id)
+            obj_tenencia = Vehicle_Tenencia.objects.filter(vehiculo__company_id=company_id, vehiculo__is_active=True)
 
             if rol not in roles_usuario:
                 obj_tenencia = obj_tenencia.filter(vehiculo__responsible_id=user_id)
@@ -583,7 +642,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     if tenencia and not tenencia.email_tenencia:
                         message_data = {
                             "title": f"Recordatorio de Pago de tenencia del vehículo: {tenencia.vehiculo.name}",
-                            "body": f"La licencia para el vehículo <strong>{tenencia.vehiculo.name}</strong> esta programada para la fecha <strong>{tenencia.fecha_pago}</strong>. Por favor, verifica la tenencia."
+                            "body": f"La tenencia para el vehículo <strong>{tenencia.vehiculo.name}</strong> esta programada para la fecha <strong>{tenencia.fecha_pago}</strong>. Por favor, verifica la tenencia."
                         }
                         Send_Email(
                             subject="Recordatorio de Tenencia",
@@ -594,6 +653,19 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             field_to_update="email_tenencia"
                         )
                         print("coreo enviado correctamente y campo actualizado de tenencia")
+
+                        context_email = {
+                            "company" : Company.objects.get(id=company_id).name,
+                            "subject" : "Correo de notificación",#Titulo del mensaje
+                            "modulo" : 2,#modulo de sia
+                            "submodulo" : "Tenencia",#tipo
+                            "item": tenencia.vehiculo.id,
+                            "title": f"Recordatorio de Pago de tenencia del vehículo: {tenencia.vehiculo.name}",
+                            "body": f"La tenencia para el vehículo <strong>{tenencia.vehiculo.name}</strong> esta programada para la fecha <strong>{tenencia.fecha_pago}</strong>. Por favor, verifica la tenencia."
+
+                        }
+                        send_notification(context_email)
+                        print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
 
                 vehicles_with_tenencia.add(item['vehiculo__id'])
 
@@ -610,6 +682,9 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 
                 
                 vehicle_instance = Vehicle.objects.get(id=vehicle["id"])
+                vehicle_instance = Vehicle.objects.filter(id=vehicle["id"], is_active=True).first()
+             
+
                 if not vehicle_instance.email_sin_tenencia:
 
                     message_data = {
@@ -625,11 +700,21 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         model_name=Vehicle,
                         field_to_update="email_sin_tenencia" 
                     )
-                    print("Correo enviado para vehículo sin tenencia y campo sin tenenecia actualizado")
+                    context_email = {
+                        "company" : Company.objects.get(id=company_id).name,
+                        "subject" : "Correo de notificación",#Titulo del mensaje
+                        "modulo" : 2,#modulo de sia
+                        "submodulo" : "Tenencia",#tipo
+                        "item": tenencia.vehiculo.id,
+                        "title": f"Tenencia no registrada para el vehículo: {tenencia.vehiculo.name}",
+                        "body": f"El vehículo <strong>{tenencia.vehiculo.name}</strong> no tiene una tenencia registrada. Por favor, verifica esta información en el sistema."
 
+                    }
+                    send_notification(context_email)
+                    print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
         # REFRENDO
         if 6 in access and access[6]["read"]:
-            obj_refrendo = Vehicle_Refrendo.objects.filter(vehiculo__company_id=company_id)
+            obj_refrendo = Vehicle_Refrendo.objects.filter(vehiculo__company_id=company_id, vehiculo__is_active=True)
 
             if rol not in roles_usuario:
                 obj_refrendo = obj_refrendo.filter(vehiculo__responsible_id=user_id)
@@ -671,6 +756,18 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             field_to_update="email_refrendo"
                         )
                         print("coreo enviado correctamente y campo actualizado de refrendo")
+                            # Mismo título y cuerpo reutilizados
+                        context_email = {
+                            "company": Company.objects.get(id=company_id).name,
+                            "subject": "Correo de notificación",
+                            "modulo": 2,
+                            "submodulo": "Refrendo",
+                            "item": refrendo.vehiculo.id,
+                            "title": message_data["title"],
+                            "body": message_data["body"]
+                        }
+                        send_notification(context_email)
+                        print("Contexto del correo enviado (refrendo):", context_email)
 
 
             
@@ -701,7 +798,18 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         field_to_update="email_sin_refrendo"  
                     )
                     print("Correo enviado para vehículo sin refrendo y campo actualizado")
-
+                                    
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Correo de notificación",
+                        "modulo": 2,
+                        "submodulo": "Refrendo",
+                        "item": vehicle_instance.id,
+                        "title": message_data["title"],
+                        "body": message_data["body"]
+                    }
+                    send_notification(context_email)
+                    print("Contexto del correo enviado (sin refrendo):", context_email)
 
         # VERIFICACIÓN
             try:
@@ -754,6 +862,18 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             )
                             print("Correo enviado para verificación 1er semestre y campo actualizado")
 
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": "Correo de notificación",
+                                "modulo": 2,
+                                "submodulo": "Verificación",
+                                "item": vehicle_instance.id,
+                                "title": message_data["title"],
+                                "body": message_data["body"]
+                            }
+                            send_notification(context_email)
+                            print("Contexto del correo enviado (sin verificacion):", context_email)
+
 
                     elif (current_month + 1) == cv[d]["s1"][0]["month_code"]:
                         month_name_ES = cv[d]["s1"][0]["month_name_ES"]
@@ -791,6 +911,18 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             )
                             print("Correo enviado para verificación 2do semestre y campo actualizado")
 
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": "Correo de notificación",
+                                "modulo": 2,
+                                "submodulo": "Verificación",
+                                "item": vehicle_instance.id,
+                                "title": message_data["title"],
+                                "body": message_data["body"]
+                            }
+                            send_notification(context_email)
+                            print("Contexto del correo enviado (sin verificacion 2 semestre:", context_email)
+
                     elif (current_month + 1) == cv[d]["s2"][0]["month_code"]:
                         month_name_ES = cv[d]["s2"][0]["month_name_ES"]
                         print(f"[INFO] Próximo pago 2do Sem. en {month_name_ES} - Vehículo: {item['name']}")
@@ -807,7 +939,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         # SEGUROS
         if 9 in access and access[9]["read"]:
             
-            obj_seguros = Vehicle_Insurance.objects.filter(vehicle__company_id=company_id)
+            obj_seguros = Vehicle_Insurance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
 
             if rol not in roles_usuario:
                 obj_seguros = obj_seguros.filter(vehicle__responsible_id=user_id)
@@ -850,7 +982,18 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             field_to_update="email_insurance"
                         )
                         print("coreo enviado correctamente y campo actualizado de seguro")
-
+                        
+                        context_email = {
+                            "company": Company.objects.get(id=company_id).name,
+                            "subject": "Correo de notificación",
+                            "modulo": 2,
+                            "submodulo": "Seguro",
+                            "item": insurance.vehicle.id,  
+                            "title": message_data["title"],
+                            "body": message_data["body"]
+                        }
+                        send_notification(context_email)
+                        print("Contexto del correo enviado (seguro):", context_email)
 
                 vehicles_with_seguro.add(item['vehicle__id'])
 
@@ -882,10 +1025,23 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     )
                     print("Correo enviado para vehículo sin seguro y campo actualizado")
 
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Correo de notificación",
+                        "modulo": 2,
+                        "submodulo": "Seguro",
+                        "item": vehicle_instance.id,
+                        "title": message_data["title"],
+                        "body": message_data["body"]
+                    }
+
+                    send_notification(context_email)
+                    print("Contexto del correo enviado (sin seguro):", context_email)
+
 
         # AUDITORÍAS
         if 10 in access and access[10]["read"]:
-            obj_auditorias = Vehicle_Audit.objects.filter(vehicle__company_id=company_id)
+            obj_auditorias = Vehicle_Audit.objects.filter(vehicle__company_id=company_id, vehicle__is_active=True)
 
             if rol not in roles_usuario:
                 obj_auditorias = obj_auditorias.filter(vehicle__responsible_id=user_id)
@@ -916,9 +1072,22 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         field_to_update="email_audit"
                     )
 
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Correo de notificación",
+                        "modulo": 2,
+                        "submodulo": "Auditoría",
+                        "item": auditoria.vehicle.id,
+                        "title": message_data["title"],
+                        "body": message_data["body"]
+                    }
+                    send_notification(context_email)
+                    print("Contexto del correo enviado (auditoría):", context_email)
+
+
         # MANTENIMIENTO
         if 11 in access and access[11]["read"]:
-            obj_mantenimiento = Vehicle_Maintenance.objects.filter(vehicle__company_id=company_id)
+            obj_mantenimiento = Vehicle_Maintenance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
 
             if rol not in roles_usuario:
                 obj_mantenimiento = obj_mantenimiento.filter(vehicle__responsible_id=user_id)
@@ -950,6 +1119,18 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         model_name=Vehicle_Maintenance,
                         field_to_update="email_maintenance"
                     )
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Correo de notificación",
+                        "modulo": 2,
+                        "submodulo": "Mantenimiento",
+                        "item": mantenimiento.vehicle.id,
+                        "title": message_data["title"],
+                        "body": message_data["body"]
+                    }
+                    send_notification(context_email)
+                    print("Contexto del correo enviado (mantenimiento):", context_email)
+
 
     # Respuesta final
     response["recordsTotal"] = len(response["data"])
