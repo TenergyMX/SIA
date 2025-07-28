@@ -3,6 +3,7 @@ class VehiclesTenencia {
         "use strict";
 
         const self = this;
+        self.filtro_estado = "todos";
         const defaultOptions = {
             infoCard: {
                 id: null,
@@ -13,12 +14,13 @@ class VehiclesTenencia {
                     url: function () {
                         return "/get_vehicles_tenencia/";
                     },
-                    data: function () {
+                    data: function (d) {
                         return {
-                            vehicle_id: defaultOptions.info.id || defaultOptions.info.vehicle_id,
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado,
                         };
                     },
-                    reload: function () {},
                 },
             },
 
@@ -30,7 +32,13 @@ class VehiclesTenencia {
                 ajax: {
                     url: "/get_vehicles_tenencia/",
                     dataSrc: "data",
-                    data: {},
+                    data: function (d) {
+                        return {
+                            ...d,
+                            vehicle_id: self.vehicle?.data?.id || null,
+                            tipo_carga: self.filtro_estado,
+                        };
+                    },
                 },
                 columns: [
                     { title: "ID", data: "id", visible: false },
@@ -45,8 +53,12 @@ class VehiclesTenencia {
             },
         };
 
+        // Merge de opciones
+        this.table = { ...defaultOptions.table, ...(options.table || {}) };
+        this.vehicle = { ...defaultOptions.vehicle, ...(options.vehicle || {}) };
+
         if (options.infoCard) {
-            self.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
+            this.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
         }
 
         if (options.table) {
@@ -79,13 +91,40 @@ class VehiclesTenencia {
 
     init() {
         const self = this;
+        this.driverSia();
+        this.driverSiaFormulario();
+
+        // Inicializar contadores
+        self.updateCounters({
+            total: 0,
+            pagadas: 0,
+            vencidas: 0,
+            proximas: 0,
+            // pendientes: 0,
+        });
 
         if (self.table) {
             self.tbl_tenencia = $(self.table.id).DataTable({
                 ajax: {
                     url: self.table.ajax.url,
-                    dataSrc: self.table.ajax.dataSrc,
-                    data: self.table.ajax.data,
+                    data: function (d) {
+                        const baseData =
+                            typeof self.table.ajax.data === "function"
+                                ? self.table.ajax.data(d)
+                                : self.table.ajax.data || {};
+                        return {
+                            ...d,
+                            ...baseData,
+                            tipo_carga: self.filtro_estado,
+                        };
+                    },
+
+                    dataSrc: function (json) {
+                        if (self.filtro_estado === "todos") {
+                            self.updateCounters(json);
+                        }
+                        return json.data;
+                    },
                 },
                 columns: self.table.columns,
                 order: [
@@ -96,8 +135,19 @@ class VehiclesTenencia {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
                 },
             });
-            delete self.table;
         }
+
+        $(".filter-card")
+            .off("click")
+            .on("click", function () {
+                const status = $(this).data("status");
+                $(".filter-card").removeClass("active");
+                $(this).addClass("active");
+                self.filtro_estado = status;
+                if (self.tbl_tenencia) {
+                    self.tbl_tenencia.ajax.reload();
+                }
+            });
 
         if (self.vehicle && self.vehicle.data.id) {
             $('#mdl_crud_tenencia [name="vehicle_id"]').hide();
@@ -108,6 +158,117 @@ class VehiclesTenencia {
         }
 
         this.setupEventHandlers();
+    }
+
+    driverSia() {
+        $(".btn-driver").on("click", function () {
+            const driver = window.driver.js.driver;
+            const driverObj = driver({
+                showProgress: true,
+                steps: [
+                    {
+                        element: ".drive-1",
+                        popover: {
+                            title: "Todas las tenencias",
+                            description:
+                                "Se muestra un registro por vehiculo, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-2",
+                        popover: {
+                            title: "Tenencias pagadas",
+                            description:
+                                "Se muestran todas las tenencias pagadas, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-3",
+                        popover: {
+                            title: "Tenencias vencidas",
+                            description:
+                                "Se muestran todos las tenencias vencidas, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-4",
+                        popover: {
+                            title: "Tenencias próximas a pagar",
+                            description:
+                                "Se muestran las tencias proximas a pagar, con sus respectivos datos.",
+                        },
+                    },
+                    {
+                        element: ".drive-5",
+                        popover: {
+                            title: "Agregar tenencia",
+                            description: "Agrega una nueva tenencia a traves del formulario.",
+                        },
+                    },
+                ],
+                nextBtnText: "Siguiente",
+                prevBtnText: "Anterior",
+                doneBtnText: "Listo",
+            });
+            driverObj.drive();
+        });
+    }
+
+    driverSiaFormulario() {
+        const modal = $("#mdl_crud_tenencia").length;
+        if (modal == 1) {
+            $(".btn-drive-form").on("click", function () {
+                const driver = window.driver.js.driver;
+                const driverObj = driver({
+                    showProgress: true,
+                    steps: [
+                        {
+                            element: ".drive-6",
+                            popover: {
+                                title: "Vehículo",
+                                description: "Selecciona un vehículo.",
+                            },
+                        },
+                        {
+                            element: ".drive-7",
+                            popover: {
+                                title: "Fecha de pago",
+                                description: "Ingresa una fecha de pago.",
+                            },
+                        },
+                        {
+                            element: ".drive-8",
+                            popover: {
+                                title: "Monto de pago",
+                                description: "Ingresa la cantidad a pagar.",
+                            },
+                        },
+                        {
+                            element: ".drive-9",
+                            popover: {
+                                title: "Comprobante de pago",
+                                description: "Adjunta el comprobante, en caso de tenerlo.",
+                            },
+                        },
+                    ],
+                    nextBtnText: "Siguiente",
+                    prevBtnText: "Anterior",
+                    doneBtnText: "Listo",
+                });
+                driverObj.drive();
+            });
+        }
+    }
+
+    updateCounters(data) {
+        const counters = data.counters || data;
+        const total = counters.total || 0;
+        const totalVehiculos = counters.total_vehiculos || 0;
+
+        $("#counter-todas").text(`${total} de ${totalVehiculos} vehículos`);
+        $("#counter-pagadas").text(counters.pagadas || 0);
+        $("#counter-vencidas").text(counters.vencidas || 0);
+        $("#counter-proximas").text(counters.proximas || 0);
     }
 
     setupEventHandlers() {
@@ -126,7 +287,9 @@ class VehiclesTenencia {
                 case "add-item":
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Registrar mantenimiento vehicular");
+                    obj_modal
+                        .find(".modal-header .modal-title")
+                        .html("Registrar tenencia vehicular");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
                     obj_modal.find('[name="actions[]"]').trigger("change");

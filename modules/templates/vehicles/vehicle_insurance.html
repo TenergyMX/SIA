@@ -1,11 +1,13 @@
 {% extends 'ynex/base.html' %}
-
 {% block content %}
 {% load static %}
 <div class="">
     <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
         <h1 class="page-title fw-semibold fs-18 mb-0">
             Seguros
+            <button id="boton_driver" type="button" class="avatar avatar-lg-drive bg-primary btn-driver">
+                <i class="fa-solid fa-question"></i>
+            </button>
         </h1>
         <div class="ms-md-1 ms-0"></div>
     </div>
@@ -14,16 +16,16 @@
     <div class="col-sm-4 col-lg-3">
         <div class="card mb-0 cursor-pointer filter-card" data-status="todas" style="cursor:pointer;">
             <div class="card-body">
-                <div class="d-flex align-items-top">
+                <div class="d-flex align-items-top drive-1">
                     <div class="me-3">
                         <span class="avatar avatar-lg bg-primary">
                             <i class="fa-solid fa-folder-open fa-xl"></i>
                         </span>
                     </div>
                     <div class="">
-                        <p class="mb-1 text-muted">TODAS</p>
-                        <h5 id="counter-todas" class="fw-semibold mb-0">0</h5>
-                    </div>
+                        <p class="mb-1 text-muted">TODOS</p>
+                        <h5 id="counter-todos" class="fw-semibold mb-0" >0 de 0 vehículos</h5>
+                    </div>      
                 </div>
             </div>
         </div>
@@ -31,14 +33,14 @@
     <div class="col-sm-4 col-lg-3">
         <div class="card mb-0 cursor-pointer filter-card" data-status="pagadas" style="cursor:pointer;">
             <div class="card-body">
-                <div class="d-flex align-items-top">
+                <div class="d-flex align-items-top drive-2">
                     <div class="me-3">
                         <span class="avatar avatar-lg bg-primary">
                             <i class="fa-sharp fa-solid fa-circle-dollar fa-xl"></i>
                         </span>
                     </div>
                     <div class="">
-                        <p class="mb-1 text-muted">PAGADAS</p>
+                        <p class="mb-1 text-muted">PAGADOS</p>
                         <h5 id="counter-pagadas" class="fw-semibold mb-0">0</h5>
                     </div>
                 </div>
@@ -48,14 +50,14 @@
     <div class="col-sm-4 col-lg-3">
         <div class="card mb-0 cursor-pointer filter-card" data-status="vencidas" style="cursor:pointer;">
             <div class="card-body">
-                <div class="d-flex align-items-top">
+                <div class="d-flex align-items-top drive-3">
                     <div class="me-3">
                         <span class="avatar avatar-lg bg-primary">
                             <i class="fa-solid fa-circle-xmark fa-xl"></i>
                         </span>
                     </div>
                     <div class="">
-                        <p class="mb-1 text-muted">VENCIDAS</p>
+                        <p class="mb-1 text-muted">VENCIDOS</p>
                         <h5 id="counter-vencidas" class="fw-semibold mb-0">0</h5>
                     </div>
                 </div>
@@ -65,14 +67,14 @@
     <div class="col-sm-4 col-lg-3">
         <div class="card mb-0 cursor-pointer filter-card" data-status="proximas" style="cursor:pointer;">
             <div class="card-body">
-                <div class="d-flex align-items-top">
+                <div class="d-flex align-items-top drive-4">
                     <div class="me-3">
                         <span class="avatar avatar-lg bg-primary">
                             <i class="fa-solid fa-calendar-circle-exclamation fa-xl"></i>
                         </span>
                     </div>
                     <div class="">
-                        <p class="mb-1 text-muted">PROXIMAS A PAGAR</p>
+                        <p class="mb-1 text-muted">PROXIMOS A PAGAR</p>
                         <h5 id="counter-proximas" class="fw-semibold mb-0">0</h5>
                     </div>
                 </div>
@@ -84,7 +86,7 @@
             <div class="card-body">
                 <div class="mb-3">
                     {% if access.create %}
-                    <button type="button" class="btn btn-primary" data-vehicle-insurance="add-item"
+                    <button type="button" class="btn btn-primary drive-5" data-vehicle-insurance="add-item"
                         title="Agregar Seguro">
                         <i class="fa-solid fa-plus me-1"></i>
                         Agregar
@@ -130,12 +132,15 @@
 
 {% block offcanvas %} {% endblock %}
 
-{% block head %} {% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.css"/>
+{% endblock %}
 
 {% block scripts %}
 <script src="{% static 'assets/js/users/users.js' %}"></script>
 <script src="{% static 'assets/js/vehicles/vehicles.js' %}"></script>
 <script src="{% static 'assets/js/vehicles/vehicles_insurance.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.js.iife.js"></script>
 <script>
     new Users({
         list: { id: 'select[name="responsible_id"]' }
@@ -144,8 +149,10 @@
     const seguros = new VehiclesInsurance({
         table: { id: '#table_insurance' },
         vehicle: new Vehicles({
-            list: { id: '[name="vehicle_id"]' }
+            list: { id: '[name="vehicle_id"]' },
         })
     });
+    console.log("🚀 Bloque scripts en seguros fue inyectado");
+
 </script>
 {% endblock %}

@@ -769,8 +769,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         send_notification(context_email)
                         print("Contexto del correo enviado (refrendo):", context_email)
 
-
-            
             vehicles_without_refrendo = obj_vehicles.exclude(id__in=vehicles_with_refrendo).values_list('name', flat=True)
             for name in vehicles_without_refrendo:
                 response["data"].append({

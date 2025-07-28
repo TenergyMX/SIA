@@ -3,7 +3,9 @@
         <form name="form-vrt" class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5">Agregar</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button id="boton_drive" type="button" class="btn-drive-help bg-primary btn-drive-form">
+                    <i class="fa-solid fa-question"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="row g-3">
@@ -11,25 +13,25 @@
                         {% csrf_token %}
                         <input type="text" name="id" value="" class="form-control">
                     </div>
-                    <div class="col-12 col-md-12 col-lg">
+                    <div class="col-12 col-md-12 col-lg drive-6">
                         <label for="">Vehículo</label>
                         <select name="vehiculo_id" class="form-control">
                             <option value=""></option>
                         </select>
                         <input type="text" name="vehiculo__name" class="form-control">
                     </div>
-                    <div class="col-md-6 col-lg">
+                    <div class="col-md-6 col-lg drive-7">
                         <label for="">Fecha de pago</label>
                         <input type="date" name="fecha_pago" class="form-control" required>
                     </div>
-                    <div class="col-md-6 col-lg">
+                    <div class="col-md-6 col-lg drive-8">
                         <label for="">Monto pagado</label>
                         <div class="input-group">
                             <span class="input-group-text">$</span>
                             <input type="number" name="monto" class="form-control" placeholder="1500" required>
                         </div>
                     </div>
-                    <div class="col-md-12">
+                    <div class="col-md-12 drive-9">
                         <label for="">Comprobante de pago</label>
                         <input type="file" name="comprobante_pago" class="form-control" >
                     </div>

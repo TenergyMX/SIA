@@ -3,7 +3,9 @@
         <form name="form-vrt" class="modal-content" onsubmit="return false;">
             <div class="modal-header">
                 <h1 class="modal-title fs-5">Agregar</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button id="boton_drive" type="button" class="btn-drive-help bg-primary btn-drive-form">
+                    <i class="fa-solid fa-question"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="row g-3">
@@ -11,22 +13,22 @@
                         {% csrf_token %}
                         <input type="hidden" name="id" value="0">
                     </div>
-                    <div class="col-12 col-md-12">
+                    <div class="col-12 col-md-12 drive-6">
                         <label for="">Vehículo</label>
                         <select name="vehicle_id" class="form-control"></select>
                         <input type="text" name="vehicle__name" class="form-control" readonly>
                     </div>
-                    <div class="col-6">
+                    <div class="col-6 drive-7">
                         <label for="">Fecha</label>
                         <input type="date" name="audit_date" class="form-control">
                     </div>            
                     
-                    <div class="col-6">
+                    <div class="col-6 drive-8">
                         <label for="">Nota General</label>
                         <textarea name="general_notes" rows="2" class="form-control" placeholder="Obervaciones"></textarea>
                     </div>
 
-                    <div class="col-12 col-lg-12">
+                    <div class="col-12 col-lg-12 drive-9">
                         <label for="">Checks</label>
                         <select name="checks[]" class="form-multi-select" multiple data-coreui-search="true" id="select-field" style="z-index: 99999;">
                             <option value="" selected>

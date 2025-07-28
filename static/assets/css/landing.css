@@ -420,7 +420,7 @@ body {
     background-color: #ffffff;
     padding: 0 4rem;
     color: #1c1c1c;
-    height: 100%;
+    height: auto;
     position: relative;
     z-index: 11;
     padding-bottom: 10%;
@@ -433,7 +433,7 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     /* height: fit-content; */
-    height: 1100px;
+    height: auto;
 }
 
 .pricing-plan .plan {
@@ -868,17 +868,18 @@ body {
 .carousel {
     position: relative;
     width: 100%;
-    height: 400px;
-    overflow: hidden;
+    overflow-x: hidden; /*cambiar a visible*/
+    overflow-y: visible;
     justify-self: center;
     margin-top: 10px;
     border-radius: 8px;
-    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);*/
+    display: flex;
+    /* scroll-snap-type: x mandatory;  */
 }
 
 .carousel-track {
     display: flex;
-    transition: transform 0.5s ease-in-out;
+    /* transition: transform 0.5s ease-in-out; */
 }
 
 .carousel-button {
@@ -914,11 +915,16 @@ body {
 }
 
 .carousel-item {
-    min-width: 100%;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem 0rem;
+    min-width: 300px;
+    max-width: 300px;
+    flex: 0 0 auto;
+    background-color: white;
+    border-radius: 10px;
+    padding: 1rem;
+    align-items: flex-start;
+    justify-content: flex-start;
+    height: auto;
+    overflow: visible;
 }
 
 .title-carousel {

@@ -180,6 +180,27 @@
             }
         }
     }
+    &.avatar-lg-drive {
+        width: 2rem;
+        height: 2rem;
+        line-height: 2rem;
+        font-size: 0.5rem;
+        .avatar-badge {
+            inset-block-start: -15%;
+            inset-inline-end: -0.25%;
+        }
+        &.online,
+        &.offline {
+            &:before {
+                width: 0.8rem;
+                height: 0.8rem;
+            }
+        }
+        svg {
+            width: 1.8rem;
+            height: 1.8rem;
+        }
+    }
 }
 .avatar-list-stacked {
     padding: 0;
