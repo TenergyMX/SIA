@@ -138,6 +138,27 @@ class Areas {
                         .val(datos["is_active"] == true ? "1" : "0");
                     break;
                 case "delete-item":
+                    var url = "/delete_area/";
+                    var fila = $(this).closest("tr");
+                    var datos = self.tbl_areas.row(fila).data();
+                    var data = new FormData();
+
+                    data.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
+                    data.append("id", datos["id"]);
+
+                    deleteItem(url, data)
+                        .then((message) => {
+                            Swal.fire("Exito", "Se ha borrado el registro", "success");
+                            self.tbl_areas.ajax.reload();
+                        })
+                        .catch((error) => {
+                            var message = "Se ha producido un problema en el servidor.";
+                            message += " Por favor, inténtalo de nuevo más tarde.";
+                            if (typeof error === "string") {
+                                message = error;
+                            }
+                            Swal.fire("Error", error, "error");
+                        });
                     break;
                 default:
             }
@@ -166,7 +187,6 @@ class Areas {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

@@ -327,6 +327,29 @@ def update_user_with_access(request):
         return JsonResponse(response, status=500)
     return JsonResponse(response)
 
+
+#funcion para eliminar los usuarios
+@csrf_exempt
+def delete_user_with_access(request):
+    if request.method == "POST":
+        try:
+            user_id = request.POST.get("id")
+
+            if not user_id:
+                return JsonResponse({"success": False, "message": "ID de usuario no proporcionado."}, status=400)
+
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return JsonResponse({"success": False, "message": "El usuario no existe."}, status=404)
+                    
+            user.delete()
+            return JsonResponse({"success": True, "message": "Usuario eliminado correctamente."})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": f"Error: {str(e)}"}, status=500)
+    else:
+        return JsonResponse({"success": False, "message": "Método no permitido."}, status=405)
+
 # Obtener todos los permisos del usuario que tiene acceso a SIA
 def get_userPermissions(request):
     context = user_data(request)
@@ -619,6 +642,24 @@ def update_area(request):
         response["error"] = {"message": str(e)}
     return JsonResponse(response)
 
+def delete_area(request):
+    response = {"success": False, "data": []}
+    dt = request.POST
+    id = dt.get("id", None)
+
+    if id == None:
+        response["error"] = {"message": "Proporcione un id valido", "id": id}
+        return JsonResponse(response)
+
+    try:
+        obj = Area.objects.get(id = id)
+    except Area.DoesNotExist:
+        response["error"] = {"message": "El objeto no existe"}
+        return JsonResponse(response)
+    else:
+        obj.delete()
+    response["success"] = True
+    return JsonResponse(response)
 
 
 #-------------PLANES 

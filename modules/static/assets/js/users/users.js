@@ -259,12 +259,12 @@ class Users {
                     var data = new FormData();
 
                     data.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
-                    data.append("id", datos["id"]);
+                    data.append("id", datos["user_id"]);
 
                     deleteItem(url, data)
                         .then((message) => {
                             Swal.fire("Exito", message, "success");
-                            this.tbl_audit.ajax.reload();
+                            self.tbl_users.ajax.reload();
                         })
                         .catch((error) => {
                             Swal.fire("Error", error, "error");

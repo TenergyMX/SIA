@@ -3871,8 +3871,8 @@ def validar_vehicle_en_sa(request):
             vehicle_name = ""
 
 
-    if responsiva:  # Verifica que haya un registro
-        if responsiva.end_date:  # Verifica si el campo end_date tiene un valor
+    if responsiva:  
+        if responsiva.end_date: 
             km_final = responsiva.final_mileage
             gasolina_final = responsiva.final_fuel
             return JsonResponse({
@@ -3881,7 +3881,7 @@ def validar_vehicle_en_sa(request):
                 "vehicle_name": vehicle_name, 
                 "km_final":km_final,
                 "gasolina_final" : gasolina_final,
-                "fecha_actual": fecha_actual  # Agrega la fecha y hora actual
+                "fecha_actual": fecha_actual 
             })
         else:
             registro = responsiva.id
@@ -3916,7 +3916,7 @@ def get_table_vehicles_driver(request):
 
         if isList:
             datos = list(Vehicle_Driver.objects.select_related('name_driver').annotate(
-                driver_name=Concat(F('name_driver__username'), Value(' '), F('name_driver__last_name'))  
+                driver_name=Concat(F('name_driver__first_name'), Value(' '), F('name_driver__last_name'))  
             ).values("id", "company", "driver_name", "image_path"))  
         else:
             access = get_module_user_permissions(context, subModule_id)  
@@ -3925,11 +3925,18 @@ def get_table_vehicles_driver(request):
             company_id = context["company"]["id"]
             editar = access["update"]
             eliminar = access["delete"]
-            tipo_user = context["role"]["name"]
+            tipo_user = context["role"]["id"]
+            user_id = context["user"]["id"]
 
-            datos = list(Vehicle_Driver.objects.select_related('name_driver').annotate(
-                driver_name=Concat(F('name_driver__username'), Value(' '), F('name_driver__last_name'))  
-            ).filter(company_id=company_id).values("id", "company", "driver_name", "number_phone", "address", "image_path"))
+            queryset = Vehicle_Driver.objects.select_related('name_driver').annotate(
+                driver_name=Concat(F('name_driver__first_name'), Value(' '), F('name_driver__last_name'))
+            ).filter(company_id=company_id)
+
+            if tipo_user == 4:
+                queryset = queryset.filter(name_driver_id=user_id)
+
+            datos = list(queryset.values("id", "company", "driver_name", "number_phone", "address", "image_path"))
+
 
             for item in datos:
 
@@ -4175,7 +4182,7 @@ def get_driver_details(request, driver_id):
             
     data = {
         "id": driver.id,
-        "name": f"{driver.name_driver.username} {driver.name_driver.last_name}" if driver.name_driver else "No asignado",
+        "name": f"{driver.name_driver.first_name} {driver.name_driver.last_name}" if driver.name_driver else "No asignado",
         "company__name": driver.company.name if driver.company else "No asignada",
         "number_phone": driver.number_phone if driver.number_phone else "No disponible",
         "address": driver.address if driver.address else "No disponible",
@@ -4260,7 +4267,7 @@ def get_table_licence(request):
             first_licence = True
             for licence in licences:
                 
-                driver_name = f"{driver.name_driver.username} {driver.name_driver.last_name}" if driver.name_driver else "No asignado",
+                driver_name = f"{driver.name_driver.first_name} {driver.name_driver.last_name}" if driver.name_driver else "No asignado",
                 start_date = licence.start_date
                 expiration_date = licence.expiration_date
                 licence_driver_url = licence.license_driver.url if licence.license_driver else None
@@ -4475,7 +4482,7 @@ def get_table_multas(request):
             for multa in multas:
 
                 # Serializar el nombre del conductor
-                driver_name = f"{driver.name_driver.username} {driver.name_driver.last_name}" if driver.name_driver else "No asignado"
+                driver_name = f"{driver.name_driver.first_name} {driver.name_driver.last_name}" if driver.name_driver else "No asignado"
 
                 # Serializar el vehículo (en lugar de pasar el objeto completo)
                 vehicle_info = {

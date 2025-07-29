@@ -25,7 +25,7 @@ urlpatterns = [
     path("get_user_with_access/", views.get_user_with_access),
     path("get_users_with_access/", views.get_users_with_access),
     path("update_user_with_access/", views.update_user_with_access),
-    path("delete_user_with_access/", views.update_user_with_access),
+    path("delete_user_with_access/", views.delete_user_with_access),
     path("get_userPermissions/", views.get_userPermissions),
     path("update_userPermissions/", views.update_userPermissions),
 
@@ -39,7 +39,7 @@ urlpatterns = [
     path("add_area/", views.add_area),
     path("get_areas/", views.get_areas),
     path("update_area/", views.update_area),
-
+    path("delete_area/", views.delete_area),
     #------[Planes]--------
     path("get_table_plans/", views.get_table_plans),
     path("get_company_plan/", views.get_company_plan),
