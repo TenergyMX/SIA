@@ -757,6 +757,11 @@ class Services_Category(models.Model):
     is_active_category = models.BooleanField(default=True, verbose_name="¿Está Activo?")
     description_category = models.TextField(blank=True, null=True, verbose_name="Descripción")
 
+class Services_locations(models.Model):
+    name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre")
+    status = models.BooleanField(default=True, verbose_name="¿Está activa la ubicación?")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True) 
+  
 #tabla servicios submodulo num.33
 class Services(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
@@ -772,6 +777,7 @@ class Services(models.Model):
         ('year', 'Año(s)')
     ], verbose_name="Unidad de Tiempo")
     price_service = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad de servicios')
+    location = models.ForeignKey(Services_locations, on_delete=models.CASCADE, verbose_name="Ubicación" ,blank=True, null=True)
 
 #tabla pagos de servicios submodulo num.34
 class Payments_Services(models.Model):

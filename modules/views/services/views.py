@@ -601,6 +601,7 @@ def add_service(request):
             time_quantity_service = int(request.POST.get('time_quantity_service'))  
             time_unit_service = request.POST.get('time_unit_service')
             price_service = request.POST.get('price_service')
+            location_id = request.POST.get('service_location')
 
             # Validaciones
             if not all([category_service_id, name_service, description_service, provider_service_id, 
@@ -614,6 +615,8 @@ def add_service(request):
             # Obtener objetos relacionados
             category_service = get_object_or_404(Services_Category, id=category_service_id)
             provider_service = get_object_or_404(Provider, id=provider_service_id)
+            location = get_object_or_404(Services_locations, id=location_id)
+
 
             # Crear un nuevo servicio
             with transaction.atomic():
@@ -627,6 +630,7 @@ def add_service(request):
                     time_quantity_service=time_quantity_service,
                     time_unit_service=time_unit_service,
                     price_service=price_service,    
+                    location=location,
                 )
 
                 # Generar el primer pago al registrar el servicio
@@ -660,16 +664,19 @@ def edit_services(request):
             time_quantity_service = request.POST.get('time_quantity_service')
             time_unit_service = request.POST.get('time_unit_service')
             price_service = request.POST.get('price_service')
+            location_id = request.POST.get('service_location', '').strip().rstrip(',')
 
             # Validaciones
             if not all([_id, category_service_id, name_service, description_service, provider_service,
-                        start_date_service, time_quantity_service, time_unit_service, price_service]):
+                        start_date_service, time_quantity_service, time_unit_service, price_service, location_id]):
                 return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
 
             services = Services.objects.get(id=_id)
 
             # Convertir `time_quantity_service` a entero
             time_quantity_service = int(time_quantity_service)
+            location = get_object_or_404(Services_locations, id=location_id)
+
 
             
             # Verificar duplicados (sin importar mayúsculas o minúsculas)
@@ -690,6 +697,7 @@ def edit_services(request):
             services.time_quantity_service = time_quantity_service
             services.time_unit_service = time_unit_service
             services.price_service = price_service
+            services.location = location 
 
             services.save()
 
@@ -1164,3 +1172,70 @@ def get_payment_history_grafic(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error interno: {str(e)}'}, status=500)
+
+
+# Funcion para obtener los nombres de las ubicaciones
+def get_services_locations(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+
+        ubicaciones = Services_locations.objects.filter(
+            company_id=company_id
+        ).values('id', 'name')  
+        data = list(ubicaciones)
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+
+# Función para agregar una nueva ubicación
+def add_service_location(request):
+    if request.method == 'POST':
+        try:
+            # Obtener la información del usuario
+            context = user_data(request)
+            company_data = context.get("company") 
+            name = request.POST.get('name')
+
+            print(f"Nombre de ubicación: {name}, Empresa (dict): {company_data}")
+
+            if not name or not company_data:
+                return JsonResponse({'success': False, 'message': 'El nombre y la empresa son requeridos.'}, status=400)
+
+            # Convertir el dict en instancia del modelo Company
+            company_id = company_data.get("id")
+            company = get_object_or_404(Company, id=company_id)
+
+            # Verificar duplicado
+            if Services_locations.objects.filter(name__iexact=name, company=company).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ya existe una ubicación con ese nombre para esta empresa.'
+                }, status=400)
+
+            # Crear la nueva ubicación
+            new_location = Services_locations.objects.create(
+                name=name,
+                company=company,
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Ubicación agregada exitosamente.',
+                'new_location': {
+                    'id': new_location.id,
+                    'name': new_location.name,
+                }
+            })
+
+        except Exception as e:
+            print(f"Error al agregar ubicación: {str(e)}")
+            return JsonResponse({'success': False, 'message': 'Error interno del servidor.'}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido.'}, status=405)
+

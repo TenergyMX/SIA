@@ -1,92 +1,92 @@
-$(document).ready(function() {
+$(document).ready(function () {
     table_services();
     updatePaymentStatus();
 });
 
 function table_services() {
-    $('#table_services').DataTable({
+    $("#table_services").DataTable({
         destroy: true,
         processing: true,
         ajax: {
             url: "/get_table_services/",
-            type: 'GET',
-            dataSrc: 'data',
-
+            type: "GET",
+            dataSrc: "data",
         },
         columns: [
-            { data: 'id' },
-            { data: 'category_service__name_category' },//categoria
-            { data: 'name_service' },
-            { data: 'description_service' },
-            { data: 'provider_service__name' },//proveedor 
-            { data: 'start_date_service' },
-            { data: 'periodo' },
-            { data: 'payment_date' },  // fecha_pago
-            { data: 'price_service' },
+            { data: "id" },
+            { data: "category_service__name_category" }, //categoria
+            { data: "name_service" },
+            { data: "description_service" },
+            { data: "provider_service__name" }, //proveedor
+            { data: "start_date_service" },
+            { data: "periodo" },
+            { data: "payment_date" }, // fecha_pago
+            { data: "price_service" },
             {
-                data: 'btn_history',
-                render: function(data, type, row) {
+                data: "btn_history",
+                render: function (data, type, row) {
                     return `<button class="btn btn-primary btn-history" onclick="show_history_payments(this)">
                                 <i class="fa-solid fa-eye"></i> Ver historial
                             </button>`;
-                }
+                },
             },
-            { 
+            {
                 data: "btn_action",
-                render: function(data, type, row) {
-                    return data;  
-                }
-            }
+                render: function (data, type, row) {
+                    return data;
+                },
+            },
         ],
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
-        pageLength: 10
+        pageLength: 10,
     });
 }
-
 
 // Función para cargar las categorías en el select
 function get_services_categories(selectedCategoryId) {
     $.ajax({
-        url: '/get_services_categories/',
-        type: 'GET',
-        success: function(response) {
-            var select = $('#category_service');
+        url: "/get_services_categories/",
+        type: "GET",
+        success: function (response) {
+            var select = $("#category_service");
             select.html(null); // Limpiar las opciones existentes
             select.append("<option value='' disabled selected>Seleccione una categoría</option>");
-            $.each(response.data, function(index, value) {
-                var selected = value.id == selectedCategoryId ? 'selected' : '';
+            $.each(response.data, function (index, value) {
+                var selected = value.id == selectedCategoryId ? "selected" : "";
                 select.append(
                     `<option value="${value.id}" ${selected}>${value.name_category}</option>`
                 );
             });
         },
-        error: function(error) {
-            console.error('Error al cargar categorías:', error);
-            alert('Hubo un error al cargar las categorías.');
-        }
+        error: function (error) {
+            console.error("Error al cargar categorías:", error);
+            alert("Hubo un error al cargar las categorías.");
+        },
     });
 }
 
 //Función para cargar los nombres de los proveedores han sido registrados
 function get_services_providers(selectedProviderId) {
     $.ajax({
-        url: '/get_services_providers/', 
-        type: 'GET',
-        success: function(response) {
-            var select = $('#provider_service');
+        url: "/get_services_providers/",
+        type: "GET",
+        success: function (response) {
+            var select = $("#provider_service");
             select.html("<option value='' disabled selected>Seleccione proveedor</option>");
-            $.each(response.data, function(index, provider) {
-                var selected = provider.id == selectedProviderId ? 'selected' : '';
-                select.append(`<option value="${provider.id}" ${selected}>${provider.name}</option>`);
+            $.each(response.data, function (index, provider) {
+                var selected = provider.id == selectedProviderId ? "selected" : "";
+                select.append(
+                    `<option value="${provider.id}" ${selected}>${provider.name}</option>`
+                );
             });
             select.val(selectedProviderId); // Establecer el valor seleccionado después de agregar las opciones
         },
-        error: function(error) {
-            console.error('Error al cargar los proveedores:', error);
-            alert('Hubo un error al cargar los proveedores.');
-        }
+        error: function (error) {
+            console.error("Error al cargar los proveedores:", error);
+            alert("Hubo un error al cargar los proveedores.");
+        },
     });
 }
 
@@ -95,33 +95,42 @@ function add_services(button) {
     var obj_modal = $("#mdl-crud-services");
     obj_modal.modal("show");
 
-    var row = $(button).closest('tr');
-    var data = $('#table_services').DataTable().row(row).data();
+    var row = $(button).closest("tr");
+    var data = $("#table_services").DataTable().row(row).data();
 
-    // Cargar las categorias 
+    // Cargar las categorias
     get_services_categories();
     //cargar los proveedores
     get_services_providers();
-
+    // Cargar las ubicaciones
+    get_services_locations();
 }
 
 // Función para agregar un servicio
 function add_service() {
-    var form = $('#form_services')[0];
+    var form = $("#form_services")[0];
     var formData = new FormData(form);
 
     // Validar campos
-    var categoryService = formData.get('category_service');
-    var nameService = formData.get('name_service').trim();
-    var descriptionService = formData.get('description_service').trim();
-    var providerService = formData.get('provider_service');
-    var startDateService = formData.get('start_date_service');
-    var timeQuantityService = formData.get('time_quantity_service');
-    var timeUnitService = formData.get('time_unit_service');
-    var priceService = formData.get('price_service');
+    var categoryService = formData.get("category_service");
+    var nameService = formData.get("name_service").trim();
+    var descriptionService = formData.get("description_service").trim();
+    var providerService = formData.get("provider_service");
+    var startDateService = formData.get("start_date_service");
+    var timeQuantityService = formData.get("time_quantity_service");
+    var timeUnitService = formData.get("time_unit_service");
+    var priceService = formData.get("price_service");
 
-    if (!categoryService || !nameService || !descriptionService || !providerService ||
-        !startDateService || !timeQuantityService || !timeUnitService || !priceService) {
+    if (
+        !categoryService ||
+        !nameService ||
+        !descriptionService ||
+        !providerService ||
+        !startDateService ||
+        !timeQuantityService ||
+        !timeUnitService ||
+        !priceService
+    ) {
         Swal.fire({
             title: "¡Error!",
             text: "Todos los campos son obligatorios.",
@@ -131,22 +140,22 @@ function add_service() {
     }
 
     $.ajax({
-        url: '/add_service/', 
-        type: 'POST',
+        url: "/add_service/",
+        type: "POST",
         data: formData,
         processData: false,
         contentType: false,
-        success: function(response) {
+        success: function (response) {
             if (response.success) {
-                $('#form_services')[0].reset();
-                $('#mdl-crud-services').modal('hide');
+                $("#form_services")[0].reset();
+                $("#mdl-crud-services").modal("hide");
                 Swal.fire({
                     title: "¡Éxito!",
                     text: response.message,
                     icon: "success",
-                    timer: 1500
+                    timer: 1500,
                 });
-                $('#table_services').DataTable().ajax.reload();
+                $("#table_services").DataTable().ajax.reload();
             } else {
                 Swal.fire({
                     title: "¡Error!",
@@ -156,7 +165,7 @@ function add_service() {
                 });
             }
         },
-        error: function(error) {
+        error: function (error) {
             console.error("Error al guardar el servicio:", error);
             Swal.fire({
                 title: "¡Error!",
@@ -168,16 +177,15 @@ function add_service() {
     });
 }
 
-
 // Evento para el botón de editar
 function edit_services(boton) {
-    var row = $(boton).closest('tr');
-    var data = $('#table_services').DataTable().row(row).data();
+    var row = $(boton).closest("tr");
+    var data = $("#table_services").DataTable().row(row).data();
     // Mostrar el modal
-    $('#mdl-crud-services').modal('show');
-    
+    $("#mdl-crud-services").modal("show");
+
     // Cambiar el título del modal para indicar que es una actualización
-    $('#mdl-crud-services .modal-title').text('Editar Servicio');
+    $("#mdl-crud-services .modal-title").text("Editar Servicio");
 
     // Cargar los datos en el formulario
     $('#form_services [name="id"]').val(data.id);
@@ -193,55 +201,65 @@ function edit_services(boton) {
     get_services_categories(data.category_service__id);
     // Cargar proveedores y seleccionar la categoría actual
     get_services_providers(data.provider_service__id);
+    get_services_locations(data.location_id);
 
     // Configurar el formulario para editar
-    $('#form_services').attr('onsubmit', 'edit_service(); return false');
-    
+    $("#form_services").attr("onsubmit", "edit_service(); return false");
 }
 
 //funcion para editar los servicios
 function edit_service() {
-    var form = $('#form_services')[0];
+    var form = $("#form_services")[0];
     var formData = new FormData(form);
 
     // Validar campos
-    var categoryService = formData.get('category_service');
-    var nameService = formData.get('name_service').trim();
-    var descriptionService = formData.get('description_service').trim();
-    var providerService = formData.get('provider_service');
-    var startDateService = formData.get('start_date_service');
-    var timeQuantityService = formData.get('time_quantity_service');
-    var timeUnitService = formData.get('time_unit_service');
-    var priceService = formData.get('price_service');
+    var categoryService = formData.get("category_service");
+    var nameService = formData.get("name_service").trim();
+    var descriptionService = formData.get("description_service").trim();
+    var providerService = formData.get("provider_service");
+    var startDateService = formData.get("start_date_service");
+    var timeQuantityService = formData.get("time_quantity_service");
+    var timeUnitService = formData.get("time_unit_service");
+    var priceService = formData.get("price_service");
+    var serviceLocation = $("#service_location").val();
 
-    if (!categoryService || !nameService || !descriptionService || !providerService ||
-        !startDateService || !timeQuantityService || !timeUnitService || !priceService) {
+    if (
+        !categoryService ||
+        !nameService ||
+        !descriptionService ||
+        !providerService ||
+        !startDateService ||
+        !timeQuantityService ||
+        !timeUnitService ||
+        !priceService ||
+        !serviceLocation
+    ) {
         Swal.fire({
             title: "¡Error!",
             text: "Todos los campos son obligatorios.",
             icon: "error",
-            showConfirmButton: true
+            showConfirmButton: true,
         });
         return;
     }
-    
+
     $.ajax({
-        url: '/edit_services/', 
-        type: 'POST',
+        url: "/edit_services/",
+        type: "POST",
         data: formData,
         processData: false,
         contentType: false,
-        success: function(response) {
+        success: function (response) {
             if (response.success) {
-                $('#form_services')[0].reset();
-                $('#mdl-crud-services').modal('hide');
+                $("#form_services")[0].reset();
+                $("#mdl-crud-services").modal("hide");
                 Swal.fire({
                     title: "¡Éxito!",
                     text: response.message,
                     icon: "success",
-                    timer: 1500
+                    timer: 1500,
                 });
-                $('#table_services').DataTable().ajax.reload(); 
+                $("#table_services").DataTable().ajax.reload();
             } else {
                 Swal.fire({
                     title: "¡Error!",
@@ -250,7 +268,7 @@ function edit_service() {
                 });
             }
         },
-        error: function(xhr, error) {
+        error: function (xhr, error) {
             // Extraer el mensaje de error del servidor
             let errorMessage = "Hubo un error al actualizar el servicio.";
             if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -269,8 +287,8 @@ function edit_service() {
 
 // Función para eliminar un servicio
 function delete_services(boton) {
-    var row = $(boton).closest('tr');
-    var data = $('#table_services').DataTable().row(row).data();
+    var row = $(boton).closest("tr");
+    var data = $("#table_services").DataTable().row(row).data();
     Swal.fire({
         title: "¿Estás seguro?",
         text: "¡No podrás revertir esta acción!",
@@ -278,59 +296,149 @@ function delete_services(boton) {
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
-        confirmButtonText: "Sí, elimínalo!"
+        confirmButtonText: "Sí, elimínalo!",
     }).then((result) => {
         if (result.isConfirmed) {
             // Si el usuario confirma la eliminación, hacer la solicitud AJAX
             $.ajax({
-                url: '/delete_services/',
-                type: 'POST',
+                url: "/delete_services/",
+                type: "POST",
                 data: {
-                    id: data.id
+                    id: data.id,
                 },
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader('X-CSRFToken', $('input[name="csrfmiddlewaretoken"]').val());
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader(
+                        "X-CSRFToken",
+                        $('input[name="csrfmiddlewaretoken"]').val()
+                    );
                 },
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
                         Swal.fire({
                             title: "¡Eliminado!",
                             text: response.message,
                             icon: "success",
-                            timer: 1500
+                            timer: 1500,
                         }).then(() => {
                             // Recargar la tabla después de la eliminación exitosa
-                            $('#table_services').DataTable().ajax.reload();
+                            $("#table_services").DataTable().ajax.reload();
                         });
                     } else {
                         Swal.fire("Error", response.message, "error");
                     }
                 },
-                error: function(error) {
+                error: function (error) {
                     console.error("Error al eliminar la categoría:", error);
                     Swal.fire("Error", "Hubo un error al eliminar la categoría.", "error");
-                }
+                },
             });
         }
     });
 }
 
-
-//función para actualizar estado de pago 
+//función para actualizar estado de pago
 function updatePaymentStatus() {
-
     $.ajax({
-        url: '/update_payment_status_view/', 
-        type: 'GET',  
-        dataType: 'json',  
-        success: function(response) {
-            if (response.status === 'success') {
+        url: "/update_payment_status_view/",
+        type: "GET",
+        dataType: "json",
+        success: function (response) {
+            if (response.status === "success") {
             } else {
                 console.error("Error al actualizar los pagos:", response.message);
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error("Error en la solicitud AJAX:", error);
+        },
+    });
+}
+
+//funcion para mostrar las opciones en el select al momento de cargar el modal para agregar una nueva ubicacion
+function get_services_locations(selectedLocationId) {
+    $.ajax({
+        url: "/get_services_locations/",
+        type: "GET",
+        success: function (response) {
+            const select = $("#service_location");
+            select.html(
+                "<option value='' disabled selected>Seleccione una de las ubicaciones existentes</option>"
+            );
+            $.each(response.data, function (index, location) {
+                const selected = location.id == selectedLocationId ? "selected" : "";
+                select.append(
+                    `<option value="${location.id}" ${selected}>${location.name}</option>`
+                );
+            });
+            // opción para agregar una nueva ubicación
+            select.append('<option value="add_new">Agregar otra ubicación no existente</option>');
+        },
+        error: function (xhr, status, error) {
+            console.error("Error al cargar las ubicaciones:", error);
+            alert("Hubo un error al cargar las ubicaciones. Inténtelo de nuevo más tarde.");
+        },
+    });
+}
+
+//fucion para mostrar el modal de una nueva ubicacion
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("service_location").addEventListener("change", function () {
+        if (this.value === "add_new") {
+            var locationModal = new bootstrap.Modal(
+                document.getElementById("mdl-crud-service-location")
+            );
+            locationModal.show();
+            this.value = "";
         }
+    });
+});
+
+// Función para agregar una nueva ubicación
+function add_service_location() {
+    var form = $("#form_service_location")[0];
+    var formData = new FormData(form);
+
+    $.ajax({
+        url: "/add_service_location/",
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (response) {
+            // Verifica la respuesta
+            if (response.success) {
+                $("#form_service_location")[0].reset();
+                $("#mdl-crud-service-location").modal("hide"); // Cierra el modal
+
+                // Actualiza el select de ubicaciones
+                var select = $("#service_location");
+                var newOption = new Option(response.new_location.name, response.new_location.id);
+                select.append(newOption);
+
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                });
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message,
+                    icon: "error",
+                });
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error("Error al guardar la ubicación:", error);
+            Swal.fire({
+                title: "¡Error!",
+                text: "Hubo un error al guardar la ubicación. Intenta nuevamente.",
+                icon: "error",
+            });
+        },
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRFToken", $('input[name="csrfmiddlewaretoken"]').val());
+        },
     });
 }
