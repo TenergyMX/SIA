@@ -11,83 +11,33 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='vehicle',
-            name='apply_tenencia',
-            field=models.BooleanField(default=False, verbose_name='Aplica tenencia'),
-        ),
-        migrations.CreateModel(
-            name='Placas',
+                migrations.CreateModel(
+            name='StripeProducts',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('plate', models.CharField(max_length=255)),
-                ('type_plate', models.CharField(blank=True, max_length=64, null=True)),
-                ('fecha_emision', models.DateField()),
-                ('fecha_vencimiento', models.DateField()),
-                ('entidad_emisora', models.CharField(blank=True, max_length=64, null=True)),
-                ('comments', models.TextField(blank=True, null=True, verbose_name='Comentarios')),
-                ('status', models.CharField(default='blank', max_length=255)),
-                ('document_placa', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='documento de placa')),
-                ('vehiculo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle')),
+                ('name', models.CharField(blank=True, max_length=254, null=True)),
+                ('stripedID', models.CharField(blank=True, max_length=44)),
+                ('description', models.CharField(blank=True, max_length=254)),
+                ('tagPrice', models.DecimalField(decimal_places=2, max_digits=9)),
+                ('price', models.DecimalField(decimal_places=0, max_digits=9)),
+                ('active', models.BooleanField(default=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
             ],
         ),
-        migrations.CreateModel(
-            name='Facturas_Vehicle',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fecha_vencimiento', models.DateField()),
-                ('number', models.CharField(max_length=255)),
-                ('status', models.CharField(default='blank', max_length=255)),
-                ('comments', models.TextField(blank=True, null=True, verbose_name='Comentarios')),
-                ('document_factura', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='documento de factura')),
-                ('name_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, verbose_name='Nombre del conductor')),
-                ('vehiculo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle')),
-            ],
+        migrations.AlterField(
+            model_name='multas',
+            name='cost',
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=50, null=True, verbose_name='Costo'),
         ),
-        migrations.CreateModel(
-            name='Hologram_Vehicle',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_hologram', models.DateField()),
-                ('document_hologram', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='documento de holograma')),
-                ('vehiculo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle')),
-            ],
+        migrations.AlterField(
+            model_name='plans',
+            name='type_plan',
+            field=models.CharField(choices=[('basic', 'Basico'), ('advanced', 'Avanzado'), ('premium', 'Premium'), ('elite', 'Elite'), ('esential', 'Esential')], default='pending', max_length=10, verbose_name='Tipo de plan'),
         ),
-        migrations.CreateModel(
-            name='Contract_Vehicle',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('type_contract', models.CharField(blank=True, max_length=64, null=True)),
-                ('fecha_contract', models.DateField()),
-                ('fecha_finiquito', models.DateField()),
-                ('status_modified', models.BooleanField(default=False, verbose_name='Estado modificado')),
-                ('document_contract', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='documento de contrato')),
-                ('document_letter', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='carta de finiquito')),
-                ('is_canceled', models.BooleanField(default=False, verbose_name='Contrato cancelado')),
-                ('vehiculo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Carnet_Vehicle',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_carnet', models.DateField()),
-                ('document_carnet', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='documento de carnet')),
-                ('vehiculo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Card_Vehicle',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('number_card', models.CharField(max_length=50)),
-                ('type_card', models.CharField(blank=True, max_length=64, null=True)),
-                ('status', models.CharField(default='blank', max_length=255)),
-                ('document_card', models.FileField(blank=True, null=True, upload_to='docs/', verbose_name='documento de tarjeta')),
-                ('fecha_vencimiento', models.DateField(blank=True, null=True, verbose_name='Fecha')),
-                ('name_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, verbose_name='Nombre del conductor')),
-                ('vehiculo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='modules.vehicle')),
-            ],
+        migrations.AlterField(
+            model_name='vehicle_insurance',
+            name='status',
+            field=models.CharField(choices=[('PAGADO', 'PAGADO'), ('PROXIMO', 'PROXIMO'), ('VENCIDO', 'VENCIDO'), ('PENDIENTE', 'PENDIENTE'), ('HISTORICO', 'HISTORICO')], default='PROXIMO', max_length=20),
         ),
 
     ]
