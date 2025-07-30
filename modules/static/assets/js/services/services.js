@@ -51,8 +51,8 @@ function get_services_categories(selectedCategoryId) {
         type: "GET",
         success: function (response) {
             var select = $("#category_service");
-            select.html(null); // Limpiar las opciones existentes
-            select.append("<option value='' disabled selected>Seleccione una categoría</option>");
+            select.empty(); // Limpiar el select antes de agregar nuevas opciones
+            select.append("<option value='' disabled>Seleccione una categoría</option>");
             $.each(response.data, function (index, value) {
                 var selected = value.id == selectedCategoryId ? "selected" : "";
                 select.append(
@@ -181,7 +181,7 @@ function add_service() {
 function edit_services(boton) {
     var row = $(boton).closest("tr");
     var data = $("#table_services").DataTable().row(row).data();
-    // Mostrar el modal
+    // Mostrar el modal'
     $("#mdl-crud-services").modal("show");
 
     // Cambiar el título del modal para indicar que es una actualización
@@ -191,18 +191,22 @@ function edit_services(boton) {
     $('#form_services [name="id"]').val(data.id);
     $('#form_services [name="name_service"]').val(data.name_service);
     $('#form_services [name="description_service"]').val(data.description_service);
-    $('#form_services [name="provider_service"]').val(data.provider_service);
     $('#form_services [name="start_date_service"]').val(data.start_date_service);
     $('#form_services [name="time_quantity_service"]').val(data.time_quantity_service);
     $('#form_services [name="time_unit_service"]').val(data.time_unit_service);
     $('#form_services [name="price_service"]').val(data.price_service);
 
+    console.log("ID categoría recibida:", data.category_service__id);
+
     // Cargar categorías y seleccionar la categoría actual
     get_services_categories(data.category_service__id);
     // Cargar proveedores y seleccionar la categoría actual
     get_services_providers(data.provider_service__id);
-    get_services_locations(data.location_id);
+    get_services_locations(data.location__id);
 
+    console.log("Categoria:", data.category_service__id);
+    console.log("Proveedor:", data.provider_service__id);
+    console.log("Ubicación:", data.location__id);
     // Configurar el formulario para editar
     $("#form_services").attr("onsubmit", "edit_service(); return false");
 }

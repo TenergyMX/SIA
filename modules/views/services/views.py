@@ -363,7 +363,7 @@ def get_table_services (request):
         datos = list(Services.objects.filter(
             company_id=company_id
         ).select_related(
-            'category_service', 'provider_service'
+            'category_service', 'provider_service', 'location' 
         ).values(
             "id", 
             "category_service__id",
@@ -376,6 +376,8 @@ def get_table_services (request):
             "time_quantity_service",
             "time_unit_service",
             "price_service",
+            "location__id",                    
+            "location__name", 
         ))
 
         # Mapa de traducción para unidades de tiempo
@@ -664,7 +666,8 @@ def edit_services(request):
             time_quantity_service = request.POST.get('time_quantity_service')
             time_unit_service = request.POST.get('time_unit_service')
             price_service = request.POST.get('price_service')
-            location_id = request.POST.get('service_location', '').strip().rstrip(',')
+            location_id = request.POST.get('service_location', '').strip()
+
 
             # Validaciones
             if not all([_id, category_service_id, name_service, description_service, provider_service,
