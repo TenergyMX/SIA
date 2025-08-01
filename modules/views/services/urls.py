@@ -46,6 +46,8 @@ urlpatterns = [
 
     path('get_services_by_date_range/', views.get_services_by_date_range),
 
+    path('get_services_by_location/<int:location_id>/', views.get_services_by_location),
+
 
     path('get_payment_history_notifications/<int:service_id>/', views.get_payment_history_notifications),
 
@@ -58,6 +60,7 @@ urlpatterns = [
     path('get_services_locations/', views.get_services_locations),
     path('add_service_location/', views.add_service_location),
 
+    path('get_services_filtered/', views.get_services_filtered),
 
 ]
 

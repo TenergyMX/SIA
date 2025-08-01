@@ -22,6 +22,7 @@ function table_services() {
             { data: "periodo" },
             { data: "payment_date" }, // fecha_pago
             { data: "price_service" },
+            { data: "location__name" },
             {
                 data: "btn_history",
                 render: function (data, type, row) {
@@ -45,14 +46,20 @@ function table_services() {
 }
 
 // Función para cargar las categorías en el select
-function get_services_categories(selectedCategoryId) {
+function get_services_categories(selectedCategoryId = null) {
     $.ajax({
         url: "/get_services_categories/",
         type: "GET",
         success: function (response) {
             var select = $("#category_service");
-            select.empty(); // Limpiar el select antes de agregar nuevas opciones
-            select.append("<option value='' disabled>Seleccione una categoría</option>");
+            select.empty();
+
+            // Si no hay categoría seleccionada
+            var defaultSelected = selectedCategoryId === null ? "selected" : "";
+            select.append(
+                `<option value='' disabled ${defaultSelected}>Seleccione una categoría</option>`
+            );
+
             $.each(response.data, function (index, value) {
                 var selected = value.id == selectedCategoryId ? "selected" : "";
                 select.append(
@@ -68,20 +75,23 @@ function get_services_categories(selectedCategoryId) {
 }
 
 //Función para cargar los nombres de los proveedores han sido registrados
-function get_services_providers(selectedProviderId) {
+function get_services_providers(selectedProviderId = null) {
     $.ajax({
         url: "/get_services_providers/",
         type: "GET",
         success: function (response) {
             var select = $("#provider_service");
-            select.html("<option value='' disabled selected>Seleccione proveedor</option>");
-            $.each(response.data, function (index, provider) {
-                var selected = provider.id == selectedProviderId ? "selected" : "";
-                select.append(
-                    `<option value="${provider.id}" ${selected}>${provider.name}</option>`
-                );
+            select.empty(); // Limpia correctamente
+
+            var defaultSelected = selectedProviderId === null ? "selected" : "";
+            select.append(
+                `<option value='' disabled ${defaultSelected}>Seleccione un proveedor</option>`
+            );
+
+            $.each(response.data, function (index, value) {
+                var selected = value.id == selectedProviderId ? "selected" : "";
+                select.append(`<option value="${value.id}" ${selected}>${value.name}</option>`);
             });
-            select.val(selectedProviderId); // Establecer el valor seleccionado después de agregar las opciones
         },
         error: function (error) {
             console.error("Error al cargar los proveedores:", error);
@@ -359,27 +369,28 @@ function updatePaymentStatus() {
 }
 
 //funcion para mostrar las opciones en el select al momento de cargar el modal para agregar una nueva ubicacion
-function get_services_locations(selectedLocationId) {
+function get_services_locations(selectedLocationId = null) {
     $.ajax({
         url: "/get_services_locations/",
         type: "GET",
         success: function (response) {
-            const select = $("#service_location");
-            select.html(
-                "<option value='' disabled selected>Seleccione una de las ubicaciones existentes</option>"
+            var select = $("#service_location");
+            select.empty(); // Limpiar opciones previas
+
+            var defaultSelected = selectedLocationId === null ? "selected" : "";
+            select.append(
+                `<option value='' disabled ${defaultSelected}>Seleccione una ubicación</option>`
             );
-            $.each(response.data, function (index, location) {
-                const selected = location.id == selectedLocationId ? "selected" : "";
-                select.append(
-                    `<option value="${location.id}" ${selected}>${location.name}</option>`
-                );
+
+            $.each(response.data, function (index, value) {
+                var selected = value.id == selectedLocationId ? "selected" : "";
+                select.append(`<option value="${value.id}" ${selected}>${value.name}</option>`);
             });
-            // opción para agregar una nueva ubicación
-            select.append('<option value="add_new">Agregar otra ubicación no existente</option>');
+            select.append(`<option value="add_new">Agregar nueva ubicación</option>`);
         },
-        error: function (xhr, status, error) {
+        error: function (error) {
             console.error("Error al cargar las ubicaciones:", error);
-            alert("Hubo un error al cargar las ubicaciones. Inténtelo de nuevo más tarde.");
+            alert("Hubo un error al cargar las ubicaciones.");
         },
     });
 }

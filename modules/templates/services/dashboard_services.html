@@ -102,16 +102,16 @@
                                 <h5>Gráfica por filtros</h5>
                             </div>
                             <div class="d-flex flex-row">
-                                <div class="col-md-4 mb-2 me-2">
+                                <div class="col-md-3 mb-2 me-2">
                                     <label for="category">Categoría de servicio</label>
                                     <select name="category" id="category" class="form-select" required>
                                         <option value="" disabled selected>Seleccione una categoría</option>
                                     </select>
                                 </div>
 
-                                
+    
                                 <!-- Filtro Rango de Fecha -->
-                                <div class="col-md-4 mb-2 me-2">
+                                <div class="col-md-3 mb-2 me-2">
                                     <label for="date_service">Rango de fecha de servicio</label>
                                     <div class="d-flex gap-2">
                                         <div class="col-md-6">
@@ -127,60 +127,45 @@
                                 
                                 
 
-                                <div class="col-md-4 mb-2 me-2">
+                                <div class="col-md-3 mb-2 me-2">
                                     <label for="provider_services">Proveedor de servicio</label>
                                     <select name="provider_services" id="provider_services" class="form-select" required>
                                         <option value="" disabled selected>Seleccione un proveedor</option>
                                     </select>
                                 </div>
+
+                                <div class="col-md-3 mb-2 me-2">
+                                    <label for="ubication_services">Ubicación de servicio</label>
+                                    <select name="ubication_services" id="ubication_services" class="form-select" required>
+                                        <option value="" disabled selected>Seleccione una ubicacion</option>
+                                    </select>
+                                </div>
+
                             </div>
                         </div>
                     </div>
 
-                    <!-- Gráfica de Egresos por Categoría-->
-                    <div id="graficaCategoria" class="col-sm-12 col-lg-12" style="display: none;">
-                        <div class="card mb-0">
-                            <div class="card-body">
-                                <div>
-                                    <h5 id="categoryNameTitle">Gráfica de Servicios por Categoría</h5>
-                                    <canvas id="graficaEgresosCategoria" width="400" height="200"></canvas>
+                    <!-- NUEVA Gráfica por combinación de filtros -->
+                    <div class="col-sm-12 col-lg-12">
+                        <div id="graficaFiltradaContainer" style="display: none;">
+                            <div class="card mb-0">
+                                <div class="card-body">
+                                    <div>
+                                        <h5 id="tituloGraficaFiltrada">Gráfica por filtros</h5>
+                                        <canvas id="graficaEgresosFiltrada" width="400" height="200"></canvas>
+
+                                        <!-- Mensaje cuando no hay datos -->
+                                        <p id="mensajeSinDatos" class="text-center text-muted mt-3" style="display: none;">
+                                            No se encontró información de egresos con los filtros seleccionados.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Gráfica de Egresos por periodo de fecha: dia, semana, mes, año-->
-                    <div id="graficaRangoFechaContainer" class="col-sm-12 col-lg-12" style="display: none;">
-                        <div class="card mb-0">
-                            <div class="card-body">
-                                <div>
-                                    <h5>Gráfica de servicios por Rango de Fecha</h5>
-                                    <canvas id="graficaRangoFechaCanvas" width="400" height="200"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-
-                    <!-- Gráfica de Egresos por Proveedor -->
-                    <div id="graficaProveedor" class="col-sm-12 col-lg-12" style="display: none;">
-                        <div class="card mb-0">
-                            <div class="card-body">
-                                <div>
-
-                                    <h5 id="proveedor_nombre_actualizado">Gráfica de Servicios del proveedor</h5>
-                                    <canvas id="graficaEgresosProveedor" width="400" height="200"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
-                
-
             </div>
         </div>
-
     </div>
 </section>
 {% endblock %}

@@ -676,8 +676,10 @@ def edit_services(request):
 
             services = Services.objects.get(id=_id)
 
-            # Convertir `time_quantity_service` a entero
+            # Convertir tipos
             time_quantity_service = int(time_quantity_service)
+            price_service_float = float(price_service)
+            start_date_parsed = datetime.strptime(start_date_service, '%Y-%m-%d').date()
             location = get_object_or_404(Services_locations, id=location_id)
 
 
@@ -686,7 +688,8 @@ def edit_services(request):
             if Services.objects.filter(name_service__iexact=name_service, company_id=company_id).exclude(id=_id).exists():
                 return JsonResponse({'success': False, 'message': 'El nombre del servicio ya existe para esta empresa, ingresa uno diferente.'})
 
-           # Guardar el precio antiguo para compararlo
+            # Guardar valores antiguos
+            old_start_date = services.start_date_service
             old_price = services.price_service
 
 
@@ -699,15 +702,21 @@ def edit_services(request):
             services.start_date_service = start_date_service
             services.time_quantity_service = time_quantity_service
             services.time_unit_service = time_unit_service
-            services.price_service = price_service
+            services.price_service = price_service_float
             services.location = location 
 
             services.save()
 
-            # Crear un nuevo registro de pago con el nuevo precio
-            create_new_payment_for_service(services, price_service)
 
-
+            # Crear nuevo pago si cambió la fecha o el precio
+            if old_start_date != start_date_parsed or old_price != price_service_float:
+                try:
+                    create_new_payment_for_service(services, price_service_float)
+                except Exception as payment_error:
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'No se pudo generar un nuevo pago: {str(payment_error)}'
+                    })
 
             return JsonResponse({'success': True, 'message': 'Servicio editado correctamente!'})
 
@@ -1242,3 +1251,90 @@ def add_service_location(request):
 
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido.'}, status=405)
 
+
+
+# Función para obtener los servicios y egresos por ubicación
+def get_services_by_location(request, location_id):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                "status": "error",
+                "message": "No se encontró la empresa asociada al usuario"
+            }, status=400)
+
+        # Obtener la ubicación
+        location = Services_locations.objects.get(id=location_id)
+
+        # Filtrar servicios por ubicación y empresa
+        services = Services.objects.filter(location_id=location_id, company_id=company_id)
+
+
+        service_data = []
+        for service in services:
+            total_payment = Payments_Services.objects.filter(
+                name_service_payment=service,
+                status_payment='paid'
+            ).aggregate(total=Sum('total_payment'))['total'] or 0
+
+            service_data.append({
+                'service_name': service.name_service,
+                'total_payment': total_payment
+            })
+
+        return JsonResponse({
+            'status': 'success',
+            'data': service_data,
+            'location_name': location.name
+        })
+
+    except Services_locations.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Ubicación no encontrada'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+
+def get_services_filtered(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        category_id = request.GET.get("category_id")
+        provider_id = request.GET.get("provider_id")
+        location_id = request.GET.get("location_id")
+        start_date = request.GET.get("start_date")
+        end_date = request.GET.get("end_date")
+
+        services = Services.objects.filter(company_id=company_id)
+
+        if category_id:
+            services = services.filter(category_service_id=category_id)
+
+        if provider_id:
+            services = services.filter(provider_service_id=provider_id)
+
+        if location_id:
+            services = services.filter(location_id=location_id)
+
+        if start_date and end_date:
+            services = services.filter(start_date_service__range=[start_date, end_date])
+
+        service_data = []
+        for service in services:
+            total_payment = Payments_Services.objects.filter(
+                name_service_payment=service,
+                status_payment='paid'
+            ).aggregate(total=Sum('total_payment'))['total'] or 0
+
+            service_data.append({
+                'service_name': service.name_service,
+                'total_payment': total_payment
+            })
+
+        return JsonResponse({'status': 'success', 'data': service_data})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
