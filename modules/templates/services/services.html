@@ -4,6 +4,9 @@
     <h1 class="page-title fw-semibold fs-18 mb-0">
         Servicios 
     </h1>
+
+   
+
     <div class="ms-md-1 ms-0">
         <nav>
             <ol class="breadcrumb mb-0">
@@ -40,6 +43,15 @@
             </div>
         </div>
         <div class="card-body">
+            <div class="col-md-4">
+                <label for="">Selecciona un filtro</label>
+                <select name="filtro_type" class="form-select">
+                    <option value="Ubicacion">Ubicación</option>
+                    <option value="Proveedor">Proveedor</option>
+                    <option value="Categoria">Categoríaa</option>
+                    <option value="Fecha">Fecha</option>
+                </select>
+            </div>
             <!-- tabla -->
             <div class="table-responsive">
                 <table class="table table-bordered w-100" id="table_services">
@@ -54,7 +66,6 @@
                             <th>Periodo</th>
                             <th>Fecha de Pago</th>
                             <th>Precio </th>
-                            <th>Ubicación</th>
                             <th>Historial</th>
                             <th>Acciones</th>
                         </tr>
