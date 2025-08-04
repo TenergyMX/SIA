@@ -188,8 +188,8 @@ class Vehicle_Audit(models.Model):
     is_checked = models.BooleanField(default=False)
     is_visible = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    user_created = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True) 
     email_audit = models.BooleanField(default=False)
-
     def __str__(self):
         return f"Auditoría de {self.vehicle} el {self.audit_date}"
 
@@ -243,6 +243,7 @@ class Multas(models.Model):
 class Checks(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=64, blank=True, null=True)
+    img = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Imagen del chek")
 
 class Placas(models.Model):
     plate = models.CharField(max_length=255)                                               

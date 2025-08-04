@@ -2601,7 +2601,8 @@ def get_vehicle_audit(request):
                         "id": check_id,
                         "name": check_name if check_name else "Sin nombre",
                         "status": check_status,
-                        "notes": check_notes
+                        "notes": check_notes,
+                        "imagen_url": generate_presigned_url(AWS_BUCKET_NAME, check.get("imagen", "")) if check.get("imagen") else None
                     })
 
                 # Reemplazar el JSON con la nueva estructura
@@ -2623,6 +2624,12 @@ def get_vehicle_audit(request):
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"show-info-details\">
             <i class="fa-sharp fa-solid fa-eye"></i>
         </button>\n"""
+
+        if item.get("imagen_url"):
+            item["btn_action"] += f"""<a href="{item['imagen_url']}" target="_blank" class="btn btn-sm btn-info">
+                <i class="fa fa-image"></i> Ver Imagen
+            </a>\n"""
+
 
         # Si no está chequeada y visible, permitir la edición
         if not is_checked and is_visible:
@@ -4722,36 +4729,56 @@ def evaluate_audit(request):
             # Obtener el ID de la empresa desde el contexto del usuario
             context = user_data(request)
             company_id = context["company"]["id"]
+            vehicle_id = request.POST.get('vehicle_id', None)
+
+            # Obtener el ID de la auditoría
+            audit_id = request.POST.get('audit_id') 
 
             # Lista para almacenar los resultados de la auditoría
             audit_results = []
 
             for check in audit_data:
-                check_name = check["id"]  # Aquí viene el nombre del check
-                status = check["" \
-                ""]
+                check_name = check["id"] 
+                status = check["status"]
                 notas = check["notas"]
-
+                imagen = request.FILES.get('imagen', None)  # Asumir que solo hay una imagen por solicitud
+                
                 # Buscar el check en la base de datos por nombre y empresa
                 check_instance = Checks.objects.filter(name=check_name, company_id=company_id).first()
-                
+                S3name = ""
+
                 if check_instance:
                     # Actualizar el estado y las notas del check
                     check_instance.status = status
                     check_instance.notas = notas
                     check_instance.save()
 
+                    # Si hay una imagen, se procesa
+                    if imagen:
+                        # Crear un nombre único para la imagen
+                        folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/audit/{audit_id}/"
+                        file_name, extension = os.path.splitext(imagen.name)
+                        new_name = f"{check_name}{extension}"  # Nombre único basado en el check
+                        S3name = folder_path + new_name
+
+                        try:
+                            # Subir la imagen a S3
+                            upload_to_s3(imagen, bucket_name, S3name)
+                        except Exception as e:
+                            print(f"Error al subir la imagen: {str(e)}")
+                            S3name = ""  # Si la carga falla, no se guarda la imagen
+
                     # Formar la estructura corregida con el ID del check
                     audit_results.append({
                         "id": str(check_instance.id),  # Convertir a string si es necesario
                         "status": status,
-                        "notas": notas
+                        "notas": notas,
+                        "imagen": S3name or "",
                     })
-            
+
             # Buscar la auditoría de vehículo utilizando el ID de la auditoría
-            audit_id = request.POST.get('audit_id')
             vehicle_audit = Vehicle_Audit.objects.filter(id=audit_id).first()
-            
+
             if vehicle_audit:
                 # Actualizar el campo 'checks' con los resultados de la auditoría
                 vehicle_audit.checks = json.dumps(audit_results)
