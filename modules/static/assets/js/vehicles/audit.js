@@ -464,16 +464,25 @@ class VehiclesAudit {
                                     ? `<span>${checkItem.notes || "---"}</span>` // Mostrar las notas como texto si está chequeado
                                     : `<textarea class="form-control editable-textarea" rows="2" placeholder="Escribe las notas aquí..." ${
                                           datos.is_checked ? "readonly" : ""
-                                      }>${checkItem.notes || ""}</textarea>`; // Solo poner readonly si está chequeado
+                                      }>${checkItem.notes || ""}</textarea>`;
 
                                 // Crear la fila de la tabla
-                                var nuevaFila = `
+                                var nuevaFila =
+                                    `
                                     <tr>
                                         <th>${checkItem.name || "---"}</th>
                                         <td class="status">${selectStatus}</td>
                                         <td class="notes">${notesField}</td>
+                                        <td class="image">` +
+                                    (checkItem.imagen && checkItem.imagen !== ""
+                                        ? `<a href="${checkItem.imagen}" target="_blank" class="btn btn-sm btn-info">
+                                                <i class="fa fa-image"></i> Ver imagen
+                                            </a>`
+                                        : `<input type="file" accept="image/*" class="form-control form-control-sm check-image" name="imagen_${checkItem.name}">`) +
+                                    `</td>
                                     </tr>
-                                `;
+                                    `;
+
                                 tbody.append(nuevaFila);
                             });
                         }
@@ -510,7 +519,6 @@ class VehiclesAudit {
             }
         });
     }
-
 }
 // Botón para refrescar la tabla principal de vehículos
 $(document).on("click", "[data-vehicle-tenencia='refresh-table']", function () {
@@ -589,7 +597,7 @@ function upd_audit_checks() {
     var saveButton = $("#btn_guardar"); // Suponiendo que tu botón tiene el id 'btn_guardar'
     saveButton.prop("disabled", true);
 
-    var modal = document.getElementById("mdl_crud_audit"); // O document.querySelector("#mdl_crud_audit")
+    var modal = document.getElementById("mdl_crud_audit");
     var form = modal.querySelector("[name='form-vrt']");
     var formData = new FormData(form);
 
@@ -601,7 +609,7 @@ function upd_audit_checks() {
     formData.append("checks", JSON.stringify(checksArray));
 
     $.ajax({
-        url: "/upd_audit_checks/", // URL del endpoint
+        url: "/upd_audit_checks/",
         type: "POST",
         data: formData,
         processData: false,
@@ -701,46 +709,57 @@ function add_vehicle_audit() {
     });
 }
 
-function evaluate_audit(id) {
+function evaluate_audit(id, vehicle_id) {
     var auditData = [];
+    var formData = new FormData(); // Usamos FormData para enviar el archivo y los datos
 
-    // Recorremos todas las filas de la tabla
     $("#audit-checks-table tbody tr").each(function () {
         var row = $(this);
 
-        // Obtener el texto del <th> en la primera columna
-        var name = row.find("th").text().trim();
-
-        // Obtener el valor seleccionado del <select> en la segunda columna
+        var name = row.find("th").text().trim(); // Ej. "llantas"
         var status = row.find("td.status select").val();
-
-        // Obtener el texto del <textarea> en la tercera columna
         var notas = row.find("td.notes textarea").val().trim();
+        var imagenInput = row.find("td.image input[type='file']")[0];
+        console.log(imagenInput);
+        var imagenFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
+        console.log(imagenFile);
 
-        // Crear un objeto con los datos
         var checkData = {
             id: name,
             status: status,
             notas: notas,
+            imagen: imagenFile ? imagenFile.name : "", // o null si prefieres
         };
 
-        // Añadir el objeto a la lista de auditoría
         auditData.push(checkData);
-    });
-    var audit_id = id;
 
-    // Enviar los datos via AJAX al backend
+        if (imagenFile) {
+            // Asegura que el key no tenga espacios raros
+            formData.append(`imagen_${name.replace(/\s+/g, "_")}`, imagenFile);
+        }
+
+        // console.log("➕ Fila:", checkData);
+    });
+
+    formData.append("audit_id", id);
+    formData.append("audit_data", JSON.stringify(auditData));
+    formData.append("csrfmiddlewaretoken", $('input[name="csrfmiddlewaretoken"]').val());
+
+    // Mostrar qué se está enviando (debug)
+    // for (var pair of formData.entries()) {
+    //     console.log(pair[0], pair[1]);
+    // }
+
+    // Enviar los datos vía AJAX al backend usando FormData
     $.ajax({
         url: "/evaluate_audit/",
         type: "POST",
-        data: {
-            audit_id: audit_id,
-            audit_data: JSON.stringify(auditData),
-            csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
-        },
+        data: formData,
+        processData: false, // Importante: para no intentar procesar los datos (el archivo)
+        contentType: false, // Importante: para no establecer un tipo de contenido (el archivo se maneja automáticamente)
         success: function (response) {
             if (response.success) {
-                Swal.fire("Success", "Auditoria evaluada correctamente", "success");
+                Swal.fire("Success", "Auditoría evaluada correctamente", "success");
                 $("#table_audit").DataTable().ajax.reload();
                 $("#update-audit-btn").hide();
             } else {

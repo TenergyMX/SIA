@@ -15,4 +15,17 @@ class Migration(migrations.Migration):
             name='apply_tenencia',
             field=models.BooleanField(default=False, verbose_name='Aplica tenencia'),
         ),
+        migrations.CreateModel(
+            name='StripeProducts',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(blank=True, max_length=254, null=True)),
+                ('stripedID', models.CharField(blank=True, max_length=44)),
+                ('description', models.CharField(blank=True, max_length=254)),
+                ('tagPrice', models.DecimalField(decimal_places=2, max_digits=9)),
+                ('price', models.DecimalField(decimal_places=0, max_digits=9)),
+                ('active', models.BooleanField(default=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+            ],
+        ),
     ]
