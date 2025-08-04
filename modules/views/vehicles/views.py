@@ -2672,7 +2672,7 @@ def get_vehicles_audit(request):
     # Base auditorías vinculadas a vehículos
     base_audit_qs = Vehicle_Audit.objects.filter(vehicle__in=total_vehiculos)
 
-   # Excluir no visibles para roles no administrativos
+    # Excluir no visibles para roles no administrativos
     if context["role"]["id"] not in [1, 2, 3]:
         base_audit_qs = base_audit_qs.exclude(is_visible=False)
 
@@ -2695,7 +2695,6 @@ def get_vehicles_audit(request):
     if not context["role"]["id"] in [1, 2, 3]:
         base_audit_qs = base_audit_qs.exclude(is_visible=False)
 
-  
     # Filtrar según tipo_carga
     if tipo_carga == "evaluadas":
         lista_queryset = latest_only.filter(is_checked=True)
@@ -2708,8 +2707,7 @@ def get_vehicles_audit(request):
     else:  # todas
         lista_queryset = latest_only
 
- 
-   # Contadores
+    # Contadores
     response["counters"] = {
         "total": lista_queryset.count(),
         "total_vehiculos": total_vehiculos_count,
@@ -2755,13 +2753,17 @@ def get_vehicles_audit(request):
 
                     # Obtener el nombre del check
                     check_name = Checks.objects.filter(id=check_id).values_list("name", flat=True).first()
-
+                    imagen_check = generate_presigned_url(AWS_BUCKET_NAME, str(check.get("imagen", ""))) if check.get("imagen") else None
+                    print("aqui las url")
+                    print(imagen_check)
                     # Construir el nuevo objeto con toda la información
                     checks_with_names.append({
                         "id": check_id,
                         "name": check_name if check_name else "Sin nombre",
                         "status": check_status,
-                        "notes": check_notes
+                        "notes": check_notes,
+                        "imagen": imagen_check
+
                     })
 
                 # Reemplazar el JSON con la nueva estructura
@@ -4741,7 +4743,9 @@ def evaluate_audit(request):
                 check_name = check["id"] 
                 status = check["status"]
                 notas = check["notas"]
-                imagen = request.FILES.get('imagen', None)  # Asumir que solo hay una imagen por solicitud
+                # La clave esperada es como: imagen_llantas
+                file_key = f'imagen_{check_name}'
+                imagen = request.FILES.get(file_key, None)
                 
                 # Buscar el check en la base de datos por nombre y empresa
                 check_instance = Checks.objects.filter(name=check_name, company_id=company_id).first()

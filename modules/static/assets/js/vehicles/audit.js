@@ -474,15 +474,15 @@ class VehiclesAudit {
                                         <td class="status">${selectStatus}</td>
                                         <td class="notes">${notesField}</td>
                                         <td class="image">` +
-                                    (checkItem.imagen_url && checkItem.imagen_url !== ""
-                                        ? `<a href="${checkItem.imagen_url}" target="_blank" class="btn btn-sm btn-info">
-                                                    <i class="fa fa-image"></i> Ver imagen
+                                    (checkItem.imagen && checkItem.imagen !== ""
+                                        ? `<a href="${checkItem.imagen}" target="_blank" class="btn btn-sm btn-info">
+                                                <i class="fa fa-image"></i> Ver imagen
                                             </a>`
                                         : `<input type="file" accept="image/*" class="form-control form-control-sm check-image" name="imagen_${checkItem.name}">`) +
                                     `</td>
-
                                     </tr>
-                                `;
+                                    `;
+
                                 tbody.append(nuevaFila);
                             });
                         }
@@ -713,42 +713,42 @@ function evaluate_audit(id, vehicle_id) {
     var auditData = [];
     var formData = new FormData(); // Usamos FormData para enviar el archivo y los datos
 
-    // Recorremos todas las filas de la tabla
     $("#audit-checks-table tbody tr").each(function () {
         var row = $(this);
 
-        // Obtener el texto del <th> en la primera columna
-        var name = row.find("th").text().trim();
-
-        // Obtener el valor seleccionado del <select> en la segunda columna
+        var name = row.find("th").text().trim(); // Ej. "llantas"
         var status = row.find("td.status select").val();
-
-        // Obtener el texto del <textarea> en la tercera columna
         var notas = row.find("td.notes textarea").val().trim();
         var imagenInput = row.find("td.image input[type='file']")[0];
+        console.log(imagenInput);
         var imagenFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
+        console.log(imagenFile);
 
-        // Crear un objeto con los datos (sin la imagen, porque la estamos añadiendo en FormData)
         var checkData = {
             id: name,
             status: status,
             notas: notas,
-            imagen: imagenFile ? imagenFile.name : null, // Solo guardamos el nombre de la imagen en los datos JSON
+            imagen: imagenFile ? imagenFile.name : "", // o null si prefieres
         };
 
-        // Añadir el objeto a la lista de auditoría
         auditData.push(checkData);
 
-        // Si existe una imagen, la agregamos al FormData
         if (imagenFile) {
-            formData.append("imagen", imagenFile); // Agregar imagen al FormData
+            // Asegura que el key no tenga espacios raros
+            formData.append(`imagen_${name.replace(/\s+/g, "_")}`, imagenFile);
         }
+
+        // console.log("➕ Fila:", checkData);
     });
 
-    // Agregar los datos JSON y otros parámetros a FormData
     formData.append("audit_id", id);
-    formData.append("audit_data", JSON.stringify(auditData)); // Los datos JSON como string
-    formData.append("csrfmiddlewaretoken", $('input[name="csrfmiddlewaretoken"]').val()); // Token CSRF
+    formData.append("audit_data", JSON.stringify(auditData));
+    formData.append("csrfmiddlewaretoken", $('input[name="csrfmiddlewaretoken"]').val());
+
+    // Mostrar qué se está enviando (debug)
+    // for (var pair of formData.entries()) {
+    //     console.log(pair[0], pair[1]);
+    // }
 
     // Enviar los datos vía AJAX al backend usando FormData
     $.ajax({
