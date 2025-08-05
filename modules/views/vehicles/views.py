@@ -58,6 +58,7 @@ load_dotenv(dotenv_path)
 import qrcode 
 import threading
 from PIL import Image
+import re
 
 # TODO --------------- [ VARIABLES ] ---------- 
 
@@ -4744,8 +4745,9 @@ def evaluate_audit(request):
                 status = check["status"]
                 notas = check["notas"]
                 # La clave esperada es como: imagen_llantas
-                file_key = f'imagen_{check_name}'
+                file_key = f'imagen_{re.sub(r"\s+", "_", check_name)}'
                 imagen = request.FILES.get(file_key, None)
+
 
                 
                 # Buscar el check en la base de datos por nombre y empresa
