@@ -461,7 +461,7 @@ class VehiclesAudit {
 
                                 // Crear el campo de notas (textarea si no está chequeado)
                                 var notesField = datos.is_checked
-                                    ? `<span>${checkItem.notes || "---"}</span>` // Mostrar las notas como texto si está chequeado
+                                    ? `<span>${checkItem.notes || "---"}</span>`
                                     : `<textarea class="form-control editable-textarea" rows="2" placeholder="Escribe las notas aquí..." ${
                                           datos.is_checked ? "readonly" : ""
                                       }>${checkItem.notes || ""}</textarea>`;
@@ -487,7 +487,6 @@ class VehiclesAudit {
                             });
                         }
                     } else {
-                        console.log("No se encontraron datos de 'checks'.");
                     }
 
                     // Actualizar la información del vehículo
@@ -495,7 +494,10 @@ class VehiclesAudit {
                         self.vehicle.infoCard.vehicle.id = datos["vehicle_id"];
                         self.vehicle.infoCard.ajax.reload();
                     }
-                    $("#update-audit-btn").attr("onclick", `evaluate_audit(${datos["id"]})`).show(); // Asegurarse de que el botón se muestre si no está chequeado
+                    // $("#update-audit-btn").attr("onclick", `evaluate_audit(${datos["id"]})`).show(); // Asegurarse de que el botón se muestre si no está chequeado
+                    $("#update-audit-btn")
+                        .attr("onclick", `evaluate_audit(${datos["id"]}, ${datos["vehicle_id"]})`)
+                        .show();
                     if (Boolean(datos.is_checked)) {
                         // Ocultar el botón si ya está chequeada
                         $("#update-audit-btn").hide();
@@ -508,13 +510,10 @@ class VehiclesAudit {
                     hideShow("#v-audit-pane .info-details", "#v-audit-pane .info");
                     break;
                 case "upd_audit_checks":
-                    // Asumimos que tienes una variable 'action' que determina el flujo
-                    // Solo se agrega el EventListener una vez
                     upd_audit_checks();
 
                     break;
                 default:
-                    console.log("Opción dezconocida:", option);
                     break;
             }
         });
@@ -539,7 +538,6 @@ function obtener_checks_empresa(selectedValues = []) {
             if (Array.isArray(data) && data.length > 0) {
                 data.forEach(function (check, index) {
                     if (!check.id) {
-                        console.warn(`⚠️ Check en índice ${index} no tiene un ID válido:`, check);
                         return;
                     }
 
@@ -574,9 +572,7 @@ function obtener_checks_empresa(selectedValues = []) {
                 closeOnSelect: false,
             });
         },
-        error: function (xhr, status, error) {
-            console.error(" Error en la solicitud AJAX:", status, error);
-        },
+        error: function (xhr, status, error) {},
     });
 }
 
@@ -678,14 +674,12 @@ function add_check() {
                 });
             }
         },
-        error: function (xhr, status, error) {
-            console.error(" Error al agregar nuevo check:", status, error);
-        },
+        error: function (xhr, status, error) {},
     });
 }
 
 function add_vehicle_audit() {
-    var modal = document.getElementById("mdl_crud_audit"); // O document.querySelector("#mdl_crud_audit")
+    var modal = document.getElementById("mdl_crud_audit");
     var form = modal.querySelector("[name='form-vrt']");
     var formData = new FormData(form);
     $.ajax({
@@ -720,9 +714,7 @@ function evaluate_audit(id, vehicle_id) {
         var status = row.find("td.status select").val();
         var notas = row.find("td.notes textarea").val().trim();
         var imagenInput = row.find("td.image input[type='file']")[0];
-        console.log(imagenInput);
         var imagenFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
-        console.log(imagenFile);
 
         var checkData = {
             id: name,
@@ -734,29 +726,22 @@ function evaluate_audit(id, vehicle_id) {
         auditData.push(checkData);
 
         if (imagenFile) {
-            // Asegura que el key no tenga espacios raros
+            // Asegura que el key no tenga espacios
             formData.append(`imagen_${name.replace(/\s+/g, "_")}`, imagenFile);
         }
-
-        // console.log("➕ Fila:", checkData);
     });
 
     formData.append("audit_id", id);
+    formData.append("vehicle_id", vehicle_id);
     formData.append("audit_data", JSON.stringify(auditData));
     formData.append("csrfmiddlewaretoken", $('input[name="csrfmiddlewaretoken"]').val());
 
-    // Mostrar qué se está enviando (debug)
-    // for (var pair of formData.entries()) {
-    //     console.log(pair[0], pair[1]);
-    // }
-
-    // Enviar los datos vía AJAX al backend usando FormData
     $.ajax({
         url: "/evaluate_audit/",
         type: "POST",
         data: formData,
-        processData: false, // Importante: para no intentar procesar los datos (el archivo)
-        contentType: false, // Importante: para no establecer un tipo de contenido (el archivo se maneja automáticamente)
+        processData: false,
+        contentType: false,
         success: function (response) {
             if (response.success) {
                 Swal.fire("Success", "Auditoría evaluada correctamente", "success");
