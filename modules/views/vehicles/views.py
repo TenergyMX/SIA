@@ -4745,7 +4745,12 @@ def evaluate_audit(request):
                 status = check["status"]
                 notas = check["notas"]
                 # La clave esperada es como: imagen_llantas
-                file_key = f'imagen_{re.sub(r"\s+", "_", check_name)}'
+                print("************************************************************")
+                print(check_name)
+                sanitized_name = re.sub(r"\s+", "_", check_name)
+                file_key = f'imagen_{sanitized_name}'
+
+                print(file_key)
                 imagen = request.FILES.get(file_key, None)
 
 
