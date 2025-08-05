@@ -4746,6 +4746,7 @@ def evaluate_audit(request):
                 # La clave esperada es como: imagen_llantas
                 file_key = f'imagen_{check_name}'
                 imagen = request.FILES.get(file_key, None)
+
                 
                 # Buscar el check en la base de datos por nombre y empresa
                 check_instance = Checks.objects.filter(name=check_name, company_id=company_id).first()
