@@ -167,7 +167,7 @@ class VehiclesResponsiva {
                 csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
             },
             success: function (response) {
-                console.log("Respuesta del servidor:", response);
+                // console.log("Respuesta del servidor:", response);
                 var status = response.status;
                 if (status == "SALIDA") {
                     obj_modal.find(".modal-header").html("Registrar salida");
@@ -472,10 +472,18 @@ class VehiclesResponsiva {
             }
         });
 
+        let lastClickedButton = null;
+
+        obj_modal.find("form button[type='submit']").on("click", function () {
+            lastClickedButton = $(this).attr("name");
+        });
+        // console.log(lastClickedButton);
         obj_modal.find("form").on("submit", function (e) {
             e.preventDefault();
-            var submit = $("button[type='submit']:focus", this).attr("name");
-            var url = "/" + (submit == "add" ? "add" : "update") + "_vehicle_maintenance/";
+            // var submit = $("button[type='submit']:focus", this).attr("name");
+            var submit = lastClickedButton || "update"; // Por defecto a "update"
+
+            var url = "";
             var datos = new FormData(this);
 
             if (submit == "add" && !self.input.signature.hasDrawing()) {
@@ -494,6 +502,7 @@ class VehiclesResponsiva {
 
             if (submit == "add") {
                 url = "/add_vehicle_responsiva/";
+                // alert("aqui estamos entrando");
 
                 self.input.signature
                     .getCanvasBlob()
