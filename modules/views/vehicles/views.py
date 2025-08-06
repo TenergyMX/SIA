@@ -85,7 +85,7 @@ def vehicles(request):
             submodule["title"] = submodule["title"].strip()  # Limpiar espacios al inicio y final
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
-    print("estos son los modulos permitidos", context["sidebar"])
+    # print("estos son los modulos permitidos", context["sidebar"])
     template = "vehicles/vechicles.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
 
@@ -300,7 +300,7 @@ def get_vehicle_maintenance_kilometer(request):
         item["acciones"] += f"<button type='submit' name='update' data-vehiculo-id='{id}' class='btn btn-primary w-auto mx-2 btn-sm'><i class='fa-solid fa-pencil'></i></button>"
         item["acciones"] += f"<button type='submit' name='delete' data-vehiculo-id='{id}' class='btn btn-danger w-auto mx-2 btn-sm'><i class='fa-solid fa-trash-can'></i></button></div>"
     response["data"] = list(obj)
-    print("esto contiene los mantenimientos", response["data"]) 
+    # print("esto contiene los mantenimientos", response["data"]) 
     return JsonResponse(response)
 
 def update_vehicle_kilometer(request):
@@ -1153,7 +1153,7 @@ def add_vehicle_refrendo(request):
     dt = request.POST
 
     vehicle_id = dt.get("vehiculo_id")
-    print(f"Vehicle ID recibido para refrendo: {vehicle_id}")
+    # print(f"Vehicle ID recibido para refrendo: {vehicle_id}")
 
     try:
         obj_vehicle = Vehicle.objects.get(id = vehicle_id)
@@ -1464,7 +1464,7 @@ def get_calendario_verificacion():
     """
     global _CALENDARIO
     if _CALENDARIO is None:
-        print("==> Iniciando lectura del JSON calendario_de_verificacion.json...")
+        # print("==> Iniciando lectura del JSON calendario_de_verificacion.json...")
         path = os.path.join(
             settings.BASE_DIR,
             "modules", "static", "assets", "json",
@@ -1473,12 +1473,12 @@ def get_calendario_verificacion():
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
             _CALENDARIO = data.get("data", {})
-        print("==> Lectura del JSON completada con éxito.")
+        # print("==> Lectura del JSON completada con éxito.")
     return _CALENDARIO
 
 
 def obtener_siguiente_pago(vehiculo, fecha_referencia):
-    print(f"\n==> Obteniendo siguiente pago para vehículo con placa: {vehiculo.plate}")
+    # print(f"\n==> Obteniendo siguiente pago para vehículo con placa: {vehiculo.plate}")
     calendario = get_calendario_verificacion()
     placa = vehiculo.plate.strip().upper()
 
@@ -1486,15 +1486,15 @@ def obtener_siguiente_pago(vehiculo, fecha_referencia):
     if not digitos:
         raise ValueError(f"No se encontró dígito numérico en la placa '{vehiculo.plate}'")
     ultimo_digito = digitos[-1]
-    print(f" - Último dígito de placa: {ultimo_digito}")
+    # print(f" - Último dígito de placa: {ultimo_digito}")
 
     entry = calendario.get(ultimo_digito)
     if not entry:
         raise ValueError(f"No existe calendario para placa terminada en '{ultimo_digito}'")
 
-    print(f" - Engomado: {entry.get('engomado_ES', 'No definido')}")
-    print(f" - Meses S1: {[m.get('month_name_ES', '') for m in entry.get('s1', [])]}")
-    print(f" - Meses S2: {[m.get('month_name_ES', '') for m in entry.get('s2', [])]}")
+    # print(f" - Engomado: {entry.get('engomado_ES', 'No definido')}")
+    # print(f" - Meses S1: {[m.get('month_name_ES', '') for m in entry.get('s1', [])]}")
+    # print(f" - Meses S2: {[m.get('month_name_ES', '') for m in entry.get('s2', [])]}")
 
     sem1 = [m["month_code"] for m in entry["s1"]]
     sem2 = [m["month_code"] for m in entry["s2"]]
@@ -1526,7 +1526,7 @@ def obtener_siguiente_pago(vehiculo, fecha_referencia):
     mes_target = min(target_months)
     fecha_pago = date(anio_target, mes_target, 1)
 
-    print(f"==> Próxima verificación será en: {fecha_pago} para el {periodo} del {anio_target}\n")
+    # print(f"==> Próxima verificación será en: {fecha_pago} para el {periodo} del {anio_target}\n")
     return fecha_pago, periodo
 
 
@@ -1736,7 +1736,7 @@ def update_vehicle_verificacion(request):
         response["error"] = {"message": f"No existe ningún registro con el ID '{id}'"}
         return JsonResponse(response)
 
-    print(f"==> Registro encontrado: {obj.id}, Estado actual: {obj.status}")
+    # print(f"==> Registro encontrado: {obj.id}, Estado actual: {obj.status}")
 
     try:
         # VERIFICACIÓN CORREGIDA: Excluir el registro actual de la búsqueda
@@ -1755,16 +1755,16 @@ def update_vehicle_verificacion(request):
         obj.fecha_pago = dt.get("fecha_pago", obj.fecha_pago)
         obj.lugar = dt.get("lugar", obj.lugar)
         
-        print(f"==> Datos actualizados: Monto: {obj.monto}, Fecha de pago: {obj.fecha_pago}, Lugar: {obj.lugar}")
+        # print(f"==> Datos actualizados: Monto: {obj.monto}, Fecha de pago: {obj.fecha_pago}, Lugar: {obj.lugar}")
         
         # Manejo del comprobante
         nuevo_comprobante = request.FILES.get('comprobante_pago')
         if nuevo_comprobante:
-            print(f"==> Se está subiendo un nuevo comprobante: {nuevo_comprobante.name}")
+            # print(f"==> Se está subiendo un nuevo comprobante: {nuevo_comprobante.name}")
             
             if obj.comprobante_pago:
                 try:
-                    print(f"==> Eliminando comprobante anterior: {obj.comprobante_pago}")
+                    # print(f"==> Eliminando comprobante anterior: {obj.comprobante_pago}")
                     delete_s3_object(bucket_name, obj.comprobante_pago)
                 except Exception as e:
                     print(f"Error al eliminar comprobante anterior: {str(e)}")
@@ -1777,19 +1777,19 @@ def update_vehicle_verificacion(request):
             new_name = f"comprobante_pago_{id}{extension}"
             s3_path = f"docs/{company_id}/vehicle/{obj.vehiculo_id}/verificacion/{new_name}"
             
-            print(f"==> Subiendo comprobante a S3: {s3_path}")
+            # print(f"==> Subiendo comprobante a S3: {s3_path}")
             upload_to_s3(nuevo_comprobante, bucket_name, s3_path)
             obj.comprobante_pago = s3_path
 
         # Cambiar estado a PAGADO
-        print(f"==> Estado actual: {obj.status}, Nuevo comprobante: {nuevo_comprobante}, Monto: {dt.get('monto')}")
+        # print(f"==> Estado actual: {obj.status}, Nuevo comprobante: {nuevo_comprobante}, Monto: {dt.get('monto')}")
         if not obj.status == 'PAGADO' and (nuevo_comprobante or dt.get('monto')):
-            print("==> Cambiando estado a PAGADO.")
+            # print("==> Cambiando estado a PAGADO.")
             obj.status = 'PAGADO'
             
             # Solo crear nuevo registro si no existe uno próximo (excluyendo el actual)
             if not proximo_registro:
-                print("==> Creando nuevo registro PROXIMO.")
+                # print("==> Creando nuevo registro PROXIMO.")
                 fecha_next, periodo_next = obtener_siguiente_pago(obj.vehiculo, obj.fecha_pago or timezone.now().date())
                 Vehicle_Verificacion.objects.create(
                     vehiculo=obj.vehiculo,
@@ -1798,10 +1798,10 @@ def update_vehicle_verificacion(request):
                     fecha_pago=fecha_next,
                     status='PROXIMO'
                 )
-                print(f"==> Nuevo registro PROXIMO creado para fecha: {fecha_next}")
+                # print(f"==> Nuevo registro PROXIMO creado para fecha: {fecha_next}")
 
         obj.save()
-        print(f"==> Registro actualizado con éxito: {obj.id}, Estado final: {obj.status}")
+        # print(f"==> Registro actualizado con éxito: {obj.id}, Estado final: {obj.status}")
 
         response["success"] = True
         response["data"] = {
@@ -1812,10 +1812,10 @@ def update_vehicle_verificacion(request):
         }
 
     except Exception as e:
-        print(f"==> ERROR: {str(e)}")
+        # print(f"==> ERROR: {str(e)}")
         response["error"] = {"message": str(e)}
         if 'obj' in locals() and obj.pk:
-            print(f"==> Revirtiendo cambios para el registro ID: {obj.id}")
+            # print(f"==> Revirtiendo cambios para el registro ID: {obj.id}")
             obj.save()
 
     return JsonResponse(response)
@@ -2013,7 +2013,7 @@ def get_vehicles_responsiva(request):
 
     if context["role"]["id"] in [1, 2]:
         lista = lista.filter(vehicle__company_id=context["company"]["id"])
-        print(lista)
+        # print(lista)
     else:
         lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
 
@@ -2755,8 +2755,8 @@ def get_vehicles_audit(request):
                     # Obtener el nombre del check
                     check_name = Checks.objects.filter(id=check_id).values_list("name", flat=True).first()
                     imagen_check = generate_presigned_url(AWS_BUCKET_NAME, str(check.get("imagen", ""))) if check.get("imagen") else None
-                    print("aqui las url")
-                    print(imagen_check)
+                    # print("aqui las url")
+                    # print(imagen_check)
                     # Construir el nuevo objeto con toda la información
                     checks_with_names.append({
                         "id": check_id,
@@ -3095,7 +3095,7 @@ def get_vehicles_maintenance(request):
         "mileage", "time", "general_notes", "actions", "comprobante", "status"
     )
 
-    print(context["role"])
+    # print(context["role"])
     if context["role"]["id"] in [1,2]:
         lista = lista.filter(vehicle__company_id = context["company"]["id"])
     else:
@@ -3312,10 +3312,10 @@ def add_vehicle_fuel(request):
     company_id = context["company"]["id"]
     responsible_id = request.user.id 
     
-    print("POST data:", dt)
-    print("vehicle_id recibido:", vehicle_id)
-    print("company_id:", company_id)
-    print("responsible_id (usuario actual):", responsible_id)
+    # print("POST data:", dt)
+    # print("vehicle_id recibido:", vehicle_id)
+    # print("company_id:", company_id)
+    # print("responsible_id (usuario actual):", responsible_id)
 
     try:
         obj = Vehicle.objects.get(id = vehicle_id)
@@ -3714,8 +3714,8 @@ def generate_qr(request, qr_type, vehicle_id):
 def delete_qr(request, qr_type, vehicle_id):
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
 
-    print("qr_type:", qr_type)
-    print("vehicle.qr_fuel:", vehicle.qr_fuel)
+    # print("qr_type:", qr_type)
+    # print("vehicle.qr_fuel:", vehicle.qr_fuel)
     
     url = ""
     if qr_type == 'info' and vehicle.qr_info:
@@ -3828,7 +3828,7 @@ def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=
     # Check if the next maintenance kilometer is near
     next_maintenance_km = next_maintenance.first().kilometer
     flag = next_maintenance_km - Decimal(kilometer)
-    print("esta es la resta del mantenimiento")
+    # print("esta es la resta del mantenimiento")
     if not flag_new and flag <= 300:
         response["status"] = "warning"
         create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance_km)
@@ -4745,12 +4745,12 @@ def evaluate_audit(request):
                 status = check["status"]
                 notas = check["notas"]
                 # La clave esperada es como: imagen_llantas
-                print("************************************************************")
-                print(check_name)
+                # print("************************************************************")
+                # print(check_name)
                 sanitized_name = re.sub(r"\s+", "_", check_name)
                 file_key = f'imagen_{sanitized_name}'
 
-                print(file_key)
+                # print(file_key)
                 imagen = request.FILES.get(file_key, None)
 
 
@@ -4848,6 +4848,23 @@ def add_vehicle_responsiva(request):
                     response["type"] = "kilometraje"
                     response["status"] = data_flag("status")
                     response["message"] = data_flag("message")
+
+            responsable_id_2 = dt.get("responsible_id")
+            vehicle_id_2 = dt.get("vehicle_id")
+
+            # print("**************************************************************************************")
+            # print(dt.get("responsible_id"))
+            # print(responsable_id_2)
+            # print("**************************************************************************************")
+            # print(dt.get("vehicle_id"))
+            # print(vehicle_id_2)
+            # print(vehicle_id)
+            
+            if not dt.get("vehicle_id") or not dt.get("responsible_id"):
+                response["status"] = "error"
+                response["message"] = "Falta el ID del vehículo o del responsable."
+                return JsonResponse(response)
+
 
             obj = Vehicle_Responsive(
                 vehicle_id=dt.get("vehicle_id"),
@@ -4953,7 +4970,20 @@ def update_vehicle_responsiva(request):
     # Iniciar transacción
     try:
         with transaction.atomic():
-            obj = Vehicle_Responsive.objects.get(id=dt.get("id"))
+            # print("*********************************error en iphone*********************************")
+            # print(dt.get("id"))
+            # print(vehicle_id)
+        
+            id_value = dt.get("id")
+
+            # Validar que id no esté vacío y sea un número
+            if not id_value or not id_value.isdigit():
+                response["success"] = False
+                response["error"] = {"message": "ID inválido o no proporcionado"}
+                return JsonResponse(response)
+
+            obj = Vehicle_Responsive.objects.get(id=int(id_value))
+
             obj.final_mileage = dt.get("final_mileage")
             obj.final_fuel = dt.get("final_fuel")
             obj.end_date = dt.get("end_date")
@@ -5183,8 +5213,8 @@ def get_user_vehicles(request):
         company_id = context["company"]["id"]
         user = request.user
 
-        print("Usuario autenticado:", user)
-        print("ID de la empresa:", company_id)
+        # print("Usuario autenticado:", user)
+        # print("ID de la empresa:", company_id)
 
         if not company_id:
             print("No se encontró empresa asociada al usuario")
@@ -5194,15 +5224,15 @@ def get_user_vehicles(request):
         vehicles_fuel = Vehicle.objects.filter(company_id=company_id, is_active=True).values('id', 'name')
 
         data = list(vehicles_fuel)
-        print("Vehículos encontrados:", data)
+        # print("Vehículos encontrados:", data)
 
         # Obtener el vehículo asignado al usuario como responsable
         assigned_vehicle = Vehicle.objects.filter(responsible=user, company_id=company_id).first()
         if assigned_vehicle:
-            print("Vehículo asignado al usuario:", assigned_vehicle.name, "(ID:", assigned_vehicle.id, ")")
+            # print("Vehículo asignado al usuario:", assigned_vehicle.name, "(ID:", assigned_vehicle.id, ")")
             user_vehicle_id = assigned_vehicle.id
         else:
-            print("No hay vehículo asignado al usuario.")
+            # print("No hay vehículo asignado al usuario.")
             user_vehicle_id = None
 
         return JsonResponse({'data': data, 'user_vehicle_id': user_vehicle_id})
@@ -5231,11 +5261,11 @@ def get_user_vehicles_for_edit(request):
 
 
 def check_qr_fuel(request, vehicle_id):
-    print("entramos a la funcion check_qr_fuel")
+    # print("entramos a la funcion check_qr_fuel")
     try:
         vehicle = get_object_or_404(Vehicle, id=vehicle_id)
-        print("Vehículo encontrado:", vehicle.name)
-        print("ID del vehículo:", vehicle.id)
+        # print("Vehículo encontrado:", vehicle.name)
+        # print("ID del vehículo:", vehicle.id)
         if vehicle.qr_fuel:
             qr_url_fuel = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_fuel))
             return JsonResponse({'status': 'success', 'qr_url_fuel': qr_url_fuel})
@@ -5304,7 +5334,7 @@ def get_vehicles(request):
             company_id=company_id
         ).values('id', 'name') 
         data = list(vehiculos)
-        print("esta es la lista de vehiculos de la empresa:", vehiculos)
+        # print("esta es la lista de vehiculos de la empresa:", vehiculos)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -5452,7 +5482,7 @@ def get_vehicles_placa(request):
             company_id=company_id
         ).values('id', 'name') 
         data = list(vehiculos)
-        print("esta es la lista de vehiculos de la empresa para tarjetas:", vehiculos)
+        # print("esta es la lista de vehiculos de la empresa para tarjetas:", vehiculos)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -5586,14 +5616,14 @@ def delete_placa(request):
 @login_required
 @csrf_exempt
 def edit_placa(request):
-    print("entramos a la funcion edit_placa")
+    # print("entramos a la funcion edit_placa")
     context = user_data(request)
     subModule_id = 37
     company_id = context["company"]["id"]
 
     if request.method == 'GET':
         placa_id = request.GET.get('id')
-        print("placa encontrada:", placa_id)
+        # print("placa encontrada:", placa_id)
 
         try:
             placa = Placas.objects.get(id=placa_id)
@@ -5667,7 +5697,7 @@ def table_factura_vehicle(request):
     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
     vehicle_id = request.GET.get('vehicle_id')
-    print("entramos a la funcion de mostrar la tabla de las faturas del vehiculo:", vehicle_id)
+    # print("entramos a la funcion de mostrar la tabla de las faturas del vehiculo:", vehicle_id)
 
     if not vehicle_id:
         return JsonResponse({"data": []})
@@ -5883,7 +5913,7 @@ def get_vehicles_card(request):
             company_id=company_id
         ).values('id', 'name') 
         data = list(vehiculos)
-        print("esta es la lista de vehiculos de la empresa para tarjetas:", vehiculos)
+        # print("esta es la lista de vehiculos de la empresa para tarjetas:", vehiculos)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -5979,7 +6009,7 @@ def table_card_vehicle(request):
     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
     vehicle_id = request.GET.get('vehicle_id')
-    print("Entramos a la función de mostrar la tabla de tarjetas del vehículo:", vehicle_id)
+    # print("Entramos a la función de mostrar la tabla de tarjetas del vehículo:", vehicle_id)
 
     if not vehicle_id:
         return JsonResponse({"data": []})
@@ -6180,7 +6210,7 @@ def get_vehicles_contract(request):
             company_id=company_id
         ).values('id', 'name') 
         data = list(vehiculos)
-        print("esta es la lista de vehiculos de la empresa para tarjetas:", vehiculos)
+        # print("esta es la lista de vehiculos de la empresa para tarjetas:", vehiculos)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -6193,7 +6223,7 @@ def table_contract_vehicle(request):
     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
     vehicle_id = request.GET.get('vehicle_id')
-    print("Entramos a la función de mostrar la tabla de contrato del vehículo:", vehicle_id)
+    # print("Entramos a la función de mostrar la tabla de contrato del vehículo:", vehicle_id)
 
     if not vehicle_id:
         return JsonResponse({"data": []})
@@ -6530,7 +6560,7 @@ def get_vehicles_letter_factura(request):
             company_id=company_id
         ).values('id', 'name') 
         data = list(vehiculos)
-        print("esta es la lista de vehiculos de la empresa para carta de facturacion:", vehiculos)
+        # print("esta es la lista de vehiculos de la empresa para carta de facturacion:", vehiculos)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -6543,7 +6573,7 @@ def table_letter_factura_vehicle(request):
     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
     vehicle_id = request.GET.get('vehicle_id')
-    print("Entramos a la función de mostrar la tabla de carta de factura del vehículo:", vehicle_id)
+    # print("Entramos a la función de mostrar la tabla de carta de factura del vehículo:", vehicle_id)
 
     if not vehicle_id:
         return JsonResponse({"data": []})
@@ -6743,7 +6773,7 @@ def get_vehicles_hologram(request):
             company_id=company_id
         ).values('id', 'name') 
         data = list(vehiculos)
-        print("esta es la lista de vehiculos de la empresa para carta de facturacion:", vehiculos)
+        # print("esta es la lista de vehiculos de la empresa para carta de facturacion:", vehiculos)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -6959,7 +6989,7 @@ def get_vehicles_carnet(request):
             company_id=company_id
         ).values('id', 'name') 
         data = list(vehiculos)
-        print("esta es la lista de vehiculos de la empresa para carta de facturacion:", vehiculos)
+        # print("esta es la lista de vehiculos de la empresa para carta de facturacion:", vehiculos)
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
