@@ -1196,7 +1196,16 @@ def add_vehicle_refrendo(request):
 def get_vehicle_refrendo(request):
     response = {"success": False, "data": []}
     dt = request.GET
-    vehicle_id = dt.get("vehicle_id", None)
+    vehicle_id = dt.get("vehicle_id")
+
+    print("vehicle_id recibido:", vehicle_id)
+
+    # Validar que vehicle_id sea un número válido
+    if not vehicle_id or not vehicle_id.isdigit():
+        response["error"] = {"message": "ID de vehículo inválido o no proporcionado."}
+        return JsonResponse(response, status=400)
+
+    vehicle_id = int(vehicle_id)
 
     lista = Vehicle_Refrendo.objects.filter(vehiculo_id = vehicle_id).values(
         "id",
@@ -2510,48 +2519,6 @@ def upd_audit_checks(request):
 
     return JsonResponse(response)
 
-def get_vehicle_audit(request):
-    context = user_data(request)
-    response = {"success": False, "data": []}
-    dt = request.GET
-    vehicle_id = dt.get("vehicle_id", None)
-    subModule_id = 10
-
-    lista = Vehicle_Audit.objects.filter(
-        vehicle_id = vehicle_id
-    ).values(
-        "id", "vehicle_id", "vehicle__name", 
-        "audit_date", "general_notes",
-        "checks", "is_visible", "is_checked"  # Asegúrate de incluir estos campos
-    )
-
-    if context["role"]["id"] in [1,2,3]:
-        lista = lista.filter(vehicle__company_id = context["company"]["id"])
-    else:
-        lista = lista.filter(vehicle__responsible_id = context["user"]["id"])
-    if not context["role"]["id"] in [1,2]:
-        lista = lista.exclude(is_visible=False)
-
-
-    access = get_module_user_permissions(context, subModule_id)
-    access = access["data"]["access"]
-    # Botones de acción
-    
-    for item in lista:
-        item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"show-info-details\">
-            <i class="fa-sharp fa-solid fa-eye"></i>
-        </button>\n"""
-        if access["update"]:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"update-item\">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
-        if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-audit=\"delete-item\">
-                <i class="fa-solid fa-trash"></i>
-            </button>\n"""
-    response["data"] = list(lista)
-    response["success"] = True
-    return JsonResponse(response)
 
 def get_vehicle_audit(request):
     context = user_data(request)
@@ -2651,12 +2618,15 @@ def get_vehicle_audit(request):
     response["success"] = True
     return JsonResponse(response)
 
+
 def get_vehicles_audit(request):
     context = user_data(request)
     response = {"success": False, "data": [], "counters": {}}
     dt = request.GET
     vehicle_id = dt.get("vehicle_id", None)
     tipo_carga = dt.get("tipo_carga", "todas")
+    period = dt.get("period", None)  # 'mensual' o 'semanal'
+    selected_date = dt.get("selected_date", None)  # '2025-08' o '2025-W32'
     subModule_id = 10
 
     hoy = timezone.now().date()
@@ -2684,37 +2654,44 @@ def get_vehicles_audit(request):
 
     latest_only = base_audit_qs.filter(id=Subquery(latest_audit.values('id')[:1]))
 
-    # Filtro según rol
-    if context["role"]["id"] in [1, 2, 3]:
-        base_audit_qs = base_audit_qs.filter(vehicle__company_id=context["company"]["id"])
-    else:
-        base_audit_qs = base_audit_qs.filter(vehicle__responsible_id=context["user"]["id"])
-
-    if vehicle_id:
-        base_audit_qs = base_audit_qs.filter(vehicle_id=vehicle_id)
-
-    if not context["role"]["id"] in [1, 2, 3]:
-        base_audit_qs = base_audit_qs.exclude(is_visible=False)
+    # Aplicar filtros según el periodo y fecha seleccionada
+    filtered_audit_qs = latest_only  # Por defecto: auditorías del mes actual
+    if selected_date and period:
+        try:
+            if period == "mensual":
+                year, month = map(int, selected_date.split("-"))
+                filtered_audit_qs = latest_only.filter(
+                    audit_date__year=year,
+                    audit_date__month=month
+                )
+            elif period == "semanal":
+                year, week = map(int, selected_date.split("-W"))
+                filtered_audit_qs = latest_only.filter(
+                    audit_date__week=week,
+                    audit_date__year=year
+                )
+        except ValueError:
+            pass  # Si el formato es inválido, no aplicar ningún filtro
 
     # Filtrar según tipo_carga
     if tipo_carga == "evaluadas":
-        lista_queryset = latest_only.filter(is_checked=True)
+        lista_queryset = filtered_audit_qs.filter(is_checked=True)
     elif tipo_carga == "vencidas":
-        lista_queryset = latest_only.filter(audit_date__lt=hoy, is_checked=False)
+        lista_queryset = filtered_audit_qs.filter(audit_date__lt=hoy, is_checked=False)
     elif tipo_carga == "proximas":
-        lista_queryset = latest_only.filter(
+        lista_queryset = filtered_audit_qs.filter(
             audit_date__gte=hoy, audit_date__lte=un_mes_despues, is_checked=False
         )
     else:  # todas
-        lista_queryset = latest_only
+        lista_queryset = filtered_audit_qs
 
     # Contadores
     response["counters"] = {
         "total": lista_queryset.count(),
         "total_vehiculos": total_vehiculos_count,
-        "evaluadas": latest_only.filter(is_checked=True).count(),
-        "vencidas": latest_only.filter(audit_date__lt=hoy, is_checked=False).count(),
-        "proximas": latest_only.filter(
+        "evaluadas": filtered_audit_qs.filter(is_checked=True).count(),
+        "vencidas": filtered_audit_qs.filter(audit_date__lt=hoy, is_checked=False).count(),
+        "proximas": filtered_audit_qs.filter(
             audit_date__gte=hoy, audit_date__lte=un_mes_despues, is_checked=False
         ).count(),
     }
@@ -2729,8 +2706,8 @@ def get_vehicles_audit(request):
     if context["role"]["id"] in [1, 2, 3]:
         lista = lista.filter(vehicle__company_id=context["company"]["id"])
     else:
-        lista = lista.filter(vehicle__responsible_id = context["user"]["id"])
-    if not context["role"]["id"] in [1,2,3]:
+        lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
+    if not context["role"]["id"] in [1, 2, 3]:
         lista = lista.exclude(is_visible=False)
 
     access = get_module_user_permissions(context, subModule_id)
@@ -2739,72 +2716,58 @@ def get_vehicles_audit(request):
     for item in lista:
         if item["checks"]:
             try:
-                # Reemplazar las comillas simples por dobles
                 checks_string = item["checks"].replace("'", "\"")
-                
-                # Intentar parsear el JSON corregido
                 checks_data = json.loads(checks_string)
                 checks_with_names = []
 
-                # Recorrer los checks del JSON
                 for check in checks_data:
                     check_id = check.get("id")
                     check_status = check.get("status")
                     check_notes = check.get("notas")
 
-                    # Obtener el nombre del check
                     check_name = Checks.objects.filter(id=check_id).values_list("name", flat=True).first()
                     imagen_check = generate_presigned_url(AWS_BUCKET_NAME, str(check.get("imagen", ""))) if check.get("imagen") else None
-                    print("aqui las url")
-                    print(imagen_check)
-                    # Construir el nuevo objeto con toda la información
+
                     checks_with_names.append({
                         "id": check_id,
                         "name": check_name if check_name else "Sin nombre",
                         "status": check_status,
                         "notes": check_notes,
                         "imagen": imagen_check
-
                     })
 
-                # Reemplazar el JSON con la nueva estructura
                 item["checks"] = checks_with_names
             except json.JSONDecodeError as e:
                 print(f"Error parsing JSON for checks: {e}")
-                item["checks"] = []  # En caso de error, asignar lista vacía
+                item["checks"] = []
         else:
-            item["checks"] = []  # Si no hay checks, asignar lista vacía
+            item["checks"] = []
 
-        # Definir si la auditoría está chequeada y visible
-        is_checked = item["is_checked"]  # Verifica si está chequeada
-        is_visible = item["is_visible"]     # Verifica si es visible
+        is_checked = item["is_checked"]
+        is_visible = item["is_visible"]
 
         item["is_checked"] = is_checked
         item["is_visible"] = is_visible
 
-        # Botones de acción
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"show-info-details\">
             <i class="fa-sharp fa-solid fa-eye"></i>
         </button>\n"""
 
-        # Si no está chequeada y visible, permitir la edición
         if not is_checked and is_visible:
             if access["update"]:
                 item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-audit=\"update-item\">
                     <i class="fa-solid fa-pen"></i>
                 </button>\n"""
-            
-        # Si tiene permisos de eliminación
+
         if access["delete"]:
             item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-audit=\"delete-item\">
                 <i class="fa-solid fa-trash"></i>
             </button>\n"""
-        
 
-    # Enviar la respuesta
     response["data"] = list(lista)
     response["success"] = True
     return JsonResponse(response)
+
 
 def update_vehicle_audit(request):
     response = {"success": False}
@@ -4685,7 +4648,7 @@ def add_vehicle_audit(request):
         vehicle_id = request.POST.get("vehicle_id")
         audit_date = request.POST.get("audit_date")
         general_notes = request.POST.get("general_notes")
-        checks = request.POST.getlist("checks[]")  # This will give a list of check ids
+        checks = request.POST.getlist("checks[]")  
 
         # Validate required data
         if not vehicle_id or not audit_date:
@@ -4740,17 +4703,23 @@ def evaluate_audit(request):
             # Lista para almacenar los resultados de la auditoría
             audit_results = []
 
+            # Diccionario de calificaciones por estado
+            calification_map = {
+                "Muy malo": 0,
+                "Malo": 2,
+                "Regular": 4.5,
+                "Bueno": 7,
+                "Excelente": 9.5
+            }
+
+            calification_values = []
+
             for check in audit_data:
                 check_name = check["id"] 
-                status = check["status"]
+                status = check["status"].strip()
                 notas = check["notas"]
-                # La clave esperada es como: imagen_llantas
-                print("************************************************************")
-                print(check_name)
                 sanitized_name = re.sub(r"\s+", "_", check_name)
                 file_key = f'imagen_{sanitized_name}'
-
-                print(file_key)
                 imagen = request.FILES.get(file_key, None)
 
 
@@ -4787,6 +4756,17 @@ def evaluate_audit(request):
                         "notas": notas,
                         "imagen": S3name or "",
                     })
+                    # Calificación por estado si aplica
+                    if status in calification_map:
+                        calification_values.append(calification_map[status])
+                    else:
+                        print("estado no reconocido:", status)
+
+
+            # Calcular promedio si hay datos
+            calificacion_final = None
+            if calification_values:
+                calificacion_final = sum(calification_values) / len(calification_values)
 
             # Buscar la auditoría de vehículo utilizando el ID de la auditoría
             vehicle_audit = Vehicle_Audit.objects.filter(id=audit_id).first()
@@ -4795,6 +4775,8 @@ def evaluate_audit(request):
                 # Actualizar el campo 'checks' con los resultados de la auditoría
                 vehicle_audit.checks = json.dumps(audit_results)
                 vehicle_audit.is_checked = True  # Marcar como verificado
+                vehicle_audit.calification = round(calificacion_final, 2) if calificacion_final is not None else None
+                print("la calificacion de esta auditoria es:", vehicle_audit.calification)
                 vehicle_audit.save()
 
                 # Responder con éxito y devolver la estructura corregida

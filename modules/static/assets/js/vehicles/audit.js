@@ -19,10 +19,14 @@ class VehiclesAudit {
                         return json.data;
                     },
                     data: function (d) {
+                        const period = document.getElementById("audit-period")?.value || "mensual";
+                        const date = document.getElementById("audit-date")?.value || null;
                         return {
                             ...d,
                             vehicle_id: self.vehicle?.data?.id || null,
                             tipo_carga: self.filtro_estado,
+                            period: period,
+                            selected_date: date,
                         };
                     },
                 },
@@ -72,6 +76,7 @@ class VehiclesAudit {
         const self = this;
         this.driverSia();
         this.driverSiaFormulario();
+        self.setupPeriodFilter();
 
         // Inicializar contadores
         self.updateCounters({
@@ -125,6 +130,27 @@ class VehiclesAudit {
         }
 
         self.setupEventHandlers();
+    }
+
+    setupPeriodFilter() {
+        const self = this;
+        const periodSelect = document.getElementById("audit-period");
+        const dateInput = document.getElementById("audit-date");
+
+        if (!periodSelect || !dateInput) return;
+
+        periodSelect.addEventListener("change", function () {
+            dateInput.type = this.value === "mensual" ? "month" : "week";
+            if (self.tbl_audit) {
+                self.tbl_audit.ajax.reload();
+            }
+        });
+
+        dateInput.addEventListener("change", function () {
+            if (self.tbl_audit) {
+                self.tbl_audit.ajax.reload();
+            }
+        });
     }
 
     driverSia() {
@@ -756,3 +782,10 @@ function evaluate_audit(id, vehicle_id) {
         },
     });
 }
+
+// Filtro por periodo (mes/semana)
+$("#audit-period, #audit-date").on("change", function () {
+    if (self.tbl_audit) {
+        self.tbl_audit.ajax.reload();
+    }
+});

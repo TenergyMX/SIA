@@ -91,17 +91,52 @@
                         Auditoría
                     </div>
                     <div class="">
+
                         {% if role.id == 1 or role.id == 2 or role.id == 3 %}
-                        <button type="button" class="btn btn-sm btn-primary drive-5" data-vehicle-audit="add-item"
-                            title="Agregar Seguro">
-                            <i class="fa-solid fa-plus me-1"></i>
-                            Agregar
-                        </button>
+                        <div class="d-flex align-items-end gap-2 flex-wrap">
+                            <!-- Botón Agregar -->
+                            <button type="button" class="btn btn-sm btn-primary drive-5" data-vehicle-audit="add-item"
+                                title="Agregars Auditoría">
+                                <i class="fa-solid fa-plus me-1"></i>
+                                Agregar
+                            </button>
+
+                            <!-- Select de periodo -->
+                            <div>
+                                <label for="audit-period" class="form-label mb-1">Periodo</label>
+                                <select id="audit-period" name="audit_period" class="form-select form-select-sm">
+                                    <option value="mensual">Mensual</option>
+                                    <option value="semanal">Semanal</option>
+                                </select>
+                            </div>
+
+                            <!-- Selector de fecha -->
+                            <div>
+                                <label for="audit-date" class="form-label mb-1">Fecha</label>
+                                <input type="month" id="audit-date" name="audit_date" class="form-control form-control-sm">
+                            </div>
+
+                            <!-- Select de estado -->
+                            <div>
+                                <label for="audit-status" class="form-label mb-1">Estado</label>
+                                <select id="audit-status" name="audit_status" class="form-select form-select-sm">
+                                    <option value="malo">Malo</option>
+                                    <option value="regular">Regular</option>
+                                    <option value="bueno">Bueno</option>
+                                    <option value="excelente">Excelente</option>
+                                </select>
+                            </div>
+                            <!-- Botón de recargar tabla -->
+                             
+                            <button type="button" class="btn btn-icon btn-sm btn-info-light" data-vehicle-audit="refresh-table"
+                                title="Refrescar tabla">
+                                <i class="fa-solid fa-arrows-rotate me-1"></i>
+                            </button>
+                        </div>
+
+                        
                         {% endif %}
-                        <button type="button" class="btn btn-icon btn-sm btn-info-light" data-vehicle-audit="refresh-table"
-                            title="Refrescar tabla">
-                            <i class="fa-solid fa-arrows-rotate me-1"></i>
-                        </button>
+                        
                     </div>
                 </div>
                 <div class="card-body">
