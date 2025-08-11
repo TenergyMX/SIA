@@ -190,6 +190,8 @@ class Vehicle_Audit(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user_created = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True) 
     email_audit = models.BooleanField(default=False)
+    calification = models.FloatField(null=True, blank=True)
+
     def __str__(self):
         return f"Auditoría de {self.vehicle} el {self.audit_date}"
 
