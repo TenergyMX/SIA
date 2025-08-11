@@ -1226,7 +1226,7 @@ def Send_Email(subject, recipient, model_instance, message_data, model_name, fie
         from_email = settings.EMAIL_HOST_USER
         text_content = "Este es el cuerpo del mensaje."
 
-        email = EmailMultiAlternatives(subject, text_content, from_email, ["andres.moreno@tenergy.com.mx"])
+        email = EmailMultiAlternatives(subject, text_content, from_email, recipient)
 
         html_content = f"""
             <html>
