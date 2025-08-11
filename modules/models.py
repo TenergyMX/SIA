@@ -208,7 +208,7 @@ class Vehicle_Maintenance(models.Model):
     actions = models.TextField(blank=True, null=True)
     comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de pago o de matenimiento")
     is_checked = models.BooleanField(default=False)
-    status = models.CharField(max_length=255, null=False, default="blank")
+    status = models.CharField(max_length=255, null=False, default="NUEVO")
     created_at = models.DateTimeField(auto_now_add=True)
     email_maintenance = models.BooleanField(default=False)
     email_maintenance_proximo = models.BooleanField(default=False)

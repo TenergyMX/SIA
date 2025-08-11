@@ -2625,8 +2625,9 @@ def get_vehicles_audit(request):
     dt = request.GET
     vehicle_id = dt.get("vehicle_id", None)
     tipo_carga = dt.get("tipo_carga", "todas")
-    period = dt.get("period", None)  # 'mensual' o 'semanal'
-    selected_date = dt.get("selected_date", None)  # '2025-08' o '2025-W32'
+    period = dt.get("period", None)  
+    selected_date = dt.get("selected_date", None)  
+    status_filter = dt.get("status", None)
     subModule_id = 10
 
     hoy = timezone.now().date()
@@ -2655,8 +2656,15 @@ def get_vehicles_audit(request):
     latest_only = base_audit_qs.filter(id=Subquery(latest_audit.values('id')[:1]))
 
     # Aplicar filtros según el periodo y fecha seleccionada
-    filtered_audit_qs = latest_only  # Por defecto: auditorías del mes actual
-    if selected_date and period:
+    if not selected_date:
+        year, month = hoy.year, hoy.month
+        filtered_audit_qs = latest_only.filter(
+            audit_date__year=year,
+            audit_date__month=month
+        )
+
+    else:   
+        filtered_audit_qs = latest_only
         try:
             if period == "mensual":
                 year, month = map(int, selected_date.split("-"))
@@ -2673,6 +2681,16 @@ def get_vehicles_audit(request):
         except ValueError:
             pass  # Si el formato es inválido, no aplicar ningún filtro
 
+    if status_filter:
+        if status_filter == "malo":
+            filtered_audit_qs = filtered_audit_qs.filter(calification__lt=2)
+        elif status_filter == "regular":
+            filtered_audit_qs = filtered_audit_qs.filter(calification__gte=2, calification__lt=3)
+        elif status_filter == "bueno":
+            filtered_audit_qs = filtered_audit_qs.filter(calification__gte=3, calification__lt=4)
+        elif status_filter == "excelente":
+            filtered_audit_qs = filtered_audit_qs.filter(calification=4)
+            
     # Filtrar según tipo_carga
     if tipo_carga == "evaluadas":
         lista_queryset = filtered_audit_qs.filter(is_checked=True)

@@ -21,12 +21,14 @@ class VehiclesAudit {
                     data: function (d) {
                         const period = document.getElementById("audit-period")?.value || "mensual";
                         const date = document.getElementById("audit-date")?.value || null;
+                        const status = document.getElementById("audit-status")?.value || null;
                         return {
                             ...d,
                             vehicle_id: self.vehicle?.data?.id || null,
                             tipo_carga: self.filtro_estado,
                             period: period,
                             selected_date: date,
+                            status: status,
                         };
                     },
                 },
@@ -784,7 +786,7 @@ function evaluate_audit(id, vehicle_id) {
 }
 
 // Filtro por periodo (mes/semana)
-$("#audit-period, #audit-date").on("change", function () {
+$("#audit-period, #audit-date, #audit-status").on("change", function () {
     if (self.tbl_audit) {
         self.tbl_audit.ajax.reload();
     }

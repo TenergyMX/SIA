@@ -438,17 +438,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                 print("Contexto del correo enviado (responsiva solicitada):", context_email)
 
                     
-                # context_email = {
-                #     "company" : Company.objects.get(id=company_id).name,
-                #     "subject" : "Prueba de correos",#Titulo del mensaje
-                #     "modulo" : 2,#modulo de sia
-                #     "submodulo" : "Responsiva",#tipo
-                #     "item" : 26,#id del vehiculo a registrar 
-                #     "title" : "Esta es una prueba para el sistema de notificaciones",
-                #     "body" : "Este es el contenido que se mostrara",
-                # }
-                # send_notification(context_email)
-    
 
         # Notificaciones cuando la solicitud es aceptada
         for responsiva in obj_responsivas.filter(status_equipment__iexact='Aceptado'): 
@@ -811,8 +800,8 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 
         # VERIFICACIÓN
             try:
-                #url = request.build_absolute_uri(settings.STATIC_URL + 'assets/json/calendario_de_verificacion.json')
-                url = "http://localhost:8000/static/assets/json/calendario_de_verificacion.json"
+                url = requests.build_absolute_uri(settings.STATIC_URL + 'assets/json/calendario_de_verificacion.json')
+                #url = "http://localhost:8000/static/assets/json/calendario_de_verificacion.json"
                 file_json = requests.get(url)
                 cv = file_json.json()
                 cv = cv["data"]
@@ -825,6 +814,47 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     return False
                 
                 for item in obj_vehicles:
+
+                    registro_proximo = Vehicle_Verificacion.objects.filter(vehiculo_id=item["id"],status='PROXIMO').first()
+
+                if registro_proximo:
+                    response["data"].append({
+                        "alert": "info",
+                        "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
+                        "title": f"Próximo pago de verificación ({registro_proximo.periodo})",
+                        "text": f"Vehículo: {item['name']}",
+                        "link": f"/vehicles/info/{item['id']}/"
+                    })
+
+                    if not registro_proximo.email_verificacion:
+                        message_data = {
+                            "title": f"Próximo pago de verificación ({registro_proximo.periodo})",
+                            "body": f"El vehículo <strong>{registro_proximo.vehiculo.name}</strong> tiene el pago próximo en este periodo."
+                        }
+                        Send_Email(
+                            subject="Aviso de verificación próxima",
+                            recipient=recipient_emails_vehiculos,
+                            model_instance=registro_proximo.vehiculo,
+                            message_data=message_data,
+                            model_name=Vehicle,
+                            field_to_update="email_verificacion"
+                        )
+                        print("Correo enviado para verificación próxima y campo actualizado")
+
+                        context_email = {
+                            "company": Company.objects.get(id=company_id).name,
+                            "subject": "Correo de notificación",
+                            "modulo": 2,
+                            "submodulo": "Verificación",
+                            "item": registro_proximo.vehiculo.id,
+                            "title": message_data["title"],
+                            "body": message_data["body"]
+                        }
+                        send_notification(context_email)
+                        print("Contexto del correo enviado (status=PROXIMO):", context_email)
+
+
+
                     d = obtener_ultimo_digito(item)
                     payment_months = [cv[d]["s1"][0]["month_code"], cv[d]["s1"][1]["month_code"]]
                     payment_months_ES = [cv[d]["s1"][0]["month_name_ES"], cv[d]["s1"][1]["month_name_ES"]]
@@ -1226,7 +1256,7 @@ def Send_Email(subject, recipient, model_instance, message_data, model_name, fie
         from_email = settings.EMAIL_HOST_USER
         text_content = "Este es el cuerpo del mensaje."
 
-        email = EmailMultiAlternatives(subject, text_content, from_email, ["andres.moreno@tenergy.com.mx"])
+        email = EmailMultiAlternatives(subject, text_content, from_email,recipient)
 
         html_content = f"""
             <html>
