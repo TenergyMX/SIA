@@ -434,7 +434,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     "title": message_data["title"],
                     "body": message_data["body"]
                 }
-                send_notification(context_email)
+                # send_notification(context_email)
                 print("Contexto del correo enviado (responsiva solicitada):", context_email)
 
                     
@@ -482,7 +482,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     "title": message_data["title"],
                     "body": message_data["body"]
                 }
-                send_notification(context_email)
+                # send_notification(context_email)
                 print("Contexto del correo enviado (responsiva aceptada):", context_email)
 
     # SERVICIOS (Módulo 5)
@@ -537,7 +537,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": message_data["title"],
                         "body": message_data["body"]
                     }
-                    send_notification(context_email)
+                    # send_notification(context_email)
                     print("Contexto del correo enviado (servicio próximo):", context_email)
 
             # Notificaciones para servicios con pago "no pagado"
@@ -573,7 +573,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": message_data["title"],
                         "body": message_data["body"]
                     }
-                    send_notification(context_email)
+                    # send_notification(context_email)
                     print("Contexto del correo enviado (servicio no pagado):", context_email)
 
 
@@ -664,7 +664,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             "body": f"La tenencia para el vehículo <strong>{tenencia.vehiculo.name}</strong> esta programada para la fecha <strong>{tenencia.fecha_pago}</strong>. Por favor, verifica la tenencia."
 
                         }
-                        send_notification(context_email)
+                        # send_notification(context_email)
                         print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
 
                 vehicles_with_tenencia.add(item['vehiculo__id'])
@@ -710,7 +710,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "body": f"El vehículo <strong>{tenencia.vehiculo.name}</strong> no tiene una tenencia registrada. Por favor, verifica esta información en el sistema."
 
                     }
-                    send_notification(context_email)
+                    # send_notification(context_email)
                     print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
         # REFRENDO
         if 6 in access and access[6]["read"]:
@@ -766,7 +766,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             "title": message_data["title"],
                             "body": message_data["body"]
                         }
-                        send_notification(context_email)
+                        # send_notification(context_email)
                         print("Contexto del correo enviado (refrendo):", context_email)
 
             vehicles_without_refrendo = obj_vehicles.exclude(id__in=vehicles_with_refrendo).values_list('name', flat=True)
@@ -806,7 +806,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": message_data["title"],
                         "body": message_data["body"]
                     }
-                    send_notification(context_email)
+                    # send_notification(context_email)
                     print("Contexto del correo enviado (sin refrendo):", context_email)
 
         # VERIFICACIÓN
@@ -869,7 +869,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                                 "title": message_data["title"],
                                 "body": message_data["body"]
                             }
-                            send_notification(context_email)
+                            # send_notification(context_email)
                             print("Contexto del correo enviado (sin verificacion):", context_email)
 
 
@@ -918,7 +918,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                                 "title": message_data["title"],
                                 "body": message_data["body"]
                             }
-                            send_notification(context_email)
+                            # send_notification(context_email)
                             print("Contexto del correo enviado (sin verificacion 2 semestre:", context_email)
 
                     elif (current_month + 1) == cv[d]["s2"][0]["month_code"]:
@@ -990,7 +990,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             "title": message_data["title"],
                             "body": message_data["body"]
                         }
-                        send_notification(context_email)
+                        # send_notification(context_email)
                         print("Contexto del correo enviado (seguro):", context_email)
 
                 vehicles_with_seguro.add(item['vehicle__id'])
@@ -1033,7 +1033,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "body": message_data["body"]
                     }
 
-                    send_notification(context_email)
+                    # send_notification(context_email)
                     print("Contexto del correo enviado (sin seguro):", context_email)
 
 
@@ -1079,7 +1079,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": message_data["title"],
                         "body": message_data["body"]
                     }
-                    send_notification(context_email)
+                    # send_notification(context_email)
                     print("Contexto del correo enviado (auditoría):", context_email)
 
 
@@ -1126,7 +1126,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": message_data["title"],
                         "body": message_data["body"]
                     }
-                    send_notification(context_email)
+                    # send_notification(context_email)
                     print("Contexto del correo enviado (mantenimiento):", context_email)
 
 
@@ -1145,7 +1145,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 #        "title" : "Esta es una prueba para el sistema de notificaciones",
 #        "body" : "Este es el contenido que se mostrara",
 #    }
-#send_notification(context_email)
+# send_notification(context_email)
 def send_notification(context):
     try:
         #TODO GET module name
