@@ -592,11 +592,100 @@ $(document).on("change", "select[name='checks[]']", function () {
     }
 });
 
+$(document).on("change", ".check-image", function (e) {
+    let input = this;
+    let file = input.files[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        Swal.fire("Error", "El archivo seleccionado no es una imagen.", "error");
+        input.value = "";
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = function (event) {
+        let img = new Image();
+        img.src = event.target.result;
+
+        img.onload = function () {
+            let canvas = document.createElement("canvas");
+            let ctx = canvas.getContext("2d");
+
+            // Detectar orientación
+            let isHorizontal = img.width >= img.height;
+            let newWidth, newHeight;
+
+            if (isHorizontal) {
+                // Imágenes horizontales
+                newWidth = 2000;
+                newHeight = 1400;
+            } else {
+                // Imágenes verticales
+                newWidth = 1000;
+                newHeight = 1500;
+            }
+
+            // Ajustar el canvas al nuevo tamaño
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+
+            // Dibujar y escalar la imagen
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+            // Reducir calidad (60%)
+            let quality = 0.6;
+            let compressedDataUrl = canvas.toDataURL(file.type, quality);
+
+            // Convertir de DataURL a Blob
+            fetch(compressedDataUrl)
+                .then((res) => res.blob())
+                .then((blob) => {
+                    let newFile = new File([blob], file.name, { type: file.type });
+
+                    // Reemplazar archivo original en el input
+                    let dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(newFile);
+                    input.files = dataTransfer.files;
+
+                    // Notificar
+                    Swal.fire({
+                        icon: "success",
+                        title: "Imagen optimizada",
+                        text: `La imagen fue redimensionada a ${newWidth}x${newHeight} y reducida de calidad.`,
+                        timer: 1300,
+                        showConfirmButton: false,
+                    });
+                });
+        };
+    };
+});
+
 function upd_audit_checks() {
-    // Deshabilitar el botón para evitar múltiples clics
-    var saveButton = $("#btn_guardar"); // Suponiendo que tu botón tiene el id 'btn_guardar'
+    var saveButton = $("#btn_guardar");
     saveButton.prop("disabled", true);
 
+    Swal.fire({
+        title: "Evaluando auditoría, por favor espere...",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+
+            // Simular proceso que dura 2 segundos, luego mostrar mensaje
+            setTimeout(() => {
+                Swal.fire({
+                    icon: "success",
+                    title: "Auditoría actualizada",
+                    text: "Procesando la actualización de la auditoría...",
+                });
+            }, 2000);
+        },
+    });
+
+    alert("Procesando la actualización de la auditoría...");
     var modal = document.getElementById("mdl_crud_audit");
     var form = modal.querySelector("[name='form-vrt']");
     var formData = new FormData(form);
@@ -615,6 +704,8 @@ function upd_audit_checks() {
         processData: false,
         contentType: false,
         success: function (response) {
+            Swal.close(); // cerrar el loading
+
             if (response.success) {
                 Swal.fire("Éxito", "Auditoría actualizada correctamente", "success");
                 $("#mdl_crud_audit").modal("hide");
@@ -622,12 +713,11 @@ function upd_audit_checks() {
             } else {
                 Swal.fire("Error", response.error, "error");
             }
-            // Volver a habilitar el botón
             saveButton.prop("disabled", false);
         },
         error: function () {
+            Swal.close(); // cerrar el loading
             Swal.fire("Error", "No se pudo actualizar la auditoría", "error");
-            // Volver a habilitar el botón en caso de error
             saveButton.prop("disabled", false);
         },
     });
@@ -656,7 +746,7 @@ function add_check() {
                     title: "Éxito",
                     text: "Check agregado correctamente",
                     icon: "success",
-                    timer: 1500,
+                    timer: 900,
                     showConfirmButton: false,
                 });
 
@@ -720,44 +810,41 @@ function evaluate_audit(id, vehicle_id) {
         var status = row.find("td.status select").val();
         var notas = row.find("td.notes textarea").val().trim();
         var imagenInput = row.find("td.image input[type='file']")[0];
-        console.log(imagenInput);
         var imagenFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
-        console.log(imagenFile);
 
         var checkData = {
             id: name,
             status: status,
             notas: notas,
-            imagen: imagenFile ? imagenFile.name : "", // o null si prefieres
+            imagen: imagenFile ? imagenFile.name : "",
         };
 
         auditData.push(checkData);
 
         if (imagenFile) {
-            // Asegura que el key no tenga espacios raros
             formData.append(`imagen_${name.replace(/\s+/g, "_")}`, imagenFile);
         }
-
-        // console.log("➕ Fila:", checkData);
     });
 
     formData.append("audit_id", id);
+    formData.append("vehicle_id", vehicle_id); // 📌 Se agrega vehicle_id si backend lo necesita
     formData.append("audit_data", JSON.stringify(auditData));
     formData.append("csrfmiddlewaretoken", $('input[name="csrfmiddlewaretoken"]').val());
 
-    // Mostrar qué se está enviando (debug)
-    // for (var pair of formData.entries()) {
-    //     console.log(pair[0], pair[1]);
-    // }
+    // 📌 DEBUG: Mostrar exactamente qué se envía
+    console.log("📤 Datos enviados a evaluate_audit:");
+    for (var pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+    }
 
-    // Enviar los datos vía AJAX al backend usando FormData
     $.ajax({
         url: "/evaluate_audit/",
         type: "POST",
         data: formData,
-        processData: false, // Importante: para no intentar procesar los datos (el archivo)
-        contentType: false, // Importante: para no establecer un tipo de contenido (el archivo se maneja automáticamente)
+        processData: false,
+        contentType: false,
         success: function (response) {
+            console.log("📥 Respuesta del servidor:", response);
             if (response.success) {
                 Swal.fire("Success", "Auditoría evaluada correctamente", "success");
                 $("#table_audit").DataTable().ajax.reload();
@@ -766,7 +853,8 @@ function evaluate_audit(id, vehicle_id) {
                 Swal.fire("Error", response.error, "error");
             }
         },
-        error: function () {
+        error: function (xhr, status, error) {
+            console.error("❌ Error AJAX:", status, error);
             Swal.fire("Error", "There was an error updating the audit", "error");
         },
     });

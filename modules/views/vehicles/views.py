@@ -4725,79 +4725,82 @@ def add_vehicle_audit(request):
 def evaluate_audit(request):
     if request.method == 'POST':
         try:
-            # Obtener los datos enviados desde el frontend
-            audit_data = json.loads(request.POST.get('audit_data', '[]'))
+            print("📌 Entramos a evaluate_audit")
+            print("POST keys:", request.POST.keys())
+            print("FILES keys:", request.FILES.keys())
 
-            # Obtener el ID de la empresa desde el contexto del usuario
+            audit_data = json.loads(request.POST.get('audit_data', '[]'))
+            print("Audit data recibido:", audit_data)
+
             context = user_data(request)
+            print("Context:", context)
+
             company_id = context["company"]["id"]
             vehicle_id = request.POST.get('vehicle_id', None)
+            print("Vehicle ID:", vehicle_id)
 
-            # Obtener el ID de la auditoría
             audit_id = request.POST.get('audit_id') 
+            print("Audit ID:", audit_id)
 
-            # Lista para almacenar los resultados de la auditoría
             audit_results = []
 
             for check in audit_data:
+                print("Procesando check:", check)
                 check_name = check["id"] 
                 status = check["status"]
                 notas = check["notas"]
-                # La clave esperada es como: imagen_llantas
                 file_key = f'imagen_{check_name}'
                 imagen = request.FILES.get(file_key, None)
-                
-                # Buscar el check en la base de datos por nombre y empresa
+                print("Imagen encontrada:", imagen)
+
                 check_instance = Checks.objects.filter(name=check_name, company_id=company_id).first()
+                print("Check instance:", check_instance)
                 S3name = ""
 
                 if check_instance:
-                    # Actualizar el estado y las notas del check
                     check_instance.status = status
                     check_instance.notas = notas
                     check_instance.save()
 
-                    # Si hay una imagen, se procesa
                     if imagen:
-                        # Crear un nombre único para la imagen
                         folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/audit/{audit_id}/"
                         file_name, extension = os.path.splitext(imagen.name)
-                        new_name = f"{check_name}{extension}"  # Nombre único basado en el check
+                        new_name = f"{check_name}{extension}"
                         S3name = folder_path + new_name
 
                         try:
-                            # Subir la imagen a S3
                             upload_to_s3(imagen, bucket_name, S3name)
                         except Exception as e:
                             print(f"Error al subir la imagen: {str(e)}")
-                            S3name = ""  # Si la carga falla, no se guarda la imagen
+                            S3name = ""
 
-                    # Formar la estructura corregida con el ID del check
                     audit_results.append({
-                        "id": str(check_instance.id),  # Convertir a string si es necesario
+                        "id": str(check_instance.id),
                         "status": status,
                         "notas": notas,
                         "imagen": S3name or "",
                     })
 
-            # Buscar la auditoría de vehículo utilizando el ID de la auditoría
             vehicle_audit = Vehicle_Audit.objects.filter(id=audit_id).first()
+            print("Vehicle audit:", vehicle_audit)
 
             if vehicle_audit:
-                # Actualizar el campo 'checks' con los resultados de la auditoría
                 vehicle_audit.checks = json.dumps(audit_results)
-                vehicle_audit.is_checked = True  # Marcar como verificado
+                vehicle_audit.is_checked = True
                 vehicle_audit.save()
 
-                # Responder con éxito y devolver la estructura corregida
                 return JsonResponse({'success': True, 'audit_results': audit_results})
             else:
                 return JsonResponse({'success': False, 'error': 'Vehicle audit not found'})
         
         except Exception as e:
+            import traceback
+            print("❌ ERROR en evaluate_audit:")
+            print(traceback.format_exc())
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 def add_vehicle_responsiva(request):
     response = {"success": False}
