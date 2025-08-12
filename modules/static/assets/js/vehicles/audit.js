@@ -545,10 +545,6 @@ class VehiclesAudit {
         });
     }
 }
-// Botón para refrescar la tabla principal de vehículos
-$(document).on("click", "[data-vehicle-tenencia='refresh-table']", function () {
-    window.vehiclesTenencia.loadCountersAndTable();
-});
 
 function obtener_checks_empresa(selectedValues = []) {
     let selectChecks = $("select[name='checks[]']");
