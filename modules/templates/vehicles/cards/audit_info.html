@@ -14,34 +14,37 @@
 
         <!-- Tabla de Checks -->
         <div class="table-responsive mb-3">
-            <table class="table table-bordered w-100 placeholder-glow" id="audit-checks-table">
-                <thead>
-                    <tr>
-                        <th>Nombres</th>
-                        <th>Check</th>
-                        <th>Notas</th>
-                        <th>Imagen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Fila de cada check -->
-                    <tr>
-                        <th>
-                            <span data-key-value="check" class="d placeholder col-4"></span>
-                        </th>
-                        <td class="status">
-                            <span data-key-value="status" class="d placeholder col-4"></span>
-                        </td>
-                        <!-- Notas Editables -->
-                        <td class="notes">
-                            <textarea data-key-value="notes" class="form-control editable-textarea" rows="2" placeholder="Escribe las notas aquí..." readonly></textarea>
-                        </td>
-                        <td class="image">
-                            <input type="file" accept="image/*" class="form-control form-control-sm check-image" data-required="false" style="display: none;">
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-responsive mb-3 audit-checks-scroll">
+
+                <table class="table table-bordered w-100 placeholder-glow" id="audit-checks-table">
+                    <thead>
+                        <tr>
+                            <th>Nombres</th>
+                            <th>Check</th>
+                            <th>Notas</th>
+                            <th>Imagen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Fila de cada check -->
+                        <tr>
+                            <th>
+                                <span data-key-value="check" class="d placeholder col-4"></span>
+                            </th>
+                            <td class="status">
+                                <span data-key-value="status" class="d placeholder col-4"></span>
+                            </td>
+                            <!-- Notas Editables -->
+                            <td class="notes">
+                                <textarea data-key-value="notes" class="form-control editable-textarea" rows="2" placeholder="Escribe las notas aquí..." readonly></textarea>
+                            </td>
+                            <td class="image">
+                                <input type="file" accept="image/*" class="form-control form-control-sm check-image" data-required="false" style="display: none;">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Notas Generales -->
