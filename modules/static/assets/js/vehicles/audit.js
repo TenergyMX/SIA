@@ -727,12 +727,11 @@ function add_vehicle_audit() {
 
 function evaluate_audit(id, vehicle_id) {
     var auditData = [];
-    var formData = new FormData(); // Usamos FormData para enviar el archivo y los datos
+    var formData = new FormData();
 
     $("#audit-checks-table tbody tr").each(function () {
         var row = $(this);
-
-        var name = row.find("th").text().trim(); // Ej. "llantas"
+        var name = row.find("th").text().trim();
         var status = row.find("td.status select").val();
         var notas = row.find("td.notes textarea").val().trim();
         var imagenInput = row.find("td.image input[type='file']")[0];
@@ -742,13 +741,12 @@ function evaluate_audit(id, vehicle_id) {
             id: name,
             status: status,
             notas: notas,
-            imagen: imagenFile ? imagenFile.name : "", // o null si prefieres
+            imagen: imagenFile ? imagenFile.name : "",
         };
 
         auditData.push(checkData);
 
         if (imagenFile) {
-            // Asegura que el key no tenga espacios
             formData.append(`imagen_${name.replace(/\s+/g, "_")}`, imagenFile);
         }
     });
@@ -758,6 +756,19 @@ function evaluate_audit(id, vehicle_id) {
     formData.append("audit_data", JSON.stringify(auditData));
     formData.append("csrfmiddlewaretoken", $('input[name="csrfmiddlewaretoken"]').val());
 
+    // for (var pair of formData.entries()) {
+    //     console.log(pair[0], pair[1]);
+    // }
+
+    // Mostrar loading con SweetAlert
+    Swal.fire({
+        title: "Procesando registro de auditoria...",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
     $.ajax({
         url: "/evaluate_audit/",
         type: "POST",
@@ -765,19 +776,97 @@ function evaluate_audit(id, vehicle_id) {
         processData: false,
         contentType: false,
         success: function (response) {
+            Swal.close(); // Cerrar loading
+
+            // console.log("📥 Respuesta del servidor:", response);
             if (response.success) {
-                Swal.fire("Success", "Auditoría evaluada correctamente", "success");
+                Swal.fire("Éxito", "Auditoría evaluada correctamente", "success");
                 $("#table_audit").DataTable().ajax.reload();
                 $("#update-audit-btn").hide();
             } else {
                 Swal.fire("Error", response.error, "error");
             }
         },
-        error: function () {
-            Swal.fire("Error", "There was an error updating the audit", "error");
+        error: function (xhr, status, error) {
+            Swal.close(); // Cerrar loading
+
+            // console.error("❌ Error AJAX:", status, error);
+            Swal.fire("Error", "Hubo un error al actualizar la auditoría", "error");
         },
     });
 }
+
+$(document).on("change", ".check-image", function (e) {
+    let input = this;
+    let file = input.files[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        Swal.fire("Error", "El archivo seleccionado no es una imagen.", "error");
+        input.value = "";
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = function (event) {
+        let img = new Image();
+        img.src = event.target.result;
+
+        img.onload = function () {
+            let canvas = document.createElement("canvas");
+            let ctx = canvas.getContext("2d");
+
+            // Detectar orientación
+            let isHorizontal = img.width >= img.height;
+            let newWidth, newHeight;
+
+            if (isHorizontal) {
+                // Imágenes horizontales
+                newWidth = 2000;
+                newHeight = 1400;
+            } else {
+                // Imágenes verticales
+                newWidth = 1000;
+                newHeight = 1500;
+            }
+
+            // Ajustar el canvas al nuevo tamaño
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+
+            // Dibujar y escalar la imagen
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+            // Reducir calidad (60%)
+            let quality = 0.6;
+            let compressedDataUrl = canvas.toDataURL(file.type, quality);
+
+            // Convertir de DataURL a Blob
+            fetch(compressedDataUrl)
+                .then((res) => res.blob())
+                .then((blob) => {
+                    let newFile = new File([blob], file.name, { type: file.type });
+
+                    // Reemplazar archivo original en el input
+                    let dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(newFile);
+                    input.files = dataTransfer.files;
+
+                    // Notificar
+                    Swal.fire({
+                        icon: "success",
+                        title: "Imagen optimizada",
+                        text: `La imagen fue redimensionada a ${newWidth}x${newHeight} y reducida de calidad.`,
+                        timer: 1300,
+                        showConfirmButton: false,
+                    });
+                });
+        };
+    };
+});
 
 // Filtro por periodo (mes/semana)
 $("#audit-period, #audit-date").on("change", function () {
