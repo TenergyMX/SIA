@@ -81,6 +81,7 @@ $(document).ready(function () {
 
         let option_class = main.replaceAll(" ", "-");
         span = `<span class="badge text-bg-secondary text-wrap mt-1 span__${option_class}" data-area='${main}' data-mods='${modulosID}' data-items='${itemsID}'>${main} >> ${modulos} >> ${items}</span>`;
+
         if ($(`.span__${option_class}`).length == 0) {
             $("#placeholder-notifications").append(span);
             $(`.chbox-${option_class}`).prop("checked", true);
@@ -110,9 +111,11 @@ $(document).ready(function () {
         });
         users = "";
         html_user = "";
+
         /*Conseguir la información de los usuarios*/
         $("#placeholder-users span").each(function (index, element) {
             txt_email = $(this).text();
+            console.log("esto contiene el text_email", txt_email);
             users += `${txt_email}|//|`;
             html_user += `<p class="m-0">${txt_email}</p>`;
         });
@@ -121,6 +124,7 @@ $(document).ready(function () {
             notification: notification,
             users: users,
         };
+        console.log("esto contiene data para crear notificaciones", data);
 
         Swal.fire({
             title: "<strong>¿Estás seguro de los siguientes registros?</strong>",

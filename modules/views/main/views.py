@@ -179,7 +179,7 @@ def get_notifications(request):
         id_module = 6
     
 
-    response_ = create_notifications(id_module, user_id, company_id, area,rol, response, access)
+    response_ = create_notifications(id_module, user_id, company_id, area,rol, response, access, request)
     print(response_)
     return JsonResponse(response)
 

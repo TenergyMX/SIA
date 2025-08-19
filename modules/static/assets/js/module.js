@@ -124,6 +124,7 @@ function getNotifications() {
             var contenedor = $("#header-notification-scroll .simplebar-content");
             contenedor.html(null);
             if (!response.success && response.error) {
+                alert("Error: " + response.error["message"]);
                 Swal.fire("Error", response.error["message"], "error");
                 return;
             } else if (!response.success && response.warning) {
