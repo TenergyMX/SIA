@@ -3512,8 +3512,7 @@ def delete_vehicle_fuel(request):
 @csrf_exempt
 def add_option(request):
     if request.method == 'POST':
-        try:
-            
+        try: 
             # Cargar datos del cuerpo del request
             data = json.loads(request.body)
             
@@ -3614,7 +3613,6 @@ def generate_qr(request, qr_type, vehicle_id):
     company_id = context["company"]["id"]
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
 
-
     # Verificar si el QR ya ha sido generado
     if qr_type == "consulta":
         qr_url_info = generate_presigned_url(AWS_BUCKET_NAME, str(vehicle.qr_info)) if vehicle.qr_info else None
@@ -3627,7 +3625,7 @@ def generate_qr(request, qr_type, vehicle_id):
             'qr_url_access': qr_url_access,
             'qr_url_fuel': qr_url_fuel
         })
-     
+
     # Contenido
     domain = request.build_absolute_uri('/')[:-1]
     #domain = "http://192.168.100.106"
@@ -3659,7 +3657,6 @@ def generate_qr(request, qr_type, vehicle_id):
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
-  
     
     # Definir la ruta del archivo en S3
     s3Path = f'docs/{company_id}/vehicle/{vehicle_id}/qr/'

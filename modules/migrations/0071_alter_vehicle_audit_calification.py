@@ -15,4 +15,9 @@ class Migration(migrations.Migration):
             name='calification',
             field=models.FloatField(blank=True, null=True),
         ),
+        migrations.AlterField(
+            model_name='vehicle_audit',
+            name='calification',
+            field=models.FloatField(blank=True, null=True),
+        ),
     ]

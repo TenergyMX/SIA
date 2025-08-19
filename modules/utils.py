@@ -33,6 +33,7 @@ from django.db.models import F, Q, Value, Max, Sum, CharField, BooleanField
 from django.db import transaction
 import requests
 import stripe
+from datetime import date, timedelta
 
 
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
@@ -578,10 +579,8 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     # send_notification(context_email)
                     print("Contexto del correo enviado (servicio no pagado):", context_email)
 
-
     # VEHÍCULOS (Módulo 2)
     elif id_module == 2:
-        print("Notificaciones de vehículos")
         # area = uridecode(area.lower())
         # if area == "almacen":
         obj_vehicles = Vehicle.objects.filter(company_id=company_id).values().exclude(is_active=False)
@@ -662,7 +661,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         tenencia.save(update_fields=["email_tenencia"])
 
 
-                        print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
+                        # print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
 
                 vehicles_with_tenencia.add(item['vehiculo__id'])
 
@@ -708,7 +707,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     vehicle_instance.email_sin_tenencia = True
                     vehicle_instance.save(update_fields=["email_sin_tenencia"])
-                    print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
+                    # print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
         # # REFRENDO
         if 6 in access and access[6]["read"]:
             obj_refrendo = Vehicle_Refrendo.objects.filter(vehiculo__company_id=company_id, vehiculo__is_active=True)
@@ -752,7 +751,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         #     model_name=Vehicle_Refrendo,
                         #     field_to_update="email_refrendo"
                         # )
-                        print("coreo enviado correctamente y campo actualizado de refrendo")
+                        # print("coreo enviado correctamente y campo actualizado de refrendo")
                         context_email = {
                             "company": Company.objects.get(id=company_id).name,
                             "subject": "Refrendo a punto de vencer",  # Titulo del mensaje
@@ -765,7 +764,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         send_notification(context_email)
                         refrendo.email_refrendo = True
                         refrendo.save(update_fields=["email_refrendo"])
-                        print("Contexto del correo enviado (refrendo):", context_email)
+                        # print("Contexto del correo enviado (refrendo):", context_email)
 
             vehicles_without_refrendo = obj_vehicles.exclude(id__in=vehicles_with_refrendo).values('id', 'name')
             for vehicle in vehicles_without_refrendo:
@@ -806,21 +805,14 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     vehicle_instance.email_sin_refrendo = True
                     vehicle_instance.save(update_fields=["email_sin_refrendo"])
-                    print("Contexto del correo enviado (sin refrendo):", context_email)
-
+                    # print("Contexto del correo enviado (sin refrendo):", context_email)
         # VERIFICACIÓN
+
         try:
-           
             json_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'assets', 'json', 'calendario_de_verificacion.json')
-            print("Ruta del archivo JSON de verificación:", json_path)
             with open(json_path, encoding="utf-8") as f:
                 cv = json.load(f)
-            cv=cv["data"]
-            print("Contenido del JSON de verificación:", cv)
-            print("Contenido completo de calendario_de_verificacion.json:")
-            print(json.dumps(cv, indent=4, ensure_ascii=False))
-
-
+            cv = cv["data"]
 
             def obtener_ultimo_digito(diccionario):
                 plate = diccionario.get('plate', '')
@@ -829,90 +821,127 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         return char
                 return False
 
-            
+            today = date.today()
 
             for item in obj_vehicles:
                 vehicle_instance = Vehicle.objects.get(id=item["id"])
                 d = obtener_ultimo_digito(item)
-                payment_months = [cv[d]["s1"][0]["month_code"], cv[d]["s1"][1]["month_code"]]
-                payment_months_ES = [cv[d]["s1"][0]["month_name_ES"], cv[d]["s1"][1]["month_name_ES"]]
-
-                # 1er semestre - Verificación pendiente
-                registro = Vehicle_Verificacion.objects.filter(
-                    Q(fecha_pago__year=current_year),
-                    Q(fecha_pago__month__in=payment_months),
-                    Q(vehiculo_id=item["id"])
-                )
-
-                
-
                 link_vehiculo = f"{domain}/vehicles/info/{item['id']}/"
 
-                if not registro.exists() and current_month in payment_months:
+                # Buscar registro de verificación vigente
+                registro = Vehicle_Verificacion.objects.filter(
+                    Q(fecha_pago__year=current_year),
+                    Q(status="PROXIMO"),
+                    Q(vehiculo_id=item["id"])
+                ).first()
+
+                if not registro and vehicle_instance.email_sin_verificacion is False:
                     response["data"].append({
                         "alert": "warning",
-                        "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
-                        "title": f"Realizar el pago de la verificación 1er Sem.",
-                        "text": f"Vehículo: {item['name']}",
+                        "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
+                        "title": f"Vehículo sin verificación",
+                        "text": f"Vehículo: {item['name']} no cuenta con ningun registro de verificación",
                         "link": link_vehiculo
                     })
 
-                    if not vehicle_instance.email_verificacion_s1:
-                        message_data = {
-                            "title": f"Pago de verificación 1er semestre - Vehículo: {vehicle_instance.name}",
-                            "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene registrada la verificación del 1er semestre. "
-                                    f"Por favor, realiza el registro correspondiente.<br>"
-                                    f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                        }
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Alerta de vehículo sin verificación",
+                        "modulo": 2,
+                        "submodulo": "Verificaciones",
+                        "item": vehicle_instance.id,
+                        "title": f"Vehículo {vehicle_instance.name} sin verificación",
+                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe de contener un registro de verificación para poder generar los futuros pagos y se generen las alertas correspondites.<br>"
+                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                    }
+                    send_notification(context_email)
 
-                        context_email = {
-                            "company": Company.objects.get(id=company_id).name,
-                            "subject": "Alerta de verificación 1er semestre",
-                            "modulo": 2,
-                            "submodulo": "Verificación",
-                            "item": vehicle_instance.id,
-                            "title": message_data["title"],
-                            "body": message_data["body"]
-                        }
-                        send_notification(context_email)
-                        vehicle_instance.email_verificacion_s1 = True
-                        vehicle_instance.save(update_fields=["email_verificacion_s1"])
-                        print("Correo enviado para verificación 1er semestre con link")
+                    vehicle_instance.email_sin_verificacion = True
+                    vehicle_instance.save(update_fields=["email_sin_verificacion"])
+                    continue  # no hay registro, seguimos con el siguiente vehículo
 
-                # 2do semestre - Verificación pendiente
-                elif current_month == cv[d]["s2"][0]["month_code"] or current_month == cv[d]["s2"][1]["month_code"]:
+                dias_restantes = (registro.fecha_pago - today).days
+                # print("los dias ", dias_restantes)
+                # print(registro.fecha_pago, " ", today)
+
+                # -------- 1️⃣ Falta un mes o menos --------
+                if dias_restantes <= 30 and dias_restantes > 3 and not registro.email_verificacion:
                     response["data"].append({
-                        "alert": "warning",
-                        "icon": "<i class=\"fa-regular fa-money-bill-wave fs-18\"></i>",
-                        "title": f"Realizar el pago de la verificación 2do Sem.",
-                        "text": f"Vehículo: {item['name']}",
+                        "alert": "info",
+                        "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
+                        "title": f"Próximo pago de verificación",
+                        "text": f"Vehículo: {item['name']} → Pago en menos de un mes",
                         "link": link_vehiculo
                     })
 
-                    if not vehicle_instance.email_verificacion_s2:
-                        message_data = {
-                            "title": f"Pago de verificación 2do semestre - Vehículo: {vehicle_instance.name}",
-                            "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene registrada la verificación del 2do semestre. "
-                                    f"Por favor, realiza el registro correspondiente.<br>"
-                                    f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                        }
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Aviso de próximo pago de verificación",
+                        "modulo": 2,
+                        "submodulo": "Verificaciones",
+                        "item": vehicle_instance.id,
+                        "title": f"Próximo pago de verificación - Vehículo: {vehicle_instance.name}",
+                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe realizar su verificación el "
+                                f"{registro.fecha_pago}.<br>"
+                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                    }
+                    send_notification(context_email)
 
-                        context_email = {
-                            "company": Company.objects.get(id=company_id).name,
-                            "subject": "Alerta de verificación 2do semestre",
-                            "modulo": 2,
-                            "submodulo": "Verificación",
-                            "item": vehicle_instance.id,
-                            "title": message_data["title"],
-                            "body": message_data["body"]
-                        }
-                        send_notification(context_email)
-                        vehicle_instance.email_verificacion_s2 = True
-                        vehicle_instance.save(update_fields=["email_verificacion_s2"])
-                        print("Correo enviado para verificación 2do semestre con link")
+                    registro.email_verificacion = True
+                    registro.save(update_fields=["email_verificacion"])
+
+                # -------- 2️⃣ Faltan 3 días o menos (recordatorio) --------
+                elif registro.email_verificacion and dias_restantes <= 3 and dias_restantes >= 0:
+                    response["data"].append({
+                        "alert": "warning",
+                        "icon": "<i class='fa-regular fa-bell fs-18'></i>",
+                        "title": f"Recordatorio urgente",
+                        "text": f"Vehículo: {item['name']} → Faltan {dias_restantes} días",
+                        "link": link_vehiculo
+                    })
+
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Recordatorio: verificación próxima a vencer",
+                        "modulo": 2,
+                        "submodulo": "Verificaciones",
+                        "item": vehicle_instance.id,
+                        "title": f"Recordatorio de verificación - Vehículo: {vehicle_instance.name}",
+                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe realizar su verificación el "
+                                f"{registro.fecha_pago}. Solo faltan {dias_restantes} días.<br>"
+                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                    }
+                    send_notification(context_email)
+
+                # -------- 3️⃣ Ya venció --------
+                elif dias_restantes < 0 and registro.status != "Vencido":
+                    response["data"].append({
+                        "alert": "danger",
+                        "icon": "<i class='fa-regular fa-circle-xmark fs-18'></i>",
+                        "title": f"Pago de verificación vencido",
+                        "text": f"Vehículo: {item['name']} - NO se realizó en el periodo",
+                        "link": link_vehiculo
+                    })
+
+                    context_email = {
+                        "company": Company.objects.get(id=company_id).name,
+                        "subject": "Alerta: verificación vencida",
+                        "modulo": 2,
+                        "submodulo": "Verificaciones",
+                        "item": vehicle_instance.id,
+                        "title": f"Verificación vencida - Vehículo: {vehicle_instance.name}",
+                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no realizó su verificación en la fecha "
+                                f"{registro.fecha_pago}. Actualmente se encuentra vencido.<br>"
+                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                    }
+                    send_notification(context_email)
+
+                    registro.status = "Vencido"
+                    registro.save(update_fields=["status"])
 
         except Exception as e:
             print("Error en verificaciones:", str(e))
+
 
         # SEGUROS
         if 9 in access and access[9]["read"]:
@@ -959,7 +988,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         #     model_name=Vehicle_Insurance,
                         #     field_to_update="email_insurance"
                         # )
-                        print("coreo enviado correctamente y campo actualizado de seguro")
+                        # print("coreo enviado correctamente y campo actualizado de seguro")
                         
                         context_email = {
                             "company": Company.objects.get(id=company_id).name,
@@ -973,7 +1002,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         send_notification(context_email)
                         insurance.email_insurance = True
                         insurance.save(update_fields=["email_insurance"])
-                        print("Contexto del correo enviado (seguro):", context_email)
+                        # print("Contexto del correo enviado (seguro):", context_email)
 
                 vehicles_with_seguro.add(item['vehicle__id'])
 
@@ -1003,7 +1032,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     #     model_name=Vehicle,
                     #     field_to_update="email_sin_insurance"  
                     # )
-                    print("Correo enviado para vehículo sin seguro y campo actualizado")
+                    # print("Correo enviado para vehículo sin seguro y campo actualizado")
 
                     context_email = {
                         "company": Company.objects.get(id=company_id).name,
@@ -1018,7 +1047,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     vehicle_instance.email_sin_insurance = True
                     vehicle_instance.save(update_fields=["email_sin_insurance"])
-                    print("Contexto del correo enviado (sin seguro):", context_email)
+                    # print("Contexto del correo enviado (sin seguro):", context_email)
 
         # AUDITORÍAS - recordatorio de hoy
         if 10 in access and access[10]["read"]:
@@ -1053,9 +1082,8 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     auditoria.email_audit = True
                     auditoria.save(update_fields=["email_audit"])
-                    print("Recordatorio enviado para auditoría:", auditoria.id)
+                    # print("Recordatorio enviado para auditoría:", auditoria.id)
 
-        
         # MANTENIMIENTO
         if 11 in access and access[11]["read"]:
             hoy = timezone.now().date()
@@ -1129,7 +1157,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     }
 
 
-                    print(f"Enviando correo para mantenimiento ID {mantenimiento.id}")
+                    # print(f"Enviando correo para mantenimiento ID {mantenimiento.id}")
                     # Send_Email(
                     #     subject="Pago de Mantenimiento",
                     #     recipient=recipient_emails_vehiculos,
@@ -1150,21 +1178,13 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     setattr(mantenimiento, campo_email, True)
                     mantenimiento.save(update_fields=[campo_email])
-                    print("el corro se envio correctamente")
+                    # print("el corro se envio correctamente")
         # Respuesta final
     response["recordsTotal"] = len(response["data"])
     response["success"] = True
     return response
 
-#context_email = {
-#        "company" : context["company"]["name"],
-#        "subject" : "Prueba de correos",
-#        "modulo" : 2,
-#        "submodulo" : "Responsiva",
-#        "item" : 26,
-#        "title" : "Esta es una prueba para el sistema de notificaciones",
-#        "body" : "Este es el contenido que se mostrara",
-#    }
+
 # send_notification(context_email)
 def es_correo_valido(valor):
     """Verifica si el valor tiene formato de correo electrónico."""
@@ -1178,35 +1198,43 @@ def send_notification(context):
         else:
             # Obtener nombre del módulo
             modulo = Module.objects.get(pk=context["modulo"]).name
+            # print(modulo)
+            # print(context["company"])
             
+
             # Filtrar por empresa y módulo
             emails = Notification_System.objects.filter(
                 company__name=context["company"],
                 mods=modulo
             )
-        
+            # print(emails.first().itemsID, type(emails.first().itemsID[0]))
             # Filtrar por ID de ítem o comodín (0)
             emails = emails.filter(
                 Q(itemsID__contains=[context["item"]]) | Q(itemsID__contains=[0])
             )
-            
+            # print(emails)
+            # print(context["submodulo"])
+            # print("-----------")
             # Separar notificaciones generales y específicas
             emails_all = emails.filter(cats="todos")
             emails_one = emails.filter(cats=context["submodulo"])
+            # print(emails_all)
+            # print(emails_one)
             emails_responsable = Vehicle.objects.filter(id=context["item"]).values_list('responsible__email', flat=True).distinct()
 
-
-          
             # Unificar lista inicial
             usuarios_raw = list(set(
                 list(emails_all.values_list("usuario", flat=True)) +
                 list(emails_one.values_list("usuario", flat=True)) + 
                 list(emails_responsable)
             ))
-            
+            # print("_____________________________-----")
+            # print(usuarios_raw)
             destinatarios_finales = []
 
             for usuario_val in usuarios_raw:
+                # print(usuario_val)
+                
                 if es_correo_valido(usuario_val):
                     # Es correo, lo agregamos directo
                     destinatarios_finales.append(usuario_val)
@@ -1223,7 +1251,8 @@ def send_notification(context):
 
             # Eliminar duplicados
             destinatarios_finales = list(set(destinatarios_finales))
-        print("esto contiene los destinatarios finales:", destinatarios_finales)
+
+        # print("esto contiene los destinatarios finales:", destinatarios_finales)
         
         # Verificar si hay destinatarios
         if not destinatarios_finales:
@@ -1305,7 +1334,7 @@ def send_notification(context):
         email = EmailMultiAlternatives(subject, "", from_email, destinatarios_finales)
         email.attach_alternative(html_content, "text/html")
         email.send()
-        print(f"Correo enviado correctamente a: {destinatarios_finales}")
+        # print(f"Correo enviado correctamente a: {destinatarios_finales}")
     
     except Exception as e:
         print(f"Error al enviar el correo: {e}")
@@ -1358,14 +1387,14 @@ def Send_Email(subject, recipient, model_instance, message_data, model_name, fie
         # Enviar y verificar
         sent_count = email.send()
         if sent_count > 0:
-            print(f"Correo enviado exitosamente a {recipient}.")
+            # print(f"Correo enviado exitosamente a {recipient}.")
 
             # Actualizar el campo solo si se envió
             with transaction.atomic():
                 instance = model_name.objects.get(pk=model_instance.pk)
                 setattr(instance, field_to_update, True)
                 instance.save()
-            print(f"Campo {field_to_update} actualizado correctamente.")
+            # print(f"Campo {field_to_update} actualizado correctamente.")
         else:
             print(f"No se pudo enviar el correo a {recipient}. No se actualiza el campo.")
 
@@ -1456,6 +1485,6 @@ def Send_Informative_Stripe(recipient, username, password, request):
 
         email.attach_alternative(html_content, "text/html")
         email.send()
-        print("Correo enviado exitosamente.")
+        # print("Correo enviado exitosamente.")
     except Exception as e:
         print(f"Error al enviar el correo: {e}")
