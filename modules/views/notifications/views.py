@@ -9,7 +9,18 @@ from modules.utils import *
 from django.core import serializers 
 @login_required
 def notifications_views(request):
-    if not request.user.is_superuser:
+    # Primero verificar si es superusuario
+    if request.user.is_superuser:
+        acceso_permitido = True
+    else:
+        # Buscar el rol asignado en User_Access para este usuario
+        user_access = User_Access.objects.filter(user=request.user).first()
+        if user_access and user_access.role.name.lower() == "administrador":
+            acceso_permitido = True
+        else:
+            acceso_permitido = False
+    
+    if not acceso_permitido:
         return render(request, "error/access_denied.html")
     context = {}
     context = user_data(request)
