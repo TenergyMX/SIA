@@ -834,30 +834,36 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     Q(status="PROXIMO"),
                     Q(vehiculo_id=item["id"])
                 ).first()
+                
+                print("este es el registro")
+                print(item["id"])
+                print(registro)
 
-                if not registro and vehicle_instance.email_sin_verificacion is False:
-                    response["data"].append({
-                        "alert": "warning",
-                        "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
-                        "title": f"Vehículo sin verificación",
-                        "text": f"Vehículo: {item['name']} no cuenta con ningun registro de verificación",
-                        "link": link_vehiculo
-                    })
+                if not registro:
+                    if vehicle_instance.email_sin_verificacion is False:
+                        print("correo de no registro de verificacion")
+                        response["data"].append({
+                            "alert": "warning",
+                            "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
+                            "title": f"Vehículo sin verificación",
+                            "text": f"Vehículo: {item['name']} no cuenta con ningun registro de verificación",
+                            "link": link_vehiculo
+                        })
 
-                    context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": "Alerta de vehículo sin verificación",
-                        "modulo": 2,
-                        "submodulo": "Verificaciones",
-                        "item": vehicle_instance.id,
-                        "title": f"Vehículo {vehicle_instance.name} sin verificación",
-                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe de contener un registro de verificación para poder generar los futuros pagos y se generen las alertas correspondites.<br>"
-                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                    }
-                    send_notification(context_email)
+                        context_email = {
+                            "company": Company.objects.get(id=company_id).name,
+                            "subject": "Alerta de vehículo sin verificación",
+                            "modulo": 2,
+                            "submodulo": "Verificaciones",
+                            "item": vehicle_instance.id,
+                            "title": f"Vehículo {vehicle_instance.name} sin verificación",
+                            "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe de contener un registro de verificación para poder generar los futuros pagos y se generen las alertas correspondites.<br>"
+                                    f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                        }
+                        send_notification(context_email)
 
-                    vehicle_instance.email_sin_verificacion = True
-                    vehicle_instance.save(update_fields=["email_sin_verificacion"])
+                        vehicle_instance.email_sin_verificacion = True
+                        vehicle_instance.save(update_fields=["email_sin_verificacion"])
                     continue  # no hay registro, seguimos con el siguiente vehículo
 
                 dias_restantes = (registro.fecha_pago - today).days
@@ -866,6 +872,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 
                 # -------- 1️⃣ Falta un mes o menos --------
                 if dias_restantes <= 30 and dias_restantes > 3 and not registro.email_verificacion:
+                    print("correo de un mes o menos")
                     response["data"].append({
                         "alert": "info",
                         "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
@@ -892,6 +899,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 
                 # -------- 2️⃣ Faltan 3 días o menos (recordatorio) --------
                 elif registro.email_verificacion and dias_restantes <= 3 and dias_restantes >= 0:
+                    print("correo de menos de 3 dias ")
                     response["data"].append({
                         "alert": "warning",
                         "icon": "<i class='fa-regular fa-bell fs-18'></i>",
@@ -915,6 +923,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 
                 # -------- 3️⃣ Ya venció --------
                 elif dias_restantes < 0 and registro.status != "Vencido":
+                    print("correo de vencido")
                     response["data"].append({
                         "alert": "danger",
                         "icon": "<i class='fa-regular fa-circle-xmark fs-18'></i>",
