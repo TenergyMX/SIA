@@ -898,7 +898,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     registro.save(update_fields=["email_verificacion"])
 
                 # -------- 2️⃣ Faltan 3 días o menos (recordatorio) --------
-                elif registro.email_verificacion and dias_restantes <= 3 and dias_restantes >= 0:
+                elif dias_restantes <= 3 and dias_restantes >= 0 and not registro.email_verificacion_days:
                     print("correo de menos de 3 dias ")
                     response["data"].append({
                         "alert": "warning",
@@ -919,6 +919,8 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                                 f"{registro.fecha_pago}. Solo faltan {dias_restantes} días.<br>"
                                 f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
                     }
+                    registro.email_verificacion_days = True
+                    registro.save(update_fields=["email_verificacion_days"])
                     send_notification(context_email)
 
                 # -------- 3️⃣ Ya venció --------

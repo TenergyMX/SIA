@@ -35,5 +35,10 @@ class Migration(migrations.Migration):
             name='email_sin_tenencia',
             field=models.BooleanField(default=False),
         ),
+        migrations.AlterField(
+            model_name='vehicle_audit',
+            name='calification',
+            field=models.FloatField(blank=True, null=True),
+        ),
         
     ]
