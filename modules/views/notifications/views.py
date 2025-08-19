@@ -27,16 +27,16 @@ def notifications_views(request):
         area["correos"] = list(userAccess)
     context["areas"] = qs_areas
     
-    context_email = {
-        "company" : context["company"]["name"],
-        "subject" : "Prueba de correos",#Titulo del mensaje
-        "modulo" : 2,#modulo de sia
-        "submodulo" : "Responsiva",#tipo
-        "item" : 26,#id del vehiculo a registrar 
-        "title" : "Esta es una prueba para el sistema de notificaciones",
-        "body" : "Este es el contenido que se mostrara",
-    }
-    send_notification(context_email)
+    # context_email = {
+    #     "company" : context["company"]["name"],
+    #     "subject" : "Prueba de correos",#Titulo del mensaje
+    #     "modulo" : 2,#modulo de sia
+    #     "submodulo" : "Responsiva",#tipo
+    #     "item" : 26,#id del vehiculo a registrar 
+    #     "title" : "Esta es una prueba para el sistema de notificaciones",
+    #     "body" : "Este es el contenido que se mostrara",
+    # }
+    # send_notification(context_email)
     
     #module_id = 3
     subModule_id = 3

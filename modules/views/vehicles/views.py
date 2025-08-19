@@ -52,6 +52,8 @@ from django.utils.timezone import localtime
 from django.core.exceptions import MultipleObjectsReturned
 
 from django.db.models import OuterRef, Subquery
+from decimal import Decimal, InvalidOperation
+
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 load_dotenv(dotenv_path)
@@ -2903,7 +2905,7 @@ def add_vehicle_maintenance(request):
     response = {"success": False}
     dt = request.POST
     vehicle_id = dt.get("vehicle_id")
-    is_new_register = dt.get("is_new_register", False)
+    is_new_register = dt.get("is_new_register")== "1"
     subModule_id = 11
 
     if not vehicle_id:
@@ -2913,13 +2915,21 @@ def add_vehicle_maintenance(request):
     
     try:
         obj_vehicle = Vehicle.objects.get(id=vehicle_id)
-        if is_new_register == 1:
+        if is_new_register:
+
+            try:
+                mileage = Decimal(dt.get("mileage")) if dt.get("mileage") else None
+            except (InvalidOperation, TypeError):
+                mileage = None
             # Verificamos que el kilometraje sea coerente
-            mileage = Decimal(dt.get("mileage")) if dt.get("mileage") else None
-            if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
-                response["status"] = "warning"
-                response["message"] = "El kilometraje del vehículo es mayor que el valor proporcionado."
-                return JsonResponse(response)
+            if mileage is not None and obj_vehicle.mileage is not None:
+                if Decimal(obj_vehicle.mileage) > mileage:
+                    response["status"] = "warning"
+                    response["message"] = (
+                        f"El kilometraje actual del vehículo ({obj_vehicle.mileage} km) "
+                        f"es mayor que el ingresado ({mileage} km)."
+                    )
+                    return JsonResponse(response)
     except Vehicle.DoesNotExist:
         response["status"] = "warning"
         response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
@@ -2940,6 +2950,7 @@ def add_vehicle_maintenance(request):
                 mileage = dt.get("mileage"),
                 time = dt.get("time"),
                 general_notes = dt.get("general_notes"),
+                status="NUEVO",
                 actions = actions
             )
             obj.save()
@@ -3618,8 +3629,8 @@ def generate_qr(request, qr_type, vehicle_id):
         })
      
     # Contenido
-   #domain = request.build_absolute_uri('/')[:-1]
-    domain = "http://192.168.100.106"
+    domain = request.build_absolute_uri('/')[:-1]
+    #domain = "http://192.168.100.106"
 
     if qr_type == 'info':
         qr_content = f"{domain}/vehicles/info/{vehicle_id}/"
@@ -4659,6 +4670,8 @@ def add_vehicle_audit(request):
             vehicle_id=vehicle_id,
             audit_date=audit_date,
             general_notes=general_notes,
+            user_created=request.user if request.user.is_authenticated else None
+
         )
 
         check_objects = []
@@ -4680,6 +4693,29 @@ def add_vehicle_audit(request):
         audit.checks = check_objects  # Store the data in the 'checks_data' field or whatever field is necessary
         audit.is_visible = True
         audit.save()
+
+        # ---- Enviar correo al responsable del vehículo ----
+        if not audit.email_responsible:
+
+            domain = request.build_absolute_uri('/')[:-1]
+
+            link_vehiculo = f"{domain}/vehicles/info/{audit.vehicle.id}/"
+            context_email = {
+                "company": audit.vehicle.company.name,
+                "subject": "Nueva auditoría registrada",
+                "modulo": 2,
+                "submodulo": "Auditoría",
+                "item": audit.vehicle.id,
+                "title": f"Se registró una auditoría para {audit.vehicle.name}",
+                "body": (
+                    f"Se ha registrado una auditoría para el vehículo <strong>{audit.vehicle.name}</strong> "
+                    f"con fecha <strong>{audit.audit_date}</strong>.<br>"
+                    f"Puedes ver los detalles de la auditoría aquí: <a href='{link_vehiculo}'>Ver auditoría</a>."
+                )
+            }
+            send_notification(context_email)
+            audit.email_responsible = True
+            audit.save(update_fields=["email_responsible"])
 
         return JsonResponse({"success": True})
 
@@ -4778,6 +4814,66 @@ def evaluate_audit(request):
                 vehicle_audit.calification = round(calificacion_final, 2) if calificacion_final is not None else None
                 print("la calificacion de esta auditoria es:", vehicle_audit.calification)
                 vehicle_audit.save()
+
+                # --- Enviar correos ---
+                # Al responsable
+                responsable = vehicle_audit.vehicle.responsible
+
+                if responsable and responsable.email and not vehicle_audit.email_evaluated_responsible:
+                    vehicle_audit.email_evaluated_responsible = True  
+                    vehicle_audit.save(update_fields=["email_evaluated_responsible"])  
+
+                    domain = request.build_absolute_uri('/')[:-1]
+
+                    link_vehiculo = f"{domain}/vehicles/info/{vehicle_audit.vehicle.id}/"
+
+                    context_email = {
+                        "to": [responsable.email],
+                        "company": vehicle_audit.vehicle.company.name,
+                        "subject": "Auditoría evaluada",
+                        "modulo": 2,
+                        "submodulo": "Auditoría",
+                        "item": vehicle_audit.vehicle.id,
+                        "title": f"Auditoría evaluada para {vehicle_audit.vehicle.name}",
+                        "body": (
+                            f"Hola {responsable.get_full_name() or responsable.username},<br><br>"
+                            f"La auditoría para el vehículo <strong>{vehicle_audit.vehicle.name}</strong> "
+                            f"del día <strong>{vehicle_audit.audit_date}</strong> ha sido evaluada "
+                            f"con calificación <strong>{vehicle_audit.calification}</strong>.<br>"
+                            f"Puedes ver los detalles aquí: <a href='{link_vehiculo}'>Ver auditoría</a>."
+                        )
+                 
+                    }
+                    send_notification(context_email)
+
+                # Al usuario que creó la auditoría
+                creator = vehicle_audit.user_created
+                if creator and creator.email and not vehicle_audit.email_evaluated_creator:
+                    
+                    vehicle_audit.email_evaluated_creator = True
+                    vehicle_audit.save(update_fields=["email_evaluated_creator"])
+
+                    link_vehiculo = f"{domain}/vehicles/info/{vehicle_audit.vehicle.id}/"
+
+                    context_email = {
+                        "to": [creator.email], 
+                        "company": vehicle_audit.vehicle.company.name,
+                        "subject": "Auditoría evaluada",
+                        "modulo": 2,
+                        "submodulo": "Auditoría",
+                        "item": vehicle_audit.vehicle.id,
+                        "title": f"Tu auditoría fue evaluada - {vehicle_audit.vehicle.name}",
+                        "body": f"""
+                            Hola {creator.get_full_name() or creator.username},<br><br>
+                            La auditoría que registraste para el vehículo 
+                            <strong>{vehicle_audit.vehicle.name}</strong> 
+                            del día <strong>{vehicle_audit.audit_date}</strong> ha sido evaluada 
+                            con calificación <strong>{vehicle_audit.calification}</strong>.<br>
+                            Puedes ver los detalles de la auditoría aquí: <a href='{link_vehiculo}'>Ver auditoría</a>.
+                        """
+                    }
+                    send_notification(context_email)
+
 
                 # Responder con éxito y devolver la estructura corregida
                 return JsonResponse({'success': True, 'audit_results': audit_results})

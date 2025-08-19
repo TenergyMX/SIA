@@ -78,13 +78,14 @@ class Vehicle_Maintenance_Kilometer(models.Model):
     def __str__(self):
         return f"{self.vehiculo} - Mantenimiento en {self.kilometer} Km"
 
-class Vehicle_Tenencia(models.Model):
+class Vehicle_Tenencia(models.Model): 
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     monto = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     fecha_pago = models.DateField()
     comprobante_pago = models.FileField(upload_to='docs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     email_tenencia = models.BooleanField(default=False)
+    email_sin_tenencia = models.BooleanField(default=False)
 
     def clean(self):
         # Validar que el monto de la tenencia sea positivo
@@ -191,7 +192,10 @@ class Vehicle_Audit(models.Model):
     user_created = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True) 
     email_audit = models.BooleanField(default=False)
     calification = models.FloatField(null=True, blank=True)
-
+    email_responsible = models.BooleanField(default=False)  # correo al responsable al crear
+    email_creator = models.BooleanField(default=False) 
+    email_evaluated_responsible = models.BooleanField(default=False)    
+    email_evaluated_creator = models.BooleanField(default=False)    
     def __str__(self):
         return f"Auditoría de {self.vehicle} el {self.audit_date}"
 

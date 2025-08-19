@@ -65,10 +65,15 @@ class VehiclesRefrendo {
         if (options.table) {
             self.table = { ...defaultOptions.table, ...options.table };
             console.log("");
-            if (self.table.vehicle.id) {
+            if (self.vehicle?.id) {
                 self.table.ajax.url = "/get_vehicle_refrendo/";
-                self.table.ajax.data = {
-                    vehicle_id: self.table.vehicle.id,
+                self.table.ajax.data = function (d) {
+                    console.log(
+                        "Enviando vehicle_id del refrendo de vehculo ----:",
+                        self.vehicle.data.id
+                    );
+                    d.vehicle_id = self.vehicle.data.id || "";
+                    d.tipo_carga = self.filtro_estado;
                 };
 
                 // Buscar el índice del elemento que quieres eliminar
