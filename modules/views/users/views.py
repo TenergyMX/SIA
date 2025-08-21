@@ -213,6 +213,7 @@ def get_users_with_access(request):
         "company_id", "company__name",
         "area_id", "area__code", "area__name",
     ).order_by("user__first_name")
+
     # Verificar el rol del usuario actual
     if user_role_id == 1:  
         pass  # No se filtra
@@ -222,7 +223,8 @@ def get_users_with_access(request):
 
     if isList:
         lista = lista.filter(
-            company_id = context["company"]["id"]
+            company_id = context["company"]["id"],
+            user__is_active=True
         ).values(
             "id",
             "user_id",
@@ -249,6 +251,15 @@ def get_users_with_access(request):
                 "<button type=\"button\" name=\"delete\" class=\"btn btn-icon btn-sm btn-danger-light\" data-user=\"dalete-item\" aria-label=\"delete\">" \
                     "<i class=\"fa-solid fa-trash\"></i>" \
                 "</button>\n"
+            if (
+                user_role_id in [1, 2] and 
+                item["user_id"] != context["user"]["id"] and 
+                item["user__is_active"]
+            ):
+                item["btn_option"] += "" \
+                "<button type=\"button\" name=\"deactivate\" class=\"btn btn-icon btn-sm btn-danger-light\" data-user=\"deactivate-item\" aria-label=\"deactivate\">" \
+                    "<i class=\"fa-solid fa-power-off\"></i>" \
+                "</button>\n"
         pass
     
     response["data"] = list(lista)
@@ -268,20 +279,25 @@ def update_user_with_access(request):
     email = dt.get('email', '').strip()
     first_name = dt.get('name', '').strip()
     last_name = dt.get('last_name', '').strip()
-    company_id = dt.get("company_id", {})
+    company_id = dt.get("company_id")
     role_id = dt.get('role', 4)
     user_id = dt.get('user_id')
     area_id = dt.get("area_id")
 
     print("Estos son los datos del formulario:", dt)
-    # Validar que todos los campos necesarios están presentes
-    if not user_id:
-        response["error"] = {"message": "El ID del usuario es obligatorio."}
-        return JsonResponse(response)
 
     if not company_id:
+        company_id = context.get("company", {}).get("id")
+    # Validar que todos los campos necesarios están presentes
+    if not user_id:
+        response["status"] = "error"
+        response["error"] = {"message": "El ID del usuario es obligatorio."}
+        return JsonResponse(response, status=400)
+
+    if not company_id:
+        response["status"] = "error"
         response["error"] = {"message": "Tu usuario no cuenta con una empresa asignada"}
-        return JsonResponse(response)
+        return JsonResponse(response, status=400)
     
     try:
         with transaction.atomic():
@@ -1177,3 +1193,32 @@ def delete_company(request):
             return JsonResponse({"success": False, "message": str(e)})
     return JsonResponse({"success": False, "message": "Método no permitido."})
 
+
+@csrf_exempt
+def deactivate_user(request):
+    if request.method == "POST":
+        user_id = request.POST.get("id")
+        try:
+            user = User.objects.get(id=user_id)
+            user.is_active = False
+            user.save()
+            return JsonResponse({
+                "status": "success",
+                "message": f"Usuario '{user.first_name} {user.last_name}' desactivado correctamente."
+
+            })
+        except User.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "Usuario no encontrado."
+            })
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": f"Error al desactivar el usuario {e}"
+            })
+    else:
+        return JsonResponse({
+            "status": "error",
+            "message": "Método no permitido. Solo se acepta POST."
+        })

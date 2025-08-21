@@ -28,6 +28,7 @@ urlpatterns = [
     path("delete_user_with_access/", views.delete_user_with_access),
     path("get_userPermissions/", views.get_userPermissions),
     path("update_userPermissions/", views.update_userPermissions),
+    path("deactivate_user/", views.deactivate_user),
 
     # TODO ----- [ Proveedores ] -----
     path("add-provider/", views.add_provider),
@@ -47,4 +48,6 @@ urlpatterns = [
     path("add_plan/", views.add_plan),
     path("delete_plans/", views.delete_plans),
     path("edit_plans/", views.edit_plans),
+
+    
 ]

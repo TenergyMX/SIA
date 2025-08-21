@@ -3975,15 +3975,16 @@ def alerta_conductor(id_conductor):
 def get_users(request):
     try:
         context = user_data(request)
-        company_id = context["company"]["id"]
+        company_id = context.get("company", {}).get("id")
+
         if not company_id:
             return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
         
-        users = User.objects.filter(
-            id__in=User_Access.objects.filter(company_id=company_id).values('user_id')
-        ).distinct().values('id', 'first_name', 'last_name')  
-        data = list(users)
-        return JsonResponse({'data': data}, safe=False)
+        user_ids = User_Access.objects.filter(company_id=company_id).values_list('user_id', flat=True)
+        users = User.objects.filter(id__in=user_ids, is_active=True).values('id', 'first_name', 'last_name')
+        
+        return JsonResponse({'data': list(users)}, safe=False)
+
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 

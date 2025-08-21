@@ -33,7 +33,8 @@ def notifications_views(request):
     for area in qs_areas:
         userAccess = User_Access.objects.filter(
             company__name=area["company__name"],
-            area__id=area["id"]
+            area__id=area["id"],
+            user__is_active=True 
         ).values("user__first_name", "user__last_name", "user__email", "id")
         area["correos"] = list(userAccess)
     context["areas"] = qs_areas

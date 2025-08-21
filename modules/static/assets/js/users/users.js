@@ -294,6 +294,53 @@ class Users {
                     self.data["user_id"] = data["id"];
                     self.tbl_userPermissions.ajax.reload();
                     break;
+
+                case "deactivate-item":
+                    var url = "/deactivate_user/";
+                    var fila = $(this).closest("tr");
+                    var datos = self.tbl_users.row(fila).data();
+                    var data = new FormData();
+
+                    data.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
+                    data.append("id", datos["user_id"]);
+
+                    Swal.fire({
+                        title: "¿Desactivar usuario?",
+                        text: `¿Estás seguro de que deseas desactivar el usuario "${datos["user__first_name"]} ${datos["user__last_name"]}"?`,
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#d33",
+                        cancelButtonColor: "#3085d6",
+                        confirmButtonText: "Sí, desactivar",
+                        cancelButtonText: "Cancelar",
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: data,
+                                processData: false,
+                                contentType: false,
+                                success: function (response) {
+                                    if (response.status === "success") {
+                                        Swal.fire("Desactivado", response.message, "success");
+                                        self.tbl_users.ajax.reload();
+                                    } else {
+                                        Swal.fire("Error", response.message, "error");
+                                    }
+                                },
+                                error: function () {
+                                    Swal.fire(
+                                        "Error del servidor",
+                                        "Ocurrió un problema en el servidor. Inténtalo más tarde.",
+                                        "error"
+                                    );
+                                },
+                            });
+                        }
+                    });
+                    break;
+
                 default:
                     console.log("Opcion dezconocida:", option);
                     break;
