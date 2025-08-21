@@ -166,6 +166,7 @@ class Vehicles {
                         self.data.vehicle_id = response["data"]["id"] || null;
                         self.data.vehicle__name = response["data"]["name"] || null;
                         self.data.vehicle__plate = response["data"]["plate"] || null;
+                        self.data.vehicle__car_tires = response["data"]["car_tires"] || null;
                         self.data.key = " ";
                     },
                     error: function (xhr, status, error) {},
@@ -364,6 +365,7 @@ class Vehicles {
                         datos["fuel_type_vehicle"]
                     );
                     console.log("Datos completos de la fila:", datos);
+                    console.log("Valor de car_tires:", datos["car_tires"]);
 
                     $.each(datos, function (index, value) {
                         const elemento = obj_offcanvas.find(`[name='${index}']`);

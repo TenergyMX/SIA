@@ -454,6 +454,7 @@ def add_vehicle_info(request):
             owner_id = dt.get("owner_id"),
             fuel_type_vehicle = dt.get("fuel_type_vehicle"),
             apply_tenencia = dt.get("apply_tenencia") == "on",  
+            car_tires = dt.get("car_tires"),
    
         )
         obj.save()
@@ -549,7 +550,7 @@ def get_vehicle_info(request):
         "insurance_company", "mileage", "model", "name", "plate",
         "responsible_id", "responsible__first_name", "responsible__last_name",
         "serial_number", "state", "validity",
-        "vehicle_type", "year", "image_path"
+        "vehicle_type", "year", "image_path", "car_tires"
     )[0]
     tempImgPath = None
     if data["image_path"]:
@@ -728,7 +729,8 @@ def get_vehicles_info(request):
             "owner_id", "owner__first_name",
             "transmission_type",
             "fuel_type_vehicle",
-            "policy_number"
+            "policy_number",
+            "car_tires"
         )
         data = data.filter(company_id=context["company"]["id"])
 
@@ -851,6 +853,7 @@ def update_vehicle_info(request):
         obj.responsible_id = dt.get("responsible_id")
         obj.owner_id = dt.get("owner_id")
         obj.fuel_type_vehicle = dt.get("fuel_type_vehicle", obj.fuel_type_vehicle)
+        obj.car_tires = dt.get("car_tires", obj.car_tires)
         obj.apply_tenencia = "apply_tenencia" in dt
 
 
