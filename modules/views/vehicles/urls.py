@@ -72,6 +72,8 @@ urlpatterns = [
     path("delete_vehicle_audit/", views.delete_vehicle_audit),
     path("upd_audit_checks/", views.upd_audit_checks),
     path("evaluate_audit/", views.evaluate_audit),
+    path("save_commitment_date/", views.save_commitment_date),
+    path("vehicles/save_correction_evidence/", views.save_correction_evidence),
 
     # Todo --- [ Mantenimiento ] ---
     path("add_vehicle_maintenance/", views.add_vehicle_maintenance),

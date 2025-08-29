@@ -2536,7 +2536,7 @@ def get_vehicle_audit(request):
     lista = Vehicle_Audit.objects.filter(vehicle_id = vehicle_id).values(
         "id", "vehicle_id", "vehicle__name", 
         "audit_date", "general_notes",
-        "checks", "is_visible", "is_checked" 
+        "checks", "is_visible", "is_checked", "commitment_date"
     )
 
     if context["role"]["id"] in [1, 2, 3]:
@@ -2575,7 +2575,10 @@ def get_vehicle_audit(request):
                         "name": check_name if check_name else "Sin nombre",
                         "status": check_status,
                         "notes": check_notes,
-                        "imagen_url": generate_presigned_url(AWS_BUCKET_NAME, check.get("imagen", "")) if check.get("imagen") else None
+                        "imagen": generate_presigned_url(AWS_BUCKET_NAME, check.get("imagen", "")) if check.get("imagen") else None,
+                        "correction": generate_presigned_url(AWS_BUCKET_NAME, str(
+                            VehicleAuditCorrection.objects.filter(audit_id=item["id"], check_name=check_name).values_list('image', flat=True).first() or ""
+                        )) if VehicleAuditCorrection.objects.filter(audit_id=item["id"], check_name=check_name).exists() else None
                     })
 
                 # Reemplazar el JSON con la nueva estructura
@@ -2705,7 +2708,7 @@ def get_vehicles_audit(request):
     lista = lista_queryset.values(
         "id", "vehicle_id", "vehicle__name",
         "audit_date", "general_notes",
-        "checks", "is_visible", "is_checked"
+        "checks", "is_visible", "is_checked", "commitment_date"
     )
 
     if context["role"]["id"] in [1, 2, 3]:
@@ -2733,12 +2736,16 @@ def get_vehicles_audit(request):
                     check_name = Checks.objects.filter(id=check_id).values_list("name", flat=True).first()
                     imagen_check = generate_presigned_url(AWS_BUCKET_NAME, str(check.get("imagen", ""))) if check.get("imagen") else None
 
+                    
                     checks_with_names.append({
                         "id": check_id,
                         "name": check_name if check_name else "Sin nombre",
                         "status": check_status,
                         "notes": check_notes,
-                        "imagen": imagen_check
+                        "imagen": imagen_check,
+                        "correction": generate_presigned_url(AWS_BUCKET_NAME, str(
+                            VehicleAuditCorrection.objects.filter(audit_id=item["id"], check_name=check_name).values_list('image', flat=True).first() or ""
+                        )) if VehicleAuditCorrection.objects.filter(audit_id=item["id"], check_name=check_name).exists() else None
                     })
 
                 item["checks"] = checks_with_names
@@ -4752,6 +4759,7 @@ def evaluate_audit(request):
 
             for check in audit_data:
                 check_name = check["id"] 
+                
                 status = check["status"].strip()
                 notas = check["notas"]
                 sanitized_name = re.sub(r"\s+", "_", check_name)
@@ -4788,6 +4796,7 @@ def evaluate_audit(request):
                     # Formar la estructura corregida con el ID del check
                     audit_results.append({
                         "id": str(check_instance.id),  # Convertir a string si es necesario
+                        "name": check_instance.name,
                         "status": status,
                         "notas": notas,
                         "imagen": S3name or "",
@@ -4815,16 +4824,54 @@ def evaluate_audit(request):
                 print("la calificacion de esta auditoria es:", vehicle_audit.calification)
                 vehicle_audit.save()
 
+                # Generar resumen de la auditoría para correo
+                audit_summary_html = """
+                <table style='border-collapse: collapse; width: 100%;'>
+                    <thead>
+                        <tr>
+                            <th style='border: 1px solid #ddd; padding: 8px;'>Check</th>
+                            <th style='border: 1px solid #ddd; padding: 8px;'>Estado</th>
+                            <th style='border: 1px solid #ddd; padding: 8px;'>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                """
+                for check in audit_results:
+                    check_name = check.get("name") 
+                    estado = check["status"]
+                    notas = check["notas"] or "Sin comentarios"
+                    audit_summary_html += f"""
+                        <tr>
+                            <td style='border: 1px solid #ddd; padding: 8px;'>{check_name}</td>
+
+                            <td style='border: 1px solid #ddd; padding: 8px;'>{estado}</td>
+                            <td style='border: 1px solid #ddd; padding: 8px;'>{notas}</td>
+                        </tr>
+                    """
+                audit_summary_html += "</tbody></table>"
+
+                # Determinar calificación final textual
+                if calification_values:
+                    promedio = sum(calification_values) / len(calification_values)
+                    # Buscar estado más cercano según la escala
+                    closest_status = min(calification_map.items(), key=lambda x: abs(x[1]-promedio))[0]
+                else:
+                    closest_status = "Sin calificación"
+
+                calificacion_final_html = f"<p><strong>Calificación final:</strong> {closest_status}</p>"
+
+                # Concatenar resumen con calificación final
+                full_audit_html = audit_summary_html + "<br>" + calificacion_final_html
+
+                
                 # --- Enviar correos ---
                 # Al responsable
                 responsable = vehicle_audit.vehicle.responsible
-
                 if responsable and responsable.email and not vehicle_audit.email_evaluated_responsible:
                     vehicle_audit.email_evaluated_responsible = True  
                     vehicle_audit.save(update_fields=["email_evaluated_responsible"])  
 
                     domain = request.build_absolute_uri('/')[:-1]
-
                     link_vehiculo = f"{domain}/vehicles/info/{vehicle_audit.vehicle.id}/"
 
                     context_email = {
@@ -4837,19 +4884,18 @@ def evaluate_audit(request):
                         "title": f"Auditoría evaluada para {vehicle_audit.vehicle.name}",
                         "body": (
                             f"Hola {responsable.get_full_name() or responsable.username},<br><br>"
-                            f"La auditoría para el vehículo <strong>{vehicle_audit.vehicle.name}</strong> "
-                            f"del día <strong>{vehicle_audit.audit_date}</strong> ha sido evaluada "
-                            f"con calificación <strong>{vehicle_audit.calification}</strong>.<br>"
-                            f"Puedes ver los detalles aquí: <a href='{link_vehiculo}'>Ver auditoría</a>."
+                            f"La auditoría realizada al vehículo <strong>{vehicle_audit.vehicle.name}</strong> "
+                            f"el día <strong>{vehicle_audit.audit_date}</strong> ha sido evaluada. "
+                            f"A continuación se muestra el detalle por check:<br><br>"
+                            f"{full_audit_html}<br>"
+                            f"Puedes ver los detalles completos aquí: <a href='{link_vehiculo}'>Ver auditoría</a>."
                         )
-                 
                     }
                     send_notification(context_email)
 
                 # Al usuario que creó la auditoría
                 creator = vehicle_audit.user_created
                 if creator and creator.email and not vehicle_audit.email_evaluated_creator:
-                    
                     vehicle_audit.email_evaluated_creator = True
                     vehicle_audit.save(update_fields=["email_evaluated_creator"])
 
@@ -4858,7 +4904,7 @@ def evaluate_audit(request):
                     context_email = {
                         "to": [creator.email], 
                         "company": vehicle_audit.vehicle.company.name,
-                        "subject": "Auditoría evaluada",
+                        "subject": "Tu auditoría fue evaluada",
                         "modulo": 2,
                         "submodulo": "Auditoría",
                         "item": vehicle_audit.vehicle.id,
@@ -4867,13 +4913,13 @@ def evaluate_audit(request):
                             Hola {creator.get_full_name() or creator.username},<br><br>
                             La auditoría que registraste para el vehículo 
                             <strong>{vehicle_audit.vehicle.name}</strong> 
-                            del día <strong>{vehicle_audit.audit_date}</strong> ha sido evaluada 
-                            con calificación <strong>{vehicle_audit.calification}</strong>.<br>
-                            Puedes ver los detalles de la auditoría aquí: <a href='{link_vehiculo}'>Ver auditoría</a>.
+                            el día <strong>{vehicle_audit.audit_date}</strong> ha sido evaluada. 
+                            Detalle por check:<br><br>
+                            {full_audit_html}<br>
+                            Puedes ver los detalles completos de la auditoría aquí: <a href='{link_vehiculo}'>Ver auditoría</a>.<br><br>
                         """
                     }
                     send_notification(context_email)
-
 
                 # Responder con éxito y devolver la estructura corregida
                 return JsonResponse({'success': True, 'audit_results': audit_results})
@@ -7107,7 +7153,7 @@ def table_carnet_vehicle(request):
                 <i class="fa-solid fa-file"></i> Ver 
             </a>"""
 
-        # Botón Editar
+        # Botón Editar                                                                                                                                                                                                                          
         if access.get("update"):
             row["btn_action"] += f"""<button class="btn btn-primary btn-sm" data-vehicle-carnet="update-carnet" 
                 data-id="{item.id}">
@@ -7297,6 +7343,149 @@ def deactivate_vehicle(request):
             "status": "error",
             "message": "Método no permitido. Solo se acepta POST."
         })
+
+
+# Vista para guardar fecha compromiso
+@login_required
+def save_commitment_date(request):
+    if request.method == "POST":
+        try:
+            audit_id = request.POST.get("audit_id")
+            commitment_date = request.POST.get("commitment_date")
+
+            if not audit_id or not commitment_date:
+                return JsonResponse({"success": False, "error": "Faltan datos"})
+
+            vehicle_audit = Vehicle_Audit.objects.filter(id=audit_id).first()
+            if not vehicle_audit:
+                return JsonResponse({"success": False, "error": "Auditoría no encontrada"})
+
+            # Guardar la fecha compromiso
+            vehicle_audit.commitment_date = commitment_date
+            vehicle_audit.save(update_fields=["commitment_date"])
+
+            # --- Enviar correo al auditor/encargado ---
+            domain = request.build_absolute_uri("/")[:-1]
+            link_vehiculo = f"{domain}/vehicles/info/{vehicle_audit.vehicle.id}/"
+
+            creator = vehicle_audit.user_created
+            if creator and creator.email:
+                context_email = {
+                    "to": [creator.email],
+                    "company": vehicle_audit.vehicle.company.name,
+                    "subject": "Fecha compromiso asignada",
+                    "modulo": 2,
+                    "submodulo": "Auditoría",
+                    "item": vehicle_audit.vehicle.id,
+                    "title": f"Fecha compromiso asignada en auditoría de {vehicle_audit.vehicle.name}",
+                    "body": f"""
+                        Hola {creator.get_full_name() or creator.username},<br><br>
+                        Se ha asignado una <strong>fecha compromiso</strong> para atender los hallazgos encontrados 
+                        en la auditoría realizada al vehículo <strong>{vehicle_audit.vehicle.name}</strong> 
+                        el día <strong>{vehicle_audit.audit_date}</strong>.<br><br>
+
+                        📅 Fecha compromiso: <strong>{vehicle_audit.commitment_date}</strong><br><br>
+
+                        Te invitamos a dar seguimiento a las acciones correctivas necesarias. <br><br>
+                        Puedes revisar la auditoría y los detalles completos en el siguiente enlace:<br>
+                        👉 <a href="{link_vehiculo}">Ver auditoría</a>.<br><br>
+                    """
+                }
+                send_notification(context_email)
+
+            return JsonResponse({"success": True, "message": "Fecha compromiso guardada y correo enviado"})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Método no permitido"})
+
+@csrf_exempt
+def save_correction_evidence(request):
+    if request.method == "POST":
+        audit_id = request.POST.get("audit_id")
+        files = request.FILES
+
+        try:
+            audit = Vehicle_Audit.objects.get(id=audit_id)
+            company_id = audit.vehicle.company.id if audit.vehicle and audit.vehicle.company else "general"
+            vehicle_id = audit.vehicle.id if audit.vehicle else "0"
+
+            uploaded_paths = {}  # Guardamos paths S3 por check
+
+            for field_name, file in files.items():
+                if field_name.startswith("correction_"):
+                    check_name = field_name.replace("correction_", "")
+
+                    # Nombre único en S3
+                    folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/audit/{audit_id}/corrections/"
+                    file_name, extension = os.path.splitext(file.name)
+                    new_name = f"{check_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}{extension}"
+                    s3_path = folder_path + new_name
+
+                    # Subir a S3
+                    try:
+                        upload_to_s3(file, bucket_name, s3_path)
+                    except Exception as e:
+                        return JsonResponse({"success": False, "error": f"Error al subir {check_name}: {str(e)}"})
+
+                    # Guardar en DB
+                    VehicleAuditCorrection.objects.create(
+                        audit=audit,
+                        check_name=check_name,
+                        image=s3_path
+                    )
+
+                    uploaded_paths[check_name] = s3_path
+
+            #Devolver todas las imágenes existentes también
+            all_corrections = VehicleAuditCorrection.objects.filter(audit=audit)
+            all_paths = {
+                c.check_name: generate_presigned_url(bucket_name, c.image) for c in all_corrections
+            }
+
+            print("esto contiene la url de las imagenes", all_paths)
+
+            # --- Enviar correo al auditor/encargado ---
+            domain = request.build_absolute_uri("/")[:-1]
+            link_vehiculo = f"{domain}/vehicles/info/{audit.vehicle.id}/"
+
+            creator = audit.user_created
+            if creator and creator.email:
+                context_email = {
+                    "to": [creator.email],
+                    "company": audit.vehicle.company.name,
+                    "subject": "Evidencias de corrección cargadas",
+                    "modulo": 2,
+                    "submodulo": "Auditoría",
+                    "item": audit.vehicle.id,
+                    "title": f"Evidencias de corrección subidas en auditoría de {audit.vehicle.name}",
+                    "body": f"""
+                        Hola {creator.get_full_name() or creator.username},<br><br>
+                        Se han subido <strong>evidencias de corrección</strong> para atender los hallazgos encontrados 
+                        en la auditoría realizada al vehículo <strong>{audit.vehicle.name}</strong> 
+                        el día <strong>{audit.audit_date}</strong>.<br><br>
+
+                        📂 Ahora puedes revisar las imágenes de las correcciones realizadas.<br><br>
+
+                        👉 <a href="{link_vehiculo}">Ver auditoría</a>.<br><br>
+                    """
+                }
+                send_notification(context_email)
+                
+            return JsonResponse({
+                "success": True,
+                "message": "Evidencias de corrección guardadas en S3",
+                "paths": all_paths
+            })
+
+        except Vehicle_Audit.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Auditoría no encontrada"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Método no permitido"})
+
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin

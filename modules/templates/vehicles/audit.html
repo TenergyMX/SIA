@@ -200,11 +200,13 @@
 
 <script>
     const auditoria = new VehiclesAudit({
-        table: { id: '#table_audit' },
+        table: { 
+            id: '#table_audit' },
         vehicle: new Vehicles({
             list: { id: '[name="vehicle_id"]' },
             infoCard: {}
         })
     });
+
 </script>
 {% endblock %}

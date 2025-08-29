@@ -199,9 +199,19 @@ class Vehicle_Audit(models.Model):
     email_creator = models.BooleanField(default=False) 
     email_evaluated_responsible = models.BooleanField(default=False)    
     email_evaluated_creator = models.BooleanField(default=False)    
+    commitment_date = models.DateField(blank=True, null=True)
+
     def __str__(self):
         return f"Auditoría de {self.vehicle} el {self.audit_date}"
 
+class VehicleAuditCorrection(models.Model):
+    audit = models.ForeignKey(Vehicle_Audit, on_delete=models.CASCADE, related_name="corrections")
+    check_name = models.CharField(max_length=255) 
+    image = models.CharField(max_length=500, blank=True, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Corrección {self.check_name} - {self.audit.vehicle.name}"
 
 class Vehicle_Maintenance(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)

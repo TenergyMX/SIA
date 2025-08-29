@@ -428,15 +428,16 @@ class VehiclesAudit {
                     obj_modal.find('[name="audit_date"]').prop("readonly", true);
                     break;
                 case "show-info-details":
-                    // Suponiendo que 'datos' contiene los datos de la auditoría
                     hideShow("#v-audit-pane .info", "#v-audit-pane .info-details");
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_audit.row(fila).data();
                     var obj_div = $("#v-audit-pane .info-details");
 
-                    // Limpiar los datos previos
-                    var tbody = obj_div.find(".table tbody");
+                    var tbody = obj_div.find("#audit-checks-table tbody");
                     tbody.empty();
+                    $("#audit-checks-table")
+                        .attr("data-audit-id", datos.id)
+                        .data("checks", datos.checks);
 
                     // Llenar la información general
                     $.each(datos, function (index, value) {
@@ -445,23 +446,72 @@ class VehiclesAudit {
                             .html(value || "---")
                             .removeClass();
 
-                        // Si es un campo de tipo input, podemos agregar un 'readonly' si está chequeado
                         if ($("#" + index).length > 0) {
                             $("#" + index).val(value || "---");
 
                             // Verificamos si la auditoría está chequeada
                             if (datos.is_checked) {
-                                $("#" + index).prop("readonly", true); // Deshabilitar el campo
+                                $("#" + index).prop("readonly", true);
                             } else {
-                                $("#" + index).prop("readonly", false); // Habilitar el campo
+                                $("#" + index).prop("readonly", false);
                             }
                         }
                     });
+
+                    // Detectar checks malos/muy malos
+                    var hasBadChecks = false;
+                    if (Array.isArray(datos["checks"])) {
+                        datos["checks"].forEach(function (checkItem) {
+                            if (checkItem.status === "Malo" || checkItem.status === "Muy Malo") {
+                                hasBadChecks = true;
+                            }
+                        });
+                    }
+
+                    // Insertar campo "Fecha compromiso"
+                    if (hasBadChecks) {
+                        obj_div.find("#commitment-date-container").remove();
+                        let target = obj_div.find(".audit_date");
+                        if (datos.commitment_date && datos.commitment_date !== "") {
+                            // Ya existe fecha -> mostrar solo como texto
+                            target.after(`
+                                <p id="commitment-date-container" class="card-text mt-2">
+                                    <span class="fw-bold">Fecha compromiso: </span>
+                                    <span>${datos.commitment_date}</span>
+                                </p>
+                            `);
+                        } else {
+                            let auditDate = target.text().trim();
+                            let auditDateISO = auditDate.includes("-")
+                                ? auditDate
+                                : auditDate.split("/").reverse().join("-");
+
+                            target.after(`
+                                <p id="commitment-date-container" class="card-text mt-2">
+                                    <span class="fw-bold">Fecha compromiso: </span>
+                                    <input type="date" id="commitment_date" 
+                                        name="commitment_date" 
+                                        class="form-control form-control-sm d-inline-block w-auto" 
+                                        min="${auditDateISO}">
+                                </p>
+                            `);
+                        }
+                    } else {
+                        $("#commitment-date-container").remove();
+                    }
+
                     // Depurar la sección de checks
                     if (datos["checks"]) {
                         // Comprobar si 'checks' es un arreglo
                         if (Array.isArray(datos["checks"])) {
+                            var hasBadChecks = false;
                             datos["checks"].forEach(function (checkItem, idx) {
+                                if (
+                                    checkItem.status === "Malo" ||
+                                    checkItem.status === "Muy Malo"
+                                ) {
+                                    hasBadChecks = true;
+                                }
                                 // Crear un select para el estado
                                 var selectStatus = `
                                     <select class="form-select status-select" data-key-value="status" ${
@@ -492,35 +542,49 @@ class VehiclesAudit {
                                           datos.is_checked ? "readonly" : ""
                                       }>${checkItem.notes || ""}</textarea>`;
 
+                                // Agregar encabezado de evidencia si existe fecha compromiso
+                                if (
+                                    datos.commitment_date &&
+                                    $("#audit-checks-table thead tr").find(".evidencia-th")
+                                        .length === 0
+                                ) {
+                                    $("#audit-checks-table thead tr").append(
+                                        "<th class='evidencia-th'>Evidencia de corrección</th>"
+                                    );
+                                }
+
                                 // Crear la fila de la tabla
-                                var nuevaFila =
-                                    `
+                                var nuevaFila = `
                                     <tr>
                                         <th>${checkItem.name || "---"}</th>
                                         <td class="status">${selectStatus}</td>
                                         <td class="notes">${notesField}</td>
-                                        <td class="image">` +
-                                    (checkItem.imagen && checkItem.imagen !== ""
-                                        ? `<a href="${checkItem.imagen}" target="_blank" class="btn btn-sm btn-info">
-                                                <i class="fa fa-image"></i> Ver imagen
-                                            </a>`
-                                        : `<input type="file" accept="image/*" class="form-control form-control-sm check-image" name="imagen_${checkItem.name}">`) +
-                                    `</td>
+                                        <td class="image">
+                                            ${
+                                                checkItem.imagen && checkItem.imagen !== ""
+                                                    ? `<a href="${checkItem.imagen}" target="_blank" class="btn btn-sm btn-info">
+                                                        <i class="fa fa-image"></i> Ver imagen
+                                                    </a>`
+                                                    : datos.is_checked
+                                                    ? `<span class="text-muted">Sin imagen</span>`
+                                                    : `<input data-key-value="images" type="file" accept="image/*"
+                                                                class="form-control form-control-sm correction-image check-image"
+                                                                name="correction_${checkItem.name}">`
+                                            }
+                                        </td>
                                     </tr>
-                                    `;
+                                `;
 
                                 tbody.append(nuevaFila);
                             });
                         }
                     } else {
                     }
-
                     // Actualizar la información del vehículo
                     if (self.vehicle && self.vehicle.infoCard) {
                         self.vehicle.infoCard.vehicle.id = datos["vehicle_id"];
                         self.vehicle.infoCard.ajax.reload();
                     }
-                    // $("#update-audit-btn").attr("onclick", `evaluate_audit(${datos["id"]})`).show(); // Asegurarse de que el botón se muestre si no está chequeado
                     $("#update-audit-btn")
                         .attr("onclick", `evaluate_audit(${datos["id"]}, ${datos["vehicle_id"]})`)
                         .show();
@@ -531,6 +595,28 @@ class VehiclesAudit {
                         // Mostrar el botón de actualización solo si no está chequeada
                         $("#update-audit-btn").show();
                     }
+
+                    if (datos.commitment_date && hasBadChecks) {
+                        enableCorrectionEvidence(datos.checks);
+                    }
+
+                    $("#correction-btn-container").remove();
+                    if (hasBadChecks && datos.commitment_date) {
+                        const targetParent = $("#general_notes").parent();
+                        targetParent.append(`
+                            <div id="correction-btn-container" class="mt-2 d-flex justify-content-start">
+                                <button type="button" id="save-correction-btn" class="btn btn-success">Guardar correcciones</button>
+                            </div>
+                        `);
+
+                        //setTimeout
+                        $("#save-correction-btn")
+                            .off("click")
+                            .on("click", function () {
+                                save_correction_evidence(datos.checks);
+                            });
+                    }
+
                     break;
                 case "show-info":
                     hideShow("#v-audit-pane .info-details", "#v-audit-pane .info");
@@ -548,14 +634,14 @@ class VehiclesAudit {
 
 function obtener_checks_empresa(selectedValues = []) {
     let selectChecks = $("select[name='checks[]']");
-    let currentSelected = selectChecks.val() || []; // Obtener valores seleccionados actuales
+    let currentSelected = selectChecks.val() || [];
 
     $.ajax({
         url: `/obtener_checks_empresa/`,
         method: "GET",
         dataType: "json",
         success: function (data) {
-            selectChecks.empty(); // Limpiar opciones previas
+            selectChecks.empty();
 
             if (Array.isArray(data) && data.length > 0) {
                 data.forEach(function (check, index) {
@@ -756,10 +842,6 @@ function evaluate_audit(id, vehicle_id) {
     formData.append("audit_data", JSON.stringify(auditData));
     formData.append("csrfmiddlewaretoken", $('input[name="csrfmiddlewaretoken"]').val());
 
-    // for (var pair of formData.entries()) {
-    //     console.log(pair[0], pair[1]);
-    // }
-
     // Mostrar loading con SweetAlert
     Swal.fire({
         title: "Procesando registro de auditoria...",
@@ -776,21 +858,23 @@ function evaluate_audit(id, vehicle_id) {
         processData: false,
         contentType: false,
         success: function (response) {
-            Swal.close(); // Cerrar loading
+            Swal.close();
 
-            // console.log("📥 Respuesta del servidor:", response);
             if (response.success) {
                 Swal.fire("Éxito", "Auditoría evaluada correctamente", "success");
-                $("#table_audit").DataTable().ajax.reload();
+                $("#table_audit")
+                    .DataTable()
+                    .ajax.reload(function () {
+                        reloadAuditDetails(id);
+                    }, false);
                 $("#update-audit-btn").hide();
             } else {
                 Swal.fire("Error", response.error, "error");
             }
         },
         error: function (xhr, status, error) {
-            Swal.close(); // Cerrar loading
+            Swal.close();
 
-            // console.error("❌ Error AJAX:", status, error);
             Swal.fire("Error", "Hubo un error al actualizar la auditoría", "error");
         },
     });
@@ -874,3 +958,235 @@ $("#audit-period, #audit-date").on("change", function () {
         self.tbl_audit.ajax.reload();
     }
 });
+
+// Escucha cambios en el input de fecha
+$(document).on("change", "#commitment_date", function () {
+    var commitmentDate = $(this).val();
+    var auditId = $("#audit-checks-table").data("audit-id");
+
+    // Obtener la fecha de la auditoría en formato ISO (YYYY-MM-DD)
+    var auditDate = $(".audit_date").text().trim();
+    var auditDateISO = auditDate.includes("-")
+        ? auditDate
+        : auditDate.split("/").reverse().join("-");
+
+    if (!commitmentDate) {
+        Swal.fire("Atención", "Selecciona una fecha de compromiso", "warning");
+        return;
+    }
+
+    // Validar fecha compromiso >= fecha auditoría
+    if (new Date(commitmentDate) < new Date(auditDateISO)) {
+        Swal.fire(
+            "Error",
+            "La fecha compromiso no puede ser anterior a la fecha de auditoría",
+            "error"
+        );
+        $(this).val("");
+        return;
+    }
+
+    if (!commitmentDate) {
+        Swal.fire("Atención", "Selecciona una fecha de compromiso", "warning");
+        return;
+    }
+
+    if (!auditId) {
+        Swal.fire("Error", "No se encontró el ID de la auditoría", "error");
+        return;
+    }
+
+    // Mostrar mensaje de confirmación
+    Swal.fire({
+        title: "¿Estás seguro?",
+        html: `¿Te comprometes a realizar las mejoras antes del <strong>${commitmentDate}</strong>?`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, comprometerme",
+        cancelButtonText: "Cancelar",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: "/save_commitment_date/",
+                method: "POST",
+                data: {
+                    audit_id: auditId,
+                    commitment_date: commitmentDate,
+                    csrfmiddlewaretoken: $("[name=csrfmiddlewaretoken]").val(),
+                },
+                success: function (res) {
+                    if (res.success) {
+                        Swal.fire("Éxito", "Fecha compromiso guardada y correo enviado", "success");
+
+                        $("#commitment-date-container").html(`
+                            <span class="fw-bold">Fecha compromiso: </span>
+                            <span class="text-success">${commitmentDate}</span>
+                        `);
+
+                        const checks = $("#audit-checks-table").data("checks");
+                        enableCorrectionEvidence(checks);
+
+                        // addEvidenceColumn();
+                    } else {
+                        Swal.fire("Error", res.error, "error");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                    Swal.fire("Error", "Hubo un error al guardar la fecha compromiso", "error");
+                },
+            });
+        } else {
+            $("#commitment_date").val("");
+        }
+    });
+});
+
+function enableCorrectionEvidence(checks) {
+    const tbody = $("#audit-checks-table tbody");
+
+    // Agregar columna de evidencia si no existe
+    if ($("#audit-checks-table thead tr").find(".evidencia-th").length === 0) {
+        $("#audit-checks-table thead tr").append(
+            "<th class='evidencia-th'>Evidencia de corrección</th>"
+        );
+    }
+
+    let allHaveEvidence = true; // bandera para decidir si mostrar el botón
+
+    // Recorrer las filas
+    tbody.find("tr").each(function (idx, row) {
+        const check = checks[idx];
+
+        let cellContent = "";
+
+        if (check.status === "Malo" || check.status === "Muy Malo") {
+            if (check.correction && check.correction !== "") {
+                // Si ya existe evidencia, mostrar enlace
+                cellContent = `<a href="${check.correction}" target="_blank" class="btn btn-sm btn-info">
+                                    <i class="fa fa-image"></i> Ver corrección
+                               </a>`;
+            } else {
+                // Si no existe, agregar input
+                cellContent = `<input type="file" accept="image/*" class="form-control form-control-sm correction-image check-image" name="correction_${check.name}">`;
+                allHaveEvidence = false; // al menos un check sin evidencia
+            }
+        } else {
+            cellContent = `<span class="text-muted">No aplica</span>`;
+        }
+
+        // limpiar y volver a insertar la celda
+        $(row).find(".correction-evidence").remove();
+        $(row).append(`<td class="correction-evidence">${cellContent}</td>`);
+    });
+
+    // Mostrar botón solo si hay algún check malo/muy malo sin evidencia
+    $("#save-correction-btn").remove(); // limpiar antes
+    if (!allHaveEvidence) {
+        $("#v-audit-pane .info-details #update-button-container").append(`
+            <button id="save-correction-btn" class="btn btn-success mt-2">Guardar correcciones</button>
+        `);
+
+        $("#save-correction-btn")
+            .off("click")
+            .on("click", function () {
+                save_correction_evidence(checks);
+            });
+    }
+}
+
+function save_correction_evidence(checks) {
+    const auditId = $("#audit-checks-table").attr("data-audit-id");
+    const formData = new FormData();
+    formData.append("audit_id", auditId);
+
+    let emptyFound = false;
+
+    $(".correction-image").each(function (idx, input) {
+        if (input.files.length > 0) {
+            formData.append(input.name, input.files[0]);
+        } else {
+            emptyFound = true;
+        }
+    });
+
+    if (emptyFound) {
+        Swal.fire({
+            icon: "warning",
+            title: "Faltan imágenes",
+            text: "Debes subir imágenes en todos los checks malos/muy malos antes de enviar.",
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: "¿Quieres enviar las evidencias de corrección?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, enviar",
+        cancelButtonText: "Cancelar",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: "/vehicles/save_correction_evidence/",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Éxito",
+                            text: "Correcciones guardadas exitosamente",
+                        });
+
+                        // Reemplazar inputs por botones Ver Imagen usando paths devueltos
+                        $(".correction-image").each(function (idx, input) {
+                            const checkName = $(input).attr("name").replace("correction_", "");
+                            const s3Path = response.paths[checkName] || "#";
+                            $(input).replaceWith(
+                                `<a href="${s3Path}" target="_blank" class="btn btn-sm btn-success">
+                                    <i class="fa fa-image"></i> Ver corrección
+                                </a>`
+                            );
+                        });
+
+                        // Ocultar botón guardar si ya no hay inputs
+                        if ($(".correction-image").length === 0) {
+                            $("#save-correction-btn").remove();
+                        }
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: response.error,
+                        });
+                    }
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Error al enviar las correcciones",
+                    });
+                },
+            });
+        }
+    });
+}
+
+function reloadAuditDetails(auditId) {
+    const table = $("#table_audit").DataTable();
+    table.rows().every(function () {
+        const data = this.data();
+        if (data && data.id === auditId) {
+            const $row = $(this.node());
+            const $btn = $row.find("[data-vehicle-audit='show-info-details']");
+            if ($btn.length > 0) {
+                $btn.trigger("click");
+            }
+            return false;
+        }
+    });
+}
