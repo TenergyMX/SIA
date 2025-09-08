@@ -9,7 +9,7 @@ urlpatterns = [
     path("vehicles/", views.vehicles),
     path("vehicles/info/", views.vehicles),
     path("vehicles/info/<int:vehicle_id>/", views.vehicles_details),
-    path("vehicles/tenencia/", views.module_vehicle_tenencia),
+    # path("vehicles/tenencia/", views.module_vehicle_tenencia),
     path("vehicles/refrendo/", views.module_vehicle_refrendo),
     path("vehicles/verificacion/", views.module_vehicle_verificacion),
     path("vehicles/responsiva/", views.module_vehicle_responsiva),
@@ -29,11 +29,11 @@ urlpatterns = [
     path("delete_vehicle_info/", views.delete_vehicle_info),
 
     # TODO ----- [ Tenencia ] -----
-    path("add_vehicle_tenencia/", views.add_vehicle_tenencia),
-    path("get_vehicle_tenencia/", views.get_vehicle_tenencia),
-    path("get_vehicles_tenencia/", views.get_vehicles_tenencia),
-    path("update_vehicle_tenencia/", views.update_vehicle_tenencia),
-    path("delete_vehicle_tenencia/", views.delete_vehicle_tenencia),
+    # path("add_vehicle_tenencia/", views.add_vehicle_tenencia),
+    # path("get_vehicle_tenencia/", views.get_vehicle_tenencia),
+    # path("get_vehicles_tenencia/", views.get_vehicles_tenencia),
+    # path("update_vehicle_tenencia/", views.update_vehicle_tenencia),
+    # path("delete_vehicle_tenencia/", views.delete_vehicle_tenencia),
 
     # TODO ----- [ Refrendo ] -----
     path("add_vehicle_refrendo/", views.add_vehicle_refrendo),

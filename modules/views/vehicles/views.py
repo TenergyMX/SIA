@@ -112,21 +112,21 @@ def vehicles_details(request, vehicle_id = None):
     template = "vehicles/vechicle_details.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
 
-@login_required
-def module_vehicle_tenencia(request):
-    context = user_data(request)
-    module_id = 2
-    subModule_id = 5
+# @login_required
+# def module_vehicle_tenencia(request):
+#     context = user_data(request)
+#     module_id = 2
+#     subModule_id = 5
     
-    access = get_module_user_permissions(context, subModule_id)
-    sidebar = get_sidebar(context, [1, module_id])
+#     access = get_module_user_permissions(context, subModule_id)
+#     sidebar = get_sidebar(context, [1, module_id])
     
-    context["access"] = access["data"]["access"]
-    context["sidebar"] = sidebar["data"]
+#     context["access"] = access["data"]["access"]
+#     context["sidebar"] = sidebar["data"]
     
-    template = "vehicles/vehicles_tenencia.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+#     template = "vehicles/vehicles_tenencia.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     
-    return render(request, template, context)
+#     return render(request, template, context)
 
 @login_required
 def module_vehicle_refrendo(request):
@@ -453,7 +453,7 @@ def add_vehicle_info(request):
             responsible_id = dt.get("responsible_id"),
             owner_id = dt.get("owner_id"),
             fuel_type_vehicle = dt.get("fuel_type_vehicle"),
-            apply_tenencia = dt.get("apply_tenencia") == "on",  
+            # apply_tenencia = dt.get("apply_tenencia") == "on",  
             car_tires = dt.get("car_tires"),
    
         )
@@ -461,34 +461,28 @@ def add_vehicle_info(request):
         id = obj.id
 
         if 'cover-image' in request.FILES and request.FILES['cover-image']:
-            load_file = request.FILES.get('cover-image')
-            #folder_path = f"docs/{company_id}/vehicle/{id}/"
-            
+            load_file = request.FILES.get('cover-image')            
             s3Path = f'docs/{company_id}/vehicle/{id}/'
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-
             file_name, extension = os.path.splitext(load_file.name)                
             new_name = f"cover-image{extension}"
-
-            # Eliminar archivos de portada anteriores usando glob
-            #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, "cover-image.*"))
-            #for old_file_path in old_files:
-            #    if os.path.exists(old_file_path):
-            #        os.remove(old_file_path)
-            #imageTemp = fs.save(folder_path + new_name, load_file)
-            #localPath = folder_path + new_name
             s3Name = s3Path + new_name
             
             upload_to_s3(load_file, bucket_name, s3Name)
     
             obj.image_path = s3Name
             obj.save()
-        response["success"] = True
-        response["status"] = "success"
-        response["message"] = "Vehículo agregado exitosamente."
-        response["id"] = obj.id
+            
+            image_url = generate_presigned_url(bucket_name, s3Name)
+
+        response.update({
+            "success": True,
+            "status": "success",
+            "message": "Vehículo agregado exitosamente.",
+            "id": obj.id,
+            "image_url": image_url
+        })
+    
     except Exception as e:
-        response["success"] = False
         response["error"] = {"message": str(e)}
         return JsonResponse(response)
     
@@ -498,8 +492,8 @@ def add_vehicle_info(request):
         vehiculos = Vehicle.objects.filter(company_id=1).order_by('id')
         num_vehiculos = vehiculos.count()
         num_auditorias = Vehicle_Audit.objects.filter(
-            vehicle__company_id = 1,
-            active = True
+            vehicle__company_id=1,
+            vehicle__is_active=True
         ).count()
         num = 3 # cantidad de auditorias a crear
 
@@ -584,7 +578,7 @@ def alertas(vehicle_id, detailed=False):
             return {"alert": False, "missing_tables": ["vehículo no encontrado"]}
         return False
 
-    apply_tenencia = vehiculo.apply_tenencia
+    # apply_tenencia = vehiculo.apply_tenencia
 
     tables = [
         ("tenencia", Vehicle_Tenencia, "vehiculo_id"),
@@ -603,8 +597,8 @@ def alertas(vehicle_id, detailed=False):
             filter_kwargs = {field_name: vehicle_id}
 
             #  Evita verificar tenencia si no aplica
-            if table_name == "tenencia" and not apply_tenencia:
-                continue
+            # if table_name == "tenencia" and not apply_tenencia:
+            #     continue
 
 
             if not table.objects.filter(**filter_kwargs).exists():
@@ -854,7 +848,7 @@ def update_vehicle_info(request):
         obj.owner_id = dt.get("owner_id")
         obj.fuel_type_vehicle = dt.get("fuel_type_vehicle", obj.fuel_type_vehicle)
         obj.car_tires = dt.get("car_tires", obj.car_tires)
-        obj.apply_tenencia = "apply_tenencia" in dt
+        # obj.apply_tenencia = "apply_tenencia" in dt
 
 
         obj.save()
@@ -908,250 +902,250 @@ def delete_vehicle_info(request):
     return JsonResponse(response)
 
 
-def add_vehicle_tenencia(request):
-    response = {"success": False, "data": []}
-    dt = request.POST
+# def add_vehicle_tenencia(request):
+#     response = {"success": False, "data": []}
+#     dt = request.POST
 
-    vehicle_id = dt.get("vehiculo_id")
+#     vehicle_id = dt.get("vehiculo_id")
     
-    try:
-        obj_vehicle = Vehicle.objects.get(id = vehicle_id)
-        company_id = obj_vehicle.company.id
-    except Vehicle.DoesNotExist:
-        response["error"] = {"message": f"No se encontró ningún vehículo con el ID {vehicle_id}"}
-        return JsonResponse(response)
+#     try:
+#         obj_vehicle = Vehicle.objects.get(id = vehicle_id)
+#         company_id = obj_vehicle.company.id
+#     except Vehicle.DoesNotExist:
+#         response["error"] = {"message": f"No se encontró ningún vehículo con el ID {vehicle_id}"}
+#         return JsonResponse(response)
 
-    try:
-        obj = Vehicle_Tenencia(
-            vehiculo_id = vehicle_id,
-            fecha_pago = dt.get("fecha_pago"),
-            monto = dt.get("monto")
-        )
-        obj.save()
-        id = obj.id
+#     try:
+#         obj = Vehicle_Tenencia(
+#             vehiculo_id = vehicle_id,
+#             fecha_pago = dt.get("fecha_pago"),
+#             monto = dt.get("monto")
+#         )
+#         obj.save()
+#         id = obj.id
 
-        # Guardar el archivo en caso de existir
-        if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES.get('comprobante_pago')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/tenencia/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-            file_name, extension = os.path.splitext(load_file.name)
+#         # Guardar el archivo en caso de existir
+#         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
+#             load_file = request.FILES.get('comprobante_pago')
+#             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/tenencia/"
+#             #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+#             file_name, extension = os.path.splitext(load_file.name)
             
-            new_name = f"comprobante_pago_{id}.{extension}"
-            #fs.save(folder_path + new_name, load_file)
+#             new_name = f"comprobante_pago_{id}.{extension}"
+#             #fs.save(folder_path + new_name, load_file)
             
-            obj.comprobante_pago = folder_path + new_name
-            s3Name = folder_path + new_name
+#             obj.comprobante_pago = folder_path + new_name
+#             s3Name = folder_path + new_name
 
-            upload_to_s3(load_file, bucket_name, s3Name)
+#             upload_to_s3(load_file, bucket_name, s3Name)
 
-            obj.save()
+#             obj.save()
 
-        response["success"] = True
-    except Exception as e:
-        response["error"] = {"message": str(e)}
-    return JsonResponse(response)
+#         response["success"] = True
+#     except Exception as e:
+#         response["error"] = {"message": str(e)}
+#     return JsonResponse(response)
 
-def get_vehicle_tenencia(request):
-    context = user_data(request)
-    response = {"success": False, "data": []}
-    dt = request.GET
-    vehicle_id = dt.get("vehicle_id", None)
-    subModule_id = 5
+# def get_vehicle_tenencia(request):
+#     context = user_data(request)
+#     response = {"success": False, "data": []}
+#     dt = request.GET
+#     vehicle_id = dt.get("vehicle_id", None)
+#     subModule_id = 5
 
-    lista = Vehicle_Tenencia.objects.filter(vehiculo_id = vehicle_id).values("id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago")
+#     lista = Vehicle_Tenencia.objects.filter(vehiculo_id = vehicle_id).values("id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago")
 
-    access = get_module_user_permissions(context, subModule_id)
-    access = access["data"]["access"]
-    for item in lista:
-        item["btn_action"] = ""
-        if item["comprobante_pago"] :
-            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
-            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
-                <i class="fa-solid fa-file"></i> Comprobante 
-            </a>\n"""
-        if access["update"]:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-tenencia=\"update-item\">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
-        if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-tenencia=\"delete-item\">
-                <i class="fa-solid fa-trash"></i>
-            </button>"""
-    response["data"] = list(lista)
+#     access = get_module_user_permissions(context, subModule_id)
+#     access = access["data"]["access"]
+#     for item in lista:
+#         item["btn_action"] = ""
+#         if item["comprobante_pago"] :
+#             tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+#             item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+#                 <i class="fa-solid fa-file"></i> Comprobante 
+#             </a>\n"""
+#         if access["update"]:
+#             item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-tenencia=\"update-item\">
+#                 <i class="fa-solid fa-pen"></i>
+#             </button>\n"""
+#         if access["delete"]:
+#             item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-tenencia=\"delete-item\">
+#                 <i class="fa-solid fa-trash"></i>
+#             </button>"""
+#     response["data"] = list(lista)
 
-    response["success"] = True
-    return JsonResponse(response)
+#     response["success"] = True
+#     return JsonResponse(response)
 
-def get_vehicles_tenencia(request):
-    context = user_data(request)
-    response = {"success": False, "data": [], "counters": {}}
-    dt = request.GET
-    tipo_carga = dt.get("tipo_carga", "todos")
-    vehicle_id = dt.get("vehicle_id")
-    subModule_id = 5
+# def get_vehicles_tenencia(request):
+#     context = user_data(request)
+#     response = {"success": False, "data": [], "counters": {}}
+#     dt = request.GET
+#     tipo_carga = dt.get("tipo_carga", "todos")
+#     vehicle_id = dt.get("vehicle_id")
+#     subModule_id = 5
 
 
-    hoy = timezone.now().date()
-    un_mes_despues = hoy + timedelta(days=30)
+#     hoy = timezone.now().date()
+#     un_mes_despues = hoy + timedelta(days=30)
 
-    # --- Vehículos según permisos ---
-    vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
-    if context["role"]["id"] not in [1, 2, 3]:
-        vehiculos = vehiculos.filter(responsible_id=context["user"]["id"])
-    if vehicle_id:
-        vehiculos = vehiculos.filter(id=vehicle_id)
+#     # --- Vehículos según permisos ---
+#     vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
+#     if context["role"]["id"] not in [1, 2, 3]:
+#         vehiculos = vehiculos.filter(responsible_id=context["user"]["id"])
+#     if vehicle_id:
+#         vehiculos = vehiculos.filter(id=vehicle_id)
 
-    total_vehiculos_count = vehiculos.count()
+#     total_vehiculos_count = vehiculos.count()
 
-   # --- Última tenencia por vehículo ---
-    all_tenencias = Vehicle_Tenencia.objects.filter(vehiculo__in=vehiculos)
-    latest_qs = Vehicle_Tenencia.objects.filter(
-        vehiculo_id=OuterRef('vehiculo_id')
-    ).order_by('-fecha_pago')
-    latest_only = all_tenencias.filter(id=Subquery(latest_qs.values('id')[:1]))
+#    # --- Última tenencia por vehículo ---
+#     all_tenencias = Vehicle_Tenencia.objects.filter(vehiculo__in=vehiculos)
+#     latest_qs = Vehicle_Tenencia.objects.filter(
+#         vehiculo_id=OuterRef('vehiculo_id')
+#     ).order_by('-fecha_pago')
+#     latest_only = all_tenencias.filter(id=Subquery(latest_qs.values('id')[:1]))
 
    
-    # Aplicar filtro tipo_carga
-    if tipo_carga == "pagadas":
-        lista_queryset = latest_only.filter(
-            Q(comprobante_pago__isnull=False) & ~Q(comprobante_pago="") & Q(fecha_pago__lte=hoy)
-        )
-    elif tipo_carga == "vencidas":
-        lista_queryset = latest_only.filter(
-            Q(fecha_pago__lt=hoy) & (Q(comprobante_pago__isnull=True) | Q(comprobante_pago=""))
-        )
-    elif tipo_carga == "proximas":
-        lista_queryset = latest_only.filter(
-            fecha_pago__gte=hoy, fecha_pago__lte=un_mes_despues
-        )
-    else:
-        lista_queryset = latest_only
-    # Traer datos
-    lista = lista_queryset.values(
-        "id", "vehiculo_id", "vehiculo__name", "vehiculo__company_id",
-        "monto", "fecha_pago", "comprobante_pago"
-    )
-    # Permisos del módulo
-    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+#     # Aplicar filtro tipo_carga
+#     if tipo_carga == "pagadas":
+#         lista_queryset = latest_only.filter(
+#             Q(comprobante_pago__isnull=False) & ~Q(comprobante_pago="") & Q(fecha_pago__lte=hoy)
+#         )
+#     elif tipo_carga == "vencidas":
+#         lista_queryset = latest_only.filter(
+#             Q(fecha_pago__lt=hoy) & (Q(comprobante_pago__isnull=True) | Q(comprobante_pago=""))
+#         )
+#     elif tipo_carga == "proximas":
+#         lista_queryset = latest_only.filter(
+#             fecha_pago__gte=hoy, fecha_pago__lte=un_mes_despues
+#         )
+#     else:
+#         lista_queryset = latest_only
+#     # Traer datos
+#     lista = lista_queryset.values(
+#         "id", "vehiculo_id", "vehiculo__name", "vehiculo__company_id",
+#         "monto", "fecha_pago", "comprobante_pago"
+#     )
+#     # Permisos del módulo
+#     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
-    # Contadores
-    contadores = {
-        "total": 0,
-        "pagadas": 0,
-        "proximas": 0,
-        "vencidas": 0,
-    }
+#     # Contadores
+#     contadores = {
+#         "total": 0,
+#         "pagadas": 0,
+#         "proximas": 0,
+#         "vencidas": 0,
+#     }
 
-    result = []
-    for item in lista:
-        estado = None
-        fecha_pago = item["fecha_pago"]
-        comprobante = item["comprobante_pago"]
+#     result = []
+#     for item in lista:
+#         estado = None
+#         fecha_pago = item["fecha_pago"]
+#         comprobante = item["comprobante_pago"]
 
-        if comprobante and fecha_pago and fecha_pago <= hoy:
-            estado = "pagada"
-            contadores["pagadas"] += 1
-        elif not comprobante and fecha_pago and fecha_pago < hoy:
-            estado = "vencida"
-            contadores["vencidas"] += 1
-        elif fecha_pago and hoy <= fecha_pago <= un_mes_despues:
-            estado = "proxima"
-            contadores["proximas"] += 1
+#         if comprobante and fecha_pago and fecha_pago <= hoy:
+#             estado = "pagada"
+#             contadores["pagadas"] += 1
+#         elif not comprobante and fecha_pago and fecha_pago < hoy:
+#             estado = "vencida"
+#             contadores["vencidas"] += 1
+#         elif fecha_pago and hoy <= fecha_pago <= un_mes_despues:
+#             estado = "proxima"
+#             contadores["proximas"] += 1
             
-        item["estado"] = estado
-        contadores["total"] += 1
+#         item["estado"] = estado
+#         contadores["total"] += 1
 
     
-        item["btn_action"] = ""
-        if item["comprobante_pago"] :
-            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
-            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
-                <i class="fa-solid fa-file"></i> Comprobante 
-            </a>\n"""
-        if access["update"]:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm mb-1\" data-vehicle-tenencia=\"update-item\">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
-        if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-tenencia=\"delete-item\">
-                <i class="fa-solid fa-trash"></i>
-            </button>"""
+#         item["btn_action"] = ""
+#         if item["comprobante_pago"] :
+#             tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+#             item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+#                 <i class="fa-solid fa-file"></i> Comprobante 
+#             </a>\n"""
+#         if access["update"]:
+#             item["btn_action"] += """<button class=\"btn btn-primary btn-sm mb-1\" data-vehicle-tenencia=\"update-item\">
+#                 <i class="fa-solid fa-pen"></i>
+#             </button>\n"""
+#         if access["delete"]:
+#             item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-tenencia=\"delete-item\">
+#                 <i class="fa-solid fa-trash"></i>
+#             </button>"""
         
-        result.append(item)
-    response["counters"] = {
-        **contadores,
-        "total_vehiculos": total_vehiculos_count,
-    }
+#         result.append(item)
+#     response["counters"] = {
+#         **contadores,
+#         "total_vehiculos": total_vehiculos_count,
+#     }
 
-    response["data"] = result
-    response["success"] = True
-    return JsonResponse(response)
+#     response["data"] = result
+#     response["success"] = True
+#     return JsonResponse(response)
 
-def update_vehicle_tenencia(request):
-    response = {"success": False, "data": []}
-    dt = request.POST
+# def update_vehicle_tenencia(request):
+#     response = {"success": False, "data": []}
+#     dt = request.POST
     
-    id = dt.get("id", None)
-    vehicle_id = dt.get("vehicle_id"),
+#     id = dt.get("id", None)
+#     vehicle_id = dt.get("vehicle_id"),
 
-    if id is None:
-        response["error"] = {"message": "No se proporcionó un ID válido para actualizar."}
-        return JsonResponse(response)
+#     if id is None:
+#         response["error"] = {"message": "No se proporcionó un ID válido para actualizar."}
+#         return JsonResponse(response)
     
-    try:
-        obj = Vehicle_Tenencia.objects.get(id=id)
-    except Vehicle_Tenencia.DoesNotExist:
-        response["error"] = {"message": f"No existe ningún resgitro con el ID '{id}'"}
-        return JsonResponse(response)
+#     try:
+#         obj = Vehicle_Tenencia.objects.get(id=id)
+#     except Vehicle_Tenencia.DoesNotExist:
+#         response["error"] = {"message": f"No existe ningún resgitro con el ID '{id}'"}
+#         return JsonResponse(response)
 
-    try:
-        obj.monto = dt.get("monto")
-        obj.fecha_pago = dt.get("fecha_pago")
-        obj.save()
-        vehicle_id = obj.vehiculo_id
+#     try:
+#         obj.monto = dt.get("monto")
+#         obj.fecha_pago = dt.get("fecha_pago")
+#         obj.save()
+#         vehicle_id = obj.vehiculo_id
         
-        # Guardar el archivo en caso de existir
-        if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
-            load_file = request.FILES.get('comprobante_pago')
-            company_id = request.session.get('company').get('id')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/tenencia/{id}/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-            file_name, extension = os.path.splitext(load_file.name)                
+#         # Guardar el archivo en caso de existir
+#         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
+#             load_file = request.FILES.get('comprobante_pago')
+#             company_id = request.session.get('company').get('id')
+#             folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/tenencia/{id}/"
+#             #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+#             file_name, extension = os.path.splitext(load_file.name)                
             
-            new_name = f"comprobante_pago{extension}"
-            #fs.save(folder_path + new_name, load_file)
-            s3Name = folder_path + new_name
+#             new_name = f"comprobante_pago{extension}"
+#             #fs.save(folder_path + new_name, load_file)
+#             s3Name = folder_path + new_name
 
-            obj.comprobante_pago = folder_path + new_name
-            upload_to_s3(load_file, bucket_name, s3Name)
-            obj.save()
+#             obj.comprobante_pago = folder_path + new_name
+#             upload_to_s3(load_file, bucket_name, s3Name)
+#             obj.save()
         
-        response["success"] = True
-    except Exception as e:
-        response["error"] = {"message": str(e)}
-    return JsonResponse(response)
+#         response["success"] = True
+#     except Exception as e:
+#         response["error"] = {"message": str(e)}
+#     return JsonResponse(response)
 
-def delete_vehicle_tenencia(request):
-    response = {"success": False, "data": []}
-    dt = request.POST
-    id = dt.get("id", None)
+# def delete_vehicle_tenencia(request):
+#     response = {"success": False, "data": []}
+#     dt = request.POST
+#     id = dt.get("id", None)
 
-    if id == None:
-        response["error"] = {"message": "Proporcione un id valido"}
-        return JsonResponse(response)
+#     if id == None:
+#         response["error"] = {"message": "Proporcione un id valido"}
+#         return JsonResponse(response)
 
-    try:
-        obj = Vehicle_Tenencia.objects.get(id = id)
-    except Vehicle_Tenencia.DoesNotExist:
-        response["error"] = {"message": "El objeto no existe"}
-        return JsonResponse(response)
-    else:
-        if obj.comprobante_pago:
-            delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
-        obj.delete()
-    response["success"] = True
-    return JsonResponse(response)
+#     try:
+#         obj = Vehicle_Tenencia.objects.get(id = id)
+#     except Vehicle_Tenencia.DoesNotExist:
+#         response["error"] = {"message": "El objeto no existe"}
+#         return JsonResponse(response)
+#     else:
+#         if obj.comprobante_pago:
+#             delete_s3_object(AWS_BUCKET_NAME, str(obj.comprobante_pago))
+#         obj.delete()
+#     response["success"] = True
+#     return JsonResponse(response)
 
 def add_vehicle_refrendo(request):
     response = {"success": False, "data": []}
@@ -1168,6 +1162,21 @@ def add_vehicle_refrendo(request):
         return JsonResponse(response)
 
     try:
+        # Validar que la fecha esté dentro de enero - marzo
+        fecha_pago_str = dt.get("fecha_pago")
+        fecha_pago = datetime.strptime(fecha_pago_str, "%Y-%m-%d").date()
+
+        inicio_periodo = date(fecha_pago.year, 1, 1)
+        fin_periodo = date(fecha_pago.year, 3, 31)
+
+        if not (inicio_periodo <= fecha_pago <= fin_periodo):
+            response["success"] = False
+            response["status"] = "warning"
+            response["error"] = {
+                "message": f"El pago de refrendo solo puede registrarse entre enero y marzo. Fecha recibida: {fecha_pago}"
+            }
+            return JsonResponse(response)
+        
         obj = Vehicle_Refrendo(
             vehiculo_id = vehicle_id,
             fecha_pago = dt.get("fecha_pago"),
@@ -1359,12 +1368,20 @@ def update_vehicle_refrendo(request):
         return JsonResponse(response)
     
     try:
+
         obj = Vehicle_Refrendo.objects.get(id=id)
     except Vehicle_Refrendo.DoesNotExist:
         response["error"] = {"message": f"No existe ningún resgitro con el ID '{id}'"}
         return JsonResponse(response)
 
     try:
+        fecha_pago = dt.get("fecha_pago")
+        if fecha_pago:
+            fecha_dt = datetime.strptime(fecha_pago, "%Y-%m-%d")
+            if fecha_dt.month not in [1, 2, 3]:
+                response["error"] = {"message": "Solo se pueden registrar pagos de refrendo de enero a marzo."}
+                return JsonResponse(response)
+
         obj.monto = dt.get("monto")
         obj.fecha_pago = dt.get("fecha_pago")
         obj.save()

@@ -370,6 +370,14 @@ class Vehicles {
                     $.each(datos, function (index, value) {
                         const elemento = obj_offcanvas.find(`[name='${index}']`);
                         if (!elemento.is(":file")) {
+                            if (typeof value === "object" && value !== null) {
+                                if (value.id) {
+                                    value = value.id;
+                                } else {
+                                    value = "";
+                                }
+                            }
+
                             if (elemento.is("select")) {
                                 console.log(`Asignando al select ${index}:`, value);
 
@@ -380,19 +388,22 @@ class Vehicles {
                         }
                     });
 
-                    obj_offcanvas
-                        .find("[name='apply_tenencia']")
-                        .prop(
-                            "checked",
-                            ["true", "on", true, 1, "1"].includes(datos["apply_tenencia"])
-                        );
+                    // obj_offcanvas
+                    //     .find("[name='apply_tenencia']")
+                    //     .prop(
+                    //         "checked",
+                    //         ["true", "on", true, 1, "1"].includes(datos["apply_tenencia"])
+                    //     );
+                    self.input.pond.removeFiles();
+                    if (datos["image_url"]) {
+                        self.input.pond
+                            .addFile(datos["image_url"])
+                            .then((file) => {})
+                            .catch((error) => {
+                                Swal.fire("Error", "Error al cargar la imagen", error);
+                            });
+                    }
 
-                    self.input.pond
-                        .addFile(datos["image_path"])
-                        .then((file) => {})
-                        .catch((error) => {
-                            Swal.fire("Error", "Error al cargar la imagen", error);
-                        });
                     obj_offcanvas.find("[type='submit']").hide();
                     obj_offcanvas.find("[name='update']").show();
 
@@ -474,9 +485,9 @@ class Vehicles {
             var datos = new FormData(this);
             var files = self.input.pond.getFiles();
 
-            if (!this.apply_tenencia.checked) {
-                datos.set("apply_tenencia", "off");
-            }
+            // if (!this.apply_tenencia.checked) {
+            //     datos.set("apply_tenencia", "off");
+            // }
 
             if (files.length > 0) {
                 var fileInput = files[0].file;

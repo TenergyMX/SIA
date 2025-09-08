@@ -602,124 +602,143 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         # recipient_emails_vehiculos = list(emails_almacen.union(emails_responsables))
 
         # TENENCIA
-        if 5 in access and access[5]["read"]:
-            obj_tenencia = Vehicle_Tenencia.objects.filter(vehiculo__company_id=company_id, vehiculo__is_active=True)
+        # if 5 in access and access[5]["read"]:
+        #     obj_tenencia = Vehicle_Tenencia.objects.filter(vehiculo__company_id=company_id, vehiculo__is_active=True)
 
-            if rol not in roles_usuario:
-                obj_tenencia = obj_tenencia.filter(vehiculo__responsible_id=user_id)
+        #     if rol not in roles_usuario:
+        #         obj_tenencia = obj_tenencia.filter(vehiculo__responsible_id=user_id)
 
-            obj_tenencia = obj_tenencia.values('vehiculo__id', 'vehiculo__name').annotate(ultima_fecha_pago=Max('fecha_pago'))
+        #     obj_tenencia = obj_tenencia.values('vehiculo__id', 'vehiculo__name').annotate(ultima_fecha_pago=Max('fecha_pago'))
 
-            vehicles_with_tenencia = set()
-            for item in obj_tenencia:
-                ultima_fecha_pago = item["ultima_fecha_pago"]
-                if ultima_fecha_pago < fecha_actual:
-                    response["data"].append({
-                        "alert": "danger",
-                        "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                        "title": "Vehículo sin tenencia (Vencido)",
-                        "text": f"Vehículo: {item['vehiculo__name']}",
-                        "link": f"/vehicles/info/{item['vehiculo__id']}/"
-                    })
-                elif fecha_actual <= ultima_fecha_pago <= fecha_actual + timedelta(days=5):
-                    dias_restantes = (ultima_fecha_pago - fecha_actual).days
-                    response["data"].append({
-                        "alert": "info",
-                        "icon": "<i class=\"fa-solid fa-info fs-18\"></i>",
-                        "title": f"Tenencia a punto de vencer en {dias_restantes} días",
-                        "text": f"Vehículo: {item['vehiculo__name']}",
-                        "link": f"/vehicles/info/{item['vehiculo__id']}/"
-                    })
+        #     vehicles_with_tenencia = set()
+        #     for item in obj_tenencia:
+        #         ultima_fecha_pago = item["ultima_fecha_pago"]
+        #         if ultima_fecha_pago < fecha_actual:
+        #             response["data"].append({
+        #                 "alert": "danger",
+        #                 "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
+        #                 "title": "Vehículo sin tenencia (Vencido)",
+        #                 "text": f"Vehículo: {item['vehiculo__name']}",
+        #                 "link": f"/vehicles/info/{item['vehiculo__id']}/"
+        #             })
+        #         elif fecha_actual <= ultima_fecha_pago <= fecha_actual + timedelta(days=5):
+        #             dias_restantes = (ultima_fecha_pago - fecha_actual).days
+        #             response["data"].append({
+        #                 "alert": "info",
+        #                 "icon": "<i class=\"fa-solid fa-info fs-18\"></i>",
+        #                 "title": f"Tenencia a punto de vencer en {dias_restantes} días",
+        #                 "text": f"Vehículo: {item['vehiculo__name']}",
+        #                 "link": f"/vehicles/info/{item['vehiculo__id']}/"
+        #             })
 
-                    tenencia = Vehicle_Tenencia.objects.filter(vehiculo__id=item["vehiculo__id"], fecha_pago=ultima_fecha_pago).first()
-                    if tenencia and not tenencia.email_tenencia:
-                        message_data = {
-                            "title": f"Pago de tenencia del vehículo: {tenencia.vehiculo.name}",
-                            "body": f"La tenencia para el vehículo <strong>{tenencia.vehiculo.name}</strong> esta proxima, se encuentra programada para la fecha <strong>{tenencia.fecha_pago}</strong>. Por favor, verifica la tenencia."
-                        }
-                        # Send_Email(
-                        #     subject="Pago de Tenencia Próxima",
-                        #     recipient=recipient_emails_vehiculos,
-                        #     model_instance=tenencia,
-                        #     message_data=message_data,
-                        #     model_name=Vehicle_Tenencia,
-                        #     field_to_update="email_tenencia"
-                        # )
+        #             tenencia = Vehicle_Tenencia.objects.filter(vehiculo__id=item["vehiculo__id"], fecha_pago=ultima_fecha_pago).first()
+        #             if tenencia and not tenencia.email_tenencia:
+        #                 message_data = {
+        #                     "title": f"Pago de tenencia del vehículo: {tenencia.vehiculo.name}",
+        #                     "body": f"La tenencia para el vehículo <strong>{tenencia.vehiculo.name}</strong> esta proxima, se encuentra programada para la fecha <strong>{tenencia.fecha_pago}</strong>. Por favor, verifica la tenencia."
+        #                 }
+        #                 # Send_Email(
+        #                 #     subject="Pago de Tenencia Próxima",
+        #                 #     recipient=recipient_emails_vehiculos,
+        #                 #     model_instance=tenencia,
+        #                 #     message_data=message_data,
+        #                 #     model_name=Vehicle_Tenencia,
+        #                 #     field_to_update="email_tenencia"
+        #                 # )
 
-                        context_email = {
-                            "company" : Company.objects.get(id=company_id).name,
-                            "subject" : "Pago de Tenencia Próxima",#Titulo del mensaje
-                            "modulo" : 2,#modulo de sia
-                            "submodulo" : "Tenencia",#tipo
-                            "item": tenencia.vehiculo.id,
-                            "title": f"Pago de tenencia del vehículo: {tenencia.vehiculo.name}",
-                            "body": f"La tenencia para el vehículo <strong>{tenencia.vehiculo.name}</strong> esta proxima, se encuentra programada para la fecha <strong>{tenencia.fecha_pago}</strong>. Por favor, verifica la tenencia."
+        #                 context_email = {
+        #                     "company" : Company.objects.get(id=company_id).name,
+        #                     "subject" : "Pago de Tenencia Próxima",#Titulo del mensaje
+        #                     "modulo" : 2,#modulo de sia
+        #                     "submodulo" : "Tenencia",#tipo
+        #                     "item": tenencia.vehiculo.id,
+        #                     "title": f"Pago de tenencia del vehículo: {tenencia.vehiculo.name}",
+        #                     "body": f"La tenencia para el vehículo <strong>{tenencia.vehiculo.name}</strong> esta proxima, se encuentra programada para la fecha <strong>{tenencia.fecha_pago}</strong>. Por favor, verifica la tenencia."
 
-                        }
-                        send_notification(context_email)
-                        tenencia.email_tenencia = True
-                        tenencia.save(update_fields=["email_tenencia"])
+        #                 }
+        #                 send_notification(context_email)
+        #                 tenencia.email_tenencia = True
+        #                 tenencia.save(update_fields=["email_tenencia"])
 
 
-                        # print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
+        #                 # print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
 
-                vehicles_with_tenencia.add(item['vehiculo__id'])
+        #         vehicles_with_tenencia.add(item['vehiculo__id'])
 
-            vehicles_without_tenencia = obj_vehicles.exclude(id__in=vehicles_with_tenencia)
-            for vehicle in vehicles_without_tenencia:
-                response["data"].append({
-                    "alert": "danger",
-                    "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                    "title": "Vehículo sin tenencia",
-                    "text": f"Vehículo: {vehicle['name']}",
-                    "link": f"/vehicles/info/{vehicle['id']}/"
-                })
+        #     vehicles_without_tenencia = obj_vehicles.exclude(id__in=vehicles_with_tenencia)
+        #     for vehicle in vehicles_without_tenencia:
+        #         response["data"].append({
+        #             "alert": "danger",
+        #             "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
+        #             "title": "Vehículo sin tenencia",
+        #             "text": f"Vehículo: {vehicle['name']}",
+        #             "link": f"/vehicles/info/{vehicle['id']}/"
+        #         })
 
-                vehicle_instance = Vehicle.objects.filter(id=vehicle["id"], is_active=True).first()
+        #         vehicle_instance = Vehicle.objects.filter(id=vehicle["id"], is_active=True).first()
              
 
-                if not vehicle_instance.email_sin_tenencia:
+        #         if not vehicle_instance.email_sin_tenencia:
 
-                    message_data = {
-                        "title": f"Tenencia no registrada para el vehículo: {vehicle_instance.name}",
-                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene una tenencia registrada. Por favor, verifica esta información en el sistema."
-                    }
+        #             message_data = {
+        #                 "title": f"Tenencia no registrada para el vehículo: {vehicle_instance.name}",
+        #                 "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene una tenencia registrada. Por favor, verifica esta información en el sistema."
+        #             }
         
-                    # Send_Email(
-                    #     subject="Alerta de Vehículo sin Tenencia",
-                    #     recipient=recipient_emails_vehiculos,
-                    #     model_instance=vehicle_instance,
-                    #     message_data=message_data,
-                    #     model_name=Vehicle,
-                    #     field_to_update="email_sin_tenencia" 
-                    # )
+        #             # Send_Email(
+        #             #     subject="Alerta de Vehículo sin Tenencia",
+        #             #     recipient=recipient_emails_vehiculos,
+        #             #     model_instance=vehicle_instance,
+        #             #     message_data=message_data,
+        #             #     model_name=Vehicle,
+        #             #     field_to_update="email_sin_tenencia" 
+        #             # )
 
-                    context_email = {
-                        "company" : Company.objects.get(id=company_id).name,
-                        "subject" : "Alerta de Vehículo sin Tenencia",#Titulo del mensaje
-                        "modulo" : 2,#modulo de sia
-                        "submodulo" : "Tenencia",#tipo
-                        "item": vehicle_instance.id,
-                        "title": f"Tenencia no registrada para el vehículo: {vehicle_instance.name}",
-                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene una tenencia registrada. Por favor, verifica esta información en el sistema."
+        #             context_email = {
+        #                 "company" : Company.objects.get(id=company_id).name,
+        #                 "subject" : "Alerta de Vehículo sin Tenencia",#Titulo del mensaje
+        #                 "modulo" : 2,#modulo de sia
+        #                 "submodulo" : "Tenencia",#tipo
+        #                 "item": vehicle_instance.id,
+        #                 "title": f"Tenencia no registrada para el vehículo: {vehicle_instance.name}",
+        #                 "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene una tenencia registrada. Por favor, verifica esta información en el sistema."
 
-                    }
-                    send_notification(context_email)
-                    vehicle_instance.email_sin_tenencia = True
-                    vehicle_instance.save(update_fields=["email_sin_tenencia"])
-                    # print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
+        #             }
+        #             send_notification(context_email)
+        #             vehicle_instance.email_sin_tenencia = True
+        #             vehicle_instance.save(update_fields=["email_sin_tenencia"])
+        #             # print("esto contienen el contexto del correo enviado:", context_email, "donde se encuentran los correos de usuarios en especifico:")
+        
         # # REFRENDO
+        # REFRENDO
         if 6 in access and access[6]["read"]:
-            obj_refrendo = Vehicle_Refrendo.objects.filter(vehiculo__company_id=company_id, vehiculo__is_active=True)
+            obj_refrendo = Vehicle_Refrendo.objects.filter(
+                vehiculo__company_id=company_id, vehiculo__is_active=True
+            )
 
             if rol not in roles_usuario:
                 obj_refrendo = obj_refrendo.filter(vehiculo__responsible_id=user_id)
 
-            obj_refrendo = obj_refrendo.values('vehiculo__id', 'vehiculo__name').annotate(ultima_fecha=Max('fecha_pago'))
-            
+            obj_refrendo = obj_refrendo.values('vehiculo__id', 'vehiculo__name').annotate(
+                ultima_fecha=Max('fecha_pago')
+            )
+
             vehicles_with_refrendo = set()
+
+            # Definir periodo válido de refrendo (enero - marzo del año actual)
+            inicio_periodo = date(current_year, 1, 1)
+            fin_periodo = date(current_year, 3, 31)
+
             for item in obj_refrendo:
-                if item["ultima_fecha"] < fecha_actual:
+                ultima_fecha = item["ultima_fecha"]
+
+                # Solo considerar refrendos en el periodo permitido
+                if not (inicio_periodo <= ultima_fecha <= fin_periodo):
+                    continue  
+
+                vehicles_with_refrendo.add(item["vehiculo__id"])
+
+                if ultima_fecha < fecha_actual:
                     response["data"].append({
                         "alert": "warning",
                         "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
@@ -727,8 +746,8 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "text": f"Vehículo: {item['vehiculo__name']}",
                         "link": f"/vehicles/info/{item['vehiculo__id']}/"
                     })
-                elif item["ultima_fecha"] <= fecha_actual + timedelta(days=5):
-                    dias_restantes = (item["ultima_fecha"] - fecha_actual).days
+                elif ultima_fecha <= fecha_actual + timedelta(days=5):
+                    dias_restantes = (ultima_fecha - fecha_actual).days
                     response["data"].append({
                         "alert": "info",
                         "icon": "<i class=\"fa-solid fa-info fs-18\"></i>",
@@ -737,24 +756,19 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "link": f"/vehicles/info/{item['vehiculo__id']}/"
                     })
 
-                    refrendo = Vehicle_Refrendo.objects.filter(vehiculo__id=item["vehiculo__id"], fecha_pago=item["ultima_fecha"]).first()
+                    refrendo = Vehicle_Refrendo.objects.filter(
+                        vehiculo__id=item["vehiculo__id"], fecha_pago=ultima_fecha
+                    ).first()
+
+                    # --- CORREO 1: REFRENDO A PUNTO DE VENCER ---
                     if refrendo and not refrendo.email_refrendo:
                         message_data = {
                             "title": f"Pago de refrendo del vehículo: {refrendo.vehiculo.name}",
-                            "body": f"El refrendo para el vehículo <strong>{refrendo.vehiculo.name}</strong> esta próxima, se encuentra programada para la fecha <strong>{refrendo.fecha_pago}</strong>. Por favor, verifica el refrendo."
+                            "body": f"El refrendo para el vehículo <strong>{refrendo.vehiculo.name}</strong> está próximo, se encuentra programado para la fecha <strong>{refrendo.fecha_pago}</strong>. Por favor, verifica el refrendo."
                         }
-                        # Send_Email(
-                        #     subject="Refrendo a punto de vencer",
-                        #     recipient=recipient_emails_vehiculos,
-                        #     model_instance=refrendo,
-                        #     message_data=message_data,
-                        #     model_name=Vehicle_Refrendo,
-                        #     field_to_update="email_refrendo"
-                        # )
-                        # print("coreo enviado correctamente y campo actualizado de refrendo")
                         context_email = {
                             "company": Company.objects.get(id=company_id).name,
-                            "subject": "Refrendo a punto de vencer",  # Titulo del mensaje
+                            "subject": "Refrendo a punto de vencer",
                             "modulo": 2,
                             "submodulo": "Refrendo",
                             "item": refrendo.vehiculo.id,
@@ -764,9 +778,29 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         send_notification(context_email)
                         refrendo.email_refrendo = True
                         refrendo.save(update_fields=["email_refrendo"])
-                        # print("Contexto del correo enviado (refrendo):", context_email)
 
+                    # --- CORREO 2: REFRENDO SIN COMPROBANTE ---
+                    if refrendo and not refrendo.comprobante_pago and not refrendo.email_sin_comprobante:
+                        context_email = {
+                            "company": Company.objects.get(id=company_id).name,
+                            "subject": "Alerta: Refrendo sin comprobante de pago",
+                            "modulo": 2,
+                            "submodulo": "Refrendo",
+                            "item": refrendo.vehiculo.id,
+                            "title": f"Refrendo sin comprobante de pago - {refrendo.vehiculo.name}",
+                            "body": (
+                                f"El refrendo del vehículo <strong>{refrendo.vehiculo.name}</strong> "
+                                f"no cuenta con un comprobante de pago cargado en el sistema. "
+                                f"Por favor, sube el comprobante o regulariza la situación."
+                            )
+                        }
+                        send_notification(context_email)
+                        refrendo.email_sin_comprobante = True
+                        refrendo.save(update_fields=["email_sin_comprobante"])
+
+            # --- CORREO 3: VEHÍCULOS SIN REFRENDO REGISTRADO ---
             vehicles_without_refrendo = obj_vehicles.exclude(id__in=vehicles_with_refrendo).values('id', 'name')
+            
             for vehicle in vehicles_without_refrendo:
                 response["data"].append({
                     "alert": "danger",
@@ -777,25 +811,14 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                 })
 
                 vehicle_instance = Vehicle.objects.get(id=vehicle["id"])
-                if not vehicle_instance.email_sin_refrendo:  
-
+                if not vehicle_instance.email_sin_refrendo:
                     message_data = {
                         "title": f"Refrendo no registrado para el vehículo: {vehicle['name']}",
                         "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene un refrendo registrado. Por favor, verifica esta información en el sistema."
                     }
-
-                    # Send_Email(
-                    #     subject="Alerta de Vehículo sin Refrendo",
-                    #     recipient=recipient_emails_vehiculos,
-                    #     model_instance=vehicle_instance,
-                    #     message_data=message_data,
-                    #     model_name=Vehicle,
-                    #     field_to_update="email_sin_refrendo"  
-                    # )
-                                    
                     context_email = {
                         "company": Company.objects.get(id=company_id).name,
-                        "subject": "Alerta de Vehículo sin Refrendo",  # Titulo del mensaje
+                        "subject": "Alerta de Vehículo sin Refrendo",
                         "modulo": 2,
                         "submodulo": "Refrendo",
                         "item": vehicle_instance.id,
@@ -805,395 +828,395 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     vehicle_instance.email_sin_refrendo = True
                     vehicle_instance.save(update_fields=["email_sin_refrendo"])
-                    # print("Contexto del correo enviado (sin refrendo):", context_email)
-        # VERIFICACIÓN
 
-        try:
-            json_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'assets', 'json', 'calendario_de_verificacion.json')
-            with open(json_path, encoding="utf-8") as f:
-                cv = json.load(f)
-            cv = cv["data"]
-
-            def obtener_ultimo_digito(diccionario):
-                plate = diccionario.get('plate', '')
-                for char in reversed(plate):
-                    if char.isdigit():
-                        return char
-                return False
-
-            today = date.today()
-
-            for item in obj_vehicles:
-                vehicle_instance = Vehicle.objects.get(id=item["id"])
-                d = obtener_ultimo_digito(item)
-                link_vehiculo = f"{domain}/vehicles/info/{item['id']}/"
-
-                # Buscar registro de verificación vigente
-                registro = Vehicle_Verificacion.objects.filter(
-                    Q(fecha_pago__year=current_year),
-                    Q(status="PROXIMO"),
-                    Q(vehiculo_id=item["id"])
-                ).first()
                 
-                print("este es el registro")
-                print(item["id"])
-                print(registro)
+                # VERIFICACIÓN
+                try:
+                    json_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'assets', 'json', 'calendario_de_verificacion.json')
+                    with open(json_path, encoding="utf-8") as f:
+                        cv = json.load(f)
+                    cv = cv["data"]
 
-                if not registro:
-                    if vehicle_instance.email_sin_verificacion is False:
-                        print("correo de no registro de verificacion")
+                    def obtener_ultimo_digito(diccionario):
+                        plate = diccionario.get('plate', '')
+                        for char in reversed(plate):
+                            if char.isdigit():
+                                return char
+                        return False
+
+                    today = date.today()
+
+                    for item in obj_vehicles:
+                        vehicle_instance = Vehicle.objects.get(id=item["id"])
+                        d = obtener_ultimo_digito(item)
+                        link_vehiculo = f"{domain}/vehicles/info/{item['id']}/"
+
+                        # Buscar registro de verificación vigente
+                        registro = Vehicle_Verificacion.objects.filter(
+                            Q(fecha_pago__year=current_year),
+                            Q(status="PROXIMO"),
+                            Q(vehiculo_id=item["id"])
+                        ).first()
+                        
+                        print("este es el registro")
+                        print(item["id"])
+                        print(registro)
+
+                        if not registro:
+                            if vehicle_instance.email_sin_verificacion is False:
+                                print("correo de no registro de verificacion")
+                                response["data"].append({
+                                    "alert": "warning",
+                                    "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
+                                    "title": f"Vehículo sin verificación",
+                                    "text": f"Vehículo: {item['name']} no cuenta con ningun registro de verificación",
+                                    "link": link_vehiculo
+                                })
+
+                                context_email = {
+                                    "company": Company.objects.get(id=company_id).name,
+                                    "subject": "Alerta de vehículo sin verificación",
+                                    "modulo": 2,
+                                    "submodulo": "Verificaciones",
+                                    "item": vehicle_instance.id,
+                                    "title": f"Vehículo {vehicle_instance.name} sin verificación",
+                                    "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe de contener un registro de verificación para poder generar los futuros pagos y se generen las alertas correspondites.<br>"
+                                            f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                                }
+                                send_notification(context_email)
+
+                                vehicle_instance.email_sin_verificacion = True
+                                vehicle_instance.save(update_fields=["email_sin_verificacion"])
+                            continue  # no hay registro, seguimos con el siguiente vehículo
+
+                        dias_restantes = (registro.fecha_pago - today).days
+                        # print("los dias ", dias_restantes)
+                        # print(registro.fecha_pago, " ", today)
+
+                        # -------- 1️⃣ Falta un mes o menos --------
+                        if dias_restantes <= 30 and dias_restantes > 3 and not registro.email_verificacion:
+                            print("correo de un mes o menos")
+                            response["data"].append({
+                                "alert": "info",
+                                "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
+                                "title": f"Próximo pago de verificación",
+                                "text": f"Vehículo: {item['name']} → Pago en menos de un mes",
+                                "link": link_vehiculo
+                            })
+
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": "Aviso de próximo pago de verificación",
+                                "modulo": 2,
+                                "submodulo": "Verificaciones",
+                                "item": vehicle_instance.id,
+                                "title": f"Próximo pago de verificación - Vehículo: {vehicle_instance.name}",
+                                "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe realizar su verificación el "
+                                        f"{registro.fecha_pago}.<br>"
+                                        f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                            }
+                            send_notification(context_email)
+
+                            registro.email_verificacion = True
+                            registro.save(update_fields=["email_verificacion"])
+
+                        # -------- 2️⃣ Faltan 3 días o menos (recordatorio) --------
+                        elif dias_restantes <= 3 and dias_restantes >= 0 and not registro.email_verificacion_days:
+                            print("correo de menos de 3 dias ")
+                            response["data"].append({
+                                "alert": "warning",
+                                "icon": "<i class='fa-regular fa-bell fs-18'></i>",
+                                "title": f"Recordatorio urgente",
+                                "text": f"Vehículo: {item['name']} → Faltan {dias_restantes} días",
+                                "link": link_vehiculo
+                            })
+
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": "Recordatorio: verificación próxima a vencer",
+                                "modulo": 2,
+                                "submodulo": "Verificaciones",
+                                "item": vehicle_instance.id,
+                                "title": f"Recordatorio de verificación - Vehículo: {vehicle_instance.name}",
+                                "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe realizar su verificación el "
+                                        f"{registro.fecha_pago}. Solo faltan {dias_restantes} días.<br>"
+                                        f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                            }
+                            registro.email_verificacion_days = True
+                            registro.save(update_fields=["email_verificacion_days"])
+                            send_notification(context_email)
+
+                        # -------- 3️⃣ Ya venció --------
+                        elif dias_restantes < 0 and registro.status != "Vencido":
+                            print("correo de vencido")
+                            response["data"].append({
+                                "alert": "danger",
+                                "icon": "<i class='fa-regular fa-circle-xmark fs-18'></i>",
+                                "title": f"Pago de verificación vencido",
+                                "text": f"Vehículo: {item['name']} - NO se realizó en el periodo",
+                                "link": link_vehiculo
+                            })
+
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": "Alerta: verificación vencida",
+                                "modulo": 2,
+                                "submodulo": "Verificaciones",
+                                "item": vehicle_instance.id,
+                                "title": f"Verificación vencida - Vehículo: {vehicle_instance.name}",
+                                "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no realizó su verificación en la fecha "
+                                        f"{registro.fecha_pago}. Actualmente se encuentra vencido.<br>"
+                                        f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                            }
+                            send_notification(context_email)
+
+                            registro.status = "Vencido"
+                            registro.save(update_fields=["status"])
+
+                except Exception as e:
+                    print("Error en verificaciones:", str(e))
+
+
+                # SEGUROS
+                if 9 in access and access[9]["read"]:
+                    
+                    obj_seguros = Vehicle_Insurance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
+
+                    if rol not in roles_usuario:
+                        obj_seguros = obj_seguros.filter(vehicle__responsible_id=user_id)
+
+                    obj_seguros = obj_seguros.values('vehicle__id', 'vehicle__name').annotate(ultima_fecha=Max('end_date'))
+
+                    vehicles_with_seguro = set()
+                    for item in obj_seguros:
+                        ultima_fecha = item["ultima_fecha"]
+                        if ultima_fecha < fecha_actual:
+                            response["data"].append({
+                                "alert": "warning",
+                                "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
+                                "title": "Vehículo sin seguro",
+                                "text": f"Vehículo: {item['vehicle__name']}",
+                                "link": f"/vehicles/info/{item['vehicle__id']}/"
+                            })
+                        elif ultima_fecha <= fecha_actual + timedelta(days=5):
+                            dias_restantes = (ultima_fecha - fecha_actual).days
+                            response["data"].append({
+                                "alert": "info",
+                                "icon": "<i class=\"fa-solid fa-info fs-18\"></i>",
+                                "title": f"Seguro a punto de vencer en {dias_restantes} días",
+                                "text": f"Vehículo: {item['vehicle__name']}",
+                                "link": f"/vehicles/info/{item['vehicle__id']}/"
+                            })
+
+                            insurance = Vehicle_Insurance.objects.filter(vehicle__id=item["vehicle__id"], end_date=item["ultima_fecha"]).first()
+                            if insurance and not insurance.email_insurance:
+                                message_data = {
+                                    "title": f"Recordatorio de Pago de seguro del vehículo: {insurance.vehicle.name}",
+                                    "body": f"El seguro para el vehículo <strong>{insurance.vehicle.name}</strong> esta programada para la fecha <strong>{insurance.end_date}</strong>. Por favor, verifica el pago de seguro."
+                                }
+                                # Send_Email(
+                                #     subject="Pago de seguro",
+                                #     recipient=recipient_emails_vehiculos,
+                                #     model_instance=insurance,
+                                #     message_data=message_data,
+                                #     model_name=Vehicle_Insurance,
+                                #     field_to_update="email_insurance"
+                                # )
+                                # print("coreo enviado correctamente y campo actualizado de seguro")
+                                
+                                context_email = {
+                                    "company": Company.objects.get(id=company_id).name,
+                                    "subject": "Pago de seguro",
+                                    "modulo": 2,
+                                    "submodulo": "Seguro",
+                                    "item": insurance.vehicle.id,  
+                                    "title": message_data["title"],
+                                    "body": message_data["body"]
+                                }
+                                send_notification(context_email)
+                                insurance.email_insurance = True
+                                insurance.save(update_fields=["email_insurance"])
+                                # print("Contexto del correo enviado (seguro):", context_email)
+
+                        vehicles_with_seguro.add(item['vehicle__id'])
+
+                    vehicles_without_seguro = obj_vehicles.exclude(id__in=vehicles_with_seguro).values('id', 'name')
+                    for vehicle in vehicles_without_seguro:
                         response["data"].append({
-                            "alert": "warning",
-                            "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
-                            "title": f"Vehículo sin verificación",
-                            "text": f"Vehículo: {item['name']} no cuenta con ningun registro de verificación",
-                            "link": link_vehiculo
+                            "alert": "danger",
+                            "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
+                            "title": "Vehículo sin seguro",
+                            "text": f"Vehículo: {vehicle['name']}",
+                            "link": f"/vehicles/info/{vehicle['id']}/"
                         })
 
-                        context_email = {
-                            "company": Company.objects.get(id=company_id).name,
-                            "subject": "Alerta de vehículo sin verificación",
-                            "modulo": 2,
-                            "submodulo": "Verificaciones",
-                            "item": vehicle_instance.id,
-                            "title": f"Vehículo {vehicle_instance.name} sin verificación",
-                            "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe de contener un registro de verificación para poder generar los futuros pagos y se generen las alertas correspondites.<br>"
-                                    f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                        }
-                        send_notification(context_email)
+                        vehicle_instance = Vehicle.objects.get(id=vehicle["id"])
+                        if not vehicle_instance.email_sin_insurance: 
 
-                        vehicle_instance.email_sin_verificacion = True
-                        vehicle_instance.save(update_fields=["email_sin_verificacion"])
-                    continue  # no hay registro, seguimos con el siguiente vehículo
+                            message_data = {
+                                "title": f"Seguro no registrado para el vehículo: {vehicle['name']}",
+                                "body": f"El vehículo <strong>{vehicle['name']}</strong> no tiene un seguro registrado. Por favor, verifica esta información en el sistema."
+                            }
 
-                dias_restantes = (registro.fecha_pago - today).days
-                # print("los dias ", dias_restantes)
-                # print(registro.fecha_pago, " ", today)
+                            # Send_Email(
+                            #     subject="Alerta de Vehículo sin Seguro",
+                            #     recipient=recipient_emails_vehiculos,
+                            #     model_instance=vehicle_instance,
+                            #     message_data=message_data,
+                            #     model_name=Vehicle,
+                            #     field_to_update="email_sin_insurance"  
+                            # )
+                            # print("Correo enviado para vehículo sin seguro y campo actualizado")
 
-                # -------- 1️⃣ Falta un mes o menos --------
-                if dias_restantes <= 30 and dias_restantes > 3 and not registro.email_verificacion:
-                    print("correo de un mes o menos")
-                    response["data"].append({
-                        "alert": "info",
-                        "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
-                        "title": f"Próximo pago de verificación",
-                        "text": f"Vehículo: {item['name']} → Pago en menos de un mes",
-                        "link": link_vehiculo
-                    })
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": "Alerta de Vehículo sin Seguro",  
+                                "modulo": 2,
+                                "submodulo": "Seguro",
+                                "item": vehicle_instance.id,
+                                "title": message_data["title"],
+                                "body": message_data["body"]
+                            }
 
-                    context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": "Aviso de próximo pago de verificación",
-                        "modulo": 2,
-                        "submodulo": "Verificaciones",
-                        "item": vehicle_instance.id,
-                        "title": f"Próximo pago de verificación - Vehículo: {vehicle_instance.name}",
-                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe realizar su verificación el "
-                                f"{registro.fecha_pago}.<br>"
-                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                    }
-                    send_notification(context_email)
+                            send_notification(context_email)
+                            vehicle_instance.email_sin_insurance = True
+                            vehicle_instance.save(update_fields=["email_sin_insurance"])
+                            # print("Contexto del correo enviado (sin seguro):", context_email)
 
-                    registro.email_verificacion = True
-                    registro.save(update_fields=["email_verificacion"])
+                # AUDITORÍAS - recordatorio de hoy
+                if 10 in access and access[10]["read"]:
+                    obj_auditorias = Vehicle_Audit.objects.filter(
+                        vehicle__company_id=company_id,
+                        vehicle__is_active=True,
+                        audit_date=fecha_actual
+                    )
+                    
+                    obj_auditorias.filter(is_visible=False).update(is_visible=True)
 
-                # -------- 2️⃣ Faltan 3 días o menos (recordatorio) --------
-                elif dias_restantes <= 3 and dias_restantes >= 0 and not registro.email_verificacion_days:
-                    print("correo de menos de 3 dias ")
-                    response["data"].append({
-                        "alert": "warning",
-                        "icon": "<i class='fa-regular fa-bell fs-18'></i>",
-                        "title": f"Recordatorio urgente",
-                        "text": f"Vehículo: {item['name']} → Faltan {dias_restantes} días",
-                        "link": link_vehiculo
-                    })
+                    for auditoria in obj_auditorias:
+                        response["data"].append({
+                            "alert": "info",
+                            "icon": "<i class='fa-solid fa-clipboard-check fs-18'></i>",
+                            "title": "Auditoría programada para hoy",
+                            "text": f"Vehículo: {auditoria.vehicle.name}",
+                            "link": f"/vehicles/info/{auditoria.vehicle.id}/"
+                        })
 
-                    context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": "Recordatorio: verificación próxima a vencer",
-                        "modulo": 2,
-                        "submodulo": "Verificaciones",
-                        "item": vehicle_instance.id,
-                        "title": f"Recordatorio de verificación - Vehículo: {vehicle_instance.name}",
-                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> debe realizar su verificación el "
-                                f"{registro.fecha_pago}. Solo faltan {dias_restantes} días.<br>"
-                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                    }
-                    registro.email_verificacion_days = True
-                    registro.save(update_fields=["email_verificacion_days"])
-                    send_notification(context_email)
+                        # Enviar recordatorio solo si no se ha enviado antes
+                        if not auditoria.email_audit:
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": "Recordatorio: auditoría programada para hoy",
+                                "modulo": 2,
+                                "submodulo": "Auditoría",
+                                "item": auditoria.vehicle.id,
+                                "title": f"Auditoría programada para hoy - {auditoria.vehicle.name}",
+                                "body": f"Se ha registrado una auditoría para el vehículo <strong>{auditoria.vehicle.name}</strong> con fecha <strong>{auditoria.audit_date}</strong>. Por favor verifica la auditoría."
+                            }
+                            send_notification(context_email)
+                            auditoria.email_audit = True
+                            auditoria.save(update_fields=["email_audit"])
+                            # print("Recordatorio enviado para auditoría:", auditoria.id)
 
-                # -------- 3️⃣ Ya venció --------
-                elif dias_restantes < 0 and registro.status != "Vencido":
-                    print("correo de vencido")
-                    response["data"].append({
-                        "alert": "danger",
-                        "icon": "<i class='fa-regular fa-circle-xmark fs-18'></i>",
-                        "title": f"Pago de verificación vencido",
-                        "text": f"Vehículo: {item['name']} - NO se realizó en el periodo",
-                        "link": link_vehiculo
-                    })
+                # MANTENIMIENTO
+                if 11 in access and access[11]["read"]:
+                    hoy = timezone.now().date()
 
-                    context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": "Alerta: verificación vencida",
-                        "modulo": 2,
-                        "submodulo": "Verificaciones",
-                        "item": vehicle_instance.id,
-                        "title": f"Verificación vencida - Vehículo: {vehicle_instance.name}",
-                        "body": f"El vehículo <strong>{vehicle_instance.name}</strong> no realizó su verificación en la fecha "
-                                f"{registro.fecha_pago}. Actualmente se encuentra vencido.<br>"
-                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                    }
-                    send_notification(context_email)
+                    obj_mantenimiento = Vehicle_Maintenance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
 
-                    registro.status = "Vencido"
-                    registro.save(update_fields=["status"])
-
-        except Exception as e:
-            print("Error en verificaciones:", str(e))
+                    if rol not in roles_usuario:                obj_mantenimiento = obj_mantenimiento.filter(vehicle__responsible_id=user_id)
 
 
-        # SEGUROS
-        if 9 in access and access[9]["read"]:
-            
-            obj_seguros = Vehicle_Insurance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
+                    for mantenimiento in obj_mantenimiento:
 
-            if rol not in roles_usuario:
-                obj_seguros = obj_seguros.filter(vehicle__responsible_id=user_id)
+                        # Si ya pasó la fecha y no tiene comprobante → NO PAGADO
+                        if mantenimiento.date and mantenimiento.date < hoy and not mantenimiento.comprobante:
+                            mantenimiento.status = "NO PAGADO"
+                            mantenimiento.save()
 
-            obj_seguros = obj_seguros.values('vehicle__id', 'vehicle__name').annotate(ultima_fecha=Max('end_date'))
+                        # Si está próximo (ej. 7 días antes) → PRÓXIMO
+                        elif mantenimiento.date and hoy <= mantenimiento.date <= (hoy + timedelta(days=7)):
+                            mantenimiento.status = "PRÓXIMO"
+                            mantenimiento.save()
 
-            vehicles_with_seguro = set()
-            for item in obj_seguros:
-                ultima_fecha = item["ultima_fecha"]
-                if ultima_fecha < fecha_actual:
-                    response["data"].append({
-                        "alert": "warning",
-                        "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                        "title": "Vehículo sin seguro",
-                        "text": f"Vehículo: {item['vehicle__name']}",
-                        "link": f"/vehicles/info/{item['vehicle__id']}/"
-                    })
-                elif ultima_fecha <= fecha_actual + timedelta(days=5):
-                    dias_restantes = (ultima_fecha - fecha_actual).days
-                    response["data"].append({
-                        "alert": "info",
-                        "icon": "<i class=\"fa-solid fa-info fs-18\"></i>",
-                        "title": f"Seguro a punto de vencer en {dias_restantes} días",
-                        "text": f"Vehículo: {item['vehicle__name']}",
-                        "link": f"/vehicles/info/{item['vehicle__id']}/"
-                    })
+                        # Si es nuevo y aún no ha sido atendido
+                        elif mantenimiento.status == "blank":
+                            mantenimiento.status = "NUEVO"
+                            mantenimiento.save()
 
-                    insurance = Vehicle_Insurance.objects.filter(vehicle__id=item["vehicle__id"], end_date=item["ultima_fecha"]).first()
-                    if insurance and not insurance.email_insurance:
-                        message_data = {
-                            "title": f"Recordatorio de Pago de seguro del vehículo: {insurance.vehicle.name}",
-                            "body": f"El seguro para el vehículo <strong>{insurance.vehicle.name}</strong> esta programada para la fecha <strong>{insurance.end_date}</strong>. Por favor, verifica el pago de seguro."
-                        }
-                        # Send_Email(
-                        #     subject="Pago de seguro",
-                        #     recipient=recipient_emails_vehiculos,
-                        #     model_instance=insurance,
-                        #     message_data=message_data,
-                        #     model_name=Vehicle_Insurance,
-                        #     field_to_update="email_insurance"
-                        # )
-                        # print("coreo enviado correctamente y campo actualizado de seguro")
+                    # --- 2. ENVIAR CORREOS SEGÚN EL ESTADO ---
+                    for mantenimiento in obj_mantenimiento:
+                        campo_email = None
                         
-                        context_email = {
-                            "company": Company.objects.get(id=company_id).name,
-                            "subject": "Pago de seguro",
-                            "modulo": 2,
-                            "submodulo": "Seguro",
-                            "item": insurance.vehicle.id,  
-                            "title": message_data["title"],
-                            "body": message_data["body"]
-                        }
-                        send_notification(context_email)
-                        insurance.email_insurance = True
-                        insurance.save(update_fields=["email_insurance"])
-                        # print("Contexto del correo enviado (seguro):", context_email)
+                        # URL completa al vehículo
 
-                vehicles_with_seguro.add(item['vehicle__id'])
+                        link_vehiculo = f"{domain}/vehicles/info/{mantenimiento.vehicle.id}/"
+                        
+                        # Mensajes según estado
+                        if mantenimiento.status == "NUEVO" and not mantenimiento.email_maintenance:
+                            campo_email = "email_maintenance"
+                            descripcion = (
+                                f"Se ha creado un nuevo mantenimiento para el vehículo <strong>{mantenimiento.vehicle.name}</strong>. "
+                                f"Aún no ha sido atendido. Puedes ver los detalles y actualizar el mantenimiento aquí: "
+                                f"<a href='{link_vehiculo}'>Ver mantenimiento</a>."
+                            )
 
-            vehicles_without_seguro = obj_vehicles.exclude(id__in=vehicles_with_seguro).values('id', 'name')
-            for vehicle in vehicles_without_seguro:
-                response["data"].append({
-                    "alert": "danger",
-                    "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                    "title": "Vehículo sin seguro",
-                    "text": f"Vehículo: {vehicle['name']}",
-                    "link": f"/vehicles/info/{vehicle['id']}/"
-                })
+                        elif mantenimiento.status == "PRÓXIMO" and not mantenimiento.email_maintenance_proximo:
+                            campo_email = "email_maintenance_proximo"
+                            descripcion = (
+                                f"El mantenimiento del vehículo <strong>{mantenimiento.vehicle.name}</strong> esta en estado próximo. "
+                                f"Revisa y realiza las acciones necesarias aquí: <a href='{link_vehiculo}'>Ver mantenimiento</a>."
+                            )
 
-                vehicle_instance = Vehicle.objects.get(id=vehicle["id"])
-                if not vehicle_instance.email_sin_insurance: 
-
-                    message_data = {
-                        "title": f"Seguro no registrado para el vehículo: {vehicle['name']}",
-                        "body": f"El vehículo <strong>{vehicle['name']}</strong> no tiene un seguro registrado. Por favor, verifica esta información en el sistema."
-                    }
-
-                    # Send_Email(
-                    #     subject="Alerta de Vehículo sin Seguro",
-                    #     recipient=recipient_emails_vehiculos,
-                    #     model_instance=vehicle_instance,
-                    #     message_data=message_data,
-                    #     model_name=Vehicle,
-                    #     field_to_update="email_sin_insurance"  
-                    # )
-                    # print("Correo enviado para vehículo sin seguro y campo actualizado")
-
-                    context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": "Alerta de Vehículo sin Seguro",  
-                        "modulo": 2,
-                        "submodulo": "Seguro",
-                        "item": vehicle_instance.id,
-                        "title": message_data["title"],
-                        "body": message_data["body"]
-                    }
-
-                    send_notification(context_email)
-                    vehicle_instance.email_sin_insurance = True
-                    vehicle_instance.save(update_fields=["email_sin_insurance"])
-                    # print("Contexto del correo enviado (sin seguro):", context_email)
-
-        # AUDITORÍAS - recordatorio de hoy
-        if 10 in access and access[10]["read"]:
-            obj_auditorias = Vehicle_Audit.objects.filter(
-                vehicle__company_id=company_id,
-                vehicle__is_active=True,
-                audit_date=fecha_actual
-            )
-            
-            obj_auditorias.filter(is_visible=False).update(is_visible=True)
-
-            for auditoria in obj_auditorias:
-                response["data"].append({
-                    "alert": "info",
-                    "icon": "<i class='fa-solid fa-clipboard-check fs-18'></i>",
-                    "title": "Auditoría programada para hoy",
-                    "text": f"Vehículo: {auditoria.vehicle.name}",
-                    "link": f"/vehicles/info/{auditoria.vehicle.id}/"
-                })
-
-                # Enviar recordatorio solo si no se ha enviado antes
-                if not auditoria.email_audit:
-                    context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": "Recordatorio: auditoría programada para hoy",
-                        "modulo": 2,
-                        "submodulo": "Auditoría",
-                        "item": auditoria.vehicle.id,
-                        "title": f"Auditoría programada para hoy - {auditoria.vehicle.name}",
-                        "body": f"Se ha registrado una auditoría para el vehículo <strong>{auditoria.vehicle.name}</strong> con fecha <strong>{auditoria.audit_date}</strong>. Por favor verifica la auditoría."
-                    }
-                    send_notification(context_email)
-                    auditoria.email_audit = True
-                    auditoria.save(update_fields=["email_audit"])
-                    # print("Recordatorio enviado para auditoría:", auditoria.id)
-
-        # MANTENIMIENTO
-        if 11 in access and access[11]["read"]:
-            hoy = timezone.now().date()
-
-            obj_mantenimiento = Vehicle_Maintenance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
-
-            if rol not in roles_usuario:                obj_mantenimiento = obj_mantenimiento.filter(vehicle__responsible_id=user_id)
+                        elif mantenimiento.status == "NO PAGADO" and not mantenimiento.email_maintenance_recordatorio:
+                            campo_email = "email_maintenance_recordatorio"
+                            descripcion = (
+                                f"El mantenimiento del vehículo <strong>{mantenimiento.vehicle.name}</strong> ha vencido y aún no se ha registrado el pago. "
+                                f"Por favor realiza el mantemiento, y sube el comprobante aquí: <a href='{link_vehiculo}'>Ver mantenimiento</a>."
+                            )
 
 
-            for mantenimiento in obj_mantenimiento:
+                        if campo_email:
+                            response["data"].append({
+                                "alert": "danger",
+                                "icon": "<i class=\"fa-solid fa-tools fs-18\"></i>",
+                                "title": f"Mantenimiento en estado {mantenimiento.status}",
+                                "text": f"Vehículo: {mantenimiento.vehicle.name}",
+                                "link": link_vehiculo
+                            })
 
-                # Si ya pasó la fecha y no tiene comprobante → NO PAGADO
-                if mantenimiento.date and mantenimiento.date < hoy and not mantenimiento.comprobante:
-                    mantenimiento.status = "NO PAGADO"
-                    mantenimiento.save()
-
-                # Si está próximo (ej. 7 días antes) → PRÓXIMO
-                elif mantenimiento.date and hoy <= mantenimiento.date <= (hoy + timedelta(days=7)):
-                    mantenimiento.status = "PRÓXIMO"
-                    mantenimiento.save()
-
-                # Si es nuevo y aún no ha sido atendido
-                elif mantenimiento.status == "blank":
-                    mantenimiento.status = "NUEVO"
-                    mantenimiento.save()
-
-            # --- 2. ENVIAR CORREOS SEGÚN EL ESTADO ---
-            for mantenimiento in obj_mantenimiento:
-                campo_email = None
-                
-                # URL completa al vehículo
-
-                link_vehiculo = f"{domain}/vehicles/info/{mantenimiento.vehicle.id}/"
-                
-                # Mensajes según estado
-                if mantenimiento.status == "NUEVO" and not mantenimiento.email_maintenance:
-                    campo_email = "email_maintenance"
-                    descripcion = (
-                        f"Se ha creado un nuevo mantenimiento para el vehículo <strong>{mantenimiento.vehicle.name}</strong>. "
-                        f"Aún no ha sido atendido. Puedes ver los detalles y actualizar el mantenimiento aquí: "
-                        f"<a href='{link_vehiculo}'>Ver mantenimiento</a>."
-                    )
-
-                elif mantenimiento.status == "PRÓXIMO" and not mantenimiento.email_maintenance_proximo:
-                    campo_email = "email_maintenance_proximo"
-                    descripcion = (
-                        f"El mantenimiento del vehículo <strong>{mantenimiento.vehicle.name}</strong> esta en estado próximo. "
-                        f"Revisa y realiza las acciones necesarias aquí: <a href='{link_vehiculo}'>Ver mantenimiento</a>."
-                    )
-
-                elif mantenimiento.status == "NO PAGADO" and not mantenimiento.email_maintenance_recordatorio:
-                    campo_email = "email_maintenance_recordatorio"
-                    descripcion = (
-                        f"El mantenimiento del vehículo <strong>{mantenimiento.vehicle.name}</strong> ha vencido y aún no se ha registrado el pago. "
-                        f"Por favor realiza el mantemiento, y sube el comprobante aquí: <a href='{link_vehiculo}'>Ver mantenimiento</a>."
-                    )
+                            message_data = {
+                                "title": f"Notificación de Mantenimiento: {mantenimiento.vehicle.name}",
+                                "body": descripcion
+                            }
 
 
-                if campo_email:
-                    response["data"].append({
-                        "alert": "danger",
-                        "icon": "<i class=\"fa-solid fa-tools fs-18\"></i>",
-                        "title": f"Mantenimiento en estado {mantenimiento.status}",
-                        "text": f"Vehículo: {mantenimiento.vehicle.name}",
-                        "link": link_vehiculo
-                    })
-
-                    message_data = {
-                        "title": f"Notificación de Mantenimiento: {mantenimiento.vehicle.name}",
-                        "body": descripcion
-                    }
-
-
-                    # print(f"Enviando correo para mantenimiento ID {mantenimiento.id}")
-                    # Send_Email(
-                    #     subject="Pago de Mantenimiento",
-                    #     recipient=recipient_emails_vehiculos,
-                    #     model_instance=mantenimiento,
-                    #     message_data=message_data,
-                    #     model_name=Vehicle_Maintenance,
-                    #     field_to_update=campo_email                    
-                    # )
-                    context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": f"Notificación de Mantenimiento - {mantenimiento.status}",
-                        "modulo": 2,
-                        "submodulo": "Mantenimiento",
-                        "item": mantenimiento.vehicle.id,
-                        "title": message_data["title"],
-                        "body": message_data["body"]
-                    }
-                    send_notification(context_email)
-                    setattr(mantenimiento, campo_email, True)
-                    mantenimiento.save(update_fields=[campo_email])
-                    # print("el corro se envio correctamente")
-        # Respuesta final
-    response["recordsTotal"] = len(response["data"])
-    response["success"] = True
-    return response
+                            # print(f"Enviando correo para mantenimiento ID {mantenimiento.id}")
+                            # Send_Email(
+                            #     subject="Pago de Mantenimiento",
+                            #     recipient=recipient_emails_vehiculos,
+                            #     model_instance=mantenimiento,
+                            #     message_data=message_data,
+                            #     model_name=Vehicle_Maintenance,
+                            #     field_to_update=campo_email                    
+                            # )
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": f"Notificación de Mantenimiento - {mantenimiento.status}",
+                                "modulo": 2,
+                                "submodulo": "Mantenimiento",
+                                "item": mantenimiento.vehicle.id,
+                                "title": message_data["title"],
+                                "body": message_data["body"]
+                            }
+                            send_notification(context_email)
+                            setattr(mantenimiento, campo_email, True)
+                            mantenimiento.save(update_fields=[campo_email])
+                            # print("el corro se envio correctamente")
+                # Respuesta final
+            response["recordsTotal"] = len(response["data"])
+            response["success"] = True
+            return response
 
 
 # send_notification(context_email)

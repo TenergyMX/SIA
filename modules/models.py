@@ -39,7 +39,7 @@ class Vehicle(models.Model):
     qr_fuel = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
     fuel_type_vehicle = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
     car_tires = models.CharField(max_length=60, blank=True, null=True)                                                 # Placa
-    apply_tenencia = models.BooleanField(default=False, verbose_name="Aplica tenencia") 
+    # apply_tenencia = models.BooleanField(default=False, verbose_name="Aplica tenencia") 
 
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,
@@ -103,6 +103,9 @@ class Vehicle_Refrendo(models.Model):
     comprobante_pago = models.FileField(upload_to='docs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     email_refrendo = models.BooleanField(default=False)
+    email_sin_comprobante = models.BooleanField(default=False) 
+     
+
 
     def __str__(self):
         return f"Refrendo vehicular para {self.vehiculo}"

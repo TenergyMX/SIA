@@ -125,12 +125,17 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="{% static 'assets/js/vehicles/vehicles.js' %}"></script>
 <script src="{% static 'assets/js/vehicles/vehicles_refrendo.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.js.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
 
 <script>
     const refrendo = new VehiclesRefrendo({

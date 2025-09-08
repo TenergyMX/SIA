@@ -337,6 +337,9 @@ class VehiclesRefrendo {
                         .find("[name='vehiculo__name']")
                         .val(self.vehicle.data.vehicle__name || null)
                         .prop("readonly", true);
+
+                    initRefrendoCalendar(obj_modal.find("[name='fecha_pago']"));
+
                     break;
                 case "update-item":
                     obj_modal.find("form")[0].reset();
@@ -370,6 +373,9 @@ class VehiclesRefrendo {
                         obj_modal.find('[name="vehiculo_id"]').show();
                         obj_modal.find('[name="vehiculo__name"]').hide();
                     }
+
+                    initRefrendoCalendar(obj_modal.find("[name='fecha_pago']"));
+
                     break;
                 case "delete-item":
                     var url = "/delete_vehicle_refrendo/";
@@ -428,6 +434,23 @@ class VehiclesRefrendo {
                     );
                 },
             });
+        });
+    }
+}
+
+function initRefrendoCalendar(inputElement) {
+    if (inputElement.length) {
+        if (inputElement[0]._flatpickr) {
+            inputElement[0]._flatpickr.destroy();
+        }
+        inputElement.flatpickr({
+            dateFormat: "Y-m-d",
+            locale: "es",
+            disable: [
+                function (date) {
+                    return date.getMonth() >= 3;
+                },
+            ],
         });
     }
 }

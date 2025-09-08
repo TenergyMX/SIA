@@ -22,7 +22,7 @@ function table_carnet_vehicle(config) {
             { title: "Id", data: "id", className: "toggleable" },
             { title: "Vehículo", data: "vehiculo", className: "toggleable" },
             { title: "Fecha", data: "date_carnet", className: "toggleable" },
-            { title: "Ver caarnet", data: "btn_view", className: "toggleable" },
+            { title: "Ver carnet", data: "btn_view", className: "toggleable" },
             {
                 title: "Acciones",
                 data: "btn_action",
