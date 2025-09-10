@@ -37,7 +37,7 @@ except KeyError as e:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG")
-print(DEBUG)
+# print(DEBUG)
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS1', 'localhost').lower().split(',')
 print("esto contiene allowed_hosts", ALLOWED_HOSTS)

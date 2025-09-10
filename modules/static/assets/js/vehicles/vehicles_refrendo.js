@@ -8,37 +8,27 @@ class VehiclesRefrendo {
         const defaultOptions = {
             infoCard: {
                 id: null,
-                vehicle: {
-                    id: null,
-                },
+                vehicle: { id: null },
                 ajax: {
-                    url: function () {
-                        return "/get_vehicles_refrendo/";
-                    },
-                    data: function (d) {
-                        return {
-                            ...d,
-                            vehicle_id: self.vehicle?.data?.id || null,
-                            tipo_carga: self.filtro_estado,
-                        };
-                    },
+                    url: () => "/get_vehicles_refrendo/",
+                    data: (d) => ({
+                        ...d,
+                        vehicle_id: self.vehicle?.data?.id || self.vehicle?.id || null,
+                        tipo_carga: self.filtro_estado,
+                    }),
                 },
             },
             table: {
                 id: "#table_refrendo",
-                vehicle: {
-                    id: null,
-                },
+                vehicle: { id: null },
                 ajax: {
                     url: "/get_vehicles_refrendo/",
                     dataSrc: "data",
-                    data: function (d) {
-                        return {
-                            ...d,
-                            vehicle_id: self.vehicle?.data?.id || null,
-                            tipo_carga: self.filtro_estado,
-                        };
-                    },
+                    data: (d) => ({
+                        ...d,
+                        vehicle_id: self.vehicle?.data?.id || self.vehicle?.id || null,
+                        tipo_carga: self.filtro_estado,
+                    }),
                 },
                 columns: [
                     { title: "ID", data: "id", visible: false },
@@ -48,48 +38,34 @@ class VehiclesRefrendo {
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
-            vehicle: {
-                data: { id: null },
-            },
+            vehicle: { id: null, data: { id: null } },
         };
 
-        // Merge de opciones
-        this.table = { ...defaultOptions.table, ...(options.table || {}) };
-        this.vehicle = { ...defaultOptions.vehicle, ...(options.vehicle || {}) };
+        // ---- Merge de opciones ----
+        self.vehicle = { ...defaultOptions.vehicle, ...(options.vehicle || {}) };
+        self.table = { ...defaultOptions.table, ...(options.table || {}) };
+        self.infoCard = { ...defaultOptions.infoCard, ...(options.infoCard || {}) };
 
-        //self.data = defaultOptions.data ;
-        if (options.infoCard) {
-            self.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
-        }
+        // ---- Caso: tabla de un solo vehículo ----
+        if (self.table.vehicle.id) {
+            self.vehicle.id = self.table.vehicle.id;
+            self.vehicle.data = { id: self.table.vehicle.id };
 
-        if (options.table) {
-            self.table = { ...defaultOptions.table, ...options.table };
-            console.log("");
-            if (self.vehicle?.id) {
-                self.table.ajax.url = "/get_vehicle_refrendo/";
-                self.table.ajax.data = function (d) {
-                    console.log(
-                        "Enviando vehicle_id del refrendo de vehculo ----:",
-                        self.vehicle.data.id
-                    );
-                    d.vehicle_id = self.vehicle.data.id || "";
-                    d.tipo_carga = self.filtro_estado;
-                };
+            // cambiar URL y data para un vehículo específico
+            self.table.ajax.url = "/get_vehicle_refrendo/";
+            self.table.ajax.data = (d) => ({
+                ...d,
+                vehicle_id: self.table.vehicle.id,
+                tipo_carga: self.filtro_estado,
+            });
 
-                // Buscar el índice del elemento que quieres eliminar
-                let indexToRemove = self.table.columns.findIndex(function (column) {
-                    return column.title === "Vehiculo" && column.data === "vehicle__name";
-                });
-
-                // Si se encontró el índice, eliminar el elemento del array
-                if (indexToRemove !== -1) {
-                    self.table.columns.splice(indexToRemove, 1);
-                }
+            // eliminar columna "Vehículo"
+            const indexToRemove = self.table.columns.findIndex(
+                (column) => column.title === "Vehículo" && column.data === "vehiculo__name"
+            );
+            if (indexToRemove !== -1) {
+                self.table.columns.splice(indexToRemove, 1);
             }
-        }
-
-        if (options.vehicle) {
-            self.vehicle = { ...defaultOptions.vehicle, ...options.vehicle };
         }
 
         self.init();
@@ -327,18 +303,10 @@ class VehiclesRefrendo {
 
                     obj_modal
                         .find("[name='vehiculo_id']")
-                        .val(self.vehicle.data.vehicle_id || null);
-                    console.log(
-                        "Enviando vehiculo_id para refrendo:",
-                        self.vehicle.data.vehicle_id
-                    );
-
+                        .val(self.vehicle.data.vehiculo_id || null);
                     obj_modal
-                        .find("[name='vehiculo__name']")
-                        .val(self.vehicle.data.vehicle__name || null)
-                        .prop("readonly", true);
-
-                    initRefrendoCalendar(obj_modal.find("[name='fecha_pago']"));
+                        .find("[name='vehicle__name']")
+                        .val(self.vehicle.data.vehicle__name || null);
 
                     break;
                 case "update-item":
@@ -373,9 +341,6 @@ class VehiclesRefrendo {
                         obj_modal.find('[name="vehiculo_id"]').show();
                         obj_modal.find('[name="vehiculo__name"]').hide();
                     }
-
-                    initRefrendoCalendar(obj_modal.find("[name='fecha_pago']"));
-
                     break;
                 case "delete-item":
                     var url = "/delete_vehicle_refrendo/";
@@ -434,23 +399,6 @@ class VehiclesRefrendo {
                     );
                 },
             });
-        });
-    }
-}
-
-function initRefrendoCalendar(inputElement) {
-    if (inputElement.length) {
-        if (inputElement[0]._flatpickr) {
-            inputElement[0]._flatpickr.destroy();
-        }
-        inputElement.flatpickr({
-            dateFormat: "Y-m-d",
-            locale: "es",
-            disable: [
-                function (date) {
-                    return date.getMonth() >= 3;
-                },
-            ],
         });
     }
 }

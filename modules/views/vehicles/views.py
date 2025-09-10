@@ -1212,7 +1212,7 @@ def get_vehicle_refrendo(request):
     dt = request.GET
     vehicle_id = dt.get("vehicle_id")
 
-    print("vehicle_id recibido:", vehicle_id)
+    print("vehicle_id recibido para mostrar solo sus refrendos:", vehicle_id)
 
     # Validar que vehicle_id sea un número válido
     if not vehicle_id or not vehicle_id.isdigit():
