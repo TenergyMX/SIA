@@ -1,7 +1,6 @@
 class VehiclesRefrendo {
     constructor(options) {
         "use strict";
-
         const self = this;
         self.filtro_estado = "todos";
 
@@ -41,7 +40,7 @@ class VehiclesRefrendo {
             vehicle: { id: null, data: { id: null } },
         };
 
-        // ---- Merge de opciones ----
+        // Merge opciones
         self.vehicle = { ...defaultOptions.vehicle, ...(options.vehicle || {}) };
         self.table = { ...defaultOptions.table, ...(options.table || {}) };
         self.infoCard = { ...defaultOptions.infoCard, ...(options.infoCard || {}) };
@@ -49,9 +48,13 @@ class VehiclesRefrendo {
         // ---- Caso: tabla de un solo vehículo ----
         if (self.table.vehicle.id) {
             self.vehicle.id = self.table.vehicle.id;
-            self.vehicle.data = { id: self.table.vehicle.id };
 
-            // cambiar URL y data para un vehículo específico
+            self.vehicle.data = {
+                id: self.table.vehicle.id,
+                vehiculo_id: self.table.vehicle.id,
+                vehiculo__name: "",
+            };
+
             self.table.ajax.url = "/get_vehicle_refrendo/";
             self.table.ajax.data = (d) => ({
                 ...d,
@@ -59,7 +62,6 @@ class VehiclesRefrendo {
                 tipo_carga: self.filtro_estado,
             });
 
-            // eliminar columna "Vehículo"
             const indexToRemove = self.table.columns.findIndex(
                 (column) => column.title === "Vehículo" && column.data === "vehiculo__name"
             );
@@ -279,6 +281,7 @@ class VehiclesRefrendo {
                 case "refresh-table":
                     self.tbl_refrendo.ajax.reload();
                     break;
+
                 case "add-item":
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
@@ -290,25 +293,32 @@ class VehiclesRefrendo {
                     obj_modal.find('[name="actions[]"]').trigger("change");
 
                     console.log(
-                        "este es el vehicle data al agregar un refrendo:",
-                        self.vehicle.data.vehicle_id
+                        "este es el vehicle data al agregar un refrendo de un solo vehiculo:",
+                        self.vehicle.data
                     );
-                    if (self.vehicle && self.vehicle.data.vehicle_id) {
-                        obj_modal.find('[name="vehiculo_id"]').hide();
-                        obj_modal.find('[name="vehiculo__name"]').show();
+
+                    const selectVehiculo = obj_modal.find('[name="vehiculo_id"]');
+
+                    if (self.vehicle && self.vehicle.data.vehiculo_id) {
+                        selectVehiculo
+                            .empty()
+                            .append(
+                                new Option(
+                                    self.vehicle.data.vehiculo__name,
+                                    self.vehicle.data.vehiculo_id,
+                                    true,
+                                    true
+                                )
+                            )
+                            .prop("disabled", true);
                     } else {
-                        obj_modal.find('[name="vehiculo_id"]').show();
-                        obj_modal.find('[name="vehiculo__name"]').hide();
+                        selectVehiculo.prop("disabled", false);
+                        selectVehiculo.val("").trigger("change");
                     }
 
-                    obj_modal
-                        .find("[name='vehiculo_id']")
-                        .val(self.vehicle.data.vehiculo_id || null);
-                    obj_modal
-                        .find("[name='vehicle__name']")
-                        .val(self.vehicle.data.vehicle__name || null);
-
+                    initRefrendoCalendar(obj_modal.find("[name='fecha_pago']"));
                     break;
+
                 case "update-item":
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
@@ -341,6 +351,8 @@ class VehiclesRefrendo {
                         obj_modal.find('[name="vehiculo_id"]').show();
                         obj_modal.find('[name="vehiculo__name"]').hide();
                     }
+                    initRefrendoCalendar(obj_modal.find("[name='fecha_pago']"));
+
                     break;
                 case "delete-item":
                     var url = "/delete_vehicle_refrendo/";
@@ -399,6 +411,23 @@ class VehiclesRefrendo {
                     );
                 },
             });
+        });
+    }
+}
+
+function initRefrendoCalendar(inputElement) {
+    if (inputElement.length) {
+        if (inputElement[0]._flatpickr) {
+            inputElement[0]._flatpickr.destroy();
+        }
+        inputElement.flatpickr({
+            dateFormat: "Y-m-d",
+            locale: "es",
+            disable: [
+                function (date) {
+                    return date.getMonth() >= 3;
+                },
+            ],
         });
     }
 }

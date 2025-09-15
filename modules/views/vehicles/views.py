@@ -1226,6 +1226,7 @@ def get_vehicle_refrendo(request):
         "vehiculo_id", "vehiculo__name",
         "monto", "fecha_pago", "comprobante_pago"
     )
+    print("esto contiene el vehiculo selecccionado",lista)
 
     for item in lista:
         item["btn_action"] = ""

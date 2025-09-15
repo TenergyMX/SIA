@@ -277,39 +277,41 @@ class VehiclesAudit {
                     self.tbl_audit.ajax.reload();
                     break;
                 case "add-item":
-                    obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
+                    obj_modal.modal("show");
                     obj_modal
-                        .find(".modal-header  .modal-title")
-                        .html("Registrar Auditoria vehicular");
+                        .find(".modal-header .modal-title")
+                        .html("Registrar refrendo vehicular");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
-                    if (self.vehicle && self.vehicle.data.vehicle_id) {
-                        $('#mdl_crud_audit [name="vehicle_id"]').hide();
-                        $('#mdl_crud_audit [name="vehicle__name"]').show();
+                    obj_modal.find('[name="actions[]"]').trigger("change");
+
+                    console.log(
+                        "este es el vehicle data al agregar un refrendo de un solo vehiculo:",
+                        self.vehicle.data
+                    );
+
+                    if (self.vehicle && self.vehicle.data.vehiculo_id) {
+                        // 👉 Vehículo único → mostrar input readonly, ocultar select
+                        obj_modal.find('[name="vehiculo_id"]').closest(".col-12").hide();
+                        obj_modal.find('[name="vehiculo__name"]').closest(".col-12").show();
+
+                        obj_modal
+                            .find('[name="vehiculo__name"]')
+                            .val(self.vehicle.data.vehiculo__name);
+                        obj_modal.find('[name="vehiculo_id"]').val(self.vehicle.data.vehiculo_id);
                     } else {
-                        $('#mdl_crud_audit [name="vehicle_id"]').show();
-                        $('#mdl_crud_audit [name="vehicle__name"]').hide();
+                        // 👉 Ningún vehículo seleccionado → select visible, input oculto
+                        obj_modal.find('[name="vehiculo_id"]').closest(".col-12").show();
+                        obj_modal.find('[name="vehiculo__name"]').closest(".col-12").hide();
+
+                        obj_modal.find('[name="vehiculo_id"]').val("").trigger("change");
+                        obj_modal.find('[name="vehiculo__name"]').val("");
                     }
-                    var checksField = obj_modal.find("[name='checks[]']");
-                    checksField.empty(); // Limpiar las opciones anteriores del select
 
-                    obj_modal.find("[name='vehicle_id']").val(self.vehicle.data.vehicle_id || null);
-                    obj_modal
-                        .find("[name='vehicle__name']")
-                        .val(self.vehicle.data.vehicle__name || null);
-
-                    //llamar la función de cargar checks
-                    obtener_checks_empresa();
-                    obj_modal.on("change", "[name='checks[]']", function () {
-                        var modal = $("#mdl_crud_audit .select2-selection__choice");
-                        modal.attr(
-                            "style",
-                            "background-color: var(--primary-color) !important; border: 1px solid var(--primary-color) !important;"
-                        );
-                    });
-
+                    initRefrendoCalendar(obj_modal.find("[name='fecha_pago']"));
                     break;
+
                 case "update-item":
                     obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
