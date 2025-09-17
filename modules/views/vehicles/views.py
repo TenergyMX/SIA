@@ -71,6 +71,17 @@ bucket_name=AWS_BUCKET_NAME
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 
+def getVehiclesList(request):
+    context = {}
+    fd = request.POST.get
+    print(fd)
+    context["success"] = True
+    vehicle = Vehicle.objects.filter(id = fd("id"))
+    if vehicle:
+        temp = vehicle.first()
+        context["option"] = f'<option value="{temp.id}">{temp.name}</option>'
+    return JsonResponse(context, safe=False)
+
 # TODO --------------- [ VIEWS ] --------------- 
 @login_required
 def vehicles(request):
@@ -1226,7 +1237,6 @@ def get_vehicle_refrendo(request):
         "vehiculo_id", "vehiculo__name",
         "monto", "fecha_pago", "comprobante_pago"
     )
-    print("esto contiene el vehiculo selecccionado",lista)
 
     for item in lista:
         item["btn_action"] = ""
@@ -1293,6 +1303,9 @@ def get_vehicles_refrendo(request):
     lista = lista_queryset.values(
         "id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago"
     )
+
+    print("HWLLLLLLLLLLLLL")
+    print(lista)
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]

@@ -77,7 +77,7 @@ class VehiclesRefrendo {
         const self = this;
         this.driverSia();
         this.driverSiaFormulario();
-
+        console.log(self.vehicle);
         // Inicializar contadores
         self.updateCounters({
             total: 0,
@@ -155,6 +155,37 @@ class VehiclesRefrendo {
         }
 
         self.setupEventHandlers();
+
+        //this.loadVehiclesOpions();
+    }
+
+    loadVehiclesOpions() {
+        const self = this;
+        var datos = new FormData();
+        datos.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
+        datos.append("id", self.vehicle.data.id);
+        $.ajax({
+            type: "POST",
+            url: "/get-vehicles/list/",
+            data: datos,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                console.log(response);
+                $('#mdl_crud_refrendo [name="vehiculo_id"]')
+                    .show()
+                    .attr("disabled", false)
+                    .html(response.option);
+                $('#mdl_crud_refrendo [name="vehiculo__name"]').hide();
+            },
+            error: function (xhr, status, error) {
+                Swal.fire(
+                    "Error del servidor",
+                    "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
+                    "error"
+                );
+            },
+        });
     }
 
     driverSia() {
@@ -283,37 +314,28 @@ class VehiclesRefrendo {
                     break;
 
                 case "add-item":
+                    // guarda el id y nombre del vehículo seleccionado
+                    const vehiculoId = self?.vehicle?.id || null;
+                    const vehiculoNombre = self?.vehicle?.name || null;
+
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
                     obj_modal
                         .find(".modal-header .modal-title")
                         .html("Registrar refrendo vehicular");
+
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
                     obj_modal.find('[name="actions[]"]').trigger("change");
 
-                    console.log(
-                        "este es el vehicle data al agregar un refrendo de un solo vehiculo:",
-                        self.vehicle.data
-                    );
-
                     const selectVehiculo = obj_modal.find('[name="vehiculo_id"]');
 
-                    if (self.vehicle && self.vehicle.data.vehiculo_id) {
-                        selectVehiculo
-                            .empty()
-                            .append(
-                                new Option(
-                                    self.vehicle.data.vehiculo__name,
-                                    self.vehicle.data.vehiculo_id,
-                                    true,
-                                    true
-                                )
-                            )
-                            .prop("disabled", true);
-                    } else {
-                        selectVehiculo.prop("disabled", false);
-                        selectVehiculo.val("").trigger("change");
+                    // si tienes el id del vehículo, vuelve a setearlo en el select
+                    if (vehiculoId) {
+                        selectVehiculo.val(vehiculoId).trigger("change");
+
+                        // si quieres que quede fijo y no seleccionable:
+                        // selectVehiculo.prop("disabled", true);
                     }
 
                     initRefrendoCalendar(obj_modal.find("[name='fecha_pago']"));

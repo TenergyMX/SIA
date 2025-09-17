@@ -27,6 +27,7 @@ urlpatterns = [
     path("get_vehicles_info/", views.get_vehicles_info),
     path("update_vehicle_info/", views.update_vehicle_info),
     path("delete_vehicle_info/", views.delete_vehicle_info),
+    path("get-vehicles/list/", views.getVehiclesList),
 
     # TODO ----- [ Tenencia ] -----
     # path("add_vehicle_tenencia/", views.add_vehicle_tenencia),
