@@ -4986,6 +4986,25 @@ def add_vehicle_responsiva(request):
             response["type"] = "kilometraje"
             response["message"] = "El kilometraje ddebe ser mayor. Kilometrakje del vehículo: " + str(obj_vehicle.mileage) + " Kilometraje proporcionado: " + str(mileage)
             return JsonResponse(response)
+        
+
+        gasolina = Decimal(dt.get("initial_fuel"))
+        if gasolina < 25:
+            fecha_actual = date.today()
+            context_email = {
+                "company": obj_vehicle.company.name,
+                "subject": "Nivel de gasolina bajo",
+                "modulo": 2,
+                "submodulo": "Gasolina",
+                "item": obj_vehicle.id,
+                "title": f"Se identifico el nivel de gasolina bajo para el vehículo {obj_vehicle.name}",
+                "body": (
+                    f"Se ha identificado bajo nivel de gasolina para el vehículo <strong>{obj_vehicle.name}</strong> "
+                    f"con fecha <strong>{fecha_actual}</strong>.<br>"
+                )
+            }
+            send_notification(context_email)
+            
     except Vehicle.DoesNotExist:
         response["status"] = "warning"
         response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
@@ -5117,6 +5136,23 @@ def update_vehicle_responsiva(request):
             response["type"] = "kilometraje"
             response["message"] = "El kilometraje ddebe ser mayor. Kilometrakje del vehículo: " + str(obj_vehicle.mileage) + " Kilometraje proporcionado: " + str(mileage)
             return JsonResponse(response)
+        
+        gasolina = Decimal(dt.get("final_fuel"))
+        if gasolina < 25:
+            fecha_actual = date.today()
+            context_email = {
+                "company": obj_vehicle.company.name,
+                "subject": "Nivel de gasolina bajo",
+                "modulo": 2,
+                "submodulo": "Gasolina",
+                "item": obj_vehicle.id,
+                "title": f"Se identifico el nivel de gasolina bajo para el vehículo {obj_vehicle.name}",
+                "body": (
+                    f"Se ha identificado bajo nivel de gasolina para el vehículo <strong>{obj_vehicle.name}</strong> "
+                    f"con fecha <strong>{fecha_actual}</strong>.<br>"
+                )
+            }
+            send_notification(context_email)
     except Vehicle.DoesNotExist:
         response["status"] = "warning"
         response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
