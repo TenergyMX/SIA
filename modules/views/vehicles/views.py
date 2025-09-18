@@ -1296,6 +1296,30 @@ def get_vehicles_refrendo(request):
         lista_queryset = latest_only.filter(
             Q(fecha_pago__gte=hoy) & Q(fecha_pago__lte=un_mes_despues)
         )
+
+    elif tipo_carga == "sin_refrendo":
+        # Vehículos que no tienen refrendo registrado en el año actual
+        year = hoy.year
+        vehicles_with_refrendo = Vehicle_Refrendo.objects.filter(
+            vehiculo__in=total_vehiculos, fecha_pago__year=year
+        ).values_list("vehiculo_id", flat=True)
+
+        lista_queryset = Vehicle.objects.filter(
+            id__in=total_vehiculos.values_list("id", flat=True)
+        ).exclude(id__in=vehicles_with_refrendo)
+
+        # Adaptamos para que tenga los mismos campos que un refrendo
+        lista = lista_queryset.annotate(
+            vehiculo_id=F("id"),
+            vehiculo__name=F("name"),
+            monto=Value("", output_field=CharField()),
+            fecha_pago=Value(None, output_field=DateField()),
+            comprobante_pago=Value("", output_field=CharField())
+        ).values(
+            "id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago"
+        )
+
+
     else:
         lista_queryset = latest_only
 

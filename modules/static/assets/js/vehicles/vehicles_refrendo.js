@@ -197,7 +197,7 @@ class VehiclesRefrendo {
                     {
                         element: ".drive-1",
                         popover: {
-                            title: "Todas las auditorías",
+                            title: "Todas los refrendos",
                             description:
                                 "Se muestra un registro por vehiculo, con sus respectivos datos.",
                         },
@@ -205,32 +205,32 @@ class VehiclesRefrendo {
                     {
                         element: ".drive-2",
                         popover: {
-                            title: "Auditorías evaluadas",
+                            title: "Refrendos evaluados",
                             description:
-                                "Se muestran todas las auditorias evaluadas, con sus respectivos datos.",
+                                "Se muestran todos lso refrendos evaluados, con sus respectivos datos.",
                         },
                     },
                     {
                         element: ".drive-3",
                         popover: {
-                            title: "Auditorías vencidas",
+                            title: "Refrendos vencidos",
                             description:
-                                "Se muestran todos las auditorias vencidas, con sus respectivos datos.",
+                                "Se muestran todos los refrendos vencidos, con sus respectivos datos.",
                         },
                     },
                     {
                         element: ".drive-4",
                         popover: {
-                            title: "Auditorías próximas a evaluar",
+                            title: "Refrendos próximos a evaluar",
                             description:
-                                "Se muestran las auditorias proximas a evaluar, con sus respectivos datos.",
+                                "Se muestran los refrendos proximos a evaluar, con sus respectivos datos.",
                         },
                     },
                     {
                         element: ".drive-5",
                         popover: {
-                            title: "Agregar auditoría",
-                            description: "Agrega una nueva auditoria a traves del formulario.",
+                            title: "Agregar Refrendo",
+                            description: "Agrega un nuevo refrendo a traves del formulario.",
                         },
                     },
                 ],
@@ -298,6 +298,7 @@ class VehiclesRefrendo {
         $("#counter-vencidas").text(counters.vencidas || 0);
         $("#counter-proximas").text(counters.proximas || 0);
         $("#counter-pendientes").text(counters.pendientes || 0);
+        $("#counter-sin_refrendo").text(counters.sin_refrendo || 0);
     }
 
     setupEventHandlers() {
