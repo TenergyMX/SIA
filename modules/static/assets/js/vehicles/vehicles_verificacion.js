@@ -101,7 +101,7 @@ class VehiclesVerificacion {
             pagadas: 0,
             vencidas: 0,
             proximas: 0,
-            // pendientes: 0,
+            sin_verificacion: 0,
         });
 
         if (self.table) {
@@ -308,7 +308,11 @@ class VehiclesVerificacion {
         $("#counter-pagadas").text(counters.pagadas || 0);
         $("#counter-vencidas").text(counters.vencidas || 0);
         $("#counter-proximas").text(counters.proximas || 0);
-        // $("#counter-pendientes").text(counters.pendientes || 0);
+        $("#counter-sin_verificacion").text(
+            `${counters.sin_verificacion || 0} de ${
+                counters.total_vehiculos_sin_verificacion || 0
+            } vehículos`
+        );
     }
 
     setupEventHandlers() {

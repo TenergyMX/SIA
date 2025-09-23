@@ -59,7 +59,14 @@ class VehiclesInsurance {
                             return d["responsible__first_name"] + " " + d["responsible__last_name"];
                         },
                     },
-                    { title: "Acciones", data: "btn_action", orderable: false },
+                    {
+                        title: "Acciones",
+                        data: "btn_action",
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return data;
+                        },
+                    },
                 ],
             },
             vehicle: {
@@ -111,7 +118,7 @@ class VehiclesInsurance {
             pagadas: 0,
             vencidas: 0,
             proximas: 0,
-            pendientes: 0,
+            sin_seguro: 0,
         });
         if (self.table) {
             self.tbl_insurance = $(self.table.id).DataTable({
@@ -130,7 +137,7 @@ class VehiclesInsurance {
                     },
 
                     dataSrc: function (json) {
-                        // Solo actualiza contadores si es = todos
+                        // Solo actualiza contadores si estás en "todos"
                         if (json.counters && self.filtro_estado === "todas") {
                             self.updateCounters(json);
                         }
@@ -225,6 +232,7 @@ class VehiclesInsurance {
 
     updateCounters(data) {
         const counters = data.counters || data;
+        console.log("estos son los contadores de los seguros", counters);
         const total = counters.total || 0;
         const totalVehiculos = counters.total_vehiculos || 0;
 
@@ -232,6 +240,9 @@ class VehiclesInsurance {
         $("#counter-pagadas").text(counters.pagadas || 0);
         $("#counter-vencidas").text(counters.vencidas || 0);
         $("#counter-proximas").text(counters.proximas || 0);
+        $("#counter-sin_seguro").text(
+            `${counters.sin_seguro ?? 0} de ${counters.total_vehiculos ?? 0} vehículos`
+        );
     }
 
     setupEventHandlers() {

@@ -61,6 +61,9 @@ import qrcode
 import threading
 from PIL import Image
 import re
+from django.db.models import DateField
+from django.db.models import Q, F, Value, OuterRef, Subquery, CharField, DateField, IntegerField
+
 
 # TODO --------------- [ VARIABLES ] ---------- 
 
@@ -1276,12 +1279,32 @@ def get_vehicles_refrendo(request):
         total_vehiculos = total_vehiculos.filter(id=vehicle_id)
     total_vehiculos_count = total_vehiculos.count()
     
-    # base_refrendo_qs = Vehicle_Refrendo.objects.filter(vehiculo__in=total_vehiculos)
+    
+    year = hoy.year
+    vehicles_with_refrendo = Vehicle_Refrendo.objects.filter(
+        vehiculo__in=total_vehiculos, fecha_pago__year=year
+    ).values_list("vehiculo_id", flat=True)
+    # Guardamos el total de vehículos sin refrendo
+    sin_refrendo_count = total_vehiculos.exclude(id__in=vehicles_with_refrendo).count()
+    
+
+    # Clasificación por estado en base solo a lista_queryset
+    contadores = {
+        "total": 0,
+        "pagadas": 0,
+        "proximas": 0,
+        "vencidas": 0,
+        "sin_refrendo": sin_refrendo_count,
+    }
 
     # Base de refrendos (solo el más reciente por vehículo)
     all_refrendos = Vehicle_Refrendo.objects.filter(vehiculo__in=total_vehiculos)
     latest_refrendo = Vehicle_Refrendo.objects.filter(vehiculo_id=OuterRef('vehiculo_id')).order_by('-fecha_pago')
     latest_only = all_refrendos.filter(id=Subquery(latest_refrendo.values('id')[:1]))
+
+    # Campos comunes
+    CAMPOS = ["id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago"]
+
 
     # Filtrar por tipo_carga
     if tipo_carga == "pagadas":
@@ -1298,97 +1321,85 @@ def get_vehicles_refrendo(request):
         )
 
     elif tipo_carga == "sin_refrendo":
-        # Vehículos que no tienen refrendo registrado en el año actual
         year = hoy.year
         vehicles_with_refrendo = Vehicle_Refrendo.objects.filter(
             vehiculo__in=total_vehiculos, fecha_pago__year=year
         ).values_list("vehiculo_id", flat=True)
 
-        lista_queryset = Vehicle.objects.filter(
-            id__in=total_vehiculos.values_list("id", flat=True)
-        ).exclude(id__in=vehicles_with_refrendo)
-
-        # Adaptamos para que tenga los mismos campos que un refrendo
-        lista = lista_queryset.annotate(
-            vehiculo_id=F("id"),
-            vehiculo__name=F("name"),
-            monto=Value("", output_field=CharField()),
-            fecha_pago=Value(None, output_field=DateField()),
-            comprobante_pago=Value("", output_field=CharField())
-        ).values(
-            "id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago"
+        lista = (
+            Vehicle.objects.filter(id__in=total_vehiculos.values_list("id", flat=True))
+            .exclude(id__in=vehicles_with_refrendo)
+            .annotate(
+                vehiculo_id=F("id"),
+                vehiculo__name=F("name"),
+                monto=Value("", output_field=CharField()),
+                fecha_pago=Value(None, output_field=DateField()),
+                comprobante_pago=Value("", output_field=CharField()),
+            )
+            .values(*CAMPOS)
         )
 
+        contadores["sin_refrendo"] = lista.count()
 
     else:
         lista_queryset = latest_only
 
-    # Seleccionar campos finales
-    lista = lista_queryset.values(
-        "id", "vehiculo_id", "vehiculo__name", "monto", "fecha_pago", "comprobante_pago"
-    )
 
-    print("HWLLLLLLLLLLLLL")
-    print(lista)
+     # Solo aplicar values si no es sin_refrendo
+    if tipo_carga != "sin_refrendo":
+        lista = lista_queryset.values(*CAMPOS)
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
 
-    # Clasificación por estado en base solo a lista_queryset
-    contadores = {
-        "total": 0,
-        "pagadas": 0,
-        "proximas": 0,
-        "vencidas": 0,
-    }
+
 
      # preparar datos de respuesta
     result =  []
     for item in lista:
         estado = None
+        fecha = item["fecha_pago"]
+        
+        if tipo_carga == "sin_refrendo":
+            estado = "sin_refrendo"
+
         if item["comprobante_pago"]:
             estado = "pagada"
             contadores["pagadas"] += 1
-        elif item["fecha_pago"] < hoy:
+        elif fecha and fecha < hoy: 
             estado = "vencida"
             contadores["vencidas"] += 1
-        elif hoy <= item["fecha_pago"] <= un_mes_despues:
+        elif fecha and hoy <= fecha <= un_mes_despues:
             estado = "proxima"
             contadores["proximas"] += 1
         
         item["estado"] = estado
         contadores["total"] += 1    
         
-  # Filtro por rol
-    # if context["role"]["id"] in [1, 2, 3]:
-    #     base_refrendo_qs = base_refrendo_qs.filter(vehiculo__company_id=context["company"]["id"])
-    # else:
-    #     base_refrendo_qs = base_refrendo_qs.filter(vehiculo__responsible_id=context["user"]["id"])
-    # if context["role"]["id"] in [1,2,3]:
-    #     lista = lista.filter(vehiculo__company_id = context["company"]["id"])
-    # else:
-    #     lista = lista.filter(vehiculo__responsible_id = context["user"]["id"])
 
         item["btn_action"] = ""
-        if item["comprobante_pago"] :
-            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
-            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
-                <i class="fa-solid fa-file"></i> Comprobante 
-            </a>\n"""
-        if access["update"]:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-refrendo=\"update-item\">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
-        if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-refrendo=\"delete-item\">
-                <i class="fa-solid fa-trash"></i>
-            </button>"""
+        if item["estado"] not in ["sin_refrendo", None]: 
+            if item["comprobante_pago"] :
+                tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+                item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                    <i class="fa-solid fa-file"></i> Comprobante 
+                </a>\n"""
+            if access["update"]:
+                item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-refrendo=\"update-item\">
+                    <i class="fa-solid fa-pen"></i>
+                </button>\n"""
+            if access["delete"]:
+                item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-refrendo=\"delete-item\">
+                    <i class="fa-solid fa-trash"></i>
+                </button>"""
 
         result.append(item)
     # Asignar contadores a la respuesta
     response["counters"] = {
         **contadores,
         "total_vehiculos": total_vehiculos_count,
+        "total_vehiculos_sin_refrendo": total_vehiculos_count,
+
     }
     response["data"] = result
     response["success"] = True
@@ -1689,6 +1700,8 @@ def get_vehicles_verificacion(request):
     # Obtener fechas de referencia
     hoy = timezone.now().date()
     un_mes_despues = hoy + timedelta(days=30)
+    year = hoy.year
+
 
     # --- VEHÍCULOS DISPONIBLES SEGÚN PERMISOS ---
     total_vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
@@ -1700,6 +1713,15 @@ def get_vehicles_verificacion(request):
 
     total_vehiculos_count = total_vehiculos.count()
 
+    # Vehículos con verificación en el año actual
+    vehicles_with_verificacion = Vehicle_Verificacion.objects.filter(
+        vehiculo__in=total_vehiculos, fecha_pago__year=year
+    ).values_list("vehiculo_id", flat=True)
+
+    # vehículos sin verificación
+    sin_verificacion_count = total_vehiculos.exclude(id__in=vehicles_with_verificacion).count()
+
+
     # Base para todos los registros relacionados a los vehículos
     all_verificaciones = Vehicle_Verificacion.objects.filter(vehiculo__in=total_vehiculos)
 
@@ -1709,6 +1731,14 @@ def get_vehicles_verificacion(request):
     ).order_by('-fecha_pago')
     latest_only = all_verificaciones.filter(id=Subquery(latest_verificacion.values('id')[:1]))
     
+    # Campos comunes
+    CAMPOS = [
+        "id", "engomado", "periodo", "lugar", "status",
+        "vehiculo_id", "vehiculo__name",
+        "monto", "fecha_pago", "comprobante_pago"
+    ]
+
+
     # Aplicar filtro según tipo_carga
     if tipo_carga == "pagadas":
         lista_queryset = latest_only.filter(status='PAGADO')
@@ -1719,15 +1749,38 @@ def get_vehicles_verificacion(request):
         )
     elif tipo_carga == "proximas":
         lista_queryset = latest_only.filter(status='PROXIMO', fecha_pago__gt=hoy)
+    elif tipo_carga == "sin_verificacion":
+        lista = (
+            Vehicle.objects.filter(id__in=total_vehiculos.values_list("id", flat=True))
+            .exclude(id__in=vehicles_with_verificacion)
+            .annotate(
+                vehiculo_id=F("id"),
+                vehiculo__name=F("name"),
+                verificacion_id=Value(None, output_field=IntegerField()),
+                engomado=Value("", output_field=CharField()),
+                periodo=Value("", output_field=CharField()),
+                lugar=Value("", output_field=CharField()),
+                status=Value("", output_field=CharField()),
+                monto=Value("", output_field=CharField()),
+                fecha_pago=Value(None, output_field=DateField()),
+                comprobante_pago=Value("", output_field=CharField()),
+            )
+            .values(*CAMPOS)
+        )
     else:  # tipo_carga == "todos"
         lista_queryset = latest_only
 
+    
+    # Convertir a lista de dicts
+    if tipo_carga != "sin_verificacion":
+        lista = lista_queryset.values(*CAMPOS)
+
         # Obtener datos
-    lista = lista_queryset.values(
-        "id", "engomado", "periodo", "lugar", "status",
-        "vehiculo_id", "vehiculo__name",
-        "monto", "fecha_pago", "comprobante_pago"
-    )
+    # lista = lista_queryset.values(
+    #     "id", "engomado", "periodo", "lugar", "status",
+    #     "vehiculo_id", "vehiculo__name",
+    #     "monto", "fecha_pago", "comprobante_pago"
+    # )
     
     # Obtener permisos del módulo
     access = get_module_user_permissions(context, subModule_id)
@@ -1739,12 +1792,22 @@ def get_vehicles_verificacion(request):
         "pagadas": 0,
         "proximas": 0,
         "vencidas": 0,
+        "sin_verificacion": sin_verificacion_count,
     }
 
     # Preparar datos de respuesta
     result = []
     for item in lista:
+        if "verificacion_id" in item:
+            item["id"] = item.pop("verificacion_id")
+
         estado = None
+        
+        fecha = item["fecha_pago"]
+        
+        if tipo_carga == "sin_verificacion":
+            estado = "sin_verificacion"
+
         if item["status"] == 'PAGADO':
             estado = "pagada"
             contadores["pagadas"] += 1
@@ -1765,26 +1828,29 @@ def get_vehicles_verificacion(request):
         
         # Botones de acción
         item["btn_action"] = ""
-        if item["comprobante_pago"] :
-            tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
-            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
-                <i class="fa-solid fa-file"></i> Comprobante 
-            </a>\n"""
-            
-        if access["update"]:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-verificacion=\"update-item\">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
-        if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-verificacion=\"delete-item\">
-                <i class="fa-solid fa-trash"></i>
-            </button>"""
+        if item["estado"] not in ["sin_verificacion", None]:
+
+            if item["comprobante_pago"] :
+                tempDoc = generate_presigned_url(bucket_name, item["comprobante_pago"])
+                item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+                    <i class="fa-solid fa-file"></i> Comprobante 
+                </a>\n"""
+                
+            if access["update"]:
+                item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-verificacion=\"update-item\">
+                    <i class="fa-solid fa-pen"></i>
+                </button>\n"""
+            if access["delete"]:
+                item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-verificacion=\"delete-item\">
+                    <i class="fa-solid fa-trash"></i>
+                </button>"""
         
         result.append(item)
     # Asignar contadores a la respuesta
     response["counters"] = {
         **contadores,
         "total_vehiculos": total_vehiculos_count,
+        "total_vehiculos_sin_verificacion": total_vehiculos_count,
     }
     response["data"] = result
     response["success"] = True
@@ -2255,10 +2321,11 @@ def get_vehicles_insurance(request):
     tipo_carga = dt.get("tipo_carga", "todos")
     subModule_id = 9
 
-    # Obtener fechas de referencia
+    # Fechas de referencia
     hoy = timezone.now().date()
     un_mes_despues = hoy + timedelta(days=30)
 
+    # Vehículos disponibles
     vehiculos = Vehicle.objects.filter(company_id=context["company"]["id"])
     if context["role"]["id"] not in [1, 2, 3]:
         vehiculos = vehiculos.filter(responsible_id=context["user"]["id"])
@@ -2274,88 +2341,151 @@ def get_vehicles_insurance(request):
     ).order_by("-end_date")
     latest_only = base_qs.filter(id=Subquery(latest_qs.values("id")[:1]))
 
-    # Filtro según tipo_carga
-    if tipo_carga == "pagadas":
-        lista_queryset = latest_only.filter(status="PAGADO")
-    elif tipo_carga == "vencidas":
-        lista_queryset = latest_only.filter(status="VENCIDO")
-    elif tipo_carga == "proximas":
-        lista_queryset = latest_only.filter(
-            status="PROXIMO",
-            end_date__gte=hoy,
-            end_date__lte=un_mes_despues
-        )
-    else:
-        lista_queryset = latest_only
-
     contadores = {
         "total": 0,
         "pagadas": 0,
         "proximas": 0,
         "vencidas": 0,
+        "sin_seguro": 0,
     }
- 
 
-    lista = lista_queryset.values(
-        "id", "vehicle_id", "vehicle__name",
-        "responsible_id", "responsible__first_name", "responsible__last_name",
-        "policy_number", "insurance_company", "cost", "validity", "doc",
-        "start_date", "end_date", "status"
-    ).order_by('-end_date')
+    year = hoy.year
+    vehicles_with_insurance = Vehicle_Insurance.objects.filter(
+        vehicle__in=vehiculos, end_date__year=year
+    ).values_list("vehicle_id", flat=True)
+
+    contadores["sin_seguro"] = vehiculos.exclude(
+        id__in=vehicles_with_insurance
+    ).count()
+
+
+    # Filtro según tipo_carga
+    if tipo_carga == "pagadas":
+        lista_queryset = latest_only.filter(status="PAGADO")
+    elif tipo_carga == "vencidas":
+        lista_queryset = latest_only.filter(status="VENCIDO")
+    # elif tipo_carga == "proximas":
+    #     lista_queryset = latest_only.filter(
+    #         status="PROXIMO",
+    #         end_date__gte=hoy,
+    #         end_date__lte=un_mes_despues
+    #     )
+    elif tipo_carga == "proximas":
+        lista_queryset = latest_only.filter(
+            end_date__gte=hoy,
+            end_date__lte=un_mes_despues
+        )
+
+    elif tipo_carga == "sin_seguro":
+
+        lista = (
+            Vehicle.objects.filter(id__in=vehiculos.values_list("id", flat=True))
+            .exclude(id__in=vehicles_with_insurance)
+            .annotate(
+                alias_vehicle_id=F("id"),
+                alias_vehicle_name=F("name"),
+                alias_responsible_id=F("responsible_id"),
+                alias_responsible_first_name=F("responsible__first_name"),
+                alias_responsible_last_name=F("responsible__last_name"),
+                alias_policy_number=Value("", output_field=CharField()),
+                alias_insurance_company=Value("", output_field=CharField()),
+                alias_cost=Value("", output_field=CharField()),
+                alias_validity=Value("", output_field=CharField()),
+                alias_doc=Value("", output_field=CharField()),
+                alias_start_date=Value(None, output_field=DateField()),
+                alias_end_date=Value(None, output_field=DateField()),
+                alias_status=Value("", output_field=CharField()),
+            )
+            .values(
+                "alias_vehicle_id", "alias_vehicle_name",
+                "alias_responsible_id", "alias_responsible_first_name", "alias_responsible_last_name",
+                "alias_policy_number", "alias_insurance_company", "alias_cost", "alias_validity", "alias_doc",
+                "alias_start_date", "alias_end_date", "alias_status"
+            )
+        )
+        contadores["sin_seguro"] = lista.count()
+    else:
+        lista_queryset = latest_only
+
+    # Si no es sin_seguro, aplicamos values normalmente
+    if tipo_carga != "sin_seguro":
+        lista = lista_queryset.values(
+            "id", "vehicle_id", "vehicle__name",
+            "responsible_id", "responsible__first_name", "responsible__last_name",
+            "policy_number", "insurance_company", "cost", "validity", "doc",
+            "start_date", "end_date", "status"
+        ).order_by("-end_date")
 
     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
-
-    access = get_module_user_permissions(context, subModule_id)
-    access = access["data"]["access"]
 
     result = []
     for item in lista:
         estado = None
-        status = item["status"]
-        fecha_fin = item["end_date"]
+        if tipo_carga == "sin_seguro":
+            # Mapear alias a nombres originales
+            item["vehicle_id"] = item.pop("alias_vehicle_id")
+            item["vehicle__name"] = item.pop("alias_vehicle_name")
+            item["responsible_id"] = item.pop("alias_responsible_id")
+            item["responsible__first_name"] = item.pop("alias_responsible_first_name")
+            item["responsible__last_name"] = item.pop("alias_responsible_last_name")
+            item["policy_number"] = item.pop("alias_policy_number")
+            item["insurance_company"] = item.pop("alias_insurance_company")
+            item["cost"] = item.pop("alias_cost")
+            item["validity"] = item.pop("alias_validity")
+            item["doc"] = item.pop("alias_doc")
+            item["start_date"] = item.pop("alias_start_date")
+            item["end_date"] = item.pop("alias_end_date")
+            item["status"] = item.pop("alias_status")
+            item["id"] = item["vehicle_id"]
+            estado = "sin_seguro"
+        else:
+            status = item.get("status")
+            fecha_fin = item.get("end_date")
+            if status == "PAGADO":
+                estado = "pagada"
+                contadores["pagadas"] += 1
+            # elif status == "PROXIMO" and fecha_fin and hoy <= fecha_fin <= un_mes_despues:
+            #     estado = "proxima"
+            #     contadores["proximas"] += 1
+            elif fecha_fin and hoy <= fecha_fin <= un_mes_despues:
+                estado = "proxima"
+                contadores["proximas"] += 1
 
-        # Clasificación por estado
-        if status == "PAGADO":
-            estado = "pagada"
-            contadores["pagadas"] += 1
-        elif status == "PROXIMO" and fecha_fin and hoy <= fecha_fin <= un_mes_despues:
-            estado = "proxima"
-            contadores["proximas"] += 1
-        elif status == "VENCIDO":
-            estado = "vencida"
-            contadores["vencidas"] += 1
+            elif status == "VENCIDO":
+                estado = "vencida"
+                contadores["vencidas"] += 1
 
-        contadores["total"] += 1
         item["estado"] = estado
+        contadores["total"] += 1
 
-        
+        # Botones
         item["btn_action"] = ""
+        if item["estado"] != "sin_seguro": 
 
-        if item["doc"] :
-            tempDoc = generate_presigned_url(bucket_name, item["doc"])
-            item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
-                <i class="fa-solid fa-file"></i> Ver seguro
-            </a>\n"""
+            if item.get("doc"):
+                tempDoc = generate_presigned_url(bucket_name, item["doc"])
+                item["btn_action"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" download>
+                    <i class="fa-solid fa-file"></i> Ver seguro
+                </a>\n"""
 
-        if access["update"]:
-            item["btn_action"] += """<button class="btn btn-primary btn-sm" data-vehicle-insurance="update-item">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
+            if access["update"]:
+                item["btn_action"] += """<button class="btn btn-primary btn-sm" data-vehicle-insurance="update-item">
+                    <i class="fa-solid fa-pen"></i>
+                </button>\n"""
 
-        if access["delete"]:
-            item["btn_action"] += """<button class="btn btn-danger btn-sm" data-vehicle-insurance="delete-item">
-                <i class="fa-solid fa-trash"></i>
-            </button>\n"""
+            if access["delete"]:
+                item["btn_action"] += """<button class="btn btn-danger btn-sm" data-vehicle-insurance="delete-item">
+                    <i class="fa-solid fa-trash"></i>
+                </button>\n"""
 
         result.append(item)
 
-    response["counters"] = {
-        **contadores,
-        "total_vehiculos": total_vehiculos_count
-    }
+    response["counters"] = {**contadores, "total_vehiculos": total_vehiculos_count}
     response["data"] = result
     response["success"] = True
     return JsonResponse(response)
+
+
 
 # Función auxiliar para generar nuevos registros (NUEVA FUNCIONALIDAD)
 def generar_proximos_pagos(queryset, fecha_referencia):

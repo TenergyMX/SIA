@@ -292,13 +292,16 @@ class VehiclesRefrendo {
         const counters = data.counters || data;
         const total = counters.total || 0;
         const totalVehiculos = counters.total_vehiculos || 0;
-
         $("#counter-todas").text(`${total} de ${totalVehiculos} vehículos`);
         $("#counter-pagadas").text(counters.pagadas || 0);
         $("#counter-vencidas").text(counters.vencidas || 0);
         $("#counter-proximas").text(counters.proximas || 0);
         $("#counter-pendientes").text(counters.pendientes || 0);
-        $("#counter-sin_refrendo").text(counters.sin_refrendo || 0);
+        $("#counter-sin_refrendo").text(
+            `${counters.sin_refrendo || 0} de ${
+                counters.total_vehiculos_sin_refrendo || 0
+            } vehículos`
+        );
     }
 
     setupEventHandlers() {
