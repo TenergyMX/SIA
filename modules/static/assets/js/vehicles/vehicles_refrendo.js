@@ -296,11 +296,8 @@ class VehiclesRefrendo {
         $("#counter-pagadas").text(counters.pagadas || 0);
         $("#counter-vencidas").text(counters.vencidas || 0);
         $("#counter-proximas").text(counters.proximas || 0);
-        $("#counter-pendientes").text(counters.pendientes || 0);
         $("#counter-sin_refrendo").text(
-            `${counters.sin_refrendo || 0} de ${
-                counters.total_vehiculos_sin_refrendo || 0
-            } vehículos`
+            `${counters.sin_refrendo || 0} de ${counters.total_vehiculos || 0} vehículos`
         );
     }
 

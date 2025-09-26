@@ -126,6 +126,7 @@ class Vehicle_Verificacion(models.Model):
         ('PENDIENTE','Pendiente'),
         ('PAGADO','Pagado'),
         ('PROXIMO','Próximo'),
+        ('VENCIDO', 'Vencido'), 
     ]
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDIENTE')
 

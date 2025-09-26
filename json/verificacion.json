@@ -1,0 +1,704 @@
+[
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 1,
+        "fields": {
+            "vehiculo": 12,
+            "monto": "1037.00",
+            "engomado": "Rojo",
+            "periodo": "1er semestre",
+            "fecha_pago": "2024-03-08",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/12/verificacion/comprobante_pago_1.pdf",
+            "created_at": "2024-09-19T14:48:56.107Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 2,
+        "fields": {
+            "vehiculo": 11,
+            "monto": "706.00",
+            "engomado": "Rosa",
+            "periodo": "2do semestre",
+            "fecha_pago": "2024-09-30",
+            "lugar": "Querétaro",
+            "comprobante_pago": "docs/1/vehicle/11/verificacion/comprobante_pago_2.pdf",
+            "created_at": "2024-10-01T17:29:39.956Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 4,
+        "fields": {
+            "vehiculo": 9,
+            "monto": "706.00",
+            "engomado": "Rosa",
+            "periodo": "2do semestre",
+            "fecha_pago": "2024-09-30",
+            "lugar": "Querétaro",
+            "comprobante_pago": "docs/1/vehicle/9/verificacion/comprobante_pago_4.pdf",
+            "created_at": "2024-10-03T14:37:44.761Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 9,
+        "fields": {
+            "vehiculo": 7,
+            "monto": "706.00",
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2024-05-10",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/7/verificacion/comprobante_pago_9.jpg",
+            "created_at": "2025-03-05T15:35:21.832Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 11,
+        "fields": {
+            "vehiculo": 22,
+            "monto": "735.00",
+            "engomado": "Amarillo",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-02-20",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/22/verificacion/comprobante_pago_11.jpg",
+            "created_at": "2025-03-05T15:59:42.477Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 12,
+        "fields": {
+            "vehiculo": 16,
+            "monto": "1.00",
+            "engomado": "Verde",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-03-19",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/16/verificacion/comprobante_pago_12.png",
+            "created_at": "2025-03-19T15:56:48.469Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 13,
+        "fields": {
+            "vehiculo": 23,
+            "monto": "1.00",
+            "engomado": "Amarillo",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-03-19",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/23/verificacion/comprobante_pago_13.jpg",
+            "created_at": "2025-03-19T16:03:43.680Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 15,
+        "fields": {
+            "vehiculo": 19,
+            "monto": "1.00",
+            "engomado": "Rosa",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-03-11",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/19/verificacion/comprobante_pago_15.png",
+            "created_at": "2025-03-19T16:15:16.272Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 27,
+        "fields": {
+            "vehiculo": 30,
+            "monto": "1400.00",
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2024-05-15",
+            "lugar": "queretaro",
+            "comprobante_pago": "",
+            "created_at": "2025-08-19T20:47:09.081Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 28,
+        "fields": {
+            "vehiculo": 30,
+            "monto": "1400.00",
+            "engomado": "Azul",
+            "periodo": "2do semestre",
+            "fecha_pago": "2024-11-01",
+            "lugar": "queretaro",
+            "comprobante_pago": "docs/1/vehicle/30/verificacion/comprobante_pago_28.jpeg",
+            "created_at": "2025-08-19T20:47:09.085Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 29,
+        "fields": {
+            "vehiculo": 6,
+            "monto": "736.00",
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2024-05-15",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/6/verificacion/comprobante_29.jpg",
+            "created_at": "2025-08-19T20:54:49.155Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 30,
+        "fields": {
+            "vehiculo": 6,
+            "monto": "736.00",
+            "engomado": "Azul",
+            "periodo": "2do semestre",
+            "fecha_pago": "2024-11-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/6/verificacion/comprobante_pago_30.jpg",
+            "created_at": "2025-08-19T20:54:49.291Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 31,
+        "fields": {
+            "vehiculo": 6,
+            "monto": null,
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-05-01",
+            "lugar": null,
+            "comprobante_pago": "",
+            "created_at": "2025-08-19T20:55:39.849Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 32,
+        "fields": {
+            "vehiculo": 30,
+            "monto": "1500.00",
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-05-01",
+            "lugar": "queretaro",
+            "comprobante_pago": "docs/1/vehicle/30/verificacion/comprobante_pago_32.jpg",
+            "created_at": "2025-08-19T20:56:24.466Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 33,
+        "fields": {
+            "vehiculo": 30,
+            "monto": null,
+            "engomado": "Azul",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-08-21",
+            "lugar": null,
+            "comprobante_pago": "",
+            "created_at": "2025-08-19T20:59:31.617Z",
+            "email_verificacion": true,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 34,
+        "fields": {
+            "vehiculo": 26,
+            "monto": "735.00",
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-01-31",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/26/verificacion/comprobante_34.jpg",
+            "created_at": "2025-08-19T21:07:01.194Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 35,
+        "fields": {
+            "vehiculo": 26,
+            "monto": "735.00",
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-05-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/26/verificacion/comprobante_pago_35.jpg",
+            "created_at": "2025-08-19T21:07:01.324Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 36,
+        "fields": {
+            "vehiculo": 26,
+            "monto": null,
+            "engomado": "Azul",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-11-01",
+            "lugar": null,
+            "comprobante_pago": "",
+            "created_at": "2025-08-19T21:08:04.205Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PROXIMO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 37,
+        "fields": {
+            "vehiculo": 8,
+            "monto": "735.00",
+            "engomado": "Amarillo",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-02-20",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/8/verificacion/comprobante_37.jpg",
+            "created_at": "2025-08-19T21:11:38.843Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 38,
+        "fields": {
+            "vehiculo": 8,
+            "monto": "735.00",
+            "engomado": "Amarillo",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-08-29",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/8/verificacion/comprobante_pago_38.jpg",
+            "created_at": "2025-08-19T21:11:38.961Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 39,
+        "fields": {
+            "vehiculo": 9,
+            "monto": "735.00",
+            "engomado": "Rosa",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-03-15",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/9/verificacion/comprobante_39.jpg",
+            "created_at": "2025-08-19T21:14:31.143Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 40,
+        "fields": {
+            "vehiculo": 9,
+            "monto": "735.00",
+            "engomado": "Rosa",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-08-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "",
+            "created_at": "2025-08-19T21:14:31.288Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 41,
+        "fields": {
+            "vehiculo": 17,
+            "monto": "340.00",
+            "engomado": "Rojo",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-03-25",
+            "lugar": "Guanajuato",
+            "comprobante_pago": "docs/1/vehicle/17/verificacion/comprobante_41.jpg",
+            "created_at": "2025-08-19T21:15:55.214Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 42,
+        "fields": {
+            "vehiculo": 17,
+            "monto": "340.00",
+            "engomado": "Rojo",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-09-01",
+            "lugar": "Guanajuato",
+            "comprobante_pago": "",
+            "created_at": "2025-08-19T21:15:55.302Z",
+            "email_verificacion": true,
+            "email_verificacion_days": true,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 43,
+        "fields": {
+            "vehiculo": 10,
+            "monto": "735.00",
+            "engomado": "Azul",
+            "periodo": "2do semestre",
+            "fecha_pago": "2024-09-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/10/verificacion/comprobante_43.jpg",
+            "created_at": "2025-08-21T19:41:21.853Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 44,
+        "fields": {
+            "vehiculo": 10,
+            "monto": "735.00",
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-05-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/10/verificacion/comprobante_pago_44.jpg",
+            "created_at": "2025-08-21T19:41:21.952Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 45,
+        "fields": {
+            "vehiculo": 10,
+            "monto": null,
+            "engomado": "Azul",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-11-01",
+            "lugar": null,
+            "comprobante_pago": "",
+            "created_at": "2025-08-21T19:42:16.920Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PROXIMO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 46,
+        "fields": {
+            "vehiculo": 12,
+            "monto": "735.00",
+            "engomado": "Rosa",
+            "periodo": "2do semestre",
+            "fecha_pago": "2024-10-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/12/verificacion/comprobante_46.jpg",
+            "created_at": "2025-08-21T19:48:10.074Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 47,
+        "fields": {
+            "vehiculo": 12,
+            "monto": "735.00",
+            "engomado": "Rosa",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-02-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/12/verificacion/comprobante_pago_47.jpg",
+            "created_at": "2025-08-21T19:48:10.193Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 48,
+        "fields": {
+            "vehiculo": 12,
+            "monto": null,
+            "engomado": "Rosa",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-08-01",
+            "lugar": null,
+            "comprobante_pago": "",
+            "created_at": "2025-08-21T19:48:31.155Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 49,
+        "fields": {
+            "vehiculo": 7,
+            "monto": "735.00",
+            "engomado": "Azul",
+            "periodo": "2do semestre",
+            "fecha_pago": "2024-08-22",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/7/verificacion/comprobante_49.jpg",
+            "created_at": "2025-08-21T21:19:46.805Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 50,
+        "fields": {
+            "vehiculo": 7,
+            "monto": "735.00",
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2025-05-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/7/verificacion/comprobante_pago_50.jpg",
+            "created_at": "2025-08-21T21:19:46.967Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 51,
+        "fields": {
+            "vehiculo": 7,
+            "monto": "735.00",
+            "engomado": "Azul",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-08-30",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/7/verificacion/comprobante_pago_51.jpg",
+            "created_at": "2025-08-21T21:20:33.303Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 52,
+        "fields": {
+            "vehiculo": 13,
+            "monto": "319.00",
+            "engomado": "Verde",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-08-22",
+            "lugar": "Guanajuato",
+            "comprobante_pago": "docs/1/vehicle/13/verificacion/comprobante_52.jpg",
+            "created_at": "2025-08-22T17:55:04.045Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 53,
+        "fields": {
+            "vehiculo": 13,
+            "monto": "319.00",
+            "engomado": "Verde",
+            "periodo": "1er semestre",
+            "fecha_pago": "2026-04-01",
+            "lugar": "Guanajuato",
+            "comprobante_pago": "",
+            "created_at": "2025-08-22T17:55:04.179Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PROXIMO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 54,
+        "fields": {
+            "vehiculo": 22,
+            "monto": "735.00",
+            "engomado": "Amarillo",
+            "periodo": "2do semestre",
+            "fecha_pago": "2025-08-23",
+            "lugar": "Queretaro",
+            "comprobante_pago": "docs/1/vehicle/22/verificacion/comprobante_54.jpg",
+            "created_at": "2025-08-25T17:54:52.676Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "Vencido"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 55,
+        "fields": {
+            "vehiculo": 22,
+            "monto": "735.00",
+            "engomado": "Amarillo",
+            "periodo": "1er semestre",
+            "fecha_pago": "2026-01-01",
+            "lugar": "Queretaro",
+            "comprobante_pago": "",
+            "created_at": "2025-08-25T17:54:52.777Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PROXIMO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 56,
+        "fields": {
+            "vehiculo": 8,
+            "monto": null,
+            "engomado": "Amarillo",
+            "periodo": "1er semestre",
+            "fecha_pago": "2026-01-01",
+            "lugar": null,
+            "comprobante_pago": "",
+            "created_at": "2025-08-29T21:22:22.284Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PROXIMO"
+        }
+    },
+    {
+        "model": "modules.vehicle_verificacion",
+        "pk": 57,
+        "fields": {
+            "vehiculo": 7,
+            "monto": null,
+            "engomado": "Azul",
+            "periodo": "1er semestre",
+            "fecha_pago": "2026-05-01",
+            "lugar": null,
+            "comprobante_pago": "",
+            "created_at": "2025-09-01T23:20:46.516Z",
+            "email_verificacion": false,
+            "email_verificacion_days": false,
+            "email_verificacion_vencida": false,
+            "status": "PROXIMO"
+        }
+    }
+]

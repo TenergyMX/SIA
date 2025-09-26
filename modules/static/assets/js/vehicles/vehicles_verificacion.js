@@ -309,9 +309,7 @@ class VehiclesVerificacion {
         $("#counter-vencidas").text(counters.vencidas || 0);
         $("#counter-proximas").text(counters.proximas || 0);
         $("#counter-sin_verificacion").text(
-            `${counters.sin_verificacion || 0} de ${
-                counters.total_vehiculos_sin_verificacion || 0
-            } vehículos`
+            `${counters.sin_verificacion || 0} de ${counters.total_vehiculos || 0} vehículos`
         );
     }
 

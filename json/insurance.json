@@ -1,0 +1,272 @@
+[
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 17,
+        "fields": {
+            "vehicle": 6,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "6530.00",
+            "responsible": 12,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/6/seguro/doc_17.pdf",
+            "created_at": "2025-01-29T16:10:15.664Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 18,
+        "fields": {
+            "vehicle": 8,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "12251.00",
+            "responsible": 15,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/8/seguro/doc_18.pdf",
+            "created_at": "2025-01-29T16:12:22.767Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 19,
+        "fields": {
+            "vehicle": 9,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "10097.00",
+            "responsible": 10,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/9/seguro/doc_19.pdf",
+            "created_at": "2025-01-29T16:14:50.513Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 21,
+        "fields": {
+            "vehicle": 13,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "11640.00",
+            "responsible": 40,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/13/seguro/doc_21.pdf",
+            "created_at": "2025-01-29T16:46:13.461Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 22,
+        "fields": {
+            "vehicle": 10,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "10005.00",
+            "responsible": 21,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/10/seguro/doc_22.pdf",
+            "created_at": "2025-01-29T16:49:18.609Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 23,
+        "fields": {
+            "vehicle": 11,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "7750.00",
+            "responsible": 11,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/11/seguro/doc_23.pdf",
+            "created_at": "2025-01-29T16:54:28.200Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 24,
+        "fields": {
+            "vehicle": 12,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "7626.00",
+            "responsible": 14,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/12/seguro/doc_24.pdf",
+            "created_at": "2025-01-29T16:56:36.161Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 25,
+        "fields": {
+            "vehicle": 22,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "9020.00",
+            "responsible": 29,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/22/seguro/doc_25.pdf",
+            "created_at": "2025-01-29T16:59:15.010Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 30,
+        "fields": {
+            "vehicle": 17,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "8972.00",
+            "responsible": 6,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/17/seguro/doc_30.pdf",
+            "created_at": "2025-01-29T17:33:15.027Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 31,
+        "fields": {
+            "vehicle": 16,
+            "policy_number": "4055739347",
+            "insurance_company": "Qualitas",
+            "cost": "68220.00",
+            "responsible": 15,
+            "validity": 35,
+            "start_date": "2024-06-25",
+            "end_date": "2028-06-24",
+            "doc": "docs/1/vehicle/16/seguro/doc_31.pdf",
+            "created_at": "2025-02-10T17:47:44.179Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 32,
+        "fields": {
+            "vehicle": 19,
+            "policy_number": "4055760052",
+            "insurance_company": "Qualitas",
+            "cost": "140443.00",
+            "responsible": 8,
+            "validity": 36,
+            "start_date": "2024-06-10",
+            "end_date": "2027-06-09",
+            "doc": "docs/1/vehicle/19/seguro/doc_32.pdf",
+            "created_at": "2025-02-10T17:49:34.627Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 34,
+        "fields": {
+            "vehicle": 23,
+            "policy_number": "4055998187",
+            "insurance_company": "Qualitas",
+            "cost": "95882.00",
+            "responsible": 7,
+            "validity": 36,
+            "start_date": "2024-12-23",
+            "end_date": "2027-12-22",
+            "doc": "docs/1/vehicle/23/seguro/doc_34.pdf",
+            "created_at": "2025-02-10T19:04:28.886Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 35,
+        "fields": {
+            "vehicle": 7,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "10485.00",
+            "responsible": 23,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/7/seguro/doc_35.pdf",
+            "created_at": "2025-03-06T19:15:42.397Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 36,
+        "fields": {
+            "vehicle": 26,
+            "policy_number": "1880070566",
+            "insurance_company": "Qualitas",
+            "cost": "17098.00",
+            "responsible": null,
+            "validity": 12,
+            "start_date": "2025-01-23",
+            "end_date": "2026-01-22",
+            "doc": "docs/1/vehicle/26/seguro/doc_36.pdf",
+            "created_at": "2025-05-02T16:17:01.523Z",
+            "email_insurance": false,
+            "status": "PAGADO"
+        }
+    },
+    {
+        "model": "modules.vehicle_insurance",
+        "pk": 38,
+        "fields": {
+            "vehicle": 30,
+            "policy_number": "2222",
+            "insurance_company": "Qualitas",
+            "cost": "2000.00",
+            "responsible": 9,
+            "validity": 1,
+            "start_date": "2025-07-24",
+            "end_date": "2025-08-23",
+            "doc": "docs/1/vehicle/30/seguro/doc_38.jpg",
+            "created_at": "2025-08-19T21:25:33.737Z",
+            "email_insurance": true,
+            "status": "PROXIMO"
+        }
+    }
+]

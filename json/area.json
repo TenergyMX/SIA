@@ -1,0 +1,170 @@
+[
+    {
+        "model": "users.area",
+        "pk": 1,
+        "fields": {
+            "company": 1,
+            "code": "SI",
+            "name": "Sistemas",
+            "description": "Sistema e Innovacion",
+            "is_active": true,
+            "created_at": "2024-06-14T15:45:15.200Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 2,
+        "fields": {
+            "company": 1,
+            "code": "RH",
+            "name": "Recursos Humanos",
+            "description": "RH",
+            "is_active": true,
+            "created_at": "2024-06-21T22:40:18.983Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 3,
+        "fields": {
+            "company": 1,
+            "code": "ING",
+            "name": "Ingenieria en Subestaciones y Electromecanica",
+            "description": "ING",
+            "is_active": true,
+            "created_at": "2024-09-02T16:41:23.968Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 4,
+        "fields": {
+            "company": 1,
+            "code": "SFVI",
+            "name": "Energias Renovables",
+            "description": "SFVI",
+            "is_active": true,
+            "created_at": "2024-09-02T16:42:17.564Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 5,
+        "fields": {
+            "company": 1,
+            "code": "INGC",
+            "name": "Ingeniería Civil",
+            "description": "INGC",
+            "is_active": true,
+            "created_at": "2024-09-02T16:43:33.008Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 6,
+        "fields": {
+            "company": 1,
+            "code": "COM",
+            "name": "Comercial",
+            "description": "Comercial",
+            "is_active": true,
+            "created_at": "2024-09-02T16:44:14.100Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 7,
+        "fields": {
+            "company": 1,
+            "code": "FAP",
+            "name": "Finanzas y Administración de proyectos",
+            "description": "FAP",
+            "is_active": true,
+            "created_at": "2024-09-02T16:47:39.094Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 8,
+        "fields": {
+            "company": 1,
+            "code": "CONT",
+            "name": "Contabilidad",
+            "description": "Contabilidad",
+            "is_active": true,
+            "created_at": "2024-09-02T16:48:45.468Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 9,
+        "fields": {
+            "company": 1,
+            "code": "CO",
+            "name": "Compras",
+            "description": "CO",
+            "is_active": true,
+            "created_at": "2024-09-02T16:49:40.937Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 10,
+        "fields": {
+            "company": 1,
+            "code": "DI",
+            "name": "Desarrollo e Innovación",
+            "description": "DI",
+            "is_active": true,
+            "created_at": "2024-09-02T19:37:27.088Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 11,
+        "fields": {
+            "company": 1,
+            "code": "AL",
+            "name": "Almacen",
+            "description": "Almacen",
+            "is_active": true,
+            "created_at": "2024-09-02T19:54:03.196Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 27,
+        "fields": {
+            "company": 12,
+            "code": "SI",
+            "name": "Sistemas",
+            "description": "Área de Sistemas",
+            "is_active": true,
+            "created_at": "2025-01-20T16:11:12.928Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 28,
+        "fields": {
+            "company": 12,
+            "code": "CO",
+            "name": "Compras",
+            "description": "Área de Compras",
+            "is_active": true,
+            "created_at": "2025-01-20T16:11:12.935Z"
+        }
+    },
+    {
+        "model": "users.area",
+        "pk": 29,
+        "fields": {
+            "company": 12,
+            "code": "AL",
+            "name": "Almacén",
+            "description": "Área de Almacén",
+            "is_active": true,
+            "created_at": "2025-01-20T16:11:12.941Z"
+        }
+    }
+]

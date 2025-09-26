@@ -1,0 +1,1064 @@
+[
+    {
+        "model": "auth.user",
+        "pk": 1,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$74WyW2ICQ2rkb6oPuzWXcy$dpDwgrBnx47CSIXY2oLVslmCehcyHBtf+RXH0kWuyRI=",
+            "last_login": "2025-08-18T23:20:42.995Z",
+            "is_superuser": true,
+            "username": "Administrador",
+            "first_name": "Admin",
+            "last_name": "",
+            "email": "",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-04-08T17:59:27Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 5,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$aiHLduV059xRCx7Ph18L0f$boJ0nqDARkKcqwCxOdziWE1ePsz4GfrLJU4MMTYfZVY=",
+            "last_login": "2025-04-01T14:43:35.098Z",
+            "is_superuser": false,
+            "username": "Bryan Salinas",
+            "first_name": "Bryan",
+            "last_name": "Salinas",
+            "email": "bryan.salinas@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-04-11T19:21:03.575Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 6,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$tj4KB9EOdgIoXVKHWyCR89$nAZhc0cAPFaRGjjZgqOkfSq95ZHJ9ufNkTO2EDALzo0=",
+            "last_login": "2025-09-09T16:51:09.003Z",
+            "is_superuser": false,
+            "username": "Ivanna Gabriela",
+            "first_name": "Ivanna",
+            "last_name": "Gabriela",
+            "email": "ivanna.gabriela@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-24T21:48:02.307Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 7,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$A1W8XXzKDZ1u6pRtOZYdlK$9CsPGqgkN9zdrtUBJfle6VbG64MfCB+3q04DOqZBGjI=",
+            "last_login": "2025-07-30T18:58:44.528Z",
+            "is_superuser": false,
+            "username": "Cris Cuamatzi",
+            "first_name": "Cris",
+            "last_name": "Cuamatzi",
+            "email": "cris.cuamatzi@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-24T21:56:04.939Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 8,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$denhCWGsTZJ2lEepAwlEzp$HsQwbjmPMstpLbY2mcqyuO4yS1TfUBVL2MEs5KVGw8Q=",
+            "last_login": "2025-08-07T02:02:06.859Z",
+            "is_superuser": false,
+            "username": "Juan.Gonzalez",
+            "first_name": "Juan",
+            "last_name": "Gonzalez",
+            "email": "juan.gonzalez@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-24T21:56:32.682Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 9,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$07QFnwhEGFxQb6BJm6GgeB$A2MqRX2s0P0lFx12cZHmkkPPlAQ9g9qC3ICxPVwDPlg=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Ana Guerrero",
+            "first_name": "Ana",
+            "last_name": "Guerrero",
+            "email": "ana.guerrero@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-30T17:28:52.643Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 10,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$BPuFFDHS9zXh5GYwBgAQRx$qxHaCV23dJQEb6SiCVmQg0JnIvADp3BbeyBv02ay7x4=",
+            "last_login": "2025-09-01T20:02:57.070Z",
+            "is_superuser": false,
+            "username": "Ernesto Arias",
+            "first_name": "Ernesto",
+            "last_name": "Arias",
+            "email": "ernesto.arias@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-30T17:31:46.685Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 11,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$tCctsMjxiZ5ATqVMRTW8Xk$nwFoVqkLyXrWxqQeyGOmgM820vK3m6/9J84QI15SHUE=",
+            "last_login": "2025-07-30T00:37:43.017Z",
+            "is_superuser": false,
+            "username": "Fernando Jaramillo",
+            "first_name": "Fernando",
+            "last_name": "Jaramillo",
+            "email": "fernando.jaramillo@interaccion-electrica.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-30T17:32:32.055Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 12,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$e55GvmHr2hPIcqxsIy3Tjl$1W5+qwuMEBJ86CqDTj+BeExkcb1/drE4h4JMG0pm2r8=",
+            "last_login": "2025-08-04T06:00:54.273Z",
+            "is_superuser": false,
+            "username": "Tirzo Martinez",
+            "first_name": "Tirzo",
+            "last_name": "Martinez",
+            "email": "tirzo.martinez@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-30T17:33:16.525Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 13,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$Ybx41H20K4shmAy9K41e9G$tz6ge8OAzJ0QyIAz4YM9UXSNuwEN6l+jtIvqxfhd4mc=",
+            "last_login": "2025-09-19T14:51:45.138Z",
+            "is_superuser": false,
+            "username": "Ernesto Ramirez",
+            "first_name": "Ernesto",
+            "last_name": "Ramirez",
+            "email": "compras@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-30T17:34:00.117Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 14,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$jntUcyb4YfH6IBCDsbPVh9$U/jU/OYcKYmnoPxDwxJKld8eQ7JLy3wUWMz0jGXu39c=",
+            "last_login": "2025-04-13T21:44:33.889Z",
+            "is_superuser": false,
+            "username": "Gil Ortiz",
+            "first_name": "Gil",
+            "last_name": "Ortiz",
+            "email": "gil.ortiz@interaccion-electrica.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-30T17:34:57.916Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 15,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$KS9eCOEdMLgYxIaFj08IJS$96MdgWqBlQpGyrliScRlvDECcSPfj0fVO2zP0RgAWyg=",
+            "last_login": "2025-09-17T15:12:24.065Z",
+            "is_superuser": true,
+            "username": "Isaac Herrera",
+            "first_name": "Isaac",
+            "last_name": "Herrera",
+            "email": "isaac.herrera@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-05-30T17:36:26Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 17,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$8kfYn37UPQdMo5UdumlkrH$06urxxGTk0wBojtMpxgu5lM1kOmE+RHp1HkdMBhDAAI=",
+            "last_login": "2024-06-14T15:46:27.957Z",
+            "is_superuser": false,
+            "username": "Prueba",
+            "first_name": "Prueba",
+            "last_name": "Super",
+            "email": "sistemas01.interaccion@gmail.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-06-14T15:45:42.140Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 18,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$s4CAGsjOBx0ij0tOkoT725$eZw5LUKfg6xxFbt4KcXLakf7SXPmUQxb5JW9JXlETL4=",
+            "last_login": "2025-09-23T22:27:13.857Z",
+            "is_superuser": true,
+            "username": "AdminTY",
+            "first_name": "Tenergy",
+            "last_name": "MX",
+            "email": "sistemas01.interaccion@gmail.com",
+            "is_staff": true,
+            "is_active": true,
+            "date_joined": "2024-06-17T16:19:32Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 19,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$Jf5JAxWaVjPcoeM1LpCqvF$xqnCgIfk26PEedXrG7fnmakLF7bIh0jTcaKTnX3itNY=",
+            "last_login": "2025-07-30T01:03:45.546Z",
+            "is_superuser": false,
+            "username": "Daniel Ruíz",
+            "first_name": "DANIEL",
+            "last_name": "RUIZ",
+            "email": "recursoshumanos@interaccion-electrica.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-06-21T21:56:32.330Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 20,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$VJrgR1hNDtd0eHLviQpAE4$HulKtpYnlALgtCTAePvM5zr2DnHJPaVOWP5rtqml7Fk=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Jaime Maldonado",
+            "first_name": "Jaime",
+            "last_name": "Maldonado",
+            "email": "jaime.maldonado@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-06-21T21:57:14.044Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 21,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$YGGmUowhyIcI5YaEAkgyoC$QY8Dhi+BP0GKGmNvywxI/O6SwMDqwaJnf9oBjDmu/+k=",
+            "last_login": "2025-06-06T22:17:36.834Z",
+            "is_superuser": false,
+            "username": "Eduardo Leon",
+            "first_name": "Eduardo",
+            "last_name": "Leon",
+            "email": "eduardo.leon@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:36:51.800Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 22,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$T4PCRmXM9ua35dyFAXMQWO$ry8SHxy/ox4T5uBYscsN73YpaPE4B4mECYNQdYRRmdk=",
+            "last_login": "2025-07-30T23:22:16.492Z",
+            "is_superuser": false,
+            "username": "Ernesto Jimenez",
+            "first_name": "Ernesto",
+            "last_name": "Jimenez",
+            "email": "ernesto.jimenez@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:40:44.722Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 23,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$jve4piV4cBOnd9itrtzyCo$Hbbuqi6EC81OHpy97Bprn2m42EfKCBgW3nucfDzsfHk=",
+            "last_login": "2025-08-13T14:04:45.474Z",
+            "is_superuser": false,
+            "username": "Sofia Ruiz",
+            "first_name": "Sofia",
+            "last_name": "Ruiz",
+            "email": "sofia.ruiz@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:44:01.491Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 24,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$uxRpKFZHKERactKJNGvoBS$Ajz769ProQf+ia5CT8NM7ukkjrCrrAS+mOREA4SYfy4=",
+            "last_login": "2025-09-15T16:52:08.559Z",
+            "is_superuser": false,
+            "username": "Lizeth Tapia",
+            "first_name": "Lizeth",
+            "last_name": "Tapia",
+            "email": "lizeth.tapia@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:45:20.764Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 25,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$8DKEXJTW6PPBgk1VZizvbM$h7/P8RDH9Ioq5/iMZKCUbrMYQQH8PZyDLkPMtbwaC+k=",
+            "last_login": "2025-09-17T15:01:19.361Z",
+            "is_superuser": false,
+            "username": "Elizabeth Pascual",
+            "first_name": "Elizabeth",
+            "last_name": "Pascual",
+            "email": "elizabeth.pascual@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:46:12.327Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 26,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$Z5d5KYXdc9ttzja4swo5k3$K7/qMsSyz5sT22DFYF1ZtvZbJAUH/WLAOJZ7fRtdQDE=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Emiliano Nieto",
+            "first_name": "Emiliano",
+            "last_name": "Nieto",
+            "email": "emiliano.nieto@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:47:12.974Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 27,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$6fC7rAGtZXr94NM26JCidw$NtIQ1ZA5Vvv43QPwxo/G2INKzqrhwTsFL9Ge9B4RdfA=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Rebecca Vargas",
+            "first_name": "Rebecca",
+            "last_name": "Vargas",
+            "email": "rebecca.vargas@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:47:48.775Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 28,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$5vxy9VUEoLphDPObtvRFeJ$R+RFtnACIu1dShWDFViZ2CDQ/TmhtAI+J/XFCbiVoes=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Civil",
+            "first_name": "Nuevo",
+            "last_name": "Civil",
+            "email": "a@gmail.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:48:28.911Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 29,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$AnGS5rIrBJ0eJqfVRxsJvh$EfiaHTwUPLjwYYVLQjHODEe2P++jowfcb3jig3pUF1M=",
+            "last_login": "2025-09-10T19:34:12.704Z",
+            "is_superuser": false,
+            "username": "Elisa Salmeron",
+            "first_name": "Elisa",
+            "last_name": "Salmeron",
+            "email": "elisa.salmeron@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:49:07.840Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 30,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$Fa9sHewYnOyJ6cM075ErU2$MM08Stl9WENQudfXNFGar+kvCxJFJo73CFYe6DOmIMU=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Luis Moreno",
+            "first_name": "Luis",
+            "last_name": "Practicante",
+            "email": "luis.moreno@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:49:56.233Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 31,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$ehTGQCVvp8XFY4zYifiBXB$zx9f66P2KjsLFvkqEei6si6066Dk69jt6ihv3ImJi9Y=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Manuel Victorio",
+            "first_name": "Manuel",
+            "last_name": "Practicante",
+            "email": "manuel.victorio@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:52:16.603Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 32,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$ho8ALQEtgm0QUSIkzLfYYB$NZfuier0Pmjr6sSvDSxTkpwJImH5dmTK9v8jzlfvmZI=",
+            "last_login": "2025-07-10T16:38:04.026Z",
+            "is_superuser": false,
+            "username": "Evelyn Gomez",
+            "first_name": "Evelyn",
+            "last_name": "Gomez",
+            "email": "evelyn.gomez@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:53:20.089Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 33,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$xqVeOrzag7dcs6EKud5Qnv$SZgFKP/wGiH4HjWZO9aqQLPcr3el6ndkM1OxOiTodLU=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Carlos Rivera",
+            "first_name": "Carlos",
+            "last_name": "Rivera",
+            "email": "carlos.rivera@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:54:27.277Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 34,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$COSvwPK11a2GtiRUtACRGZ$h58a1wqZdTKR9YJzot8bujzdkO3XBT/FgulHqQ7bNxY=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Seguridad Amp",
+            "first_name": "Seguridad",
+            "last_name": "Amp",
+            "email": "seguridad.amp@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:55:00.318Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 35,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$AzsCR8bMR4eV7jusYoVqlT$+1SYQghbyNEJza/n3mAgOv0mzAhJ+sE5jZeiaacfbHM=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Andres Moreno",
+            "first_name": "Andres",
+            "last_name": "Moreno",
+            "email": "andres.moreno@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T19:57:10.519Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 36,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$LwnyDHvxHxiA0hGQ83CXu6$VJzDI/F4wEOpX8GYIQY+4Fg4h1TOwANtDIy/ixGW8Mc=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Alexandra Ariza",
+            "first_name": "Alexandra",
+            "last_name": "Ariza",
+            "email": "alexandra.ariza@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T20:08:19.076Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 37,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$aLO055tBtPY1ZNCounavi0$2mf9Ptt/msd8KYJ6KQCz7EvmRQM/wScw2Oz/JzWw76Q=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Brenda Velazquez",
+            "first_name": "Brenda",
+            "last_name": "Velazquez",
+            "email": "brenda.velazquez@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-02T22:39:33.604Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 38,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$xsHqCPZyKdIoTx0Ro7RQWj$m/dGjiIgDqsYrnU6+8dqkzYVR3lQJhSd0FEfq5qhfGs=",
+            "last_login": "2024-11-04T21:09:43.643Z",
+            "is_superuser": false,
+            "username": "Danna Arroyo",
+            "first_name": "Danna",
+            "last_name": "Arroyo",
+            "email": "danna.arroyo@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-09T17:53:06.899Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 39,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$99j4w8ZkeFg65YE3fbTKIl$nIMSjPpNSBfqZ/qm9HGVvywuBCjcUryMhiqU9/13LHo=",
+            "last_login": "2025-09-23T21:08:33.602Z",
+            "is_superuser": false,
+            "username": "Diego Rodriguez",
+            "first_name": "Diego",
+            "last_name": "Rodriguez",
+            "email": "diego.rodriguez@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-09T17:54:43.673Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 40,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$iuerl8T0bL6g3FvsQ3Zjsw$bo1R+LBsvCZLQbcdT1QBMnzfrNGIL+aT9as3K/1Lrbs=",
+            "last_login": "2025-08-01T17:45:33.297Z",
+            "is_superuser": false,
+            "username": "Daniel Faustino",
+            "first_name": "Daniel",
+            "last_name": "Faustino",
+            "email": "daniel.faustino@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-10T16:52:40.167Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 41,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$BtzjX0XS3of7QB9zL08NYm$apXCw/0uapXEzjqbAUiLmTrZuGcbRdXICjmVMQSlrWE=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Jacob Deloya",
+            "first_name": "Jacob",
+            "last_name": "Deloya",
+            "email": "jacob.deloya@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-10T16:53:19.354Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 42,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$i9DDvXLv1muYmueAT5E2TT$2F27uz0IuB33kEpGtqEC9lV//jB+ZPDLsGdGHjv9jvE=",
+            "last_login": "2024-12-02T21:06:20.636Z",
+            "is_superuser": false,
+            "username": "Jenifeer",
+            "first_name": "Jenifeer",
+            "last_name": "Rodriguez",
+            "email": "jenifeer.rodriguez@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-09-26T20:19:24.460Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 43,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$fwHdx2OyfLOD44tWKAtoG2$3531AQr3ArapdV7ybNOu00dJTeBhgwKFhWLn24TPVBs=",
+            "last_login": "2024-10-22T19:33:34.703Z",
+            "is_superuser": false,
+            "username": "Prueba_Lec",
+            "first_name": "",
+            "last_name": "",
+            "email": "",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-10-22T18:47:40.016Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 44,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$1b1HeoSzzKY5ctPVg0Zx3n$tG1T/8Jh9ynY4oT37FcujM5EDJUmF6rezfwnkD4Gjoc=",
+            "last_login": "2024-10-22T22:02:31.229Z",
+            "is_superuser": false,
+            "username": "Invitado_Sia",
+            "first_name": "",
+            "last_name": "",
+            "email": "",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-10-22T21:58:01Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 45,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$mjCg88YknWiKEFN7wtQioj$7M79coJzcMLliH74NNRffMM60wpWchl3cpI6SuyUgB4=",
+            "last_login": "2024-11-26T15:01:18.341Z",
+            "is_superuser": false,
+            "username": "Francisco_Gonzalez",
+            "first_name": "",
+            "last_name": "",
+            "email": "",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-10-22T22:06:51.910Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 52,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$022YR89m2vYAGJKYVOFPoV$jpPGG5+Aa81nEFXCdfxLvJ8aTNrcnlaMY29ZSArNREw=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "admin_net_50",
+            "first_name": "Admin NET 50",
+            "last_name": "",
+            "email": "admin_net_50@gmail.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-01-20T14:27:26.145Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 53,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$1CBDTqjX6aqdAxJLI1SK52$mdDEEwpkop2UKLXcTmhO/2ln9+M+Adf3Ekcq6P0MeU8=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "admin_seguridad_nombre",
+            "first_name": "Admin Seguridad nombre",
+            "last_name": "",
+            "email": "admin_seguridad_nombre@gmail.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-01-20T14:37:02.831Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 54,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$gSZoOCFp0b6uf2YrzZVHx7$4pj8kzZYZq7Y9hZXxvh0yXf6qjfxEgOKSUM1yMZyIXI=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "admin_tenergy_mx_x",
+            "first_name": "Admin Tenergy MX X",
+            "last_name": "",
+            "email": "222@mailcom",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-01-20T16:06:43.390Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 55,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$sBtpMfHNR5QYeubapMhFyF$EJrTiP+dghgMVo/R5FxUaAQDhi73rzMlyCLdSnBVazI=",
+            "last_login": "2025-03-19T18:32:51.211Z",
+            "is_superuser": false,
+            "username": "Admin_Net50",
+            "first_name": "Admin Empresa 6",
+            "last_name": "",
+            "email": "empresa@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-01-20T16:11:12Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 56,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$2GuGkq2IWyQzW48xQpsofq$ULBKEHAqKbb8skoOujIa1hjEDxdReECZdJm3aEQSwq0=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Eric Diaz",
+            "first_name": "Eric",
+            "last_name": "Diaz",
+            "email": "eric.diaz@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-01-31T14:38:41.232Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 57,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$fZTgezwVp8jgC6gZgVd0uJ$CIc7jGa2gNsZRJEIIiP5vASzheYFbwi53tuWNosW/HY=",
+            "last_login": "2025-07-31T22:45:35.465Z",
+            "is_superuser": false,
+            "username": "Patrick Lagerholm",
+            "first_name": "Patrick",
+            "last_name": "Lagerholm",
+            "email": "patrick.sigurd@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-02-05T16:22:07.819Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 58,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$Uk7oLfJh0DHn3Pik1KDnah$tC7rVV8pAaVELCT8Kp2G2YCBthsGovxaH0P59GwkDFM=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Luis Garcias",
+            "first_name": "Lius",
+            "last_name": "Garcias",
+            "email": "luis.garcias@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-02-10T14:56:18.775Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 59,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$mFsz241sA8nMCLQUIOFwrI$cfymU9f5zvUtKe9mP3YYxozFMian/jyoWGkUQiDP4Gk=",
+            "last_login": "2025-09-23T19:44:51.681Z",
+            "is_superuser": false,
+            "username": "Vigilancia",
+            "first_name": "Vigilancia",
+            "last_name": "Tenergy",
+            "email": "guardia@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-03-03T19:38:39.322Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 60,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$NQhixkHimR60rFhBp02wVD$zzWbdbb6RcSXfSSFq797xwN+DwSkrfknemyo+35yiMw=",
+            "last_login": "2025-03-10T18:17:22.585Z",
+            "is_superuser": false,
+            "username": "Rodrigo_Moysen",
+            "first_name": "Rodrigo",
+            "last_name": "Moysen",
+            "email": "",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-03-10T16:31:53.822Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 61,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$LMP9XoUkUfuphuyvE6aMMy$bv6hwkrXZFjC401AslLia4IfeSMOAUjSy2Ohq3WatXo=",
+            "last_login": "2025-07-16T22:20:23.970Z",
+            "is_superuser": false,
+            "username": "Luis Garcia",
+            "first_name": "Luis Fernando",
+            "last_name": "García Perez",
+            "email": "luis.garcia@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-03-21T21:34:36.866Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 62,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$dSKG3BUXp1zFihExfnXO3e$qHb3nTkSjyx+WP94ESd/ubb4b7RN/bke3pg+7y0NcGk=",
+            "last_login": "2025-04-01T17:14:10.968Z",
+            "is_superuser": false,
+            "username": "Gerardo Huitron",
+            "first_name": "Uriel Gerardo",
+            "last_name": "Huitron Varela",
+            "email": "gerardo.huitron@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-03-21T21:37:42.394Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 63,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$zZaN0vxBYkccdOniVEcGYH$eAhiZFbe5x1ajhD3mGrJD5q9fbe8vshGlCNKXEXN8zk=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Salvador Luz",
+            "first_name": "Junior Salvador",
+            "last_name": "H.Luz Leyva",
+            "email": "salvador.luz@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-03-21T21:42:47.671Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 64,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$MMyySgxatMJOtZvtIOb9cU$sDMQee/PidA++nG0jUbiGqLVw9wqDfUCUR7cnBnVmBo=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Sergio Moreno",
+            "first_name": "Sergio Alberto",
+            "last_name": "Moreno Zepeda",
+            "email": "sergio.moreno@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-06-10T19:05:51.356Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 65,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$mLgebKmvzcorPK9dXH8yKD$MGrLAdG+f1G4K0BwSpbwFWZaGohAJPKgoMvHnpx6BPM=",
+            "last_login": "2025-07-07T15:45:45.085Z",
+            "is_superuser": false,
+            "username": "Judith Rodriguez",
+            "first_name": "Judith",
+            "last_name": "Rodriguez",
+            "email": "judith.rodriguez@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-07-07T14:47:35.852Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 66,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$a2t1asBQwEIlaWplELv331$/Eg9OM9b2mx/vHOGskmnnCmKvy9Vtk/6h/FiTbFOQeY=",
+            "last_login": "2025-07-29T14:33:53.246Z",
+            "is_superuser": false,
+            "username": "Usuario Prueba",
+            "first_name": "Usuario",
+            "last_name": "Prueba",
+            "email": "sistemas01.interaccion@gmail.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-07-29T14:31:28.354Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 67,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$sVq7egI6VE6yS05V4aVs7R$VNgwTUt6j8F4oPDX7K9kL0AC+SKr5aff2d9a58O2Kxc=",
+            "last_login": "2025-08-15T15:21:43.005Z",
+            "is_superuser": false,
+            "username": "Wendy Pozas",
+            "first_name": "Wendy Stefany",
+            "last_name": "Pozas Trejo",
+            "email": "wendy.pozas@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-08-15T15:17:34.618Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 68,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$AF4xVgDSuL6PICHC0wlN0E$LXbAHpgcqgqZcYUoypGLjjLjYpkDGxOu/E+nQfP8Los=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Said Gatica",
+            "first_name": "Said",
+            "last_name": "Gatica",
+            "email": "said.gatica@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-08-28T19:30:52.219Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 69,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$f33cA4BuXY2EQkWQzFqonU$Rj3aUKpLSVfyw7/gMmjRRd4iCT/KFZD5TEE+SksaPTc=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "Diego Ortiz",
+            "first_name": "Diego",
+            "last_name": "Ortiz Contreras",
+            "email": "diego.ortiz@tenergy.com.mx",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2025-09-15T19:00:38.175Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    }
+]
