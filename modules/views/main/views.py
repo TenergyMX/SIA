@@ -137,16 +137,8 @@ def probe():
 def get_notifications(request):
     response = {"success": False, "data": []}
 
-    print("request")
-    print(request)
-
     context = user_data(request)
 
-    print("* ************** context **************")
-    print(context)
-
-
-    
     fecha_actual = datetime.now().date()
     current_year = datetime.today().year
     current_month = datetime.today().month
@@ -158,8 +150,9 @@ def get_notifications(request):
     user_id = context["user"]["id"]
 
     access = get_user_access(context)
-    access = access["data"]
 
+    access = access["data"]
+    
     url_path = request.GET.get('url', '')
     match = resolve(f'{url_path}')
     module = match.func.__module__
@@ -173,14 +166,19 @@ def get_notifications(request):
 
     if url_modulo == "vehicles":
         id_module = 2
+    elif url_modulo == "users":
+        id_module = 1
+    elif url_modulo == "computer-equipment":
+        id_module = 3  
+    elif url_modulo == "infrastructure":
+        id_module = 4
     elif url_modulo == "services":
         id_module = 5
     elif url_modulo == "equipment-and-tools":
         id_module = 6
-    
 
     response_ = create_notifications(id_module, user_id, company_id, area,rol, response, access, request)
-    print(response_)
+
     return JsonResponse(response)
 
 def prueba_datos(request):

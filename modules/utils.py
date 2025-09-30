@@ -383,13 +383,24 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
     roles_usuario = [1, 2, 3]
     domain = request.build_absolute_uri('/')[:-1]
 
+    # USUARIOS (Módulo 1)
+    if id_module == 1:
+        response["success"] = True
+        response["data"] = []
+    # EQUIPOS DE COMPUTO (Módulo 3)
+    if id_module == 3: 
+        response["success"] = True
+        response["data"] = []
+
+    #INFRAESTRUCTURA (Módulo 4)
+    if id_module == 4:
+        response["success"] = True
+        response["data"] = []
 
     # EQUIPO Y HERRAMIENTAS (Módulo 6)
     if id_module == 6:
-        print("Notificaciones de equipos y herramientas")
         area = uridecode(area.lower())
         if rol in [1, 2, 3] or area == "almacen":
-            print("Acceso como administrador")
             obj_responsivas = Equipment_Tools_Responsiva.objects.filter(
                 company_id=company_id       
             )
@@ -420,14 +431,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     "title": f"Solicitud del equipo: {responsiva.equipment_name.equipment_name}",
                     "body": f"El equipo <strong>{responsiva.equipment_name.equipment_name}</strong> ha sido solicitado por el empleado <strong>{responsiva.responsible_equipment.username}</strong>. Por favor, revisa la solicitud correspondiente."
                 }
-                # Send_Email(
-                #     subject="Solicitud de equipo o herramienta",
-                #     recipient=recipient_emails,
-                #     model_instance=responsiva,
-                #     message_data=message_data,
-                #     model_name=Equipment_Tools_Responsiva,
-                #     field_to_update="email_responsiva"
-                # )
+               
                 context_email = {
                     "company": Company.objects.get(id=company_id).name,
                     "subject": "Correo de notificación",
@@ -437,21 +441,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     "title": message_data["title"],
                     "body": message_data["body"]
                 }
-                # send_notification(context_email)
-                print("Contexto del correo enviado (responsiva solicitada):", context_email)
-
-                    
-                # context_email = {
-                #     "company" : Company.objects.get(id=company_id).name,
-                #     "subject" : "Prueba de correos",#Titulo del mensaje
-                #     "modulo" : 2,#modulo de sia
-                #     "submodulo" : "Responsiva",#tipo
-                #     "item" : 26,#id del vehiculo a registrar 
-                #     "title" : "Esta es una prueba para el sistema de notificaciones",
-                #     "body" : "Este es el contenido que se mostrara",
-                # }
-                # send_notification(context_email)
-    
 
         # Notificaciones cuando la solicitud es aceptada
         for responsiva in obj_responsivas.filter(status_equipment__iexact='Aceptado'): 
@@ -468,14 +457,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     "title": "Solicitud aceptada",
                     "body": f"Tu solicitud del equipo <strong>{responsiva.equipment_name.equipment_name}</strong> ha sido aceptada."
                 }
-                # Send_Email(
-                #     subject="Solicitud de equipo aceptada",
-                #     recipient=responsiva.responsible_equipment.email,
-                #     model_instance=responsiva,
-                #     message_data=message_data,
-                #     model_name=Equipment_Tools_Responsiva,
-                #     field_to_update="email_responsiva_aceptada"
-                # )
+                
                 context_email = {
                     "company": Company.objects.get(id=company_id).name,
                     "subject": "Correo de notificación",
@@ -485,9 +467,11 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     "title": message_data["title"],
                     "body": message_data["body"]
                 }
-                # send_notification(context_email)
-                print("Contexto del correo enviado (responsiva aceptada):", context_email)
-
+        # Respuesta final
+        response["recordsTotal"] = len(response["data"])
+        response["success"] = True
+        return response
+            
     # SERVICIOS (Módulo 5)
     elif id_module == 5:
         print("Notificaciones de servicios")
@@ -558,14 +542,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": f"Recordatorio de Servicio No Pagado: {pago.name_service_payment.name_service}",
                         "body": f"El servicio <strong>{pago.name_service_payment.name_service}</strong> tiene un pago no realizado programado para el <strong>{pago.next_date_payment}</strong>. Por favor, realiza el pago correspondiente."
                     }
-                    # Send_Email(
-                    #     subject="Recordatorio de Pago de Servicio",
-                    #     recipient=recipient_emails_servicios,
-                    #     model_instance=pago,
-                    #     message_data=message_data,
-                    #     model_name=Payments_Services,
-                    #     field_to_update="email_payment_unpaid"
-                    # )
+                    
 
                     context_email = {
                         "company": Company.objects.get(id=company_id).name,
@@ -576,8 +553,10 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": message_data["title"],
                         "body": message_data["body"]
                     }
-                    # send_notification(context_email)
-                    print("Contexto del correo enviado (servicio no pagado):", context_email)
+        response["recordsTotal"] = len(response["data"])
+        response["success"] = True
+        return response
+
 
     # VEHÍCULOS (Módulo 2)
     elif id_module == 2:
@@ -706,8 +685,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     vehicle_instance.email_sin_refrendo = True
                     vehicle_instance.save(update_fields=["email_sin_refrendo"])
-        
-        
+
 
         # VERIFICACIÓN
         if 8 in access and access[8]["read"]:
@@ -718,20 +696,19 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     vehicle_instance = Vehicle.objects.get(id=item["id"])
                     link_vehiculo = f"{domain}/vehicles/info/{item['id']}/"
 
-                    # Buscar registro de verificación vigente en el año actual
+                    # 👉 Buscar el último registro de verificación (sin importar el año)
                     registro = Vehicle_Verificacion.objects.filter(
-                        vehiculo_id=item["id"],
-                        fecha_pago__year=current_year
+                        vehiculo_id=item["id"]
                     ).order_by("-fecha_pago").first()
 
                     if not registro:
-                        # 🚨 Vehículo sin verificación en el año actual
+                        # 🚨 Vehículo sin verificación en ningún año
                         if not vehicle_instance.email_sin_verificacion:
                             response["data"].append({
                                 "alert": "warning",
                                 "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
                                 "title": f"Vehículo sin verificación",
-                                "text": f"Vehículo: {item['name']} no cuenta con ningún registro de verificación en {current_year}",
+                                "text": f"Vehículo: {item['name']} no cuenta con ningún registro de verificación",
                                 "link": link_vehiculo
                             })
 
@@ -743,8 +720,8 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                                 "item": vehicle_instance.id,
                                 "title": f"Vehículo {vehicle_instance.name} sin verificación",
                                 "body": (
-                                    f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene un registro "
-                                    f"de verificación en el año <strong>{current_year}</strong>. "
+                                    f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene ningún registro "
+                                    f"de verificación. "
                                     f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
                                 )
                             }
@@ -753,7 +730,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             vehicle_instance.save(update_fields=["email_sin_verificacion"])
                         continue
 
-                    # Ya tiene registro este año → calcular diferencia de días
+                    # Ya tiene registro → calcular diferencia de días
                     dias_restantes = (registro.fecha_pago - today).days
 
                     # -------- 1️⃣ Falta un mes o menos --------
@@ -811,34 +788,40 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         registro.save(update_fields=["email_verificacion_days"])
 
                     # -------- 3️⃣ Ya venció --------
-                    elif dias_restantes < 0 and registro.status != "Vencido":
-                        response["data"].append({
-                            "alert": "danger",
-                            "icon": "<i class='fa-regular fa-circle-xmark fs-18'></i>",
-                            "title": f"Pago de verificación vencido",
-                            "text": f"Vehículo: {item['name']} - NO se realizó en el periodo",
-                            "link": link_vehiculo
-                        })
+                    elif dias_restantes < 0 and registro.status != "VENCIDO" and not registro.comprobante_pago:
+                        if not registro.email_verificacion_vencida:
+                            response["data"].append({
+                                "alert": "danger",
+                                "icon": "<i class='fa-regular fa-circle-xmark fs-18'></i>",
+                                "title": f"Pago de verificación vencido",
+                                "text": f"Vehículo: {item['name']} - NO se realizó en el periodo",
+                                "link": link_vehiculo
+                            })
 
-                        context_email = {
-                            "company": Company.objects.get(id=company_id).name,
-                            "subject": "Alerta: verificación vencida",
-                            "modulo": 2,
-                            "submodulo": "Verificaciones",
-                            "item": vehicle_instance.id,
-                            "title": f"Verificación vencida - Vehículo: {vehicle_instance.name}",
-                            "body": (
-                                f"El vehículo <strong>{vehicle_instance.name}</strong> no realizó su verificación "
-                                f"en la fecha <strong>{registro.fecha_pago}</strong>. Actualmente se encuentra vencido.<br>"
-                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                            )
-                        }
-                        send_notification(context_email)
-                        registro.status = "Vencido"
-                        registro.save(update_fields=["status"])
+                            context_email = {
+                                "company": Company.objects.get(id=company_id).name,
+                                "subject": "Alerta: verificación vencida",
+                                "modulo": 2,
+                                "submodulo": "Verificaciones",
+                                "item": vehicle_instance.id,
+                                "title": f"Verificación vencida - Vehículo: {vehicle_instance.name}",
+                                "body": (
+                                    f"El vehículo <strong>{vehicle_instance.name}</strong> no realizó su verificación "
+                                    f"en la fecha <strong>{registro.fecha_pago}</strong>. Actualmente se encuentra vencido.<br>"
+                                    f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                                )
+                            }
+                            send_notification(context_email)
+                            registro.email_verificacion_vencida = True
+
+                        # Actualiza estatus a VENCIDO siempre que aplique
+                        registro.status = "VENCIDO"
+                        registro.save(update_fields=["status", "email_verificacion_vencida"])
 
             except Exception as e:
                 print("Error en verificaciones:", str(e))
+
+
 
 
         # SEGUROS
@@ -1081,7 +1064,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         response["recordsTotal"] = len(response["data"])
         response["success"] = True
         return response
-
 
 # send_notification(context_email)
 def es_correo_valido(valor):
