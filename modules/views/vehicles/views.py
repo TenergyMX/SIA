@@ -1312,6 +1312,9 @@ def get_vehicles_refrendo(request):
         lista_queryset = latest_only.filter(
             fecha_pago__range=(inicio_trimestre, fin_trimestre)
         )
+        lista_queryset |= latest_only.filter(
+            fecha_pago__gt=fin_trimestre 
+        )
     elif tipo_carga == "vencidas":
         lista_queryset = latest_only.filter(
             Q(fecha_pago__lt=date(year, 1, 1)) | Q(fecha_pago__isnull=True)
@@ -1367,7 +1370,7 @@ def get_vehicles_refrendo(request):
         pago_year = fecha.year if fecha else None
         estado = None
 
-        if fecha and inicio_trimestre <= fecha <= fin_trimestre:
+        if fecha and fecha.year >= year:
             estado = "pagada"
             contador_pagadas += 1
         elif month in [12, 1, 2, 3] and pago_year == year - 1 and \
