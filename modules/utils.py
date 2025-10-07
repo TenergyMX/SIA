@@ -821,9 +821,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
             except Exception as e:
                 print("Error en verificaciones:", str(e))
 
-
-
-
         # SEGUROS
         if 9 in access and access[9]["read"]:
             
@@ -963,7 +960,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     auditoria.email_audit = True
                     auditoria.save(update_fields=["email_audit"])
-                    # print("Recordatorio enviado para auditoría:", auditoria.id)
+                    print("Recordatorio enviado para auditoría:", auditoria.id)
 
         # MANTENIMIENTO
         if 11 in access and access[11]["read"]:
