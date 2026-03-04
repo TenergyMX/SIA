@@ -3887,48 +3887,47 @@ def delete_qr(request, qr_type, vehicle_id):
 #Vehicle = QuerySet
 
 def sendEmail_UpdateKilometer(request, subject, to_send, vehicle):
+
     from_send = settings.EMAIL_HOST_USER
-    domain = request.build_absolute_uri('/')[:-1]  # Obtiene el dominio dinámicamente
-    if vehicle.responsible.username:
-        responsable = vehicle.responsible.username
-    else:
-        responsable = "Sin responsable"
-    text_content = f'Mensage Generado por plataforma: Mensage Generado por plataforma'
+    domain = request.build_absolute_uri('/')[:-1]
+
+    responsable = vehicle.responsible.username if vehicle.responsible else "Sin responsable"
+
+    text_content = 'Mensaje generado por plataforma'
+
     html_content = f"""
     <html>
-    <head>
-        <style>
-            body {{ background-color: #FFFAFA; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: Arial, sans-serif; }}
-            .container {{ background-color: #A5C334; padding: 36px; border-radius: 18px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); text-align: center; width: 80%; max-width: 600px; }}
-            img {{ max-width: 150px; margin-bottom: 20px; }}
-            h2 {{ color: #333333; }}
-            p {{ color: #555555; line-height: 1.5; }}
-            strong {{ color: #000000; }}
-        </style>
-    </head>
     <body>
-        <div class="container">
-            <img src="{domain}/staticfiles/assets/images/brand-logos/CS_LOGO.png" alt="Logo">
-            <h2>{vehicle.name}</h2>
-            <p>Responsable del vehiculo: {responsable}</p>
-            <p>El vehículo está próximo a alcanzar el kilometraje para su revisión, por lo que es necesario programar el mantenimiento correspondiente</p>
-        </div>
+        <h2>{vehicle.name}</h2>
+        <p>Responsable del vehículo: {responsable}</p>
+        <p>El vehículo está próximo a alcanzar el kilometraje para su revisión.</p>
     </body>
     </html>
     """
-    #AGREGANDO LOS CORREOS DEL ENCARGADO DEL VEHICULO Y DEL RESPONSABLE DE ALMACEN
-    to_send.append(vehicle.responsible.email)
-    qsUser = User_Access.objects.filter(company__id = request.session["company"]["id"], area__company__id = request.session["company"]["id"],
-    area__name__in = ['Almacén', 'RRHH'], role__name = "Encargado").first()
-    for item in qsUser:
-        to_send.append(item.user.email)
-    # if qsUser:
-    #    to_send.append(qsUser.user.email)
+
+    # Agregar correo del responsable
+    if vehicle.responsible and vehicle.responsible.email:
+        to_send.append(vehicle.responsible.email)
+
+    # Buscar UN usuario encargado
+    qsUser = User_Access.objects.filter(
+        company__id=request.session["company"]["id"],
+        area__company__id=request.session["company"]["id"],
+        area__name__in=['Almacen', 'Recursos Humanos'],
+    ).first()
+
+    # 🔥 AQUÍ ya no hay for
+    if qsUser and qsUser.user and qsUser.user.email:
+        to_send.append(qsUser.user.email)
+
+    # Eliminar duplicados
+    to_send = list(set(filter(None, to_send)))
+
     email = EmailMultiAlternatives(subject, text_content, from_send, to_send)
     email.attach_alternative(html_content, "text/html")
     email.send()
-    return True
 
+    return True
 #@obj_vehicle = QuerySet Vehicle
 #@kilometer = Decimal
 #@date_set = DateTime
@@ -3948,53 +3947,106 @@ def create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance
         general_notes=f"Vehículo cerca de los {km} km, necesario programar revisión"
     )
     obj_maintenance.save()
-
 def check_vehicle_kilometer(request, obj_vehicle=None, kilometer=None, date_set=None):
+    print("========== INICIO check_vehicle_kilometer ==========")
+    print(f"Vehículo: {obj_vehicle}")
+    print(f"Kilometraje recibido: {kilometer}")
+    print(f"Fecha: {date_set}")
+
     response = {"status": "success"}
 
     # Check if maintenance kilometer records exist
     obj_maintenance_kilometer = Vehicle_Maintenance_Kilometer.objects.filter(vehiculo=obj_vehicle)
+    print(f"Total mantenimientos configurados: {obj_maintenance_kilometer.count()}")
+
     if obj_maintenance_kilometer.count() == 0:
+        print("❌ No existen mantenimientos configurados")
         response["status"] = "error"
-        response["error"] = {"message": "Kilometraje para mantenimiento no asignado, por favor registre el kilometraje de manera manual"}
+        response["error"] = {
+            "message": "Kilometraje para mantenimiento no asignado, por favor registre el kilometraje de manera manual"
+        }
         return JsonResponse(response)
 
     # Find the next maintenance kilometer
-    next_maintenance = obj_maintenance_kilometer.filter(kilometer__gte=kilometer).order_by("kilometer")
+    next_maintenance = obj_maintenance_kilometer.filter(
+        kilometer__gte=kilometer
+    ).order_by("kilometer")
+
+    print(f"Mantenimientos mayores o iguales al actual: {next_maintenance.count()}")
+
     if next_maintenance.count() == 0:
+        print("❌ No se encontró próximo mantenimiento")
         response["status"] = "error"
-        response["error"] = {"message": "El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."}
+        response["error"] = {
+            "message": "El próximo kilometraje para mantenimiento no ha sido registrado. Por favor, ingrese el kilometraje manualmente."
+        }
         return JsonResponse(response)
 
     # Check if there is an active maintenance alert for the vehicle
-    flag_new = Vehicle_Maintenance.objects.filter(vehicle=obj_vehicle, type="preventivo").order_by("-id").first()
-    
+    flag_new = Vehicle_Maintenance.objects.filter(
+        vehicle=obj_vehicle,
+        type="preventivo"
+    ).order_by("-id").first()
+
+    print(f"Último mantenimiento preventivo: {flag_new}")
+
+    if flag_new:
+        print(f"Estado del último mantenimiento: {flag_new.status}")
+        print(f"Kilometraje del último mantenimiento: {flag_new.mileage}")
+
     if flag_new and flag_new.status == "ALERTA":
+        print("⚠️ Ya existe una ALERTA activa")
         response["status"] = "warning"
         response["message"] = "Aún no se ha agendado la revisión del mantenimiento para este vehículo."
         return JsonResponse(response)
+
     # Check if the next maintenance kilometer is near
     next_maintenance_km = next_maintenance.first().kilometer
+    print(f"Próximo mantenimiento configurado: {next_maintenance_km}")
+
     flag = next_maintenance_km - Decimal(kilometer)
-    # print("esta es la resta del mantenimiento")
+    print(f"Diferencia actual (próximo - actual): {flag}")
+
     if not flag_new and flag <= 300:
+        print("⚠️ No existe mantenimiento previo y está dentro de los 300 km")
         response["status"] = "warning"
+
+        print("👉 Creando nuevo registro de mantenimiento...")
         create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance_km)
-        response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
+
+        response["message"] = (
+            f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
+        )
 
     if flag_new:
-        diferencia = abs(int(next_maintenance_km)-int(flag_new.mileage))
+        diferencia = abs(int(next_maintenance_km) - int(flag_new.mileage))
+        print(f"Diferencia contra último mantenimiento registrado: {diferencia}")
     else:
-        diferencia = abs(int(next_maintenance_km)-int(0))
+        diferencia = abs(int(next_maintenance_km) - int(0))
+        print(f"No hay mantenimiento previo. Diferencia calculada: {diferencia}")
+
     if flag_new and flag <= 300 and flag_new.status != "ALERTA" and diferencia >= 300:
+        print("⚠️ Se cumple condición para generar nuevo mantenimiento con alerta")
+
         response["status"] = "warning"
-        # Create a new maintenance record if necessary
+
+        print("👉 Creando nuevo registro de mantenimiento...")
         create_maintenance_record(obj_vehicle, kilometer, date_set, next_maintenance_km)
-        response["message"] = f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
 
-        sendEmail_UpdateKilometer(request, "Programar Mantenimiento", [settings.EMAIL_HOST_USER], obj_vehicle)
+        response["message"] = (
+            f"El kilometraje está cerca de alcanzar los {next_maintenance_km} km, se recomienda agendar una revisión."
+        )
+
+        print("📧 Enviando correo de notificación...")
+        sendEmail_UpdateKilometer(
+            request,
+            "Programar Mantenimiento",
+            [settings.EMAIL_HOST_USER],
+            obj_vehicle
+        )
+
+    print("========== FIN check_vehicle_kilometer ==========")
     return JsonResponse(response)
-
 #funcion para descargar el qr
 def descargar_qr(request):
     id_vehicle = request.GET.get("id_vehicle")
