@@ -2703,7 +2703,7 @@ def get_vehicle_audit(request):
     lista = Vehicle_Audit.objects.filter(vehicle_id = vehicle_id).values(
         "id", "vehicle_id", "vehicle__name", 
         "audit_date", "general_notes",
-        "checks", "is_visible", "is_checked", "commitment_date"
+        "checks", "is_visible", "is_checked", "commitment_date", "calification"
     )
 
     if context["role"]["id"] in [1, 2, 3]:
@@ -2716,6 +2716,23 @@ def get_vehicle_audit(request):
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
+
+
+    #Función para obtener texto de calificación
+    def get_textual_calification(score):
+        if score is None:
+            return "Sin calificación"
+        score = Decimal(str(score))
+        calification_map = {
+            "malo": (Decimal("0.0"), Decimal("3.0")),
+            "regular": (Decimal("3.01"), Decimal("6.89")),
+            "bueno": (Decimal("6.9"), Decimal("8.79")),
+            "excelente": (Decimal("8.8"), Decimal("10.0"))
+        }
+        for label, (low, high) in calification_map.items():
+            if low <= score <= high:
+                return label.capitalize()
+        return "Calificación fuera de rango"
 
     for item in lista:
         if item["checks"]:
@@ -2750,12 +2767,22 @@ def get_vehicle_audit(request):
 
                 # Reemplazar el JSON con la nueva estructura
                 item["checks"] = checks_with_names
+
+                
+                # Calcular calification_text
+                try:
+                    score = float(item.get("calification"))
+                except (TypeError, ValueError):
+                    score = None
+                item["calification_text"] = get_textual_calification(score)
+
             except json.JSONDecodeError as e:
                 print(f"Error parsing JSON for checks: {e}")
                 item["checks"] = []  # En caso de error, asignar lista vacía
         else:
             item["checks"] = []  # Si no hay checks, asignar lista vacía
-
+            item["calification_text"] = "Sin calificación" 
+            
         # Definir si la auditoría está chequeada y visible
         is_checked = item["is_checked"]  # Verifica si está chequeada
         is_visible = item["is_visible"]     # Verifica si es visible
@@ -2801,6 +2828,9 @@ def get_vehicles_audit(request):
     vehicle_id = dt.get("vehicle_id", None)
     tipo_carga = dt.get("tipo_carga", "todas")
     period = dt.get("period", None)  # 'mensual' o 'semanal'
+    estado = dt.get("estado_calificacion", "").lower()
+    print("🧪 Estado recibido:", estado)
+
     selected_date = dt.get("selected_date", None)  # '2025-08' o '2025-W32'
     subModule_id = 10
 
@@ -2860,6 +2890,19 @@ def get_vehicles_audit(request):
     else:  # todas
         lista_queryset = filtered_audit_qs
 
+    # Filtrar por calificación textual
+    if estado in ["todas", "malo", "regular", "bueno", "excelente"]:
+        rango_estado = {
+            "malo": (Decimal("0.0"), Decimal("3.0")),
+            "regular": (Decimal("3.01"), Decimal("6.89")),
+            "bueno": (Decimal("6.9"), Decimal("8.79")),
+            "excelente": (Decimal("8.8"), Decimal("10.0")),
+            "todas": (Decimal("0.0"), Decimal("10.0"))
+        }
+        
+        min_val, max_val = rango_estado[estado]
+        lista_queryset = lista_queryset.filter(calification__gte=min_val, calification__lte=max_val)
+
     # Contadores
     response["counters"] = {
         "total": lista_queryset.count(),
@@ -2875,7 +2918,7 @@ def get_vehicles_audit(request):
     lista = lista_queryset.values(
         "id", "vehicle_id", "vehicle__name",
         "audit_date", "general_notes",
-        "checks", "is_visible", "is_checked", "commitment_date"
+        "checks", "is_visible", "is_checked", "commitment_date", "calification"
     )
 
     if context["role"]["id"] in [1, 2, 3]:
@@ -2888,7 +2931,38 @@ def get_vehicles_audit(request):
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
 
+    calification_map = {
+        "Muy malo": 0,
+        "Malo": 2,
+        "Regular": 4.5,
+        "Bueno": 7,
+        "Excelente": 9.5
+    }
+
+    def get_textual_calification(score):
+        if score is None:
+            return "Sin calificación"
+
+        score = Decimal(str(score))
+
+        calification_map = {
+            "malo": (Decimal("0.0"), Decimal("3.0")),
+            "regular": (Decimal("3.01"), Decimal("6.89")),
+            "bueno": (Decimal("6.9"), Decimal("8.79")),
+            "excelente": (Decimal("8.8"), Decimal("10.0"))
+        }
+
+        for label, (low, high) in calification_map.items():
+            if low <= score <= high:
+                return label.capitalize()
+        return "Calificación fuera de rango"
+
+    #print(f" Filtro aplicado → {estado} | Rango: {min_val} - {max_val}")
+    print(f" Queryset count: {lista_queryset.count()}")
+
     for item in lista:
+        print(item.get("calification"), "→", item.get("calification_text"))
+
         if item["checks"]:
             try:
                 checks_string = item["checks"].replace("'", "\"")
@@ -2916,6 +2990,14 @@ def get_vehicles_audit(request):
                     })
 
                 item["checks"] = checks_with_names
+                try:
+                    score = float(item.get("calification"))
+                except (TypeError, ValueError):
+                    score = None
+                item["calification_text"] = get_textual_calification(score)
+
+
+
             except json.JSONDecodeError as e:
                 print(f"Error parsing JSON for checks: {e}")
                 item["checks"] = []
@@ -2945,6 +3027,7 @@ def get_vehicles_audit(request):
 
     response["data"] = list(lista)
     response["success"] = True
+    response["filtro_estado"] = estado
     return JsonResponse(response)
 
 
@@ -5140,7 +5223,6 @@ def evaluate_audit(request):
                     }
                     send_notification(context_email)
 
-                # Responder con éxito y devolver la estructura corregida
                 return JsonResponse({'success': True, 'audit_results': audit_results})
             else:
                 return JsonResponse({'success': False, 'error': 'Vehicle audit not found'})
@@ -7647,6 +7729,7 @@ def save_commitment_date(request):
                     """
                 }
                 send_notification(context_email)
+                print("se envio al correo:", creator.email)
 
             return JsonResponse({"success": True, "message": "Fecha compromiso guardada y correo enviado"})
 
@@ -7727,6 +7810,8 @@ def save_correction_evidence(request):
                     """
                 }
                 send_notification(context_email)
+                print("Correo de evidencias enviado para auditoría:", audit.id)
+                print("los correo a los que fue enviado son:", creator.email)
                 
             return JsonResponse({
                 "success": True,

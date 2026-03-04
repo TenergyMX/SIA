@@ -2,6 +2,7 @@ class VehiclesAudit {
     constructor(options) {
         const self = this;
         self.filtro_estado = "todas";
+        self.isManualReload = false;
 
         const defaultOptions = {
             data: {},
@@ -13,20 +14,28 @@ class VehiclesAudit {
                 ajax: {
                     url: "/get_vehicles_audit/",
                     dataSrc: function (json) {
-                        if (self.filtro_estado === "todas") {
+                        Swal.close();
+                        // Solo actualizar contadores si el filtro activo es "todas"
+                        if (self.filtro_estado === "todas" && !self.isManualReload) {
                             self.updateCounters(json);
                         }
+                        // Reiniciar la bandera después de cada recarga
+                        self.isManualReload = false;
                         return json.data;
                     },
+
                     data: function (d) {
                         const period = document.getElementById("audit-period")?.value || "mensual";
                         const date = document.getElementById("audit-date")?.value || null;
+                        const estado = document.getElementById("audit-status")?.value || null;
+
                         return {
                             ...d,
                             vehicle_id: self.vehicle?.data?.id || null,
                             tipo_carga: self.filtro_estado,
                             period: period,
                             selected_date: date,
+                            estado_calificacion: estado,
                         };
                     },
                 },
@@ -34,6 +43,7 @@ class VehiclesAudit {
                     { title: "ID", data: "id", visible: false },
                     { title: "Vehículo", data: "vehicle__name" },
                     { title: "Fecha", data: "audit_date" },
+                    { title: "Estado", data: "calification_text" },
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
@@ -142,12 +152,14 @@ class VehiclesAudit {
         periodSelect.addEventListener("change", function () {
             dateInput.type = this.value === "mensual" ? "month" : "week";
             if (self.tbl_audit) {
+                self.isManualReload = true;
                 self.tbl_audit.ajax.reload();
             }
         });
 
         dateInput.addEventListener("change", function () {
             if (self.tbl_audit) {
+                self.isManualReload = true;
                 self.tbl_audit.ajax.reload();
             }
         });
@@ -427,6 +439,8 @@ class VehiclesAudit {
                     break;
                 case "show-info-details":
                     hideShow("#v-audit-pane .info", "#v-audit-pane .info-details");
+                    // 🔹 Ocultar las tarjetas de contadores
+                    $(".filter-card").closest(".col-sm-4, .col-lg-3").hide();
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_audit.row(fila).data();
                     var obj_div = $("#v-audit-pane .info-details");
@@ -618,6 +632,9 @@ class VehiclesAudit {
                     break;
                 case "show-info":
                     hideShow("#v-audit-pane .info-details", "#v-audit-pane .info");
+                    //Mostrar las tarjetas de contadores nuevamente
+                    $(".filter-card").closest(".col-sm-4, .col-lg-3").show();
+
                     break;
                 case "upd_audit_checks":
                     upd_audit_checks();
@@ -951,10 +968,13 @@ $(document).on("change", ".check-image", function (e) {
 });
 
 // Filtro por periodo (mes/semana)
-$("#audit-period, #audit-date").on("change", function () {
-    if (self.tbl_audit) {
-        self.tbl_audit.ajax.reload();
-    }
+document.querySelectorAll("#audit-period, #audit-date, #audit-status").forEach((el) => {
+    el.addEventListener("change", () => {
+        if (self.tbl_audit) {
+            self.isManualReload = true;
+            self.tbl_audit.ajax.reload();
+        }
+    });
 });
 
 // Escucha cambios en el input de fecha
@@ -1188,3 +1208,17 @@ function reloadAuditDetails(auditId) {
         }
     });
 }
+
+$("#audit-status").on("change", function () {
+    Swal.fire({
+        title: "Procesando...",
+        html: "Espere un momento por favor, mientras procesamos tu peticion",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+    self.isManualReload = true;
+    // Forzar recarga del DataTable con el nuevo estado
+    $("#table_audit").DataTable().ajax.reload();
+});
