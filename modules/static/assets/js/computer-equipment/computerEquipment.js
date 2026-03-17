@@ -77,6 +77,12 @@ class ComputerEquipment {
                         className: "toggleable",
                     },
                     { title: "Estado", data: "equipment_status", className: "toggleable" },
+                    {
+                        title: "Comentarios",
+                        data: "comments",
+                        className: "toggleable",
+                        visible: true,
+                    },
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
