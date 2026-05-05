@@ -689,7 +689,7 @@
                 <div class="col-sm-4">
                     <div class="card custom-card">
                         <div class="card-body"></div>
-                    </div>
+                    </div>  
                 </div>
                 <div class="col-sm-4">
                     <div class="card custom-card">
@@ -907,7 +907,6 @@
 <!-- ! placas  -->
 <script src="{% static 'assets/js/vehicles/placas.js' %}"></script>
 <script>
-    console.log("Valor desde Django:", "{{ vehicle.id }}");
 
     table_placa_vehicle({
         table: {
@@ -926,7 +925,6 @@
 <!-- ! carta facturas  -->
 <script src="{% static 'assets/js/vehicles/letter_factura.js' %}"></script>
 <script>
-    console.log("Valor desde Django para carta factura:", "{{ vehicle.id }}");
 
     table_letter_factura_vehicle({
         table: {
@@ -944,7 +942,6 @@
 <!-- ! facturas  -->
 <script src="{% static 'assets/js/vehicles/factura.js' %}"></script>
 <script>
-    console.log("Valor desde Django para factura:", "{{ vehicle.id }}");
 
     table_factura_vehicle({
         table: {
@@ -962,7 +959,6 @@
 <!-- ! tarjetas  -->
 <script src="{% static 'assets/js/vehicles/card.js' %}"></script>
 <script>
-    console.log("Valor desde Django para tarjeta:", "{{ vehicle.id }}");
 
     table_card_vehicle({
         table: {
@@ -981,7 +977,6 @@
 <!-- ! contratos y permisos  -->
 <script src="{% static 'assets/js/vehicles/contract.js' %}"></script>
 <script>
-    console.log("Valor desde Django para contrato:", "{{ vehicle.id }}");
 
     table_contract_vehicle({
         table: {
@@ -1000,7 +995,6 @@
 <!-- ! Hologranas de vehiculos  -->
 <script src="{% static 'assets/js/vehicles/hologram.js' %}"></script>
 <script>
-    console.log("Valor desde Django para holograma:", "{{ vehicle.id }}");
 
     table_hologram_vehicle({
         table: {
@@ -1018,7 +1012,6 @@
 <!-- ! Carnet de vehiculos  -->
 <script src="{% static 'assets/js/vehicles/carnet.js' %}"></script>
 <script>
-    console.log("Valor desde Django para carnet:", "{{ vehicle.id }}");
 
     table_carnet_vehicle({
         table: {

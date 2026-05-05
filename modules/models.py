@@ -847,8 +847,6 @@ class Equipmets_Tools_locations(models.Model):
     location_status = models.BooleanField(default=True, verbose_name="¿Está activa la ubicación?")
     location_company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True) 
   
-
-
 #tabla de equipos y herramientas 
 class Equipment_Tools(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")

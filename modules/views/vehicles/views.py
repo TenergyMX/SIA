@@ -64,7 +64,8 @@ import re
 from django.db.models import DateField
 from django.db.models import Q, F, Value, OuterRef, Subquery, CharField, DateField, IntegerField
 
-
+import logging
+logger = logging.getLogger(__name__)
 # TODO --------------- [ VARIABLES ] ---------- 
 
 AUDITORIA_VEHICULAR_POR_MES = 2
@@ -2135,74 +2136,262 @@ def get_vehicle_responsiva(request):
 
 
 
+# def get_vehicles_responsiva(request):
+#     print("entramos a la función de mostrar entradas y salidas")
+#     try: 
+#         context = user_data(request)
+#         response = {"success": False, "data": []}
+#         # dt = request.GET
+#         # vehicle_id = dt.get("vehicle_id", None)
+#         subModule_id = 8
+
+#         lista = Vehicle_Responsive.objects.values(
+#             "id", "vehicle_id", "vehicle__name",
+#             "responsible_id", "responsible__first_name", "responsible__last_name",
+#             "image_path_entry_1", "image_path_entry_2", "image_path_exit_1", "image_path_exit_2",
+#             "initial_mileage", "final_mileage",
+#             "initial_fuel", "final_fuel",
+#             "start_date", "end_date",
+#             "signature", "destination", "trip_purpose"
+#         ).order_by("-id")
+
+#         # Filtrado según el rol del usuario
+#         if context["role"]["id"] in [1, 2]:
+#             lista = lista.filter(vehicle__company_id=context["company"]["id"])
+#             # print(lista)
+#         else:
+#             lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
+
+#         # Obtener permisos de acceso
+#         access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+#         modified_data_list = []
+
+#         for data in lista:
+#             modified_data = data.copy()
+
+#             try:
+#             # **Convertir la fecha a la zona local y formatearla en "DD/MM/YYYY HH:MM"**
+#                 if modified_data.get("start_date"):
+#                     modified_data["start_date"] = localtime(modified_data["start_date"]).strftime("%d/%m/%Y %H:%M")
+
+#                 if modified_data.get("end_date"):
+#                     modified_data["end_date"] = localtime(modified_data["end_date"]).strftime("%d/%m/%Y %H:%M")
+#             except Exception as e:
+#                 logger.error(f"Error formateando fechas: {e}")
+
+
+#             # imagenes
+#             # print("vamos a cargar imagenes ")
+#             for img_field in [
+#                 "image_path_exit_1",
+#                 "image_path_exit_2",
+#                 "image_path_entry_1",
+#                 "image_path_entry_2"
+#             ]:
+#                 value = data.get(img_field)
+
+#                 if value:
+#                     try:
+#                         data[img_field] = generate_presigned_url(
+#                             AWS_BUCKET_NAME,
+#                             str(value)
+#                         )
+#                     except:
+#                         data[img_field] = None
+#                 else:
+#                     data[img_field] = None
+            
+#             # firmas
+#             signature = modified_data.get("signature")
+#             if signature and str(signature).strip():
+#                 try:
+#                     modified_data["signature"] = generate_presigned_url(
+#                         AWS_BUCKET_NAME,
+#                         str(signature)
+#                     )
+#                 except Exception as e:
+#                     logger.error(f"S3 error (signature): {e}")
+#                     modified_data["signature"] = None
+#             else:
+#                 modified_data["signature"] = None
+
+#             modified_data_list.append(modified_data)
+
+
+#         # Agregar botones de acción
+#         for item in modified_data_list:
+#             check = item["final_mileage"] and item["end_date"]
+#             item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-responsiva=\"show-info-details\" title=\"Mostrar info\">
+#                 <i class="fa-solid fa-eye"></i>
+#             </button>\n"""
+#             if not check:
+#                 item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-responsiva=\"check\" title="Check">
+#                 <i class="fa-regular fa-list-check"></i>
+#             </button>\n"""
+#             if access["delete"]:
+#                 item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-responsiva=\"delete-item\">
+#                     <i class="fa-solid fa-trash"></i>
+#                 </button>"""
+
+#         response["data"] = modified_data_list
+#         response["success"] = True
+
+#         return JsonResponse(response)
+
+#     except Exception as e:
+#         logger.error(f"ERROR GENERAL EN ENDPOINT: {e}")
+
+#         return JsonResponse({
+#             "success": False,
+#             "data": [],
+#             "error": str(e)
+#         }, status=500)
+
+        
+
 def get_vehicles_responsiva(request):
-    context = user_data(request)
-    response = {"success": False, "data": []}
-    dt = request.GET
-    vehicle_id = dt.get("vehicle_id", None)
-    subModule_id = 8
+    print("entramos a la función de mostrar entradas y salidas")
 
-    lista = Vehicle_Responsive.objects.values(
-        "id", "vehicle_id", "vehicle__name",
-        "responsible_id", "responsible__first_name", "responsible__last_name",
-        "image_path_entry_1", "image_path_entry_2", "image_path_exit_1", "image_path_exit_2",
-        "initial_mileage", "final_mileage",
-        "initial_fuel", "final_fuel",
-        "start_date", "end_date",
-        "signature", "destination", "trip_purpose"
-    ).order_by("-id")
-    # Filtrado según el rol del usuario
+    try:
+        context = user_data(request)
+        response = {"success": False, "data": []}
+        subModule_id = 8
 
-    if context["role"]["id"] in [1, 2]:
-        lista = lista.filter(vehicle__company_id=context["company"]["id"])
-        # print(lista)
-    else:
-        lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
+        is_detail = request.GET.get("detail")
+        vehicle_id = request.GET.get("id")
 
-    # Obtener permisos de acceso
-    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
-    modified_data_list = []
+        lista = Vehicle_Responsive.objects.values(
+            "id", "vehicle_id", "vehicle__name",
+            "responsible_id", "responsible__first_name", "responsible__last_name",
+            "image_path_entry_1", "image_path_entry_2", "image_path_exit_1", "image_path_exit_2",
+            "initial_mileage", "final_mileage",
+            "initial_fuel", "final_fuel",
+            "start_date", "end_date",
+            "signature", "destination", "trip_purpose"
+        ).order_by("-id")
 
-    for data in lista:
-        modified_data = data.copy()
-# **Convertir la fecha a la zona local y formatearla en "DD/MM/YYYY HH:MM"**
-        if modified_data.get("start_date"):
-            modified_data["start_date"] = localtime(modified_data["start_date"]).strftime("%d/%m/%Y %H:%M")
+        if context["role"]["id"] in [1, 2]:
+            lista = lista.filter(vehicle__company_id=context["company"]["id"])
+        else:
+            lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
 
-        if modified_data.get("end_date"):
-            modified_data["end_date"] = localtime(modified_data["end_date"]).strftime("%d/%m/%Y %H:%M")
+        access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
+        # =========================================================
+        # DETALLE 
+        # =========================================================
+        if is_detail and vehicle_id:
 
-        # Procesar imágenes y firmas
-        for img_field in ["image_path_exit_1", "image_path_exit_2", "image_path_entry_1", "image_path_entry_2"]:
-            if modified_data.get(img_field):
-                modified_data[img_field] = generate_presigned_url(AWS_BUCKET_NAME, str(modified_data[img_field]))
+            data = lista.filter(id=vehicle_id).first()
 
-        # Procesar firma
-        if modified_data.get("signature"):
-            modified_data["signature"] = generate_presigned_url(AWS_BUCKET_NAME, str(modified_data["signature"]))
+            if not data:
+                return JsonResponse({"success": False}, status=404)
 
-        modified_data_list.append(modified_data)
+            data = dict(data)
 
+            # fechas
+            if data.get("start_date"):
+                data["start_date"] = localtime(data["start_date"]).strftime("%d/%m/%Y %H:%M")
 
-    # Agregar botones de acción
-    for item in modified_data_list:
-        check = item["final_mileage"] and item["end_date"]
-        item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-vehicle-responsiva=\"show-info-details\" title=\"Mostrar info\">
-            <i class="fa-solid fa-eye"></i>
-        </button>\n"""
-        if not check:
-            item["btn_action"] += """<button class=\"btn btn-primary btn-sm\" data-vehicle-responsiva=\"check\" title="Check">
-            <i class="fa-regular fa-list-check"></i>
-        </button>\n"""
-        if access["delete"]:
-            item["btn_action"] += """<button class=\"btn btn-danger btn-sm\" data-vehicle-responsiva=\"delete-item\">
-                <i class="fa-solid fa-trash"></i>
-            </button>"""
+            if data.get("end_date"):
+                data["end_date"] = localtime(data["end_date"]).strftime("%d/%m/%Y %H:%M")
 
-    response["data"] = modified_data_list
-    response["success"] = True
-    return JsonResponse(response)
+            for img_field in [
+                "image_path_exit_1",
+                "image_path_exit_2",
+                "image_path_entry_1",
+                "image_path_entry_2"
+            ]:
+                try:
+                    value = data.get(img_field)
+
+                    if value:
+                        data[img_field] = generate_presigned_url(
+                            AWS_BUCKET_NAME,
+                            str(value)
+                        )
+                    else:
+                        data[img_field] = None
+
+                except Exception as e:
+                    logger.error(f"Error imagen {img_field}: {e}")
+                    data[img_field] = None
+
+            # firma
+            try:
+                if data.get("signature"):
+                    data["signature"] = generate_presigned_url(
+                        AWS_BUCKET_NAME,
+                        str(data["signature"])
+                    )
+                else:
+                    data["signature"] = None
+            except Exception as e:
+                logger.error(f"Error firma: {e}")
+                data["signature"] = None
+
+            return JsonResponse({
+                "success": True,
+                "data": data
+            })
+
+        # =========================================================
+        # TABLA 
+        # =========================================================
+
+        lista = lista[:50]  
+
+        modified_data_list = []
+
+        for data in lista:
+            modified_data = data.copy()
+
+            try:
+                if modified_data.get("start_date"):
+                    modified_data["start_date"] = localtime(modified_data["start_date"]).strftime("%d/%m/%Y %H:%M")
+
+                if modified_data.get("end_date"):
+                    modified_data["end_date"] = localtime(modified_data["end_date"]).strftime("%d/%m/%Y %H:%M")
+
+            except Exception as e:
+                logger.error(f"Error formateando fechas: {e}")
+
+            
+
+            # botón acciones
+            check = modified_data["final_mileage"] and modified_data["end_date"]
+
+            modified_data["btn_action"] = """<button class="btn btn-primary btn-sm" data-vehicle-responsiva="show-info-details" title="Mostrar info">
+                <i class="fa-solid fa-eye"></i>
+            </button>\n"""
+
+            if not check:
+                modified_data["btn_action"] += """<button class="btn btn-primary btn-sm" data-vehicle-responsiva="check" title="Check">
+                    <i class="fa-regular fa-list-check"></i>
+                </button>\n"""
+
+            if access["delete"]:
+                modified_data["btn_action"] += """<button class="btn btn-danger btn-sm" data-vehicle-responsiva="delete-item">
+                    <i class="fa-solid fa-trash"></i>
+                </button>"""
+
+            modified_data_list.append(modified_data)
+
+        response["data"] = modified_data_list
+        response["success"] = True
+
+        return JsonResponse(response)
+
+    except Exception as e:
+        logger.error(f"ERROR GENERAL EN ENDPOINT: {e}")
+
+        return JsonResponse({
+            "success": False,
+            "data": [],
+            "error": str(e)
+        }, status=500)
+    
+
 
 def delete_vehicle_responsiva(request):
     response = {"success": False, "data": []}
@@ -2717,24 +2906,15 @@ def get_vehicle_audit(request):
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
 
-
-    #Función para obtener texto de calificación
-    def get_textual_calification(score):
-        if score is None:
-            return "Sin calificación"
-        score = Decimal(str(score))
-        calification_map = {
-            "malo": (Decimal("0.0"), Decimal("3.0")),
-            "regular": (Decimal("3.01"), Decimal("6.89")),
-            "bueno": (Decimal("6.9"), Decimal("8.79")),
-            "excelente": (Decimal("8.8"), Decimal("10.0"))
-        }
-        for label, (low, high) in calification_map.items():
-            if low <= score <= high:
-                return label.capitalize()
-        return "Calificación fuera de rango"
-
     for item in lista:
+        # definir calificación 
+        try:
+            score = float(item.get("calification"))
+        except (TypeError, ValueError):
+            score = None
+        item["calification_text"] = get_textual_calification(score)
+
+        # procesar checks
         if item["checks"]:
             try:
                 # Reemplazar las comillas simples por dobles
@@ -2820,9 +3000,28 @@ def get_vehicle_audit(request):
     response["success"] = True
     return JsonResponse(response)
 
+#Función para obtener texto de calificación
+def get_textual_calification(score):
+    if score is None:
+        return "Sin calificación"
+    score = Decimal(str(score))
+    calification_map = {
+        "malo": (Decimal("0.0"), Decimal("3.0")),
+        "regular": (Decimal("3.01"), Decimal("6.89")),
+        "bueno": (Decimal("6.9"), Decimal("8.79")),
+        "excelente": (Decimal("8.8"), Decimal("10.0"))
+    }
+    for label, (low, high) in calification_map.items():
+        if low <= score <= high:
+            return label.capitalize()
+    return "Calificación fuera de rango"
+
+
 
 def get_vehicles_audit(request):
+    print("se cargan las auditorias de los vehiculos")
     context = user_data(request)
+    print("esto contiene el context", context)
     response = {"success": False, "data": [], "counters": {}}
     dt = request.GET
     vehicle_id = dt.get("vehicle_id", None)
