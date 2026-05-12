@@ -15,11 +15,25 @@ class siaStripe {
         $("a[data-stripe]").each(function () {
             $(this).on("click", function (e) {
                 e.preventDefault();
+
+                const company = prompt("Por favor escribe el nombre de tu empresa");
+                if (!company) return;
+
+                const address = prompt("Escribe la dirección de la empresa");
+                if (!address) return;
+
+                const email = prompt("Escribe un correo electrónico válido");
+                if (!email) return;
+
+                console.log("company:", company);
+                console.log("address:", address);
+                console.log("email:", email);
+
                 const fd = new FormData();
                 fd.append("plan", this.dataset.stripe);
-                fd.append("company", prompt("Por favor escribe el nombre de tu empresa"));
-                fd.append("address", prompt("Escribe la dirección de la empresa"));
-                fd.append("email", prompt("Escribe un correo electrónico válido"));
+                fd.append("company", company);
+                fd.append("address", address);
+                fd.append("email", email);
 
                 $.ajax({
                     type: "POST",
@@ -27,7 +41,7 @@ class siaStripe {
                     data: fd,
                     processData: false,
                     contentType: false,
-                    header: {
+                    headers: {
                         "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
                     },
                     success: function (r) {

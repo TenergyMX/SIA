@@ -11,12 +11,19 @@ class VehiclesAudit {
                 vehicle: {
                     id: null,
                 },
+
                 ajax: {
                     url: "/get_vehicles_audit/",
                     dataSrc: function (json) {
+                        console.log("[AJAX RESPONSE] Datos recibidos:", json);
+
                         Swal.close();
+                        console.log("[UI] Swal cerrado");
+
                         // Solo actualizar contadores si el filtro activo es "todas"
                         if (self.filtro_estado === "todas" && !self.isManualReload) {
+                            console.log("[COUNTERS] Actualizando contadores");
+
                             self.updateCounters(json);
                         }
                         // Reiniciar la bandera después de cada recarga
@@ -25,6 +32,8 @@ class VehiclesAudit {
                     },
 
                     data: function (d) {
+                        console.log("[AJAX REQUEST] Preparando datos...");
+
                         const period = document.getElementById("audit-period")?.value || "mensual";
                         const date = document.getElementById("audit-date")?.value || null;
                         const estado = document.getElementById("audit-status")?.value || null;
@@ -51,6 +60,8 @@ class VehiclesAudit {
                 data: { id: null },
             },
         };
+
+        console.log("[INIT] Configuración lista", defaultOptions);
 
         self.data = defaultOptions.data;
 
@@ -578,8 +589,8 @@ class VehiclesAudit {
                                                         <i class="fa fa-image"></i> Ver imagen
                                                     </a>`
                                                     : datos.is_checked
-                                                    ? `<span class="text-muted">Sin imagen</span>`
-                                                    : `<input data-key-value="images" type="file" accept="image/*"
+                                                      ? `<span class="text-muted">Sin imagen</span>`
+                                                      : `<input data-key-value="images" type="file" accept="image/*"
                                                                 class="form-control form-control-sm correction-image check-image"
                                                                 name="correction_${checkItem.name}">`
                                             }
