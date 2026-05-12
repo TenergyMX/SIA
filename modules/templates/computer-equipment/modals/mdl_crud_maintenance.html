@@ -6,12 +6,22 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                asads
                 <div class="row g-3">
                     <div class="col-12 d-none">
                         {% csrf_token %}
                         <input type="hidden" name="id" value="0">
                     </div>
+
+                    <div class="col-md-4 col-computer-select">
+                        <label>Equipo</label>
+                        <select name="computerSystem_id" class="form-select"></select>
+                    </div>
+
+                    <div class="col-md-4 col-computer-name d-none">
+                        <label>Equipo</label>
+                        <input type="text" name="computerSystem_name" class="form-control" readonly>
+                    </div>
+
                     <div class="col-md-4">
                         <label for="">Tipo</label>
                         <select name="type" class="form-select">
@@ -19,6 +29,7 @@
                             <option value="Correctivo">Correctivo</option>
                         </select>
                     </div>
+
                     <div class="col-md-4">
                         <label for="">¿Quien lo realiza?</label>
                         <select name="performed_by" class="form-select">

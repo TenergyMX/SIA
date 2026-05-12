@@ -276,11 +276,13 @@ class ComputerSoftware {
                     deleteItem(url, data)
                         .then((message) => {
                             Swal.fire("Exito", message, "success");
+                            self.tbl_software.ajax.reload(null, false);
                         })
                         .catch((error) => {
                             Swal.fire("Error", error, "error");
                         });
                     break;
+
                 case "add-item-installation":
                     obj_modal2.modal("show");
                     obj_modal2.find("form")[0].reset();
@@ -334,6 +336,7 @@ class ComputerSoftware {
                         }
                     });
                     break;
+
                 case "delete-item-installation":
                     var url = "/delete_software_installation/";
                     var fila = $(this).closest("tr");
@@ -358,6 +361,7 @@ class ComputerSoftware {
                             Swal.fire("Error", error, "error");
                         });
                     break;
+
                 case "show-computer-to-software":
                     // Esta tabla indicaría qué software está instalado en cada equipo.
                     // Es decir, por cada equipo, podrías listar todo el software que tiene instalado.
@@ -391,7 +395,6 @@ class ComputerSoftware {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }
@@ -430,7 +433,6 @@ class ComputerSoftware {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

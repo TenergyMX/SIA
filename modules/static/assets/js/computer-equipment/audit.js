@@ -109,6 +109,36 @@ class ComputerEquipment_audit {
                     obj_modal.find("[name='computerSystem_id']").prop("disabled", false);
                     obj_modal.find("[name='is_checked']").val(0).closest(".row").hide();
                     obj_modal.find("select").prop("required", true);
+
+                    // mostrar equipo actual
+                    if (self.computer && self.computer.data) {
+                        // guardar ID en hidden
+                        obj_modal
+                            .find("[name='computerSystem_hidden_id']")
+                            .val(self.computer.data.id);
+
+                        // select visible pero deshabilitado
+                        obj_modal
+                            .find("[name='computerSystem_id']")
+                            .val(self.computer.data.id)
+                            .prop("disabled", true)
+                            .prop("required", false)
+                            .hide();
+
+                        // mostrar nombre
+                        obj_modal
+                            .find("[name='computerSystem__name']")
+                            .val(self.computer.data.name)
+                            .show();
+                    } else {
+                        obj_modal
+                            .find("[name='computerSystem_id']")
+                            .prop("disabled", false)
+                            .prop("required", true)
+                            .show();
+
+                        obj_modal.find("[name='computerSystem__name']").hide();
+                    }
                     // obj_modal.find(".info-2").hide().find(":input").prop("diabled", true);
                     break;
                 case "update-item":
@@ -215,6 +245,14 @@ class ComputerEquipment_audit {
             var submit = $("button[type='submit']:focus", this).attr("name");
             var url = "/" + (submit == "add" ? "add" : "update") + "-computer-equipment-audit/";
             var datos = new FormData(this);
+
+            // si viene desde un equipo específico
+            if (self.computer && self.computer.data) {
+                datos.set(
+                    "computerSystem_id",
+                    obj_modal.find("[name='computerSystem_hidden_id']").val()
+                );
+            }
 
             $.ajax({
                 type: "POST",

@@ -30,7 +30,7 @@ urlpatterns = [
     path("add_software/", views.add_software),
     path("get_softwares/", views.get_softwares),
     path("update_software/", views.update_software),
-    path("delete_softwares/", views.get_softwares),
+    path("delete_computer_software/", views.delete_computer_equipment_softwares),
 
     path("add_software_installation/", views.add_software_installation),
     path("get_software_installations/", views.get_software_installations),
@@ -67,5 +67,7 @@ urlpatterns = [
 
 
 
+    # lista de computadoras
+    path("get-computers/", views.get_computers),
 
 ]
