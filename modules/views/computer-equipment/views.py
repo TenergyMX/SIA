@@ -562,6 +562,27 @@ def delete_computer_system(request):
     response["success"] = True
     return JsonResponse(response)
 
+
+def get_computers(request):
+
+    data = []
+
+    computers = ComputerSystem.objects.select_related(
+        "current_responsible"
+    )
+
+    for item in computers:
+        data.append({
+            "id": item.id,
+            "name": item.name,
+            "responsible": (
+                f"{item.current_responsible.first_name} "
+                f"{item.current_responsible.last_name}"
+            ) if item.current_responsible else "Sin responsable"
+        })
+
+    return JsonResponse({"data": data})
+
 # TODO ----- [ PERIFERICOS ] -----
 
 def get_computer_peripherals(request):
@@ -740,6 +761,15 @@ def get_softwares(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in datos:
+        
+            if item["is_unlimited"]:
+                item["available_installations"] = "Ilimitadas"
+            else:
+                item["available_installations"] = (
+                    item["max_installations"] - item["installation_count"]
+                )
+
+            # botones 
             item["btn_action"] = ""
             if access["update"]:
                 item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-computer-software=\"update-item\">" \
@@ -749,6 +779,7 @@ def get_softwares(request):
                 item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-computer-software=\"delete-item\">" \
                     "<i class=\"fa-solid fa-trash\"></i>"
                 "</button>"
+
     response["recordsTotal"] = datos.count()
     response["data"] = list(datos)
     response["success"] = True
@@ -773,8 +804,13 @@ def update_software(request):
         obj.name = dt.get("name")
         obj.version = dt.get("version")
         obj.description = dt.get("description")
-        obj.is_unlimited = dt.get("is_unlimited")
+                
+        obj.is_unlimited = True if dt.get("is_unlimited") == "true" else False
+
         obj.function = dt.get("function", "UWU")
+
+        obj.max_installations = dt.get("max_installations")
+
         obj.save()
         
 
@@ -795,12 +831,30 @@ def add_software_installation(request):
     subModule_id = 15
 
     try:
+        software = Software.objects.get(id=dt.get("software_id"))
+        
+        # validar el limite de instalaciones
+        if not software.is_unlimited:
+            if software.installation_count >= software.max_installations:
+                response["error"] = {
+                    "message": "Ya no hay instalaciones disponibles para este software"
+                }
+                return JsonResponse(response)
+            
+        # crear instalación de software
         obj = SoftwareInstallation(
             software_id = dt.get("software_id"),
             software_identifier = dt.get("software_identifier"),
             computerSystem_id = dt.get("computerSystem_id")
         )
         obj.save()
+
+        # actualizar el contador
+        software.installation_count = SoftwareInstallation.objects.filter(
+            software_id = software.id
+        ).count()
+        software.save()
+
         response["id"] = obj.id
         response["success"] = True
     except Exception as e:
@@ -923,7 +977,35 @@ def add_computer_equipment_audit(request):
 
     try:
         obj = ComputerEquipment_Audit(
-            computerSystem_id = dt.get("computerSystem_id")
+            computerSystem_id = dt.get("computerSystem_id"),
+            limpieza_check = dt.get("limpieza_check"),
+            fecha_ultima_limpieza = dt.get("fecha_ultima_limpieza"),
+            audit_date=dt.get("fecha_ultima_limpieza"),
+
+            # pantalla
+            pantalla_check=dt.get("pantalla_check"),
+            pantalla_notas=dt.get("pantalla_notas"),
+
+            # teclado
+            teclado_check=dt.get("teclado_check"),
+            teclado_notas=dt.get("teclado_notas"),
+
+            # puertos
+            puertos_check=dt.get("puertos_check"),
+            puertos_notas=dt.get("puertos_notas"),
+
+            # cargador
+            cargador_check=dt.get("cargador_check"),
+            cargador_notas=dt.get("cargador_notas"),
+
+            # carcasa
+            carcasa_check=dt.get("carcasa_check"),
+            carcasa_notas=dt.get("carcasa_notas"),
+
+            # notas generales
+            general_notes=dt.get("general_notes"),
+
+            is_checked = is_checked
         )
         obj.save()
         response["id"] = obj.id
@@ -991,6 +1073,7 @@ def get_computer_equipment_audits(request):
     response["data"] = list(datos)
     response["success"] = True
     return JsonResponse(response)
+
 
 def update_computer_equipment_audit(request):
     context = user_data(request)
@@ -1072,12 +1155,17 @@ def add_computer_equipment_maintenance(request):
     array = dt.getlist("actions[]")
     actions = {accion: "PENDIENTE" for accion in array}
     actions = str(actions)
-
+    
+    print("computerSystem_id recibido:", dt.get("computerSystem_id"))
     try:
         with transaction.atomic():
+            print("performed_by:", dt.get("performed_by"))
+            print("user_id:", dt.get("user_id"))
+            print("provider_id:", dt.get("provider_id"))
             obj = ComputerEquipment_Maintenance(
+                computerSystem_id = dt.get("computerSystem_id"),
                 performed_by = dt.get("performed_by"),
-                # user_id = dt.get("user_id")
+                user_id = dt.get("user_id"),
                 provider_id = dt.get("provider_id"),
                 type = dt.get("type"),
                 cost = dt.get("cost"),
@@ -1119,22 +1207,59 @@ def get_computer_equipment_maintenances(request):
     computerSystem_id = dt.get("computerSystem_id")
     subModule_id = 17
 
+    print("esto contiene computersystemid:", computerSystem_id)
+
     datos = ComputerEquipment_Maintenance.objects.values(
         "id",
-        "computerSystem_id", "computerSystem__name", "computerSystem__serial_number",
-        "performed_by",
-        "provider_id", "provider__name",
-        "user_id",
-        "type", "cost", "actions",
-        "is_checked", "date", "document",
-    )
+        "computerSystem_id", 
+        "computerSystem__name", 
+        "computerSystem__serial_number",
 
+        "performed_by",
+
+        "provider_id", 
+        "provider__name",
+
+        "user_id",
+        "user__username",
+        "user__first_name",
+        "user__last_name",
+
+        "type", 
+        "cost", 
+        "actions",
+        "is_checked", 
+        "date", 
+        "document",
+    )
+ 
     if computerSystem_id and computerSystem_id != None:
         datos = datos.filter(computerSystem_id = computerSystem_id)
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
     for item in datos:
+        if item["performed_by"] == "Proveedor":
+            item["performed_name"] = (item["provider__name"] or "Sin proveedor")
+
+        elif item["performed_by"] == "Usuario":
+
+
+            full_name = (
+                f"{item['user__first_name'] or ''} "
+                f"{item['user__last_name'] or ''}"
+            ).strip()
+
+            item["performed_name"] = (
+                full_name
+                if full_name
+                else item["user__username"] or "Sin usuario"
+            )
+
+        
+        else :
+            item["performed_name"] = "-----"
+        
         item["btn_action"] = "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-computer-equipment-maintenance=\"show-info-details\">" \
             "<i class=\"fa-solid fa-eye\"></i>" \
         "</button>\n"
@@ -1181,10 +1306,26 @@ def update_computer_equipment_maintenance(request):
         if "performed_by" in dt and dt["performed_by"]: obj.performed_by = dt.get("performed_by")
         if "cost" in dt and dt["cost"]: obj.cost = dt.get("cost")
         if "date" in dt and dt["date"]: obj.date = dt.get("date")
+
+        if dt.get("performed_by") == "Usuario":
+
+            if dt.get("user_id"):
+                obj.user_id = dt.get("user_id")
+
+            obj.provider_id = None
+
+        elif dt.get("performed_by") == "Proveedor":
+
+            if dt.get("provider_id"):
+                obj.provider_id = dt.get("provider_id")
+
+            obj.user_id = None
+
         # if "is_checked" in dt and dt["is_checked"]: obj.is_checked = dt.get("is_checked")
 
         # obj.user_id = dt.get("user_id")
         # obj.provider_id = dt.get("provider_id")
+
         obj.is_checked = is_checked
         obj.actions = actions
         obj.save()
@@ -1937,5 +2078,24 @@ def delete_qr_computer(request, qr_type, computerSystemId):
     delete_s3_object(AWS_BUCKET_NAME, url)
     return JsonResponse({'status':'success'})
 
+# funcion para eliminar un software 
+def delete_computer_equipment_softwares(request):
+    context = user_data(request)
+    response = { "success": False }
+    dt = request.POST
+    id = dt.get("id")
+    subModule_id = 15
 
+    if id == None:
+        response["error"] = {"message": "Proporcione un id valido", "id": id}
+        return JsonResponse(response)
+    try:
+        obj = Software.objects.get(id = id)
+    except Software.DoesNotExist:
+        response["error"] = {"message": "El objeto no existe"}
+        return JsonResponse(response)
+    else:
+        obj.delete()
+    response["success"] = True
+    return JsonResponse(response)
 # END

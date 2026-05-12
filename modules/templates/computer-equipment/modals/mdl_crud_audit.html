@@ -5,10 +5,11 @@
                 <h1 class="modal-title fs-5">Agregar</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body">    
                 <div class="d-none">
                     {% csrf_token %}
                     <input type="hidden" name="id" value="0">
+                    <input type="hidden" name="computerSystem_hidden_id">
                     
                 </div>
                 <div class="info-1">
@@ -19,19 +20,19 @@
                         <div class="col-md-7">
                             <select name="computerSystem_id" class="form-select"></select>
                             <input type="text" name="computerSystem__name" class="form-control" readonly style="display: none;">
-                        </div>
+                        </div>      
                     </div>
                     <div class="row mb-2">
                         <label for="" class="col-md-5 col-form-label">
                             Limpieza del Equipo
                         </label>
                         <div class="col-md-7">
-                            <select name="pantalla_check" class="form-select">
+                            <select name="limpieza_check" class="form-select">
                                 <option value="">-----</option>
                                 <option value="Malo">Malo</option>
                                 <option value="Regular">Regular</option>
                                 <option value="Bueno">Bueno</option>
-                            </select>
+                            </select>   
                         </div>
                     </div>
                     <div class="row mb-2">

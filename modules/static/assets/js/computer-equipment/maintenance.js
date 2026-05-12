@@ -19,7 +19,7 @@ class ComputerEquipment_maintenance {
                 columns: [
                     { title: "Equipo", data: "computerSystem__name" },
                     { title: "Tipo", data: "type" },
-                    { title: "Realizado por", data: "performed_by" },
+                    { title: "Realizado por", data: "performed_name" },
                     {
                         title: "Costo",
                         data: "cost",
@@ -116,16 +116,45 @@ class ComputerEquipment_maintenance {
                 case "refresh-table":
                     self.tbl_maintenance.ajax.reload();
                     break;
+
                 case "add-item":
+                    console.log("self.data:", self.data);
+                    console.log("self.computer:", self.computer);
                     obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
+
                     obj_modal.find(".modal-header .modal-title").html("Agregar mantenimiento");
+
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
+
+                    // si viene de un equipo
+                    if (self.data["computerSystem_id"]) {
+                        obj_modal.find(".col-computer-select").hide();
+
+                        obj_modal.find(".col-computer-name").removeClass("d-none");
+
+                        // asignar id
+                        obj_modal.find("[name='computerSystem_id']").html(`
+                            <option value="${self.computer.data.id}" selected>
+                                ${self.computer.data.name}
+                            </option>
+                        `);
+
+                        // mostrar nombre
+                        obj_modal.find("[name='computerSystem_name']").val(self.computer.data.name);
+                    } else {
+                        obj_modal.find(".col-computer-select").show();
+
+                        obj_modal.find(".col-computer-name").addClass("d-none");
+
+                        self.loadComputers(obj_modal.find("[name='computerSystem_id']"));
+                    }
 
                     obj_modal.find("[name='type']").trigger("change");
                     obj_modal.find("[name='performed_by']").trigger("change");
                     break;
+
                 case "update-item":
                     obj_modal.modal("show");
                     obj_modal.find("form")[0].reset();
@@ -135,6 +164,11 @@ class ComputerEquipment_maintenance {
 
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_maintenance.row(fila).data();
+
+                    self.loadComputers(
+                        obj_modal.find("[name='computerSystem_id']"),
+                        datos["computerSystem_id"]
+                    );
 
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
@@ -188,6 +222,7 @@ class ComputerEquipment_maintenance {
                     var datos = self.tbl_maintenance.row(fila).data();
                     var obj_div = $(".info-details");
 
+                    console.log(datos);
                     $.each(datos, function (index, value) {
                         var isFileInput = obj_div.find(`[name="${index}"]`).is(":file");
                         if (!isFileInput) {
@@ -270,7 +305,6 @@ class ComputerEquipment_maintenance {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }
@@ -360,7 +394,6 @@ class ComputerEquipment_maintenance {
                             Swal.fire("Advertencia", response.warning["message"], "warning");
                             return;
                         } else if (!response.success) {
-                            
                             Swal.fire("Error", "Ocurrio un error inesperado", "error");
                             return;
                         }
@@ -401,6 +434,33 @@ class ComputerEquipment_maintenance {
                 self.dataMaintenance = { preventivo: [], correctivo: [] };
             },
             complete: function () {},
+        });
+    }
+
+    loadComputers(select, selected = null) {
+        console.log("loadComputers ejecutado");
+
+        $.ajax({
+            type: "GET",
+            url: "/get-computers/",
+            success: function (response) {
+                select.html(`<option value="">Seleccione un equipo</option>`);
+
+                $.each(response.data, function (index, item) {
+                    select.append(`
+                        <option value="${item.id}">
+                            ${item.name || "Sin nombre"} (${item.responsible || "Sin responsable"})
+                        </option>
+                    `);
+                });
+
+                if (selected) {
+                    select.val(selected);
+                }
+            },
+            error: function () {
+                console.error("Error cargando computadoras");
+            },
         });
     }
 }

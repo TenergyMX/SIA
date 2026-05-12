@@ -56,11 +56,11 @@ class ComputerEquipment {
                     { title: "S.O.", data: "so", className: "toggleable", visible: false },
                     { title: "Marca", data: "brand", className: "toggleable" },
                     { title: "Modelo", data: "model", className: "toggleable" },
-                    {
-                        title: "Fecha Adquisición",
-                        data: "adquisition_date",
-                        className: "toggleable",
-                    },
+                    // {
+                    //     title: "Fecha Adquisición",
+                    //     data: "adquisition_date",
+                    //     className: "toggleable",
+                    // },
                     {
                         title: "Procesador",
                         data: "processor",
