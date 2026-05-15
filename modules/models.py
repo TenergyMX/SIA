@@ -361,6 +361,7 @@ class ComputerSystem(models.Model):
     qr_info_computer = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
     identifier = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name="Identificador")
     adquisition_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Adquisición")
+    document_factura = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
 
     class Meta:
         verbose_name = "Equipo de Computo"

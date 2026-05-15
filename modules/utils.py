@@ -256,6 +256,7 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
 #         ExpiresIn=expiration
 #     )
 
+
 def generate_presigned_url(bucket_name, object_name, expiration=3600):
     content_type, _ = mimetypes.guess_type(object_name)
     if not content_type:

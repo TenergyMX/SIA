@@ -52,7 +52,10 @@ AWS_SECRET_ACCESS_KEY=os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_DEFAULT_REGION=os.environ.get('AWS_DEFAULT_REGION')
 AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
 
+bucket_name=AWS_BUCKET_NAME
+
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
+
 
 
 # TODO --------------- [ VIEWS ] ----------
@@ -343,10 +346,16 @@ def computer_equipment_deliverie_pdf_view(request):
 def add_computer_system(request):
     context = user_data(request)
     response = {"success": False}
+
     dt = request.POST
+    files = request.FILES
+
     company_id = context["company"]["id"]
 
     try:
+        # Documento factura
+        document_factura = files.get("document_factura")
+
         obj = ComputerSystem(
             is_active = dt.get("is_active", True),
             company_id = company_id,
@@ -376,6 +385,21 @@ def add_computer_system(request):
             disk_capacity = dt.get("disk_capacity"),
         )
         obj.save()
+
+
+
+        if document_factura:
+            s3Path = f'docs/{company_id}/computer-equipment/facturas/{obj.id}/'
+            file_name, extension = os.path.splitext(document_factura.name)
+            new_name = f"factura_equipo{obj.id}{extension}"
+            S3name = s3Path + new_name
+
+            upload_to_s3(document_factura, bucket_name, S3name)
+
+            # guardar la ruta
+            obj.document_factura = S3name
+            obj.save()
+
         response["id"] = obj.id
         response["success"] = True
     except Exception as e:
@@ -419,12 +443,21 @@ def get_computer_equipment(request):
         "disk_type", "disk_capacity", 
         "ram", "ram_type", "ram_speed", "graphics_card",
         "color", "battery","warranty", "location",
+        "document_factura",
         "current_responsible_id", "current_responsible__username",
         "current_responsible__first_name", "current_responsible__last_name",
         "previous_responsible_id", "previous_responsible__username",
         "previous_responsible__first_name", "previous_responsible__last_name",
         "equipment_status", "last_maintenance_date","comments", "identifier", "adquisition_date",
     )[0]
+
+    if datos.get("document_factura"):
+        datos["document_factura"] = generate_presigned_url(
+            AWS_BUCKET_NAME,
+            str(datos["document_factura"])
+        )
+    else:
+        datos["document_factura"] = None
 
     response["data"] = datos
     return JsonResponse(response)
@@ -450,6 +483,7 @@ def get_computers_equipment(request):
         "disk_type", "disk_capacity", 
         "ram", "ram_type", "ram_speed", "graphics_card",
         "color", "battery","warranty", "location",
+        "document_factura",
         "current_responsible_id", "current_responsible__username",
         "current_responsible__first_name", "current_responsible__last_name",
         "previous_responsible_id", "previous_responsible__username",
@@ -469,6 +503,29 @@ def get_computers_equipment(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in datos:
+
+            print("item de informacion de computadoras:", item["document_factura"])
+            
+            # BOTÓN VER FACTURA
+            item["btn_view_factura"] = ""
+
+            if item["document_factura"]:
+
+                tempDoc = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(item["document_factura"]),
+                    inline=True
+                )
+
+                item["btn_view_factura"] = f"""
+                    <a href="{tempDoc}"
+                    target="_blank"
+                    class="btn btn-sm btn-info">
+                        <i class="fa-solid fa-eye"></i>
+                        Ver
+                    </a>
+                """
+
             item["btn_action"] = f"<a href='/computers-equipment/info/{item['id']}/' class='btn btn-icon btn-sm btn-primary-light' data-computer-system='show-info' aria-label='info'>" \
                 "<i class=\"fa-solid fa-eye\"></i>" \
             "</a>\n"
@@ -486,8 +543,11 @@ def get_computers_equipment(request):
     return JsonResponse(response)
 
 def update_computer_system(request):
+    context = user_data(request)
     response = {"success": False}
     dt = request.POST
+
+    company_id = context["company"]["id"]
 
     computerSystem_id = dt.get("id", None)
 
@@ -495,10 +555,10 @@ def update_computer_system(request):
         response["error"] = {"message": "No se proporcionó un ID de vehículo válido"}
         return JsonResponse(response)
     
-    
     try:
         obj = ComputerSystem.objects.get(id = computerSystem_id)
 
+        # responsables
         db_current_responsible_id = obj.current_responsible_id
         previous_responsible_id = None
         current_responsible_id = None
@@ -531,6 +591,43 @@ def update_computer_system(request):
         obj.current_responsible_id = current_responsible_id
         obj.equipment_status = dt.get("equipment_status")
         obj.comments = dt.get("comments")
+
+        # DOCUMENTO FACTURA
+        document_factura = request.FILES.get("document_factura")
+
+        if document_factura:
+
+            # eliminar documento anterior
+            if obj.document_factura:
+                delete_s3_object(
+                    AWS_BUCKET_NAME,
+                    str(obj.document_factura.name)
+                )
+
+            # obtener extensión
+            file_name, extension = os.path.splitext(
+                document_factura.name
+            )
+
+            # nuevo nombre
+            new_name = f"factura_equipo_{obj.id}{extension}"
+
+            # ruta S3
+            s3_path = (
+                f"docs/{company_id}/computer-equipment/"
+                f"facturas/{obj.id}/{new_name}"
+            )
+
+            # subir a S3
+            upload_to_s3(
+                document_factura,
+                AWS_BUCKET_NAME,
+                s3_path
+            )
+
+            # guardar ruta
+            obj.document_factura = s3_path
+
         obj.save()
 
         response["success"] = True
@@ -878,7 +975,7 @@ def get_software_installations(request):
         "software__function",
         "software__name",
         "software__installation_count",
-        "software__version",
+        "software__version",            
         "software__description",
         "computerSystem_id", "computerSystem__name",
         "computerSystem__current_responsible_id",
@@ -1750,13 +1847,36 @@ def update_computer_equipment_deliverie(request):
         response["message"] = "Sin responsable"
         return JsonResponse(response) 
     try:
-        obj = ComputerEquipment_Deliveries.objects.get(id = id)
+        with transaction.atomic():
 
-        obj.responsible_id = responsible_id,
-        obj.save()
-        response["id"] = obj.id
-        response["status"] = "success"
-        response["message"] = "actualizado correctamente"
+            obj = ComputerEquipment_Deliveries.objects.get(id = id)
+            # actualizar responsable
+            obj.responsible_id = responsible_id
+            # actualizar archivo
+            if 'responsibility_letter' in request.FILES and request.FILES['responsibility_letter']:
+
+                load_file = request.FILES.get('responsibility_letter')
+
+                folder_path = f"docs/{company_id}/computers-equipment/deliveries/"
+
+                file_name, extension = os.path.splitext(load_file.name)
+
+                new_name = f"doc_{id}{extension}"
+
+                s3Name = folder_path + new_name
+
+                # subir nuevo archivo
+                upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+
+                # guardar ruta
+                obj.responsibility_letter = folder_path + new_name
+
+            obj.save()
+                
+            response["id"] = obj.id
+            response["status"] = "success"
+            response["message"] = "actualizado correctamente"
+            
     except Exception as e:
         response["status"] = "error"
         response["message"] = str(e)
@@ -1820,10 +1940,45 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
         return False
 
     
-def generate_presigned_url(bucket_name, object_name, expiration=3600):
-    s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
-    return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
+# def generate_presigned_url(bucket_name, object_name, expiration=3600):
+#     s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+#     boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
+#     return s3.generate_presigned_url('get_object',Params={'Bucket': bucket_name, 'Key': object_name}, ExpiresIn=expiration)
+
+
+def generate_presigned_url(
+    bucket_name,
+    object_name,
+    expiration=3600,
+    inline=False
+):
+    content_type, _ = mimetypes.guess_type(object_name)
+
+    if not content_type:
+        content_type = 'application/pdf'
+
+    s3 = boto3.client(
+        's3',
+        region_name='us-east-2',
+        config=Config(signature_version='s3v4')
+    )
+
+    params = {
+        'Bucket': bucket_name,
+        'Key': object_name,
+        'ResponseContentType': content_type
+    }
+
+    if inline:
+        params['ResponseContentDisposition'] = 'inline'
+
+    return s3.generate_presigned_url(
+        'get_object',
+        Params=params,
+        ExpiresIn=expiration
+    )
+
+
 
 def validate_image(file):
     # Check file size (e.g., max 5 MB)

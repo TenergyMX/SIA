@@ -1,13 +1,10 @@
 $(document).ready(function () {});
 
-//Función para mostrar la tabla del historial de pagos de servicios
 // Función para mostrar la tabla del historial de pagos de servicios
 function show_history_payments(serviceIdOrButton) {
     var serviceId;
 
-    // Determinar si el parámetro es un botón (elemento DOM) o un ID directo
     if (typeof serviceIdOrButton === "object" && serviceIdOrButton.nodeType === 1) {
-        // Es un elemento DOM (botón)
         var row = $(serviceIdOrButton).closest("tr");
         var data = $("#table_services").DataTable().row(row).data();
         if (!data || !data.id) {
@@ -16,7 +13,6 @@ function show_history_payments(serviceIdOrButton) {
         }
         serviceId = data.id;
     } else {
-        // Asumimos que es el serviceId directamente
         serviceId = serviceIdOrButton;
     }
 
@@ -27,12 +23,10 @@ function show_history_payments(serviceIdOrButton) {
             var tbody = $("#table-history-payments tbody");
             tbody.empty();
 
-            // Guardar el serviceId en la tabla para usarlo luego en editPayment
             $("#table-history-payments").data("service-id", serviceId);
 
             if (response.length > 0) {
                 response.forEach(function (payment) {
-                    // Determinar el texto que se debe mostrar para el estado de pago
                     var statusText = "";
                     var badgeClass = "";
                     switch (payment.status_payment) {

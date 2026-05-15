@@ -83,6 +83,14 @@ class ComputerEquipment {
                         className: "toggleable",
                         visible: true,
                     },
+
+                    {
+                        title: "Ver factura",
+                        data: "btn_view_factura",
+                        orderable: false,
+                        className: "text-center",
+                    },
+
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
