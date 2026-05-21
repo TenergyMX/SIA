@@ -54,13 +54,13 @@ def update_payment(request, payment_id):
     
     try:
         payment = get_object_or_404(Payments_Services, id=payment_id)
-        is_new_upload = False  # Flag para saber si es una nueva carga
+        is_new_upload = False  
 
-        # 1. Actualizar monto si está presente
+        # Actualizar monto si está presente
         if 'total_payment' in request.POST:
             payment.total_payment = request.POST['total_payment']
 
-        # 2. Procesar archivo solo si se subió uno nuevo
+        # Procesar archivo solo si se subió uno nuevo
         if 'proof_payment' in request.FILES:
             load_file = request.FILES['proof_payment']
             is_new_upload = True
@@ -77,7 +77,6 @@ def update_payment(request, payment_id):
             # Eliminar archivo anterior si existe
             if payment.proof_payment:
                 try:
-                    # Asumiendo que usas django-storages y S3
                     payment.proof_payment.delete(save=False)
                 except Exception as e:
                     print(f"Error al eliminar archivo anterior: {str(e)}")
@@ -85,10 +84,11 @@ def update_payment(request, payment_id):
             # Generar ruta estructurada en S3
             company_id = payment.name_service_payment.company.id
             service_name = payment.name_service_payment.name_service.replace(' ', '_')
-            current_date = datetime.now().strftime('%Y%m%d_%H%M%S')  # Agregamos hora para mayor unicidad
+            current_date = datetime.now().strftime('%Y%m%d_%H%M%S')  
             
-            folder_path = f"docs/{company_id}/services/proof_payment/{service_name}/"
-            file_name = f"comprobante_{service_name}_{current_date}{file_ext}"
+            folder_path = f"docs/{company_id}/services/proof_payment/{payment.id}/"
+
+            file_name = f"proof_{current_date}{file_ext}"
             s3_path = folder_path + file_name
 
             # Subir a S3
@@ -96,7 +96,7 @@ def update_payment(request, payment_id):
             
             # Guardar nueva ruta en la base de datos
             payment.proof_payment = s3_path
-            payment.status_payment = 'paid'  # Actualizar estado automáticamente
+            payment.status_payment = 'paid'  
 
         payment.save()
         
@@ -439,7 +439,7 @@ def get_services_categories(request):
 
         if not company_id:
             return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
-    # Obtener las categorías de equipo asociadas a la empresa y activas
+        # Obtener las categorías de equipo asociadas a la empresa y activas
         categories = Services_Category.objects.filter(
             empresa_id=company_id, is_active_category=True
         ).values('id', 'name_category') 

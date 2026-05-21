@@ -808,7 +808,7 @@ class Payments_Services(models.Model):
     ]
     
     name_service_payment = models.ForeignKey(Services, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Nombre del servicio")
-    proof_payment = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Comprobante de pago")
+    proof_payment = models.FileField(upload_to='docs/', max_length=255, blank=True, null=True, verbose_name="Comprobante de pago")
     total_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
     next_date_payment = models.DateField(blank=True, null=True, verbose_name="Próxima fecha de pago")
     status_payment = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Estado de pago")
