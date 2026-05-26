@@ -633,4 +633,974 @@ def siaChangePassword(request):
             messages.success(request, 'Tu contraseña ha sido actualizada correctamente.')
             return redirect('/reset-password/')
 
-    return render(request, 'home/reset-password.html')
+    return render(request, 'home/reset-password.html') 
+
+
+#NUEVO LANDING PAGE
+def new_home_view(request):
+    context = {}
+
+    if request.user.is_authenticated:
+        context["user"] = request.user
+
+    # HERO (descripcion general de la pagina)
+    context["homeStats"] = [
+        {
+            "icon": "directions_car",
+            "title": "Vehículos",
+            "num": "24",
+            "subtitle": "+3 este mes",
+            "iconColor": "text-amber-500",
+            "subtitleColor": "text-emerald-500",
+        },
+        {
+            "icon": "computer",
+            "title": "Equipos",
+            "num": "156",
+            "subtitle": "Activos",
+            "iconColor": "text-sky-500",
+            "subtitleColor": "text-emerald-500",
+        },
+        {
+            "icon": "build",
+            "title": "Herramientas",
+            "num": "89",
+            "subtitle": "En inventario",
+            "iconColor": "text-emerald-500",
+            "subtitleColor": "text-gray-400",
+        },
+        {
+            "icon": "apartment",
+            "title": "Inmuebles",
+            "num": "12",
+            "subtitle": "Registrados",
+            "iconColor": "text-sky-300",
+            "subtitleColor": "text-gray-400",
+        },
+    ]
+
+    # FEATURES
+    context["homeFeatures"] = [
+        "Sin instalación",
+        "100% en la nube",
+        "Soporte 24/7",
+    ]
+
+    # Módulos 
+
+    # MÓDULO VEHÍCULOS
+    context["vehiclesModule"] = {
+        "id": "vehiculos",
+        "number": "Módulo 01",
+        "icon": "directions_car",
+        "title": "Vehículos",
+        "description": """
+            Control total de tu flotilla vehicular. Desde el registro
+            de unidades hasta el seguimiento de mantenimientos,
+            todo en un solo lugar para optimizar la operación
+            de tu empresa.
+        """,
+        "color": "emerald",
+
+        # badges superiores
+        "features": [
+            {
+                "icon": "local_gas_station",
+                "text": "Control de combustible",
+            },
+            {
+                "icon": "location_on",
+                "text": "Ubicación de unidades",
+            },
+            {
+                "icon": "calendar_month",
+                "text": "Calendario de servicios",
+            },
+            {
+                "icon": "security",
+                "text": "Historial de siniestros",
+            },
+        ],
+
+        # cards del lado derecho
+        "cards": [
+            {
+                "icon": "directions_car",
+                "title": "Registro de Vehículos",
+                "description": """
+                    Administra vehículos con información completa:
+                    marca, modelo, placas y número de serie.
+                """,
+            },
+
+            {
+                "icon": "description",
+                "title": "Gestión Documental",
+                "description": """
+                    Control de tarjetas de circulación, pólizas de seguro, verificaciones y todos los documentos legales.
+                """,
+            },
+
+            {
+                "icon": "qr_code_scanner",
+                "title": "Entradas y Salidas con QR",
+                "description": """
+                    Sistema de control de acceso mediante códigos QR para registro automático de movimientos.
+                """,
+            },
+
+            {
+                "icon": "build",
+                "title": "Mantenimientos Preventivos",
+                "description": """
+                    Programa y da seguimiento a servicios, cambios de aceite, afinaciones y más.
+                """,
+            },
+
+            {
+                "icon": "badge",
+                "title": "Gestión de Conductores",
+                "description": """
+                    Registro de conductores, vigencia de licencias, historial de multas y asignaciones.
+                """,
+            },
+
+            {
+                "icon": "notifications",
+                "title": "Sistema de Notificaciones",
+                "description": """
+                    Alertas automáticas por vencimientos, mantenimientos pendientes y documentos por renovar.
+                """,
+            },
+        ]
+    }
+
+    # MODULO EQUIPOS DE COMPUTO
+    context["computoModule"] = {
+
+        "id": "computo",
+
+        "number": "Módulo 02",
+
+        "title": "Cómputo",
+
+        "icon": "computer",
+
+        "description": """
+            Administra toda tu infraestructura tecnológica
+            de manera eficiente. Controla equipos, software,
+            licencias y mantenimientos con trazabilidad completa.
+        """,
+
+        # SPECS DEL DASHBOARD IZQUIERDO
+        "specs": [
+            "Marca y modelo",
+            "Número de serie",
+            "Sistema operativo",
+            "Software instalado",
+            "Fecha de adquisición",
+            "Garantía vigente",
+            "Usuario asignado",
+            "Ubicación física",
+        ],
+
+        # CARD FLOTANTE SUPERIOR
+        "topCard": {
+            "icon": "dns",
+            "number": "20",
+            "label": "Equipos máx."
+        },
+
+        # CARD FLOTANTE INFERIOR
+        "bottomCard": {
+            "icon": "description",
+            "title": "Software",
+            "subtitle": "Control de licencias"
+        },
+
+        # FEATURES DERECHA
+        "features": [
+            {
+                "icon": "inventory_2",
+                "title": "Inventario Completo",
+                "description": """
+                    Registro detallado de hasta 20 equipos:
+                    computadoras, laptops, impresoras,
+                    monitores y periféricos.
+                """
+            },
+
+            {
+                "icon": "badge",
+                "title": "Responsivas Digitales",
+                "description": """
+                    Genera y gestiona cartas responsivas
+                    para cada equipo asignado a colaboradores.
+                """
+            },
+
+            {
+                "icon": "build",
+                "title": "Control de Mantenimientos",
+                "description": """
+                    Programa mantenimientos preventivos
+                    y correctivos con historial completo de servicios.
+                """
+            },
+
+            {
+                "icon": "fact_check",
+                "title": "Auditorías de Software",
+                "description": """
+                    Verifica licencias instaladas y cumplimiento
+                    de políticas de TI.
+                """
+            },
+
+        ]
+    }
+
+    # MODULO HERRAMIENTAS
+    context["toolsModule"] = {
+        "id": "herramientas",
+        "number": "Módulo 03",
+        "title": "Herramientas",
+        "icon": "build",
+        "description": """
+            Mantén el control total de tus herramientas
+            y equipos de trabajo. Desde el inventario
+            hasta los mantenimientos, optimiza el uso
+            de tus recursos.
+        """,
+        # CATEGORÍAS
+        "categories": [
+            {
+                "icon": "construction",
+                "title": "Herramienta manual",
+                "description": "Martillos, llaves, etc."
+            },
+            {
+                "icon": "handyman",
+                "title": "Herramienta eléctrica",
+                "description": "Taladros, sierras, etc."
+            },
+            {
+                "icon": "straighten",
+                "title": "Medición",
+                "description": "Calibradores, niveles, etc."
+            },
+            {
+                "icon": "engineering",
+                "title": "Especializada",
+                "description": "Equipo técnico"
+            },
+        ],
+
+        # FEATURES
+        "features": [
+            {
+                "icon": "inventory_2",
+                "title": "Inventario Detallado",
+                "description": """
+                    Registra hasta 20 herramientas
+                    con especificaciones técnicas,
+                    números de serie y ubicación.
+                """
+            },
+            {
+                "icon": "description",
+                "title": "Fichas Técnicas",
+                "description": """
+                    Documentación completa de cada herramienta:
+                    manuales, especificaciones
+                    y condiciones de uso.
+                """
+            },
+            {
+                "icon": "monitoring",
+                "title": "Control de Inventario",
+                "description": """
+                    Seguimiento en tiempo real de existencias,
+                    préstamos y devoluciones
+                    de herramientas.
+                """
+            },
+            {
+                "icon": "settings",
+                "title": "Mantenimientos",
+                "description": """
+                    Programa calibraciones, reparaciones
+                    y mantenimientos preventivos
+                    para cada equipo.
+                """
+            },
+        ],
+
+        # STATS
+        "stats": [
+            {
+                "number": "20",
+                "label": "Herramientas máx.",
+                "color": "text-emerald-500"
+            },
+            {
+                "number": "100%",
+                "label": "Trazabilidad",
+                "color": "text-blue-950"
+            },
+            {
+                "number": "24/7",
+                "label": "Acceso al sistema",
+                "color": "text-blue-950"
+            },
+        ]
+    }
+
+    # MÓDULO SERVICIOS
+    context["servicesModule"] = {
+        "id": "servicios",
+        "number": "Módulo 04",
+        "icon": "credit_card",
+        "title": "Servicios",
+        "description": """
+            Centraliza la gestión de todos los servicios contratados por tu empresa.
+            Controla pagos, fechas de vencimiento y genera reportes para optimizar
+            tus gastos operativos.
+        """,
+        "color": "sky",
+
+        # TIPOS DE SERVICIOS
+        "serviceTypes": [
+            {
+                "icon": "wifi",
+                "text": "Internet",
+                "bg": "bg-sky-500/10",
+                "iconColor": "text-sky-500",
+            },
+            {
+                "icon": "call",
+                "text": "Telefonía",
+                "bg": "bg-sky-200/30",
+                "iconColor": "text-sky-300",
+            },
+            {
+                "icon": "bolt",
+                "text": "Electricidad",
+                "bg": "bg-amber-400/10",
+                "iconColor": "text-amber-500",
+            },
+            {
+                "icon": "water_drop",
+                "text": "Agua",
+                "bg": "bg-sky-500/10",
+                "iconColor": "text-sky-500",
+            },
+            {
+                "icon": "shield",
+                "text": "Seguros",
+                "bg": "bg-emerald-500/10",
+                "iconColor": "text-emerald-500",
+            },
+        ],
+
+        # FEATURES
+        "features": [
+            {
+                "icon": "description",
+                "title": "Registro de Servicios",
+                "description": """
+                    Administra hasta 5 servicios contratados con toda la
+                    información de proveedores y contratos.
+                """,
+            },
+            {
+                "icon": "credit_card",
+                "title": "Gestión de Pagos",
+                "description": """
+                    Control de fechas de pago, montos, métodos de pago
+                    y registro de comprobantes.
+                """,
+            },
+            {
+                "icon": "bar_chart",
+                "title": "Reportes Detallados",
+                "description": """
+                    Análisis de gastos por servicio, tendencias y proyecciones
+                    para mejor planificación.
+                """,
+            },
+            {
+                "icon": "notifications",
+                "title": "Alertas de Vencimiento",
+                "description": """
+                    Notificaciones automáticas antes de fechas límite
+                    de pago para evitar recargos.
+                """,
+            },
+        ],
+
+        # STATS CARD
+        "statsCard": {
+            "title": "Servicios incluidos",
+            "value": "5 servicios",
+            "subtitle": "Historial de pagos incluido",
+            "icon": "trending_up",
+        },
+    }
+    
+    # MÓDULO INFRAESTRUCTURA
+    context["infrastructureModule"] = {
+        "id": "infraestructura",
+        "number": "Módulo 05",
+        "icon": "apartment",
+        "title": "Infraestructura",
+        "description": """
+            Centraliza la administración de todos tus inmuebles e instalaciones.
+            Desde oficinas hasta plantas industriales,
+            mantén todo bajo control.
+        """,
+        "color": "amber",
+
+        # TIPOS DE INMUEBLES
+        "propertyTypes": [
+            {
+                "icon": "apartment",
+                "title": "Oficinas",
+                "description": "Espacios administrativos",
+            },
+            {
+                "icon": "factory",
+                "title": "Plantas",
+                "description": "Instalaciones productivas",
+            },
+            {
+                "icon": "store",
+                "title": "Sucursales",
+                "description": "Puntos de venta",
+            },
+            {
+                "icon": "warehouse",
+                "title": "Bodegas",
+                "description": "Almacenamiento",
+            },
+        ],
+
+        # FEATURES
+        "features": [
+            {
+                "icon": "apartment",
+                "title": "Registro de Inmuebles",
+                "description": """
+                    Administra hasta 25 inmuebles:
+                    oficinas, bodegas, sucursales y plantas.
+                """,
+            },
+
+            {
+                "icon": "fingerprint",
+                "title": "Identificadores Únicos",
+                "description": """
+                    Cada inmueble cuenta con un ID único
+                    para facilitar seguimiento y gestión.
+                """,
+            },
+
+            {
+                "icon": "description",
+                "title": "Fichas Técnicas",
+                "description": """
+                    Documentación completa:
+                    planos, contratos, escrituras y especificaciones.
+                """,
+            },
+
+            {
+                "icon": "build",
+                "title": "Mantenimientos",
+                "description": """
+                    Programa y registra mantenimientos
+                    eléctricos, hidráulicos y preventivos.
+                """,
+            },
+        ],
+
+        # INFO CARD
+        "propertyInfo": [
+            "Dirección completa",
+            "Metros cuadrados",
+            "Tipo de propiedad",
+            "Fecha de adquisición",
+            "Valor catastral",
+            "Responsable asignado",
+            "Contratos vigentes",
+            "Historial de mantenimiento",
+        ],
+
+        # FOOTER CARD
+        "statsCard": {
+            "title": "Capacidad máxima",
+            "subtitle": "Incluido en tu plan",
+            "value": "25",
+            "icon": "location_on",
+        },
+    }
+
+    # PLANES
+    context["plans"] = [
+
+        # BÁSICO
+        {
+            "label": "Plan",
+            "name": "Básico",
+            "price": "250",
+            "icon": "workspace_premium",
+            "recommended": False,
+
+            "headerBg": """
+                bg-gradient-to-r
+                from-amber-400
+                to-orange-500
+            """,
+
+            "features": [
+                "Módulo de Vehículos completo",
+                "Registro de hasta 10 vehículos",
+                "Gestión documental",
+                "Entradas/salidas con QR",
+                "Mantenimientos preventivos",
+                "Control de conductores y licencias",
+                "Notificaciones automáticas",
+            ],
+
+            "modules": [
+                {
+                    "icon": "computer",
+                    "title": "Equipos de Cómputo",
+                    "limit": "1 - 20 registros",
+                },
+
+                {
+                    "icon": "build",
+                    "title": "Equipos y Herramientas",
+                    "limit": "1 - 20 registros",
+                },
+
+                {
+                    "icon": "credit_card",
+                    "title": "Servicios",
+                    "limit": "1 - 5 registros",
+                },
+
+                {
+                    "icon": "apartment",
+                    "title": "Infraestructura",
+                    "limit": "1 - 25 registros",
+                },
+            ]
+        },
+
+        # ESENCIAL
+        {
+            "label": "Más popular",
+            "name": "Esencial",
+            "price": "525",
+            "icon": "star",
+            "recommended": True,
+
+            "headerBg": """
+                bg-gradient-to-r
+                from-amber-500
+                to-yellow-500
+            """,
+
+            "features": [
+                "Todo incluido en Básico",
+                "Incremento de registros",
+                "Reportes gráficos",
+                "Panel administrativo avanzado",
+                "Mayor capacidad operativa",
+                "Historial y trazabilidad completa",
+            ],
+
+            "modules": [
+                {
+                    "icon": "computer",
+                    "title": "Equipos",
+                    "limit": "20 - 50 registros",
+                },
+
+                {
+                    "icon": "build",
+                    "title": "Herramientas",
+                    "limit": "20 - 50 registros",
+                },
+
+                {
+                    "icon": "credit_card",
+                    "title": "Servicios",
+                    "limit": "5 - 10 registros",
+                },
+
+                {
+                    "icon": "apartment",
+                    "title": "Infraestructura",
+                    "limit": "25 - 100 registros",
+                },
+            ]
+        },
+
+        # AVANZADO
+        {
+            "label": "Empresarial",
+            "name": "Avanzado",
+            "price": "850",
+            "icon": "rocket_launch",
+            "recommended": False,
+
+            "headerBg": """
+                bg-gradient-to-r
+                from-slate-800
+                to-slate-950
+            """,
+
+            "features": [
+                "Todo incluido en Esencial",
+                "Control de gasolina",
+                "Correos automáticos",
+                "Mayor capacidad multiusuario",
+                "Reportes avanzados",
+                "Escalabilidad empresarial",
+            ],
+
+            "modules": [
+                {
+                    "icon": "computer",
+                    "title": "Equipos",
+                    "limit": "25 - 50 registros",
+                },
+
+                {
+                    "icon": "build",
+                    "title": "Herramientas",
+                    "limit": "25 - 50 registros",
+                },
+
+                {
+                    "icon": "credit_card",
+                    "title": "Servicios",
+                    "limit": "10 - 20 registros",
+                },
+
+                {
+                    "icon": "apartment",
+                    "title": "Infraestructura",
+                    "limit": "100 - 150 registros",
+                },
+            ]
+        },
+
+        # PRO
+        {
+            "label": "Corporativo",
+            "name": "Pro",
+            "price": "1500",
+            "icon": "verified",
+            "recommended": False,
+
+            "headerBg": """
+                bg-gradient-to-r
+                from-indigo-600
+                to-purple-700
+            """,
+
+            "features": [
+                "Vehículos de 50 a 100 registros",
+                "Equipos de 50 a 100 registros",
+                "Herramientas de 100 a 200 registros",
+                "Servicios sin límite",
+                "Infraestructura sin límite",
+                "Soporte prioritario",
+            ],
+
+            "modules": [
+                {
+                    "icon": "directions_car",
+                    "title": "Vehículos",
+                    "limit": "50 - 100",
+                },
+
+                {
+                    "icon": "computer",
+                    "title": "Equipos",
+                    "limit": "50 - 100",
+                },
+
+                {
+                    "icon": "build",
+                    "title": "Herramientas",
+                    "limit": "100 - 200",
+                },
+
+                {
+                    "icon": "apartment",
+                    "title": "Infraestructura",
+                    "limit": "Sin límite",
+                },
+            ]
+        },
+
+        # ÉLITE
+        {
+            "label": "Premium",
+            "name": "Élite",
+            "price": "2500",
+            "icon": "diamond",
+            "recommended": False,
+
+            "headerBg": """
+                bg-gradient-to-r
+                from-pink-600
+                to-rose-700
+            """,
+
+            "features": [
+                "Vehículos de 100 a 250 registros",
+                "Equipos de 200 a 350 registros",
+                "Herramientas de 200 a 350 registros",
+                "Servicios ilimitados",
+                "Infraestructura ilimitada",
+                "Atención personalizada",
+            ],
+
+            "modules": [
+                {
+                    "icon": "directions_car",
+                    "title": "Vehículos",
+                    "limit": "100 - 250",
+                },
+
+                {
+                    "icon": "computer",
+                    "title": "Equipos",
+                    "limit": "200 - 350",
+                },
+
+                {
+                    "icon": "build",
+                    "title": "Herramientas",
+                    "limit": "200 - 350",
+                },
+
+                {
+                    "icon": "apartment",
+                    "title": "Infraestructura",
+                    "limit": "Sin límite",
+                },
+            ]
+        },
+
+    ]
+
+    # CONTACTO
+    context["contactModule"] = {
+        "badge": "Contacto",
+
+        "title": {
+            "normal": "¿Listo para",
+            "highlight": "transformar",
+            "end": "tu gestión empresarial?"
+        },
+
+        "description": """
+            Completa el formulario y un especialista te contactará
+            para mostrarte cómo SIA Capital puede ayudarte
+            a optimizar los procesos de tu empresa.
+        """,
+
+        # BENEFICIOS / TRUST SIGNALS
+        "trustSignals": [
+            {
+                "icon": "shield",
+                "title": "Datos Seguros",
+                "description": "Encriptación de extremo a extremo",
+                "bg": "bg-yellow-100",
+                "iconColor": "text-yellow-500",
+            },
+            {
+                "icon": "schedule",
+                "title": "Respuesta Rápida",
+                "description": "Te contactamos en menos de 24h",
+                "bg": "bg-yellow-100",
+                "iconColor": "text-yellow-500",
+            },
+            {
+                "icon": "support_agent",
+                "title": "Soporte Dedicado",
+                "description": "Acompañamiento personalizado",
+                "bg": "bg-yellow-100",
+                "iconColor": "text-yellow-500",
+            },
+        ],
+
+        # FORMULARIO
+        "form": {
+            "title": "Solicita una demostración",
+            "fields": [
+                {
+                    "label": "Nombre completo",
+                    "type": "text",
+                    "name": "name",
+                    "placeholder": "Juan Pérez",
+                    "required": True,
+                },
+                {
+                    "label": "Empresa",
+                    "type": "text",
+                    "name": "company",
+                    "placeholder": "Tu empresa",
+                    "required": True,
+                },
+                {
+                    "label": "Correo electrónico",
+                    "type": "email",
+                    "name": "email",
+                    "placeholder": "juan@empresa.com",
+                    "required": True,
+                },
+                {
+                    "label": "Teléfono",
+                    "type": "tel",
+                    "name": "phone",
+                    "placeholder": "+52 55 1234 5678",
+                    "required": True,
+                },
+            ],
+            "textarea": {
+                "label": "Mensaje",
+                "name": "message",
+                "rows": 5,
+                "placeholder": """
+                    Cuéntanos sobre tu empresa
+                    y qué necesitas gestionar...
+                """,
+            },
+            "button": {
+                "text": "Enviar solicitud",
+                "icon": "send",
+            },
+            "privacyText": """
+                Al enviar aceptas nuestra política de privacidad.
+                No compartimos tu información.
+            """,
+        },
+        # MENSAJE DE ÉXITO
+        "successMessage": {
+            "title": "¡Mensaje enviado!",
+            "description": """
+                Gracias por tu interés.
+                Te contactaremos pronto.
+            """,
+            "buttonText": "Enviar otro mensaje",
+        }
+    }
+
+    # FOOTER
+    context["footerModule"] = {
+
+        # BRAND
+        "brand": {
+            "name": "Capital System",
+
+            "description": """
+                Plataforma integral de gestión empresarial.
+                Optimiza tus procesos con tecnología de vanguardia.
+            """,
+
+            "logoLetter": "S",
+        },
+
+        # REDES SOCIALES
+        "socials": [
+            {
+                "icon": "facebook",
+                "url": "#",
+                "hover": "hover:bg-blue-600",
+            },
+            {
+                "icon": "alternate_email",
+                "url": "#",
+                "hover": "hover:bg-sky-500",
+            },
+            {
+                "icon": "business",
+                "url": "#",
+                "hover": "hover:bg-blue-700",
+            },
+        ],
+
+        # LINKS
+        "sections": [
+            {
+                "title": "Producto",
+                "links": [
+                    {
+                        "name": "Módulos",
+                        "url": "#modulos",
+                    },
+                    {
+                        "name": "Planes",
+                        "url": "#planes",
+                    },
+                 
+                ]
+            },
+            {
+                "title": "Empresa",
+                "links": [
+                    {
+                        "name": "Nosotros",
+                        "url": "#",
+                    },
+                    {
+                        "name": "Contacto",
+                        "url": "#contacto",
+                    },
+                    {
+                        "name": "Blog",
+                        "url": "#",
+                    },
+                ]
+            },
+            {
+                "title": "Legal",
+                "links": [
+                    {
+                        "name": "Privacidad",
+                        "url": "#",
+                    },
+                    {
+                        "name": "Términos",
+                        "url": "#",
+                    },
+                    {
+                        "name": "Cookies",
+                        "url": "#",
+                    },
+                ]
+            },
+        ],
+
+        # BOTTOM
+        "bottom": {
+            "copyright": """
+                © 2026 Capital System Solutions.
+                Todos los derechos reservados.
+            """,
+
+            "madeWith": "Hecho en México",
+        }
+    }
+
+
+    return render(request, "home2/new_index.html", context)
+

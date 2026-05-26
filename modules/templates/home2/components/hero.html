@@ -1,0 +1,172 @@
+<!-- HERO SECTION -->
+<section
+    class="relative min-h-screen flex items-center pt-20 lg:pt-0 overflow-hidden bg-white">
+    <!-- BACKGROUND -->
+    <div class="absolute inset-0">
+        <div
+            class="absolute top-0 right-0 w-1/2 h-full bg-blue-600/5 rounded-l-[100px] hidden lg:block">
+        </div>
+    </div>
+    <div
+        class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-24">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <!-- LEFT CONTENT -->
+            <div class="space-y-8 text-center lg:text-left">
+                <!-- BADGE + TITLE -->
+                <div class="space-y-4">
+                    <div
+                        class="inline-flex items-center gap-2 bg-amber-400/20 text-blue-950 px-4 py-2 rounded-full text-sm font-medium">
+                        <span
+                            class="w-2 h-2 bg-amber-400 rounded-full animate-pulse">
+                        </span>
+                        Plataforma SaaS para Empresas
+                    </div>
+                    <h1
+                        class="text-4xl sm:text-5xl lg:text-6xl font-bold text-blue-950 leading-tight">
+                        Gestión empresarial
+                        <span class="text-amber-400">
+                            integral
+                        </span>
+                        en un solo lugar
+                    </h1>
+                    <p
+                        class="text-lg lg:text-xl text-gray-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                        Administra vehículos, equipos de cómputo,
+                        herramientas, infraestructura y servicios
+                        con una plataforma moderna, segura y fácil de usar.
+                    </p>
+                </div>
+                <!-- FEATURES -->
+                <div
+                    class="flex flex-wrap justify-center lg:justify-start gap-4 text-sm text-gray-700">
+                    {% for feature in homeFeatures %}
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="material-icons text-emerald-500 text-base">
+                            check_circle
+                        </span>
+                        <span>
+                            {{ feature }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+              
+            </div>
+            <!-- RIGHT DASHBOARD -->
+            <div class="relative hidden lg:block">
+                <div
+                    class="relative bg-[#f8f4ef] rounded-3xl shadow-2xl shadow-blue-900/10 p-6 border border-gray-200">
+                    <!-- HEADER -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-12 h-12 bg-blue-950 rounded-xl flex items-center justify-center">
+                                <span
+                                    class="text-white font-bold text-lg">
+                                    S
+                                </span>
+                            </div>
+                            <div>
+                                <p
+                                    class="font-semibold text-blue-950 text-sm">
+                                    Capital System
+                                </p>
+                                <p class="text-xs text-gray-400">
+                                    Dashboard
+                                </p>
+                            </div>
+                        </div>
+                        <!-- DOTS -->
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-3 h-3 rounded-full bg-red-500">
+                            </div>
+                            <div
+                                class="w-3 h-3 rounded-full bg-amber-400">
+                            </div>
+                            <div
+                                class="w-3 h-3 rounded-full bg-emerald-500">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- STATS -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        {% for stat in homeStats %}
+                        <div class="bg-[#efe8dc] rounded-2xl p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span
+                                    class="material-icons text-base {{ stat.iconColor }}">
+                                    {{ stat.icon }}
+                                </span>
+                                <span
+                                    class="text-xs text-gray-500">
+                                    {{ stat.title }}
+                                </span>
+                            </div>
+                            <p
+                                class="text-3xl font-bold text-blue-950">
+                                {{ stat.num }}
+                            </p>
+                            <p
+                                class="text-xs mt-1 {{ stat.subtitleColor }}">
+                                {{ stat.subtitle }}
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <!-- ACTIVITY -->
+                    <div class="bg-[#efe8dc] rounded-2xl p-4">
+                        <div
+                            class="flex items-center justify-between mb-4">
+                            <span
+                                class="text-sm font-semibold text-blue-950">
+                                Actividad Reciente
+                            </span>
+                            <span
+                                class="material-icons text-gray-400 text-base">
+                                settings
+                            </span>
+                        </div>
+                        <div class="space-y-4">
+                            <div
+                                class="flex items-center justify-between text-xs">
+                                <span class="text-gray-600">
+                                    Mantenimiento completado - Unidad 12
+                                </span>
+                                <span class="text-gray-400">
+                                    Hace 2h
+                                </span>
+                            </div>
+                            <div
+                                class="flex items-center justify-between text-xs">
+                                <span class="text-gray-600">
+                                    Nuevo equipo registrado
+                                </span>
+                                <span class="text-gray-400">
+                                    Hace 4h
+                                </span>
+                            </div>
+                            <div
+                                class="flex items-center justify-between text-xs">
+                                <span class="text-gray-600">
+                                    Auditoría programada
+                                </span>
+                                <span class="text-gray-400">
+                                    Hace 6h
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- DECORATIONS -->
+                <div
+                    class="absolute -top-4 -right-4 w-24 h-24 bg-amber-400/20 rounded-full blur-2xl">
+                </div>
+                <div
+                    class="absolute -bottom-4 -left-4 w-32 h-32 bg-sky-300/30 rounded-full blur-2xl">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

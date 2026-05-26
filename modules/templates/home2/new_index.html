@@ -1,0 +1,52 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Capital System</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        rel="stylesheet">
+
+    <link rel="stylesheet"
+        href="{% static 'assets/css/style2.css' %}">
+        <!-- href="{% static 'home2/assets/css/style.css' %}"> -->
+</head>
+
+<body class="bg-white">
+
+    {% include 'home2/components/navbar.html' %}
+
+    {% include 'home2/components/hero.html' %}
+
+    {% include 'home2/modules/vehiculos.html' %}
+
+    {% include 'home2/modules/computo.html' %}
+
+    {% include 'home2/modules/herramientas.html' %}
+
+    {% include 'home2/modules/servicios.html' %}
+
+    {% include 'home2/modules/infraestructura.html' %}
+
+    {% include 'home2/components/planes.html' %}
+
+    {% include 'home2/components/contacto.html' %}
+
+    {% include 'home2/components/footer.html' %}
+
+    <!-- <script src="{% static 'home2/assets/js/main.js' %}"></script> -->
+
+    <script src="{% static 'assets/js/main2.js' %}"></script>
+
+</body>
+
+</html>

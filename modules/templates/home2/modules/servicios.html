@@ -1,0 +1,103 @@
+<!-- MODULO SERVICIOS -->
+<section id="{{ servicesModule.id }}"
+    class="fade-section py-20 lg:py-32 bg-blue-950/[0.02]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <!-- LEFT SIDE -->
+            <div>
+                <!-- HEADER -->
+                <div class="flex items-center gap-3 mb-6">
+                    <div
+                        class="w-14 h-14 bg-sky-200/30 rounded-2xl flex items-center justify-center">
+                        <span class="material-icons text-sky-300 text-3xl">
+                            {{ servicesModule.icon }}
+                        </span>
+                    </div>
+                    <span
+                        class="text-sm font-medium text-sky-300 uppercase tracking-wider">
+                        {{ servicesModule.number }}
+                    </span>
+                </div>
+                <!-- TITLE -->
+                <h2
+                    class="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-900 mb-6">
+                    Administración de
+                    <span class="text-sky-300">
+                        {{ servicesModule.title }}
+                    </span>
+                </h2>
+                <!-- DESCRIPTION -->
+                <p class="text-lg text-gray-600 leading-relaxed mb-8">
+                    {{ servicesModule.description }}
+                </p>
+                <!-- SERVICE TYPES -->
+                <div class="flex flex-wrap gap-3 mb-8">
+                    {% for service in servicesModule.serviceTypes %}
+                    <div
+                        class="flex items-center gap-2 px-4 py-2.5 rounded-xl {{ service.bg }}">
+                        <span
+                            class="material-icons text-base {{ service.iconColor }}">
+                            {{ service.icon }}
+                        </span>
+                        <span class="text-sm font-medium text-blue-900">
+                            {{ service.text }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+            </div>
+            <!-- RIGHT SIDE -->
+            <div class="space-y-4">
+                {% for feature in servicesModule.features %}
+                <div
+                    class="group flex gap-5 p-5 bg-white rounded-xl border border-gray-200 hover:border-sky-300 hover:shadow-lg transition-all duration-300">
+                    <div
+                        class="w-12 h-12 bg-sky-200/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-icons text-sky-300 text-2xl">
+                            {{ feature.icon }}
+                        </span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-blue-900 mb-1">
+                            {{ feature.title }}
+                        </h3>
+                        <p class="text-sm text-gray-600 leading-relaxed">
+                            {{ feature.description }}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+                <!-- STATS CARD -->
+                <div class="bg-blue-900 rounded-xl p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-white/70 mb-1">
+                                {{ servicesModule.statsCard.title }}
+                            </p>
+                            <p class="text-3xl font-bold">
+                                {{ servicesModule.statsCard.value }}
+                            </p>
+                        </div>
+                        <div
+                            class="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center">
+                            <span class="material-icons text-white text-3xl">
+                                {{ servicesModule.statsCard.icon }}
+                            </span>
+                        </div>
+                    </div>
+                    <div
+                        class="mt-4 pt-4 border-t border-white/20 flex items-center gap-2">
+                        <span
+                            class="material-icons text-white/70 text-base">
+                            description
+                        </span>
+                        <span class="text-sm text-white/70">
+                            {{ servicesModule.statsCard.subtitle }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
