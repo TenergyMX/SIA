@@ -655,7 +655,7 @@ def new_home_view(request):
         },
         {
             "icon": "computer",
-            "title": "Equipos",
+            "title": "Equipos de cómputo",
             "num": "156",
             "subtitle": "Activos",
             "iconColor": "text-sky-500",
@@ -663,7 +663,7 @@ def new_home_view(request):
         },
         {
             "icon": "build",
-            "title": "Herramientas",
+            "title": "Equipos y Herramientas",
             "num": "89",
             "subtitle": "En inventario",
             "iconColor": "text-emerald-500",
@@ -671,7 +671,7 @@ def new_home_view(request):
         },
         {
             "icon": "apartment",
-            "title": "Inmuebles",
+            "title": "Infraestructura y Servicios",
             "num": "12",
             "subtitle": "Registrados",
             "iconColor": "text-sky-300",
@@ -710,7 +710,7 @@ def new_home_view(request):
             },
             {
                 "icon": "location_on",
-                "text": "Ubicación de unidades",
+                "text": "Asignación de unidades",
             },
             {
                 "icon": "calendar_month",
@@ -718,7 +718,7 @@ def new_home_view(request):
             },
             {
                 "icon": "security",
-                "text": "Historial de siniestros",
+                "text": "Historial de anomalías en vehículos",
             },
         ],
 
@@ -751,7 +751,7 @@ def new_home_view(request):
 
             {
                 "icon": "build",
-                "title": "Mantenimientos Preventivos",
+                "title": "Mantenimientos",
                 "description": """
                     Programa y da seguimiento a servicios, cambios de aceite, afinaciones y más.
                 """,
@@ -850,7 +850,7 @@ def new_home_view(request):
 
             {
                 "icon": "fact_check",
-                "title": "Auditorías de Software",
+                "title": "Control de Software",
                 "description": """
                     Verifica licencias instaladas y cumplimiento
                     de políticas de TI.
@@ -869,7 +869,7 @@ def new_home_view(request):
         "description": """
             Mantén el control total de tus herramientas
             y equipos de trabajo. Desde el inventario
-            hasta los mantenimientos, optimiza el uso
+            hasta los prestamos, optimiza el uso
             de tus recursos.
         """,
         # CATEGORÍAS
@@ -902,7 +902,7 @@ def new_home_view(request):
                 "icon": "inventory_2",
                 "title": "Inventario Detallado",
                 "description": """
-                    Registra hasta 20 herramientas
+                    Registra herramientas
                     con especificaciones técnicas,
                     números de serie y ubicación.
                 """
@@ -927,11 +927,11 @@ def new_home_view(request):
             },
             {
                 "icon": "settings",
-                "title": "Mantenimientos",
+                "title": "Responsivas",
                 "description": """
-                    Programa calibraciones, reparaciones
-                    y mantenimientos preventivos
-                    para cada equipo.
+                    Gestiona el control y seguimiento 
+                    de equipos y herramientas, 
+                    registrando su estado de prestamo y devolución. 
                 """
             },
         ],
@@ -939,7 +939,7 @@ def new_home_view(request):
         # STATS
         "stats": [
             {
-                "number": "20",
+                "number": "Escalable",
                 "label": "Herramientas máx.",
                 "color": "text-emerald-500"
             },
@@ -1009,7 +1009,7 @@ def new_home_view(request):
                 "icon": "description",
                 "title": "Registro de Servicios",
                 "description": """
-                    Administra hasta 5 servicios contratados con toda la
+                    Administra servicios contratados con toda la
                     información de proveedores y contratos.
                 """,
             },
@@ -1042,7 +1042,7 @@ def new_home_view(request):
         # STATS CARD
         "statsCard": {
             "title": "Servicios incluidos",
-            "value": "5 servicios",
+            "value": "Servicios Personalizados",
             "subtitle": "Historial de pagos incluido",
             "icon": "trending_up",
         },
@@ -1091,7 +1091,7 @@ def new_home_view(request):
                 "icon": "apartment",
                 "title": "Registro de Inmuebles",
                 "description": """
-                    Administra hasta 25 inmuebles:
+                    Administra inmuebles:
                     oficinas, bodegas, sucursales y plantas.
                 """,
             },
@@ -1127,10 +1127,7 @@ def new_home_view(request):
         # INFO CARD
         "propertyInfo": [
             "Dirección completa",
-            "Metros cuadrados",
-            "Tipo de propiedad",
             "Fecha de adquisición",
-            "Valor catastral",
             "Responsable asignado",
             "Contratos vigentes",
             "Historial de mantenimiento",
@@ -1140,7 +1137,7 @@ def new_home_view(request):
         "statsCard": {
             "title": "Capacidad máxima",
             "subtitle": "Incluido en tu plan",
-            "value": "25",
+            "value": "Escalable",
             "icon": "location_on",
         },
     }
