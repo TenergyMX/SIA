@@ -78,8 +78,8 @@ class ComputerEquipment_maintenance {
                 },
                 columns: self.table.columns,
                 order: [
-                    [0, "desc"],
-                    [1, "asc"],
+                    [4, "desc"],
+                    // [1, "asc"],
                 ],
                 language: {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
@@ -233,6 +233,30 @@ class ComputerEquipment_maintenance {
                             obj_div.find(`[name="${index}"]`).val(value);
                         }
                     });
+
+                    // Comprobante
+                    if (datos["comprobante_url"]) {
+                        obj_div.find(".comprobante-input").hide();
+
+                        obj_div
+                            .find(".comprobante-link")
+                            .attr("href", datos["comprobante_url"])
+                            .show();
+
+                        obj_div.find(".comprobante-empty").hide();
+                    } else {
+                        obj_div.find(".comprobante-link").hide().attr("href", "#");
+
+                        if (datos["is_checked"]) {
+                            // Ya se guardó y no existe comprobante
+                            obj_div.find(".comprobante-input").hide();
+                            obj_div.find(".comprobante-empty").show();
+                        } else {
+                            // Aún puede subir comprobante
+                            obj_div.find(".comprobante-input").show();
+                            obj_div.find(".comprobante-empty").hide();
+                        }
+                    }
 
                     // Realizador por...
                     if (datos["performed_by"] == "Proveedor") {

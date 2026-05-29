@@ -1327,15 +1327,45 @@ def get_computer_equipment_maintenances(request):
         "actions",
         "is_checked", 
         "date", 
-        "document",
-    )
+        "comprobante",
+        # "document",
+    ).order_by("-date")
  
     if computerSystem_id and computerSystem_id != None:
         datos = datos.filter(computerSystem_id = computerSystem_id)
 
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
+
     for item in datos:
+
+        # URL del comprobante
+        item["comprobante_url"] = ""
+
+        if item["comprobante"]:
+            item["comprobante_url"] = generate_presigned_url(
+                AWS_BUCKET_NAME,
+                str(item["comprobante"]),
+                inline=True
+            )
+
+        if item["performed_by"] == "Proveedor":
+            item["performed_name"] = (item["provider__name"] or "Sin proveedor")
+
+        elif item["performed_by"] == "Usuario":
+
+
+            full_name = (
+                f"{item['user__first_name'] or ''} "
+                f"{item['user__last_name'] or ''}"
+            ).strip()
+
+            item["performed_name"] = (
+                full_name
+                if full_name
+                else item["user__username"] or "Sin usuario"
+            )
+
         if item["performed_by"] == "Proveedor":
             item["performed_name"] = (item["provider__name"] or "Sin proveedor")
 
@@ -1379,6 +1409,8 @@ def update_computer_equipment_maintenance(request):
     dt = request.POST
     subModule_id = 17
 
+    files = request.FILES
+
     id = dt.get("id")
 
     if not id:
@@ -1403,6 +1435,21 @@ def update_computer_equipment_maintenance(request):
         if "performed_by" in dt and dt["performed_by"]: obj.performed_by = dt.get("performed_by")
         if "cost" in dt and dt["cost"]: obj.cost = dt.get("cost")
         if "date" in dt and dt["date"]: obj.date = dt.get("date")
+
+        # Subir comprobante
+        comprobante = files.get("comprobante")
+
+        if comprobante:
+            s3Path = f'docs/{company_id}/computer-equipment/maintenance/{obj.id}/'
+
+            file_name, extension = os.path.splitext(comprobante.name)
+            new_name = f"comprobante_mantenimiento_{obj.id}{extension}"
+
+            S3name = s3Path + new_name
+
+            upload_to_s3(comprobante, bucket_name, S3name)
+
+            obj.comprobante = S3name
 
         if dt.get("performed_by") == "Usuario":
 

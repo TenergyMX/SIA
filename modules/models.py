@@ -557,10 +557,11 @@ class ComputerEquipment_Maintenance(models.Model):
     type = models.CharField(max_length=100,blank=True, null=True, verbose_name='Tipo de mantenimiento')
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='Costo')
     actions = models.TextField( blank=True,null=True,verbose_name='Acciones')
-    document = models.FileField(upload_to='doc/maintenance/', blank=True, null=True, verbose_name='Documento')
+    # document = models.FileField(upload_to='doc/maintenance/', blank=True, null=True, verbose_name='Documento')
     is_checked = models.BooleanField(default=False)
     date = models.DateField(blank=True, null=True, verbose_name='Fecha de mantenimiento')
     created_at = models.DateTimeField(auto_now_add=True)
+    comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de matenimiento")
 
     class Meta:
         verbose_name = 'Mantenimiento de Equipo de Computo'

@@ -58,6 +58,36 @@
             {% csrf_token %}
             <input type="hidden" name="id" value="0">
 
+
+            <div class="mb-3">
+                <label class="form-label">Comprobante de mantenimiento</label>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+
+                    <input
+                        type="file"
+                        name="comprobante"
+                        class="form-control form-control-sm comprobante-input"
+                        style="max-width: 250px;"
+                    >
+
+                    <a href="#"
+                    class="btn btn-sm btn-info comprobante-link"
+                    target="_blank"
+                    style="display:none;">
+                        <i class="fa-solid fa-eye me-1"></i>
+                        Ver comprobante
+                    </a>
+
+                    <span class="text-muted comprobante-empty" style="display:none;">
+                        Sin comprobante
+                    </span>
+
+                </div>
+            </div>
+
+            
+
             <!-- Lista -->
             <ol class="list-group list-group-numbered placeholder-glow mb-3">
                 <li class="list-group-item">
