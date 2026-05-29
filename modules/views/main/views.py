@@ -1410,7 +1410,7 @@ def new_home_view(request):
 
         "description": """
             Completa el formulario y un especialista te contactará
-            para mostrarte cómo SIA Capital puede ayudarte
+            para mostrarte cómo Capital System puede ayudarte
             a optimizar los procesos de tu empresa.
         """,
 
@@ -1499,6 +1499,7 @@ def new_home_view(request):
             """,
             "buttonText": "Enviar otro mensaje",
         }
+
     }
 
     # FOOTER
@@ -1600,4 +1601,5 @@ def new_home_view(request):
 
 
     return render(request, "home2/new_index.html", context)
+
 
