@@ -557,10 +557,11 @@ class ComputerEquipment_Maintenance(models.Model):
     type = models.CharField(max_length=100,blank=True, null=True, verbose_name='Tipo de mantenimiento')
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='Costo')
     actions = models.TextField( blank=True,null=True,verbose_name='Acciones')
-    document = models.FileField(upload_to='doc/maintenance/', blank=True, null=True, verbose_name='Documento')
+    # document = models.FileField(upload_to='doc/maintenance/', blank=True, null=True, verbose_name='Documento')
     is_checked = models.BooleanField(default=False)
     date = models.DateField(blank=True, null=True, verbose_name='Fecha de mantenimiento')
     created_at = models.DateTimeField(auto_now_add=True)
+    comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de matenimiento")
 
     class Meta:
         verbose_name = 'Mantenimiento de Equipo de Computo'
@@ -808,7 +809,7 @@ class Payments_Services(models.Model):
     ]
     
     name_service_payment = models.ForeignKey(Services, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Nombre del servicio")
-    proof_payment = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Comprobante de pago")
+    proof_payment = models.FileField(upload_to='docs/', max_length=255, blank=True, null=True, verbose_name="Comprobante de pago")
     total_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
     next_date_payment = models.DateField(blank=True, null=True, verbose_name="Próxima fecha de pago")
     status_payment = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Estado de pago")
