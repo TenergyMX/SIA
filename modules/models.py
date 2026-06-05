@@ -362,7 +362,8 @@ class ComputerSystem(models.Model):
     identifier = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name="Identificador")
     adquisition_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Adquisición")
     document_factura = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
-
+    intervaL_maintenance = models.IntegerField(blank=True, null=True, verbose_name="Frecuencia de mantenimiento")
+    
     class Meta:
         verbose_name = "Equipo de Computo"
         verbose_name_plural = "Equipos de Computo"

@@ -142,9 +142,16 @@
                         <label for="">Responsable Actual</label>
                         <select name="current_responsible_id" class="form-select"></select>
                     </div>
-
-                        
-                    <div class="col-md-8">
+                    <div class="col-md-4">
+                        <label for="maintenance_frequency">Frecuencia de mantenimiento</label>
+                        <select name="maintenance_frequency" id="maintenance_frequency" class="form-select">
+                            <option value="2">Cada 2 meses</option>
+                            <option value="4">Cada 4 meses</option>
+                            <option value="6">Cada 6 meses</option>
+                            <option value="12">Cada 1 año</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
                         <label for="">Factura del equipo</label>
                         <input type="file" name="document_factura" class="form-control" >
                     </div>  

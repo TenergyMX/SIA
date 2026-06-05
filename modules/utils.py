@@ -390,9 +390,27 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         response["data"] = []
     # EQUIPOS DE COMPUTO (Módulo 3)
     if id_module == 3: 
-        response["success"] = True
         response["data"] = []
-
+        # Fecha límite: 7 días atrás desde hoy
+        seven_days_ago = date.today() - timedelta(days=7)
+        # Consulta
+        qs_maintenances = ComputerEquipment_Maintenance.objects.filter(
+            date__gte=seven_days_ago,  # Fecha mayor o igual a hace 7 días
+            is_checked=False
+        )
+        
+        for item in qs_maintenances:
+            response["data"].append({
+                "alert": "warning",
+                "icon": "<i class=\"fa-solid fa-exclamation-triangle fs-18\"></i>",
+                "title": "Mantenimiento Programado",
+                "text": f"El equipo '{item.computerSystem}' tiene un mantenimiento programado.",
+                "link": f"/computers-equipment/info/{item.computerSystem.pk}/"
+            })
+            
+        response["success"] = True
+        response["recordsTotal"] = len(response["data"])
+        return response
     #INFRAESTRUCTURA (Módulo 4)
     if id_module == 4:
         response["success"] = True

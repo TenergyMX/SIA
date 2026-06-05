@@ -342,7 +342,7 @@ def computer_equipment_deliverie_pdf_view(request):
 # TODO --------------- [ REQUEST ] ----------
 
 # TODO ----- [ COMPUTO ] -----
-
+from dateutil.relativedelta import relativedelta
 def add_computer_system(request):
     context = user_data(request)
     response = {"success": False}
@@ -383,10 +383,24 @@ def add_computer_system(request):
             disk_type = dt.get("disk_type"),
             architecture = dt.get("architecture"),
             disk_capacity = dt.get("disk_capacity"),
+            intervaL_maintenance = int(dt.get("maintenance_frequency"))
         )
         obj.save()
 
-
+        #!REGISTRAR PRIMER MANTENIMIENTO PROGRAMADO
+        qs_mantenimiento = ComputerEquipment_Maintenance()
+        qs_mantenimiento.computerSystem_id = obj.pk
+        qs_mantenimiento.performed_by = "usuario"
+        qs_mantenimiento.user = request.user
+        qs_mantenimiento.type = "Preventivo"
+        qs_mantenimiento.cost = "0.00"
+        qs_mantenimiento.actions = "{'Limpieza de Archivos Temporales y Basura': 'PENDIENTE', 'Limpieza Física del Hardware': 'PENDIENTE'}"
+        qs_mantenimiento.is_checked = False
+        qs_date = datetime.now() + relativedelta(months= int(dt.get("maintenance_frequency")))
+        qs_mantenimiento.date = qs_date
+        qs_mantenimiento.save()
+        print("Se registro el primer mantenimiento programado")
+        #!ENDBLOCK
 
         if document_factura:
             s3Path = f'docs/{company_id}/computer-equipment/facturas/{obj.id}/'
@@ -591,6 +605,7 @@ def update_computer_system(request):
         obj.current_responsible_id = current_responsible_id
         obj.equipment_status = dt.get("equipment_status")
         obj.comments = dt.get("comments")
+        obj.intervaL_maintenance = int(dt.get("maintenance_frequency"))
 
         # DOCUMENTO FACTURA
         document_factura = request.FILES.get("document_factura")
@@ -1241,7 +1256,6 @@ def delete_computer_equipment_audit(request):
     return JsonResponse(response)
 
 # TODO ----- [ MANTENIMIENTO ] -----
-
 def add_computer_equipment_maintenance(request):
     context = user_data(request)
     response = {"success": False, "data": []}
