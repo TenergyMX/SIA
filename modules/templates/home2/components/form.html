@@ -1,0 +1,86 @@
+
+<div
+    class="bg-white border border-gray-200 rounded-3xl shadow-xl p-6 lg:p-8">
+
+    <!-- SUCCESS MESSAGE -->
+    <div id="success-message" class="hidden text-center py-10">
+        <div
+            class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-5">
+            <span class="material-icons text-yellow-500 text-4xl">
+                check
+            </span>
+        </div>
+
+        <h3 class="text-2xl font-bold text-blue-950 mb-3">
+            {{ contactModule.successMessage.title }}
+        </h3>
+
+        <p class="text-gray-600 mb-6">
+            {{ contactModule.successMessage.description }}
+        </p>
+
+        <button
+            onclick="resetForm()"
+            class="border border-gray-300 px-5 py-3 rounded-xl hover:bg-gray-100 transition">
+            {{ contactModule.successMessage.buttonText }}
+        </button>
+    </div>
+
+    <!-- FORM -->
+    <form id="contact-form" class="space-y-6">
+
+        <div class="grid sm:grid-cols-2 gap-4">
+
+            {% for field in contactModule.form.fields %}
+            <div>
+                <input
+                    type="hidden"
+                    id="plan-selected"
+                    name="plan">
+
+                <label
+                    class="block text-sm font-medium text-blue-950 mb-2">
+                    {{ field.label }}
+                </label>
+
+                <input
+                    type="{{ field.type }}"
+                    name="{{ field.name }}"
+                    placeholder="{{ field.placeholder }}"
+                    {% if field.required %}required{% endif %}
+                    class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+            </div>
+            {% endfor %}
+        </div>
+
+        <div>
+            <label
+                class="block text-sm font-medium text-blue-950 mb-2">
+                {{ contactModule.form.textarea.label }}
+            </label>
+
+            <textarea
+                rows="{{ contactModule.form.textarea.rows }}"
+                name="{{ contactModule.form.textarea.name }}"
+                placeholder="{{ contactModule.form.textarea.placeholder }}"
+                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"></textarea>
+        </div>
+
+        <button
+            id="submit-btn"
+            type="submit"
+            class="w-full bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-semibold py-4 rounded-xl transition shadow-lg">
+            <span class="flex items-center justify-center gap-2">
+                <span class="material-icons text-base">
+                    {{ contactModule.form.button.icon }}
+                </span>
+                {{ contactModule.form.button.text }}
+            </span>
+        </button>
+
+        <p class="text-xs text-center text-gray-500">
+            {{ contactModule.form.privacyText }}
+        </p>
+
+    </form>
+</div>

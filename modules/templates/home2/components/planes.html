@@ -121,19 +121,25 @@
                     </div>
 
                     <!-- CTA -->
-                    <a href="#contacto"
-                        class="w-full inline-flex items-center justify-center rounded-2xl py-4 px-6 font-semibold transition-all duration-300
+                    <button
+                        type="button"
+                        data-stripe="{{ plan.stripe }}"
+                        data-plan="{{ plan.name }}"
+                        data-price="{{ plan.price }}"
+                        class="btn-cotizar w-full inline-flex items-center justify-center rounded-2xl py-4 px-6 font-semibold transition-all duration-300
                         {% if plan.recommended %}
                             bg-amber-500 hover:bg-amber-400 text-blue-900 shadow-lg shadow-amber-500/20
                         {% else %}
                             bg-blue-900 hover:bg-blue-800 text-white
-                        {% endif %}
-                    ">
+                        {% endif %}">
+                        
                         Cotizar Ahora
+
                         <span class="material-icons ml-2 text-base">
                             arrow_forward
                         </span>
-                    </a>
+
+                    </button>
 
                     <!-- FOOTER -->
                     <p class="text-center text-xs text-gray-400 mt-5">

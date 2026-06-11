@@ -413,6 +413,28 @@ def getPlan(request):
     try:
         context = {}
         fd = request.POST.get
+
+        print("se obtienen estos datos", request.POST)
+
+        if fd("accept_terms") != "on":
+            return JsonResponse({
+                "error": "Debes aceptar los términos y condiciones."
+            })
+
+        if User.objects.filter(email__iexact=fd("email")).exists():
+            return JsonResponse({
+                "error": "Ya existe una cuenta registrada con este correo."
+            })
+
+        if Company.objects.filter(
+            name__iexact=fd("company")
+        ).exists():
+            return JsonResponse({
+                "error": "La empresa ya se encuentra registrada."
+            })
+    
+
+   
         qs_plan = StripeProducts.objects.filter(name__iexact = fd("plan"))
         if qs_plan.count() == 0:
             return JsonResponse({
@@ -461,6 +483,7 @@ def getPlan(request):
     return JsonResponse(context, safe=False)
 
 
+
 @csrf_exempt  # Webhooks no usan CSRF
 def stripWebHook(request):
     payload = request.body
@@ -485,7 +508,10 @@ def stripWebHook(request):
                     #create company
                     company = Company.objects.create(
                         name=data['metadata'].get('company'),
-                        address=data['metadata'].get('address')
+                        address=data['metadata'].get('address'),
+                        # terminos y condiciones 
+                        accept_terms=True
+
                     )
 
                     #generate password
@@ -554,6 +580,9 @@ def stripWebHook(request):
                 print(f"Error en webhook: {e}")
                 return HttpResponse(status=500)
     return HttpResponse(status=200)
+
+
+
 
 def verifiedPrompts(company, email):
     context = {}
@@ -1150,6 +1179,7 @@ def new_home_view(request):
             "label": "Plan",
             "name": "Básico",
             "price": "250",
+            "stripe": "basic",
             "icon": "workspace_premium",
             "recommended": False,
 
@@ -1201,6 +1231,7 @@ def new_home_view(request):
             "label": "Más popular",
             "name": "Esencial",
             "price": "525",
+            "stripe": "esential",
             "icon": "star",
             "recommended": True,
 
@@ -1251,6 +1282,7 @@ def new_home_view(request):
             "label": "Empresarial",
             "name": "Avanzado",
             "price": "850",
+            "stripe": "advance",
             "icon": "rocket_launch",
             "recommended": False,
 
@@ -1301,6 +1333,7 @@ def new_home_view(request):
             "label": "Corporativo",
             "name": "Pro",
             "price": "1500",
+            "stripe": "pro",
             "icon": "verified",
             "recommended": False,
 
@@ -1351,6 +1384,7 @@ def new_home_view(request):
             "label": "Premium",
             "name": "Élite",
             "price": "2500",
+            "stripe": "elite",
             "icon": "diamond",
             "recommended": False,
 
@@ -1414,7 +1448,7 @@ def new_home_view(request):
             a optimizar los procesos de tu empresa.
         """,
 
-        # BENEFICIOS / TRUST SIGNALS
+        # BENEFICIOS /
         "trustSignals": [
             {
                 "icon": "shield",
