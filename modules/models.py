@@ -885,9 +885,6 @@ class Equipment_Tools_Responsiva(models.Model):
     email_responsiva_late = models.BooleanField(default=False)
     email_responsiva_date = models.BooleanField(default=False)
 
-
-
-
 class PlanHeader(models.Model):
     stripeClient = models.CharField(max_length=100, null="True", verbose_name="Stripe_cliente")
     StripeProductss = models.CharField(max_length=100, null="True", verbose_name="Stripe_producto")
@@ -896,7 +893,7 @@ class PlanHeader(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal")
     created_at = models.DateField(blank=True, null=True, verbose_name="Fecha de inicio", auto_now=True)
     q_modules =  models.PositiveIntegerField(blank=True, null=True, default=1, verbose_name="Cantidad de modulos")
-    title = models.ForeignKey(Module, on_delete=models.CASCADE, blank=True, null=True, verbose_name="titulo_modulo")
+    title = models.CharField(max_length=100, null="True")
 
 #tabla de planes
 class Plans(models.Model):
