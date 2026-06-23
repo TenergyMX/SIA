@@ -888,7 +888,15 @@ class Equipment_Tools_Responsiva(models.Model):
 
 
 
-
+class PlanHeader(models.Model):
+    stripeClient = models.CharField(max_length=100, null="True", verbose_name="Stripe_cliente")
+    StripeProductss = models.CharField(max_length=100, null="True", verbose_name="Stripe_producto")
+    stripeSubcription = models.CharField(max_length=100, null="True", verbose_name="Stripe_subscripcion")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal")
+    created_at = models.DateField(blank=True, null=True, verbose_name="Fecha de inicio", auto_now=True)
+    q_modules =  models.PositiveIntegerField(blank=True, null=True, default=1, verbose_name="Cantidad de modulos")
+    title = models.ForeignKey(Module, on_delete=models.CASCADE, blank=True, null=True, verbose_name="titulo_modulo")
 
 #tabla de planes
 class Plans(models.Model):
@@ -912,6 +920,7 @@ class Plans(models.Model):
     ], verbose_name="Unidad de Tiempo")
     end_date_plan = models.DateField(blank=True, null=True, verbose_name="Fecha de fin")
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo total')
+    planHeader = models.ForeignKey(PlanHeader, on_delete=models.CASCADE, blank=True, null=True, verbose_name="planheader")
     
 class StripeProducts(models.Model):
     name = models.CharField(max_length=254, blank=True, null=True)

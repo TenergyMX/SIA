@@ -8,3 +8,7 @@ from modules.utils import *
 # from helpers.enviar_correo import *
 
 # Create your views here.
+
+def terminos(request):
+    context = {}
+    return render( request, "users/terms.html", context )

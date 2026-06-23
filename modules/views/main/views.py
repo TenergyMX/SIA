@@ -482,6 +482,7 @@ def getPlan(request):
                 # Plan
                 "plan_name": plan.name,
                 "plan_description": plan.description,
+                "plan_price" : plan.stripedID
             },
             success_url=f"{YOUR_DOMAIN}{success_url}",
             cancel_url=f"{YOUR_DOMAIN}/stripe-cancel/",
@@ -771,6 +772,17 @@ def stripWebHook(request):
                     for m in Module.objects.all():
                         print(m.id, "-", m.name)
 
+                    plan_header = PlanHeader()
+                    plan_header.title = f"Licencia de uso: {company} de {user.first_name} {user.last_name}"
+                    plan_header.stripeClient = session["customer"]
+                    plan_header.StripeProductss = session["metadata"].get("plan_price")
+                    plan_header.stripeSubcription = session["subscription"]
+                    plan_header.company =company
+                    plan_header.user = user 
+                    plan_header.q_modules = 0
+                    plan_header.save()
+                    i = 0
+                    
                     for module in modules:
 
                         submodules = SubModule.objects.filter(
@@ -797,8 +809,14 @@ def stripWebHook(request):
                             time_quantity_plan=1,
                             time_unit_plan='month',
                             end_date_plan=datetime.now().date() + timedelta(days=30),
-                            total=(session.get("amount_total", 0) / 100)
+                            total=(session.get("amount_total", 0) / 100),
+                            planHeader = plan_header
                         )
+                        
+                        i = i + 1
+                        
+                    plan_header.q_modules = i
+                    plan_header.save()
 
                     Send_Informative_Stripe(
                         email,

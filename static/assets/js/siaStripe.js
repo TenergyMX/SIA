@@ -153,6 +153,20 @@ class siaStripe {
 
             console.log("📡 ANTES DEL AJAX");
 
+            /**Validar contraseñas*/
+            const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,}$/;
+            const validPassword = regex.test(password.value);
+
+            console.log(validPassword);
+            if (!validPassword) {
+                Swal.fire(
+                    "La contraseña no cumple los requisitos",
+                    "Debe tener más de 8 caracteres, incluir al menos una letra mayúscula, un número y un carácter especial.",
+                    "error"
+                );
+                return;
+            }
+
             $.ajax({
                 type: "POST",
                 url: "/stripe/get-plan/",

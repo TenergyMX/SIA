@@ -107,8 +107,8 @@ def users_profile_view(request):
 
 #planes 
 def plans_views(request):
-    if not request.user.is_superuser:
-        return render(request, "error/access_denied.html")
+    #if not request.user.is_superuser:
+    #    return render(request, "error/access_denied.html")
     
     context = user_data(request)
     module_id = 3
@@ -667,17 +667,30 @@ def delete_area(request):
 def get_table_plans(request):
     response = {"status": "error", "message": "Sin procesar"}
     context = user_data(request)
+    print("esto contiene el context de la tabla planes:", context)
     subModule_id = 0
     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
     area = context["area"]["name"]
-    tipo_user = context["role"]["name"]
     editar = access["update"]
     eliminar = access["delete"]
     agregar = access["create"]
     
     try:
         # Obtener los datos de los planes 
-        datos = list(Plans.objects.select_related(
+        datos = Plans.objects
+        
+        if not request.user.is_superuser:#Consulta exacta
+            #Buscar el usuario
+            tipo_user = context["role"]["name"]
+            print("tipo de usuario:", tipo_user)
+            # empresa de usuario
+            empresa= context["company"]["id"]
+            print("esmpresa de usuario:", empresa)
+            #Buscar el plan con la empresa del usuario
+            datos = datos.filter(company__pk = empresa)
+            #filtrar busqueda por id
+            
+        datos = datos.select_related(
             'company', 'module'
         ).values(
             "id", 
@@ -692,8 +705,11 @@ def get_table_plans(request):
             "status_payment_plan",
             "time_quantity_plan",  
             "time_unit_plan" 
-        ))
-
+        )
+        
+        print("this is the result from the plan register ", datos)
+        
+        datos = list(datos)
         # Mapa de traducción para unidades de tiempo
         time_unit_translation = {
             'day': ('día', 'días'),

@@ -372,7 +372,7 @@ def check_user_access_to_module(request, module_id, submodule_id):
             return False
 
         has_access_to_module = active_plans.filter(module__id=module_id).exists()
-
+        
         if not has_access_to_module:
             print(f"La empresa '{name_company}' no tiene acceso al módulo con ID {module_id}")
             return False
