@@ -18,6 +18,7 @@ services:
       - "8000:8000"
     volumes:
       - ./docs/:/app/docs/
+      - ./static/:/app/static/
       - ./staticfiles/:/app/staticfiles/
       - ./users/migrations/:/app/users/migrations
       - ./modules/:/app/modules

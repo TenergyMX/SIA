@@ -73,6 +73,13 @@ def computer_equipment_view(request):
     context["sidebar"] = sidebar["data"]
     print("estos son los modulos permitidos", context["sidebar"])
 
+    context["dataCatalog"] = get_computers_equipment(request, True)["data"]
+
+    for item in context["dataCatalog"]:
+        print(item)
+
+    #print("esta es la informacion obtenida", context["dataCatalog"])
+
     template = "computer-equipment/computer_equipment.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
 
@@ -462,7 +469,7 @@ def get_computer_equipment(request):
     response["data"] = datos
     return JsonResponse(response)
 
-def get_computers_equipment(request):
+def get_computers_equipment(request, inter = False):
     response = {"success": False}
     context = user_data(request)
     dt = request.GET
@@ -540,6 +547,9 @@ def get_computers_equipment(request):
 
     response["recordsTotal"] = datos.count()
     response["data"] = list(datos)
+
+    if inter:
+        return response
     return JsonResponse(response)
 
 def update_computer_system(request):

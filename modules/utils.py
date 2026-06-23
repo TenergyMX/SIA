@@ -148,7 +148,21 @@ def get_user_access(context = {}):
 def update_session_data(request):
     # Obtener el usuario actual
     user = request.user
-    
+
+    print("USER:", request.user)
+    print("AUTH:", request.user.is_authenticated)
+
+    # Usuario no autenticado
+    if not user.is_authenticated:
+        request.session.update({
+            'access': {'id': None},
+            'role': {'id': 4, 'name': None, 'level': None},
+            'company': {'id': None, 'name': None},
+            'user': {},
+            'area': {'id': None, 'name': None}
+        })
+        return
+
     # Crear un diccionario con los datos del usuario
     user_data = {
         'id': user.id,
@@ -1366,3 +1380,15 @@ def Send_Informative_Stripe(recipient, username, password, request):
         # print("Correo enviado exitosamente.")
     except Exception as e:
         print(f"Error al enviar el correo: {e}")
+
+
+
+def send_contact_email(subject, recipient, html_content):
+    email = EmailMultiAlternatives(
+    subject=subject,
+    body="",
+    from_email=settings.EMAIL_HOST_USER,
+    to=recipient if isinstance(recipient, list) else [recipient]
+    )
+    email.attach_alternative(html_content, "text/html")
+    email.send()

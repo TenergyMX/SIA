@@ -31,8 +31,7 @@ from django.utils.timezone import now
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 import json
-
-
+from modules.utils import send_contact_email
 # TODO --------------- [ VIEWS ] ---------- 
 def home_view(request):
     context = {}
@@ -147,6 +146,7 @@ def get_notifications(request):
     company_id = context["company"]["id"]
     area = context["area"]["name"]
     rol = context["role"]["id"]
+    
     user_id = context["user"]["id"]
 
     access = get_user_access(context)
@@ -194,7 +194,7 @@ def prueba_datos(request):
     access = get_user_access(context)
     access = access["data"]
     
-    empresas = Company.objects.all().values('id', 'name')  # esto retorna un queryset de diccionarios
+    empresas = Company.objects.all().values('id', 'name')  
     empresas_list = list(empresas)
 
     print(empresas_list)
@@ -410,11 +410,12 @@ def enviar_cotizacion(request):
 
 @csrf_exempt
 def getPlan(request):
+
+    YOUR_DOMAIN = request.build_absolute_uri('/')[:-1]
+
     try:
         context = {}
         fd = request.POST.get
-
-        print("se obtienen estos datos", request.POST)
 
         if fd("accept_terms") != "on":
             return JsonResponse({
@@ -442,34 +443,47 @@ def getPlan(request):
             }, safe=False)
         
         plan = qs_plan.first()
-        context["plan"] = fd("plan")
         context["id"] = plan.stripedID
         
         #YOUR_DOMAIN = "http://localhost" #para desarrollo
-        YOUR_DOMAIN = request.build_absolute_uri('/')[:-1]
-        if plan.description == "subscription":
-            method = ['card']
-            item = [{'price':plan.stripedID,'quantity':1}]
-        else:
-            pass
+        # YOUR_DOMAIN = request.build_absolute_uri('/')[:-1]
+        method = ['card']
+        item = [{'price':plan.stripedID,'quantity':1}]
         
         prompts = verifiedPrompts(fd("company").lower(), fd("email"))
         if "error" in prompts:
             return JsonResponse(prompts, safe=False)
         
         serializer = URLSafeSerializer("ID_ENC_SECRET_KEY")
+
+        success_url = "/stripe-success/"
+        
+        #if metadadato["accesos"] == "login_directo":
+        #    success_url = "/login/"
+
         session = stripe.checkout.Session.create(
             payment_method_types = method,
-            mode = plan.description,
+            mode = "subscription",
             line_items=item,
             metadata={
-                'product_data':plan.description,
-                'company':fd("company"),
-                'email_address':fd("email"),
-                'address': fd("address"),
-                'name' : plan.name
+
+                # Control
+                "method": "Activar Licencia",
+
+                # Empresa
+                "company": fd("company"),
+
+                # Usuario
+                "name": fd("name"),
+                "email": fd("email"),
+                "phone": fd("phone"),
+                "password": fd("password"),
+
+                # Plan
+                "plan_name": plan.name,
+                "plan_description": plan.description,
             },
-            success_url=f"{YOUR_DOMAIN}/stripe-success/",
+            success_url=f"{YOUR_DOMAIN}{success_url}",
             cancel_url=f"{YOUR_DOMAIN}/stripe-cancel/",
             subscription_data={},
         )
@@ -484,104 +498,325 @@ def getPlan(request):
 
 
 
-@csrf_exempt  # Webhooks no usan CSRF
-def stripWebHook(request):
-    payload = request.body
-    header = request.META.get('HTTP_STRIPE_SIGNATURE')
-    webSecret = settings.STRIPE_WEBHOOK_SECRET
+# @csrf_exempt  # Webhooks no usan CSRF
+# def stripWebHook(request):
+#     payload = request.body
+#     header = request.META.get('HTTP_STRIPE_SIGNATURE')
+#     webSecret = settings.STRIPE_WEBHOOK_SECRET
 
-    # Verificar la firma del webhook
+#     # Verificar la firma del webhook
+#     try:
+#         evt = stripe.Webhook.construct_event(payload, header, webSecret)
+#     except (ValueError, stripe.error.SignatureVerificationError):
+#         return HttpResponse(status=400)
+   
+#     print("======================================================")
+#     print(evt['type'])
+#     print("======================================================")
+
+
+#     if evt['type'] == "checkout.session.completed":
+#         data = evt['data']['object']
+#         print(data)
+#         username = data['customer_details']['name']
+#         email = data['customer_details']['email']
+
+#         if data['metadata'].get('method') == 'Activar Licencia':
+            
+#             try:
+#                 with transaction.atomic():
+#                     #create company
+#                     company = Company.objects.create(
+#                         name=data['metadata'].get('company'),
+#                         # address=data['metadata'].get('address'),
+#                         # terminos y condiciones 
+#                         accept_terms=True
+#                     )
+
+#                     #generate password
+#                     password = passwordSecure()  # Asegúrate de tener esta función implementada
+
+#                     #create user
+#                     user = User.objects.create_user(
+#                         username=f"admin_{company.name}",
+#                         email=email,
+#                         password=password
+#                     )
+
+#                     #create area
+#                     areas = ["Sistemas", "Almacen", "Compras"]
+#                     area_objs = []
+#                     for area in areas:
+#                         obj = Area.objects.create(
+#                             company=company,
+#                             name=area,
+#                             code=area[:2].upper(),
+#                             description=area
+#                         )
+#                         area_objs.append(obj)
+
+#                     #get system area
+#                     area_sistemas = next((a for a in area_objs if a.name.lower() == "sistemas"), None)
+
+#                     #get administrator role
+#                     rol_admin = Role.objects.filter(name__iexact="Administrador").first()
+
+#                     #create access
+#                     if rol_admin and area_sistemas:
+#                         user_access = User_Access.objects.create(
+#                             user=user,
+#                             role=rol_admin,
+#                             company=company,
+#                             area=area_sistemas
+#                         )
+                        
+#                     qs_modules = Module.objects.filter(name__in = ["Usuarios", "Vehículo"])
+#                     for module in qs_modules:
+#                         subModules = SubModule.objects.filter(module = module)
+#                         for subModule in subModules:
+#                             SubModule_Permission(
+#                                 subModule = subModule,
+#                                 user = user_access,
+#                                 create = True,
+#                                 read = True,
+#                                 update = True,
+#                                 delete = True
+#                             ).save()
+                            
+#                         Plans(
+#                             company = company,
+#                             module = module,
+#                             start_date_plan = datetime.now().date(),
+#                             type_plan = data['metadata'].get('name'),
+#                             status_payment_plan = True,
+#                             time_quantity_plan = 1,
+#                             time_unit_plan = 'month',
+#                             end_date_plan = datetime.now().date() + timedelta(days=30),
+#                             total = data['amount_total']
+#                         ).save()
+#                     Send_Informative_Stripe(email, f"admin_{company.name}", password, request)
+#             except Exception as e:
+#                 print(f"Error en webhook: {e}")
+#                 return HttpResponse(status=500)
+    
+
+#     elif evt['type'] == 'checkout.subscription.created':
+#         data = evt['data']['object']
+#         print("checkout.subscription.created",data)
+#         pass
+
+#     elif evt['type'] == 'invoice.paid':
+#         data = evt['data']['object']
+#         print("invoice.paid",data)
+#         pass
+
+#     elif evt['type'] == 'customer.created':
+#         data = evt['data']['object']
+#         print("customer.created",data)
+#         pass
+
+
+#     elif evt['type'] == 'customer.subscription.created':
+#         data = evt['data']['object']
+#         print("customer.subscription.created",data)
+#         pass
+
+#     elif evt['type'] == 'payment_method.attached':
+#         data = evt['data']['object']
+#         print("payment_method.attached",data)
+#         pass
+
+#     elif evt['type'] == 'payment_intent.succeeded':
+#         data = evt['data']['object']
+#         print("payment_intent.succeeded",data)
+#         pass
+
+#     elif evt['type'] == 'customer.subscription.updated':
+#         data = evt['data']['object']
+#         print("customer.subscription.updated",data)
+#         pass
+
+#     return HttpResponse(status=200)
+
+
+@csrf_exempt
+def stripWebHook(request):
+
+    payload = request.body
+    signature = request.META.get("HTTP_STRIPE_SIGNATURE")
+
     try:
-        evt = stripe.Webhook.construct_event(payload, header, webSecret)
-    except (ValueError, stripe.error.SignatureVerificationError):
+        event = stripe.Webhook.construct_event(
+            payload,
+            signature,
+            settings.STRIPE_WEBHOOK_SECRET
+        )
+
+    except Exception as e:
+        print(e)
         return HttpResponse(status=400)
 
-    if evt['type'] == "checkout.session.completed":
-        data = evt['data']['object']
-        print(data)
-        username = data['customer_details']['name']
-        email = data['customer_details']['email']
+    if event["type"] == "checkout.session.completed":
 
-        if data['metadata'].get('product_data') == 'subscription':
+        session = event["data"]["object"]
+
+        if session["metadata"].get("method") == "Activar Licencia":
+
             try:
+
                 with transaction.atomic():
-                    #create company
+
+                    metadata = session["metadata"]
+
+                    print("METADATA RECIBIDA")
+                    print(metadata) 
+
+                    company_name = metadata.get("company")
+                    email = metadata.get("email")
+                    password = metadata.get("password")
+                    plan_name = metadata.get("plan_name")
+
+                    # ----------------------
+                    # EMPRESA
+                    # ----------------------
+
                     company = Company.objects.create(
-                        name=data['metadata'].get('company'),
-                        address=data['metadata'].get('address'),
-                        # terminos y condiciones 
+                        name=company_name,
                         accept_terms=True
-
                     )
 
-                    #generate password
-                    password = passwordSecure()  # Asegúrate de tener esta función implementada
+                    # ----------------------
+                    # USUARIO ADMIN
+                    # ----------------------
 
-                    #create user
+                    username = f"admin_{company.id}"
+                    full_name = metadata.get("name", "")
+
                     user = User.objects.create_user(
-                        username=f"admin_{company.name}",
+                        username=username,
                         email=email,
-                        password=password
+                        password=password,
+                        first_name=full_name
+                    )
+                    
+                    # ----------------------
+                    # AREAS
+                    # ----------------------
+
+                    area_sistemas = Area.objects.create(
+                        company=company,
+                        name="Sistemas",
+                        code="SI",
+                        description="Sistemas"
+                    )
+                    
+                    Area.objects.create(
+                        company=company,
+                        name="Almacen",
+                        code="AL",
+                        description="Almacen"
                     )
 
-                    #create area
-                    areas = ["Sistemas", "Almacen", "Compras"]
-                    area_objs = []
-                    for area in areas:
-                        obj = Area.objects.create(
-                            company=company,
-                            name=area,
-                            code=area[:2].upper(),
-                            description=area
+                    Area.objects.create(
+                        company=company,
+                        name="Compras",
+                        code="CO",
+                        description="Compras"
+                    )
+
+                    # ----------------------
+                    # ROL ADMIN
+                    # ----------------------
+
+                    rol_admin = Role.objects.filter(
+                        name__iexact="Administrador"
+                    ).first()
+
+                    if not rol_admin:
+                        raise Exception(
+                            "No existe el rol Administrador"
                         )
-                        area_objs.append(obj)
 
-                    #get system area
-                    area_sistemas = next((a for a in area_objs if a.name.lower() == "sistemas"), None)
+                    # ----------------------
+                    # ACCESO
+                    # ----------------------
 
-                    #get administrator role
-                    rol_admin = Role.objects.filter(name__iexact="Administrador").first()
+                    user_access = User_Access.objects.create(
+                        user=user,
+                        role=rol_admin,
+                        company=company,
+                        area=area_sistemas
+                    )
 
-                    #create access
-                    if rol_admin and area_sistemas:
-                        user_access = User_Access.objects.create(
-                            user=user,
-                            role=rol_admin,
-                            company=company,
-                            area=area_sistemas
+                    # ----------------------
+                    # MODULOS
+                    # ----------------------
+
+                    modules = Module.objects.filter(
+                        name__in=[
+                            "Usuarios",
+                            "Vehículo",
+                            "Equipos de computo",
+                            "Infraestructura",
+                            "Servicios",
+                            "Equipos y herramientas",
+                            "Notificaciones"
+                        ]
+                    )
+
+                    for m in modules:
+                        print("MODULO ENCONTRADO:", m.id, "-", m.name)
+                    
+
+                    for m in Module.objects.all():
+                        print(m.id, "-", m.name)
+
+                    for module in modules:
+
+                        submodules = SubModule.objects.filter(
+                            module=module
                         )
-                        
-                    qs_modules = Module.objects.filter(name__in = ["Usuarios", "Vehículo"])
-                    for module in qs_modules:
-                        subModules = SubModule.objects.filter(module = module)
-                        for subModule in subModules:
-                            SubModule_Permission(
-                                subModule = subModule,
-                                user = user_access,
-                                create = True,
-                                read = True,
-                                update = True,
-                                delete = True
-                            ).save()
-                            
-                        Plans(
-                            company = company,
-                            module = module,
-                            start_date_plan = datetime.now().date(),
-                            type_plan = data['metadata'].get('name'),
-                            status_payment_plan = True,
-                            time_quantity_plan = 1,
-                            time_unit_plan = 'month',
-                            end_date_plan = datetime.now().date() + timedelta(days=30),
-                            total = data['amount_total']
-                        ).save()
-                    Send_Informative_Stripe(email, f"admin_{company.name}", password, request)
+
+                        for submodule in submodules:
+
+                            SubModule_Permission.objects.create(
+                                subModule=submodule,
+                                user=user_access,
+                                create=True,
+                                read=True,
+                                update=True,
+                                delete=True
+                            )
+
+                        Plans.objects.create(
+                            company=company,
+                            module=module,
+                            start_date_plan=datetime.now().date(),
+                            type_plan=plan_name,
+                            status_payment_plan=True,
+                            time_quantity_plan=1,
+                            time_unit_plan='month',
+                            end_date_plan=datetime.now().date() + timedelta(days=30),
+                            total=(session.get("amount_total", 0) / 100)
+                        )
+
+                    Send_Informative_Stripe(
+                        email,
+                        username,
+                        password,
+                        request
+                    )
+
             except Exception as e:
-                print(f"Error en webhook: {e}")
+                import traceback
+
+                print("ERROR WEBHOOK")
+                print(str(e))
+                traceback.print_exc()
+
                 return HttpResponse(status=500)
+
     return HttpResponse(status=200)
-
-
 
 
 def verifiedPrompts(company, email):
@@ -610,6 +845,11 @@ def verifiedPrompts(company, email):
 
 class SuccessView(TemplateView):
     template_name = "home/stripe-success.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["showLabels"] = True
+        return context
 
 class CancelView(TemplateView):
     template_name = "home/stripe-cancel.html"
@@ -1633,7 +1873,48 @@ def new_home_view(request):
         }
     }
 
+    print("hello new index.html")
 
+    if request.method == "POST":
+        print("Formulario recibido")
+
+        # fd = request.POST.get
+
+        name = request.POST.get("name")
+        company = request.POST.get("company")
+        email = request.POST.get("email")
+        phone = request.POST.get("phone")
+        message = request.POST.get("message")
+
+        print(name, company, email, phone)
+
+        html_content = f"""
+        <h2>Nueva solicitud desde el sitio web</h2>
+
+        <p><strong>Nombre:</strong> {name}</p>
+        <p><strong>Empresa:</strong> {company}</p>
+        <p><strong>Correo:</strong> {email}</p>
+        <p><strong>Teléfono:</strong> {phone}</p>
+
+        <p><strong>Mensaje:</strong></p>
+        <p>{message}</p>
+        """
+
+        send_contact_email(
+            subject="Nuevo contacto desde la web",
+            recipient=["sia@tenergy.com.mx"],
+            html_content=html_content
+        )
+        print("Correo enviado")
+
+
+        messages.success(
+            request,
+            "Tu mensaje ha sido enviado correctamente."
+        )
+
+        return redirect("/")
+        
     return render(request, "home2/new_index.html", context)
 
 

@@ -72,17 +72,15 @@ class siaStripe {
 
         document.querySelectorAll(".btn-cotizar").forEach((button) => {
             button.addEventListener("click", function () {
-                const planInput = document.getElementById("plan-selected");
+                const planInput = document.getElementById("checkout-plan");
 
-                console.log("INPUT ENCONTRADO:", planInput);
+                console.log("INPUT PLAN:", planInput);
 
                 const plan = this.dataset.stripe;
 
-                console.log("PLAN:", plan);
-
                 planInput.value = plan;
 
-                console.log("VALOR GUARDADO:", planInput.value);
+                console.log("PLAN GUARDADO:", planInput.value);
 
                 modal.classList.remove("hidden");
             });
@@ -96,23 +94,64 @@ class siaStripe {
     submitForm() {
         console.log("submitForm ejecutado");
 
-        document.addEventListener("submit", function (e) {
-            if (e.target.id !== "contact-form") {
-                return;
+        const form = document.getElementById("checkout-form");
+
+        if (!form) {
+            console.log("❌ No existe checkout-form");
+            return;
+        }
+
+        // validacion de contraseña
+        const password = form.querySelector('[name="password"]');
+        const confirm = form.querySelector('[name="password_contact"]');
+        const error = document.getElementById("password-error");
+
+        console.log("password:", password.value);
+        console.log("confirm:", confirm.value);
+
+        confirm.addEventListener("input", function () {
+            if (confirm.value && password.value !== confirm.value) {
+                error.classList.remove("hidden");
+            } else {
+                error.classList.add("hidden");
             }
+        });
+
+        console.log("✅ FORM ENCONTRADO:", form);
+
+        form.addEventListener("submit", function (e) {
+            console.log("🚀 SUBMIT DETECTADO");
 
             e.preventDefault();
 
-            console.log("SUBMIT EJECUTADO");
+            if (password.value !== confirm.value) {
+                error.classList.remove("hidden");
+                return;
+            }
 
-            const form = e.target;
+            error.classList.add("hidden");
+
+            console.log("✅ preventDefault ejecutado");
+
             const fd = new FormData(form);
 
+            console.log("📋 PLAN:", fd.get("plan"));
+
+            console.log("📋 DATOS DEL FORM:");
             for (let pair of fd.entries()) {
                 console.log(pair[0], pair[1]);
             }
 
-            console.log("PLAN EN FORM:", form.querySelector('[name="plan"]').value);
+            const csrf = document.querySelector("#checkout-form [name=csrfmiddlewaretoken]");
+
+            console.log("🔐 CSRF:", csrf);
+
+            if (!csrf) {
+                console.log("❌ No se encontró el CSRF");
+                return;
+            }
+
+            console.log("📡 ANTES DEL AJAX");
 
             $.ajax({
                 type: "POST",
@@ -122,34 +161,48 @@ class siaStripe {
                 contentType: false,
 
                 headers: {
-                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                    "X-CSRFToken": csrf.value,
                 },
 
                 beforeSend: function () {
-                    console.log("ENVIANDO AJAX...");
+                    console.log("📤 ENVIANDO AJAX...");
                 },
 
                 success: function (r) {
+                    console.log("✅ AJAX SUCCESS");
                     console.log("RESPUESTA:", r);
 
                     if (r.error) {
+                        console.log("❌ ERROR DEVUELTO:", r.error);
                         alert(r.error);
                         return;
                     }
 
+                    console.log("✅ CREANDO INSTANCIA STRIPE");
+
                     const stripe = Stripe(r.STP_ID);
+
+                    console.log("✅ REDIRECCIONANDO A CHECKOUT");
 
                     stripe.redirectToCheckout({
                         sessionId: r.id,
                     });
                 },
 
-                error: function (xhr) {
-                    console.log("ERROR AJAX:", xhr);
-                    console.log("RESPUESTA:", xhr.responseText);
+                error: function (xhr, status, error) {
+                    console.log("❌ AJAX ERROR");
+                    console.log("STATUS:", status);
+                    console.log("ERROR:", error);
+                    console.log("RESPONSE:", xhr.responseText);
+                },
+
+                complete: function () {
+                    console.log("🏁 AJAX FINALIZADO");
                 },
             });
         });
+
+        console.log("✅ EVENTO SUBMIT REGISTRADO");
     }
 }
 

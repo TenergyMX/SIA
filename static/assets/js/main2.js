@@ -69,40 +69,6 @@ function initSmoothModuleScroll() {
     });
 }
 
-// INICIALIZAR FORMULARIO
-function initForm() {
-    const form = document.getElementById("contact-form");
-
-    // si el formulario no existe
-    if (!form) return;
-
-    const successMessage = document.getElementById("success-message");
-
-    const submitBtn = document.getElementById("submit-btn");
-
-    const btnText = document.getElementById("btn-text");
-
-    form.addEventListener("submit", function (e) {
-        e.preventDefault();
-
-        submitBtn.disabled = true;
-
-        btnText.innerHTML = `
-            <span class="material-icons animate-spin">
-                autorenew
-            </span>
-
-            Enviando...
-        `;
-
-        setTimeout(() => {
-            form.classList.add("hidden");
-
-            successMessage.classList.remove("hidden");
-        }, 1500);
-    });
-}
-
 // RESET FORM
 
 function resetForm() {
@@ -136,8 +102,6 @@ async function initApp() {
     console.log("testing 2");
     // iniciar funciones
     initNavbar();
-
-    initForm();
 
     // iniciar animaciones
     initScrollAnimations();

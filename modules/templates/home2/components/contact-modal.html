@@ -30,13 +30,13 @@
         </div>
 
         <!-- FORM -->
-        <form id="contact-form" class="space-y-6">
+        <form id="checkout-form" class="space-y-6">
 
             {% csrf_token %}
 
             <input
                 type="hidden"
-                id="plan-selected"
+                id="checkout-plan"
                 name="plan">
 
             <!-- DATOS -->
@@ -98,6 +98,38 @@
                         class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400">
                 </div>
 
+                <!-- CONTRASEÑA -->
+                <div>
+                    <label class="block text-sm font-medium text-blue-950 mb-2">
+                        Contraseña *
+                    </label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        required
+                        placeholder="Energia1079"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                </div>
+
+                <!-- CONFIRMAR CONTRASEÑA -->
+                <div>
+                    <label class="block text-sm font-medium text-blue-950 mb-2">
+                        Contraseña *
+                    </label>
+
+                    <input
+                        type="password"
+                        name="password_contact"
+                        required
+                        placeholder="Energia1079"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                    
+                    <p id="password-error" class="hidden text-red-500 text-sm mt-1">
+                        Las contraseñas no coinciden.
+                    </p>
+                </div>
+
             </div>
 
             <!-- TERMINOS -->
@@ -134,11 +166,13 @@
 
             <!-- BOTON -->
             <button
-                id="submit-btn"
+                id="checkout-submit-btn"
                 type="submit"
                 class="w-full bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-semibold py-4 rounded-xl transition shadow-lg">
 
-                <span class="flex items-center justify-center gap-2">
+                <span 
+                    id="checkout-btn-text"
+                    class="flex items-center justify-center gap-2">
 
                     <span class="material-icons text-base">
                         payments

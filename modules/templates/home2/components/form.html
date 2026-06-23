@@ -27,16 +27,14 @@
     </div>
 
     <!-- FORM -->
-    <form id="contact-form" class="space-y-6">
+    <form id="contact-form" class="space-y-6" method="POST">
+
+        {% csrf_token %}
 
         <div class="grid sm:grid-cols-2 gap-4">
 
             {% for field in contactModule.form.fields %}
             <div>
-                <input
-                    type="hidden"
-                    id="plan-selected"
-                    name="plan">
 
                 <label
                     class="block text-sm font-medium text-blue-950 mb-2">
@@ -67,7 +65,7 @@
         </div>
 
         <button
-            id="submit-btn"
+            id="contact-submit-btn"
             type="submit"
             class="w-full bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-semibold py-4 rounded-xl transition shadow-lg">
             <span class="flex items-center justify-center gap-2">
