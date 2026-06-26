@@ -677,39 +677,70 @@ def get_table_plans(request):
     
     try:
         # Obtener los datos de los planes 
-        datos = Plans.objects
-        
+        # datos = Plans.objects.all()
+        # filtro de empresa
+        empresa = None
         if not request.user.is_superuser:#Consulta exacta
             #Buscar el usuario
-            tipo_user = context["role"]["name"]
-            print("tipo de usuario:", tipo_user)
+            #"tipo_user = context["role"]["name"]
             # empresa de usuario
             empresa= context["company"]["id"]
-            print("esmpresa de usuario:", empresa)
+            print("empresa de usuario:", empresa)
             #Buscar el plan con la empresa del usuario
-            datos = datos.filter(company__pk = empresa)
+            #datos = datos.filter(company__pk = empresa)
             #filtrar busqueda por id
             
-        datos = datos.select_related(
-            'company', 'module'
-        ).values(
-            "id", 
-            "company__id", 
-            "company__name",  
-            "module__id", 
-            "module__name",  
-            "type_plan", 
+        datos = Plans.objects.select_related(
+            'company', 'module', 'planHeader'
+        )
+        #aplicar filtro de empresa
+        if empresa:
+            datos = datos.filter(company_id=empresa)
+
+        datos = datos.values(
+            "id",
+            "planHeader_id",
+            "company__id",
+            "company__name",
+            "module__id",
+            "module__name",
+            "type_plan",
             "start_date_plan",
             "end_date_plan",
-            "total", 
+            "total",
             "status_payment_plan",
-            "time_quantity_plan",  
-            "time_unit_plan" 
+            "time_quantity_plan",
+            "time_unit_plan"
         )
         
-        print("this is the result from the plan register ", datos)
         
         datos = list(datos)
+
+
+        #agrupar datos
+        planes_agrupados = {}
+        for item in datos:
+            plan_id = item["planHeader_id"]
+
+            if plan_id not in planes_agrupados:
+
+                planes_agrupados[plan_id] = item.copy()
+
+                planes_agrupados[plan_id]["modules"] = []
+
+            planes_agrupados[plan_id]["modules"].append(
+                item["module__name"]
+            )
+
+        datos = list(
+            planes_agrupados.values()
+        )
+        #lista a string 
+        for item in datos:
+            item["modules"] = ", ".join(
+                item["modules"]
+            )
+
         # Mapa de traducción para unidades de tiempo
         time_unit_translation = {
             'day': ('día', 'días'),
@@ -751,6 +782,11 @@ def get_table_plans(request):
             #payment_date = calculate_payment_date(item.get("start_date_plan"), quantity, unit)
             #item["payment_date"] = payment_date.strftime('%Y-%m-%d') if payment_date else "N/A"
 
+
+        print("===== DATOS AGRUPADOS =====")
+        print(datos)
+        print("Cantidad:", len(datos))
+        
         # Respuesta exitosa con los datos procesados
         response["data"] = datos
         response["status"] = "success"

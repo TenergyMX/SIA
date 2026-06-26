@@ -14,6 +14,7 @@
     </div>
 </div>
 
+
 <section>
     <div class="row g-3">
         <div class="col-12">
@@ -23,7 +24,7 @@
                         Planes
                     </div>
                     <div class="">
-                        {% if access.create %}
+                        {% if request.user.is_superuser %}
                         <button type="button" class="btn btn-sm btn-primary" onclick="add_plans()" 
                             data-user="add-plan" title="Agregar plan">
                             <i class="fa-solid fa-plus"></i>
@@ -35,27 +36,8 @@
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered w-100" id="table_plans">
-                            <thead>
-                                <tr>
-                                    <th>Id</th>
-                                    <th>Empresa </th>
-                                    <th>Módulo</th>
-                                    <th>Tipo de plan</th>
-                                    <th>Fecha inicio</th>
-                                    <th>Periodo</th>
-                                    <th>Fecha fin</th>
-                                    <th>Costo total</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                            <tfoot></tfoot>
-                        </table>
-                    </div>
+                <div class="row" id="plans_container">
+                    
                 </div>
             </div>
         </div>
@@ -63,6 +45,8 @@
     </div>
 </section>
 {% endblock %}
+
+
 
 {% load static %}
 
@@ -82,4 +66,5 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-{% endblock %}
+{% endblock %} 
+

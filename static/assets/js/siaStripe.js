@@ -74,13 +74,9 @@ class siaStripe {
             button.addEventListener("click", function () {
                 const planInput = document.getElementById("checkout-plan");
 
-                console.log("INPUT PLAN:", planInput);
-
                 const plan = this.dataset.stripe;
 
                 planInput.value = plan;
-
-                console.log("PLAN GUARDADO:", planInput.value);
 
                 modal.classList.remove("hidden");
             });
@@ -97,7 +93,6 @@ class siaStripe {
         const form = document.getElementById("checkout-form");
 
         if (!form) {
-            console.log("❌ No existe checkout-form");
             return;
         }
 
@@ -105,9 +100,6 @@ class siaStripe {
         const password = form.querySelector('[name="password"]');
         const confirm = form.querySelector('[name="password_contact"]');
         const error = document.getElementById("password-error");
-
-        console.log("password:", password.value);
-        console.log("confirm:", confirm.value);
 
         confirm.addEventListener("input", function () {
             if (confirm.value && password.value !== confirm.value) {
@@ -117,11 +109,7 @@ class siaStripe {
             }
         });
 
-        console.log("✅ FORM ENCONTRADO:", form);
-
         form.addEventListener("submit", function (e) {
-            console.log("🚀 SUBMIT DETECTADO");
-
             e.preventDefault();
 
             if (password.value !== confirm.value) {
@@ -131,33 +119,21 @@ class siaStripe {
 
             error.classList.add("hidden");
 
-            console.log("✅ preventDefault ejecutado");
-
             const fd = new FormData(form);
 
-            console.log("📋 PLAN:", fd.get("plan"));
-
-            console.log("📋 DATOS DEL FORM:");
             for (let pair of fd.entries()) {
-                console.log(pair[0], pair[1]);
             }
 
             const csrf = document.querySelector("#checkout-form [name=csrfmiddlewaretoken]");
 
-            console.log("🔐 CSRF:", csrf);
-
             if (!csrf) {
-                console.log("❌ No se encontró el CSRF");
                 return;
             }
-
-            console.log("📡 ANTES DEL AJAX");
 
             /**Validar contraseñas*/
             const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,}$/;
             const validPassword = regex.test(password.value);
 
-            console.log(validPassword);
             if (!validPassword) {
                 Swal.fire(
                     "La contraseña no cumple los requisitos",
@@ -178,45 +154,40 @@ class siaStripe {
                     "X-CSRFToken": csrf.value,
                 },
 
-                beforeSend: function () {
-                    console.log("📤 ENVIANDO AJAX...");
-                },
+                beforeSend: function () {},
 
                 success: function (r) {
-                    console.log("✅ AJAX SUCCESS");
-                    console.log("RESPUESTA:", r);
-
                     if (r.error) {
-                        console.log("❌ ERROR DEVUELTO:", r.error);
-                        alert(r.error);
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: r.error,
+                        });
                         return;
                     }
 
-                    console.log("✅ CREANDO INSTANCIA STRIPE");
+                    Swal.fire({
+                        title: "Redireccionando...",
+                        text: "Serás enviado a la plataforma de pago segura de Stripe.",
+                        icon: "info",
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
 
-                    const stripe = Stripe(r.STP_ID);
+                            const stripe = Stripe(r.STP_ID);
 
-                    console.log("✅ REDIRECCIONANDO A CHECKOUT");
-
-                    stripe.redirectToCheckout({
-                        sessionId: r.id,
+                            stripe.redirectToCheckout({
+                                sessionId: r.id,
+                            });
+                        },
                     });
                 },
 
-                error: function (xhr, status, error) {
-                    console.log("❌ AJAX ERROR");
-                    console.log("STATUS:", status);
-                    console.log("ERROR:", error);
-                    console.log("RESPONSE:", xhr.responseText);
-                },
+                error: function (xhr, status, error) {},
 
-                complete: function () {
-                    console.log("🏁 AJAX FINALIZADO");
-                },
+                complete: function () {},
             });
         });
-
-        console.log("✅ EVENTO SUBMIT REGISTRADO");
     }
 }
 

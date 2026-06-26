@@ -80,6 +80,7 @@
                         type="email"
                         name="email"
                         required
+                        oninput="this.value = this.value.toLowerCase();"
                         placeholder="correo@empresa.com"
                         class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400">
                 </div>
@@ -110,6 +111,9 @@
                         required
                         placeholder="Energia1079"
                         class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                    <p class="text-xs text-gray-500 mt-1">
+                        Mínimo 8 caracteres, una mayúscula, un número y un carácter especial.
+                    </p>
                 </div>
 
                 <!-- CONFIRMAR CONTRASEÑA -->
@@ -127,6 +131,9 @@
                     
                     <p id="password-error" class="hidden text-red-500 text-sm mt-1">
                         Las contraseñas no coinciden.
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Mínimo 8 caracteres, una mayúscula, un número y un carácter especial.
                     </p>
                 </div>
 
