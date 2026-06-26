@@ -286,6 +286,8 @@ function add_plan() {
 function edit_plan(boton) {
     var row = $(boton).closest("tr");
     var data = $("#table_plans").DataTable().row(row).data();
+    select2module();
+
     $("#mdl-crud-plans").modal("show");
 
     $("#mdl-crud-plans .modal-title").text("Editar Plan");
@@ -369,6 +371,16 @@ function edit_plans() {
                 icon: "error",
             });
         },
+    });
+}
+
+function select2module() {
+    $("#modules_company").select2({
+        width: "100%",
+        placeholder: "Seleccione los checks",
+        dropdownParent: $("#mdl_crud_audit"),
+        dropdownAutoWidth: true,
+        closeOnSelect: false,
     });
 }
 
