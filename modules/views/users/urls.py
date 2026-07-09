@@ -43,8 +43,8 @@ urlpatterns = [
     #------[Planes]--------
     path("get_table_plans/", views.get_table_plans),
     path("get_company_plan/", views.get_company_plan),
-    path("get_modules_plan/", views.get_modules_plan),
-    path("add_plan/", views.add_plan),
-    path("delete_plans/", views.delete_plans),
-    path("edit_plans/", views.edit_plans),
+    # path("get_modules_plan/", views.get_modules_plan),
+    # path("add_plan/", views.add_plan),
+    path("cancel_subscription/", views.cancel_subscription),
+    # path("edit_plans/", views.edit_plans),
 ]

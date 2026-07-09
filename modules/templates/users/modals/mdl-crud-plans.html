@@ -13,26 +13,33 @@
                 </div>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label for="company_plan">Empresa </label>
+                        <label for="company_plan">Empresa</label>
                         <select name="company_plan" id="company_plan" class="form-select" required>
                             <option value="" disabled selected>Seleccione una empresa</option>
                         </select>
                     </div>
                     
                     <div class="col-md-4">
-                        <label for="modules_company">Módulo </label>
-                        <select name="modules_company[]" id="modules_company" multiple="multiple" class="form-select" required>
-                            <option value="" disabled selected>Seleccione un módulo</option>
+                        <label for="modules_company">Módulos</label>
+
+                        <select
+                            name="modules_company[]"
+                            id="modules_company"
+                            class="form-select"
+                            multiple>
                         </select>
                     </div>
 
                     <div class="col-md-4">
                         <label for="">Tipo de plan</label>
                         <select name="type_plan" class="form-select">
-                            <option value="">seleciones un plan</option>
+                            <option value="">selecciona un plan</option>
                             <option value="basic">Básico</option>
+                            <option value="esential">Esencial</option>
                             <option value="advanced">Avanzado</option>
-                            <option value="premium">Premium</option>
+                            <option value="pro">Pro</option>
+                            <option value="elite">Élite</option>
+
                         </select>
                     </div>                    
                     <div class="col-md-4">

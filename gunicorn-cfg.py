@@ -13,9 +13,9 @@ reload = True
 
 #errorlog = "/app/error.log"
 
-#capture_out = True
+capture_out = True
 
-#daemon = True
+daemon = False
 
 loglevel = 'debug'
 

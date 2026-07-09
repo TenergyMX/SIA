@@ -42,4 +42,7 @@ RUN python manage.py collectstatic --no-input
 
 #ENV DATABASE_ADDRESS=
 
+#CMD ["gunicorn", "--config", "gunicorn-cfg.py", "core.wsgi", "--reload"]
+
 CMD ["gunicorn", "--config", "gunicorn-cfg.py", "core.wsgi", "--reload"]
+#CMD ["gunicorn", "--config", "gunicorn-cfg.py", "-k", "uvicorn.workers.UvicornWorker", "core.asgi:application"]
