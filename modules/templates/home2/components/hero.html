@@ -1,3 +1,4 @@
+{% load static %}
 <!-- HERO SECTION -->
 <section
     class="relative min-h-screen flex items-center pt-20 lg:pt-0 overflow-hidden bg-white">
@@ -60,22 +61,10 @@
                     <!-- HEADER -->
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-3">
-                            <div
-                                class="w-12 h-12 bg-blue-950 rounded-xl flex items-center justify-center">
-                                <span
-                                    class="text-white font-bold text-lg">
-                                    S
-                                </span>
-                            </div>
-                            <div>
-                                <p
-                                    class="font-semibold text-blue-950 text-sm">
-                                    Capital System
-                                </p>
-                                <p class="text-xs text-gray-400">
-                                    Dashboard
-                                </p>
-                            </div>
+                            <img
+                                src="{% static 'images/logo.png' %}"
+                                alt="Capital System"
+                                class="h-12 w-auto">
                         </div>
                         <!-- DOTS -->
                         <div class="flex items-center gap-2">

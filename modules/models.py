@@ -436,6 +436,7 @@ class ComputerPeripheral(models.Model):
     peripheral_status = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Periférico")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
     identifier = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name="Identificador")
+    factura_document = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
 
     class Meta:
         verbose_name = "Periférico de Equipo de Computo"

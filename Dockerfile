@@ -46,3 +46,14 @@ RUN python manage.py collectstatic --no-input
 
 CMD ["gunicorn", "--config", "gunicorn-cfg.py", "core.wsgi", "--reload"]
 #CMD ["gunicorn", "--config", "gunicorn-cfg.py", "-k", "uvicorn.workers.UvicornWorker", "core.asgi:application"]
+
+RUN apt-get update && apt-get install -y \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    fonts-dejavu-core \
+    fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*

@@ -774,15 +774,16 @@ def get_table_plans(request):
             #     "<i class='fa-solid fa-pen'></i>"
             #     "</button>\n"
             # )
+            
             item["btn_action"] += (
                 "<button "
                 "data-value='"+str(item["id"])+"' "
                 "type='button' "
                 "name='cancel_subscription' "
-                "class='btn btn-icon btn-sm btn-warning-light' "
+                "class='btn btn-sm btn-danger' "
                 "onclick='cancel_subscription(this)' "
                 "title='Cancelar suscripción'>"
-                "<i class='fa-solid fa-ban'></i>"
+                "<i class='fa-solid fa-ban me-1'></i> Cancelar"
                 "</button>"
             )
             # Formatear el periodo

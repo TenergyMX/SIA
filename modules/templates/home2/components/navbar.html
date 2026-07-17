@@ -1,20 +1,15 @@
+{% load static %}
 <!-- Navbar -->
-<nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200"></nav>
+<nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 lg:h-20">
             <!-- Logo -->
-            <a href="/"
-                class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-lg">
-                        S
-                    </span>
-                </div>
-
-                <span class="font-semibold text-blue-600 text-sm lg:text-base hidden sm:block">
-                    Capital System
-                </span>
-
+            <a href="/" class="flex items-center">
+                <img
+                    src="{% static 'images/logo.png' %}"
+                    alt="Capital System"
+                    class="h-12 w-auto"
+                >
             </a>
 
             <!-- Desktop Navigation -->
@@ -30,28 +25,28 @@
                     <!-- Dropdown Menu -->
                     <div class="absolute top-full left-0 pt-2 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-200 z-[60]">
                         <div class="bg-white border border-gray-200 rounded-xl shadow-xl p-2 min-w-[220px]">
-                            <a href="#vehiculos"
-                                class="nav-scroll block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+                            <a href="/vehicles/"
+                                class="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
                                 Vehículos
                             </a>
 
-                            <a href="#computo"
-                                class="nav-scroll block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+                            <a href="/computers-equipment/"
+                                class="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
                                 Equipos de Cómputo
                             </a>
 
-                            <a href="#herramientas" 
-                                class="nav-scroll block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+                            <a href="/equipments_and_tools/" 
+                                class="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
                                 Herramientas
                             </a>
 
-                            <a href="#servicios"
-                                class="nav-scroll block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+                            <a href="/category_services/"
+                                class="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
                                 Servicios
                             </a>
 
-                            <a href="#infraestructura"
-                                class="nav-scroll block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+                            <a href="/infrastructure/"
+                                class="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
                                 Infraestructura
                             </a>
 

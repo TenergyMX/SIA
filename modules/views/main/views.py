@@ -1806,7 +1806,6 @@ def new_home_view(request):
                 Optimiza tus procesos con tecnología de vanguardia.
             """,
 
-            "logoLetter": "S",
         },
 
         # REDES SOCIALES

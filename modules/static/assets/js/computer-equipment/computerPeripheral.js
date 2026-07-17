@@ -70,6 +70,12 @@ class ComputerPeripheral {
                         visible: false,
                         className: "toggleable",
                     },
+                    {
+                        title: "Ver factura",
+                        data: "btn_view_factura",
+                        orderable: false,
+                        className: "text-center",
+                    },
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },
@@ -242,7 +248,6 @@ class ComputerPeripheral {
                         Swal.fire("Advertencia", response.warning["message"], "warning");
                         return;
                     } else if (!response.success) {
-                        
                         Swal.fire("Error", "Ocurrio un error inesperado", "error");
                         return;
                     }

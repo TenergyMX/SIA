@@ -87,101 +87,12 @@
     </div>
 </section>
 
-<section class="row row-cols-3">
-    {% for item in dataCatalog %}
-        {{item.id}}
-    
-<div class="row px-3">
-    <!-- tarjeta -->
-    <div class="card shadow-sm" style="width:400px;">
-        <!-- contenido principal -->
-        <div class="card-body">
 
-            <div class="d-flex justify-content-between">
-
-                <div class="d-flex">
-
-                    <div class="bg-primary text-white rounded p-2 me-2">
-                        <i class="fa-solid fa-laptop"></i>
-                    </div>
-
-                    <div>
-                        <h3 class="fw-bold mb-0">IVANNA GABRIELA</h3>
-                        <p class="text-muted">EQ-0002</p>
-                    </div>
-
-                </div>
-
-                <span class="badge bg-primaryorder">
-                    HUAWEI
-                </span>
-
-            </div>
-        </div>
-
-        <!-- estado -->
-        <div class="px-4 mb-4">
-            <span class="badge bg-primary">Portátil</span>
-            <span class="badge bg-success">En uso</span>
-            <span class="badge bg-success">Activo</span>
-        </div>
-
-        <!-- informacion -->
-        <div class="row px-3">
-
-            <div class="col-6">
-                <small class="text-muted">Área</small>
-                <h5>Compras</h5>
-            </div>
-
-            <div class="col-6">
-                <small class="text-muted">Responsable</small>
-                <h5>Ivanna</h5>
-            </div>
-
-        </div>
-
-        <div class="row px-3 mt-3">
-
-            <div class="col-6">
-                <small class="text-muted">Modelo</small>
-                <h5>MateBook M</h5>
-            </div>
-
-            <div class="col-6">
-                <small class="text-muted">Antigüedad</small>
-                <h5>3 años 10 m</h5>
-            </div>
-
-        </div>
-
-        <div class="mx-3 mt-3 p-2 bg-light rounded">
-            HW-WX9-0002
-        </div>
-
-        <div class="p-3">
-            <strong>Comentarios:</strong>
-            En buen estado
-        </div>
-
-        <div class="card-footer bg-white">
-
-            <div class="d-flex justify-content-center gap-4">
-
-                <button class="btn btn-outline-secondary"><i class="fa-regular fa-eye"></i></button>
-                <button class="btn btn-outline-primary"><i class="fa-solid fa-pencil"></i></button>
-                <button class="btn btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
-
-            </div>
-
-        </div>
-
+<section>
+    <div class="row g-4" id="computer_cards">
     </div>
-
-</div>
-        
-    {% endfor %}
 </section>
+
 {% endblock %}
 
 {% load static %}

@@ -62,7 +62,16 @@
         }
     </style>
 </head>
+
 <body>
+    <!-- Encabezado -->
+    <div class="header">
+        {% if header_image %}
+            <img src="{{ header_image }}" alt="Encabezado" style="width: 100%; display: block;" />
+        {% else %}
+            <p>No se encontró la imagen de encabezado.</p>
+        {% endif %}
+    </div>
     <br>
     <br>
     <section>
@@ -165,5 +174,14 @@
             </table>
         </div>
     </section>
+
+    <!-- Pie de página -->
+    <div class="footer">
+        {% if footer_image %}
+            <img src="{{ footer_image }}" alt="Pie de Página" style="width: 100%; display: block;" />
+        {% else %}
+            <p>No se encontró la imagen de pie de página.</p>
+        {% endif %}
+    </div>
 </body>
 </html>

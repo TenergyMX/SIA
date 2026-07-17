@@ -48,6 +48,12 @@ function initSmoothModuleScroll() {
 
             const targetId = this.getAttribute("href");
 
+            if (!targetId.startsWith("#")) {
+                return;
+            }
+
+            e.preventDefault();
+
             const targetSection = document.querySelector(targetId);
 
             if (!targetSection) return;
