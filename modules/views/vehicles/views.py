@@ -3414,8 +3414,8 @@ def add_vehicle_maintenance(request):
             )
             obj.save()
 
-            obj_vehicle.mileage = dt.get("mileage")
-            obj_vehicle.save()
+            # obj_vehicle.mileage = dt.get("mileage")
+            # obj_vehicle.save()
 
             response["id"] = obj.id
         response["status"] = "success"

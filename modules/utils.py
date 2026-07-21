@@ -397,6 +397,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
     current_month = datetime.today().month
     roles_usuario = [1, 2, 3]
     domain = request.build_absolute_uri('/')[:-1]
+    # domain = settings.DOMAIN
 
     # USUARIOS (Módulo 1)
     if id_module == 1:
@@ -581,7 +582,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         if rol not in roles_usuario:
             obj_vehicles = obj_vehicles.filter(responsible_id=user_id)
 
-        # # REFRENDO
         # REFRENDO
         if 6 in access and access[6]["read"]:
             obj_refrendo = Vehicle_Refrendo.objects.filter(
@@ -594,18 +594,23 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
             obj_refrendo = obj_refrendo.values('vehiculo__id', 'vehiculo__name').annotate(
                 ultima_fecha=Max('fecha_pago')
             )
-
+            print("esto contiene refrendo", obj_refrendo)
             vehicles_with_refrendo = set()
 
             # Definir periodo válido de refrendo (enero - marzo del año actual)
             inicio_periodo = date(current_year, 1, 1)
             fin_periodo = date(current_year, 3, 31)
 
+
             for item in obj_refrendo:
                 ultima_fecha = item["ultima_fecha"]
+                print("vehiculo", item["vehiculo__name"])
+                print("fechas", ultima_fecha)
+                print(inicio_periodo)
+                print(fin_periodo)
 
                 # Solo considerar refrendos en el periodo permitido
-                if not (inicio_periodo <= ultima_fecha <= fin_periodo):
+                if (inicio_periodo <= ultima_fecha <= fin_periodo):
                     continue  
 
                 vehicles_with_refrendo.add(item["vehiculo__id"])
@@ -614,7 +619,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     response["data"].append({
                         "alert": "warning",
                         "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                        "title": "Vehículo sin refrendo",
+                        "title": "Refrendo de Vehículo vencido",
                         "text": f"Vehículo: {item['vehiculo__name']}",
                         "link": f"/vehicles/info/{item['vehiculo__id']}/"
                     })
@@ -671,9 +676,16 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         refrendo.save(update_fields=["email_sin_comprobante"])
 
             # --- CORREO 3: VEHÍCULOS SIN REFRENDO REGISTRADO ---
-            vehicles_without_refrendo = obj_vehicles.exclude(id__in=vehicles_with_refrendo).values('id', 'name')
-            
-            for vehicle in vehicles_without_refrendo:
+            vehiculos_con_refrendo = set(
+                Vehicle_Refrendo.objects.filter(
+                    vehiculo__company_id=company_id
+                ).values_list("vehiculo_id", flat=True)
+            )
+
+            for vehicle in obj_vehicles:
+                if vehicle["id"] in vehiculos_con_refrendo:
+                    continue
+                
                 response["data"].append({
                     "alert": "danger",
                     "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
@@ -840,20 +852,29 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         if 9 in access and access[9]["read"]:
             
             obj_seguros = Vehicle_Insurance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
-
+            print("esto contiene seguros1:", obj_seguros)
             if rol not in roles_usuario:
                 obj_seguros = obj_seguros.filter(vehicle__responsible_id=user_id)
 
             obj_seguros = obj_seguros.values('vehicle__id', 'vehicle__name').annotate(ultima_fecha=Max('end_date'))
+            print("esto contiene seguros2:", obj_seguros)
 
             vehicles_with_seguro = set()
+
             for item in obj_seguros:
+
+                print("esta es la informacion de seguros", obj_seguros)
+
                 ultima_fecha = item["ultima_fecha"]
+
+                #el vehiculo tiene un seguro registrado:
+                vehicles_with_seguro.add(item["vehicle__id"])
+                print("esta es la ultima fecha", ultima_fecha)
                 if ultima_fecha < fecha_actual:
                     response["data"].append({
                         "alert": "warning",
                         "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                        "title": "Vehículo sin seguro",
+                        "title": "Seguro vencido",
                         "text": f"Vehículo: {item['vehicle__name']}",
                         "link": f"/vehicles/info/{item['vehicle__id']}/"
                     })
@@ -873,15 +894,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                             "title": f"Recordatorio de Pago de seguro del vehículo: {insurance.vehicle.name}",
                             "body": f"El seguro para el vehículo <strong>{insurance.vehicle.name}</strong> esta programada para la fecha <strong>{insurance.end_date}</strong>. Por favor, verifica el pago de seguro."
                         }
-                        # Send_Email(
-                        #     subject="Pago de seguro",
-                        #     recipient=recipient_emails_vehiculos,
-                        #     model_instance=insurance,
-                        #     message_data=message_data,
-                        #     model_name=Vehicle_Insurance,
-                        #     field_to_update="email_insurance"
-                        # )
-                        # print("coreo enviado correctamente y campo actualizado de seguro")
                         
                         context_email = {
                             "company": Company.objects.get(id=company_id).name,
@@ -897,14 +909,23 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         insurance.save(update_fields=["email_insurance"])
                         # print("Contexto del correo enviado (seguro):", context_email)
 
-                vehicles_with_seguro.add(item['vehicle__id'])
+                # vehicles_with_seguro.add(item['vehicle__id'])
+
+            print("=== VEHÍCULOS ===")
+            print(list(obj_vehicles.values_list("id", "name")))
+
+            print("=== CON SEGURO ===")
+            print(vehicles_with_seguro)
 
             vehicles_without_seguro = obj_vehicles.exclude(id__in=vehicles_with_seguro).values('id', 'name')
+            print("=== SIN SEGURO ===")
+            print(list(vehicles_without_seguro))
+
             for vehicle in vehicles_without_seguro:
                 response["data"].append({
                     "alert": "danger",
                     "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                    "title": "Vehículo sin seguro",
+                    "title": "Vehículo sin seguro 3",
                     "text": f"Vehículo: {vehicle['name']}",
                     "link": f"/vehicles/info/{vehicle['id']}/"
                 })
@@ -917,19 +938,9 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "body": f"El vehículo <strong>{vehicle['name']}</strong> no tiene un seguro registrado. Por favor, verifica esta información en el sistema."
                     }
 
-                    # Send_Email(
-                    #     subject="Alerta de Vehículo sin Seguro",
-                    #     recipient=recipient_emails_vehiculos,
-                    #     model_instance=vehicle_instance,
-                    #     message_data=message_data,
-                    #     model_name=Vehicle,
-                    #     field_to_update="email_sin_insurance"  
-                    # )
-                    # print("Correo enviado para vehículo sin seguro y campo actualizado")
-
                     context_email = {
                         "company": Company.objects.get(id=company_id).name,
-                        "subject": "Alerta de Vehículo sin Seguro",  
+                        "subject": "Alerta de Vehículo sin Seguro 4",  
                         "modulo": 2,
                         "submodulo": "Seguro",
                         "item": vehicle_instance.id,
