@@ -243,54 +243,10 @@ def computer_equipment_responsiva_pdf_view(request):
             "identifier" : identifier 
         })
 
-    # template = "computer-equipment/print/responsiva.html"
-    # template = get_template('computer-equipment/print/responsiva.html')
-
-
-    # template = get_template('pdf/responsiva.html')
-
-  
-
-    # html = template.render(context2)
-
-
-    # with open("/tmp/responsiva.html", "w", encoding="utf-8") as f:
-    #     f.write(html)
-
-
-    # pdf = HTML(
-    #     string=html,
-    #     # base_url=request.build_absolute_uri("/")
-    
-
-    # ).write_pdf()
-
     return WeasyPDF(
         "pdf/responsiva.html",
         context2
     ).render()
-
-
-
-
-    # response["Content-Disposition"] = (
-    #     'inline; filename="responsiva.pdf"'
-    # )
-
-    # return response
-    # html = template.render(context2)
-    # response = HttpResponse(content_type='application/pdf')
-    # response['Content-Disposition'] = 'inline; filename="reporte.pdf"'
-
-    # # pisa_status = pisa.CreatePDF(html, dest=response)
-    # pisa_status = pisa.CreatePDF(
-    #     html,
-    #     dest=response,
-    #     link_callback=link_callback
-    # )
-    # if pisa_status.err:
-    #     return HttpResponse('Ocurrió un error al generar el PDF', status=400)
-    # return response
 
 @login_required
 def computer_equipment_deliverie_view(request):

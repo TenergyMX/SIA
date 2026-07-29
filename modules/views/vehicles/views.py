@@ -64,6 +64,9 @@ import re
 from django.db.models import DateField
 from django.db.models import Q, F, Value, OuterRef, Subquery, CharField, DateField, IntegerField
 
+from modules.templates.pdf.weasy import WeasyPDF
+
+
 import logging
 logger = logging.getLogger(__name__)
 # TODO --------------- [ VARIABLES ] ---------- 
@@ -441,6 +444,7 @@ def add_vehicle_info(request):
     context = user_data(request)
     response = {"success": False}
     dt = request.POST
+    files = request.FILES
 
     company_id = context["company"]["id"]
 
@@ -451,6 +455,52 @@ def add_vehicle_info(request):
         return JsonResponse(response)
 
     try:
+        #documento de factura
+        document_factura_vehicle = files.get("document_factura_vehicle")
+        # imagen 
+        cover_image = files.get("cover-image")
+
+        # Validar campos obligatorios
+        required_fields = {
+            "Nombre del vehículo": dt.get("name"),
+            "Placa": dt.get("plate"),
+            "Modelo": dt.get("model"),
+            "Año": dt.get("year"),
+            "Número de serie": dt.get("serial_number"),
+            "Marca": dt.get("brand"),
+            "Color": dt.get("color"),
+            # "Vigencia": dt.get("validity"),
+            "Kilometraje": dt.get("mileage"),
+            "Responsable": dt.get("responsible_id"),
+            "Propietario": dt.get("owner_id"),
+            "Tipo de combustible": dt.get("fuel_type_vehicle"),
+            "Número de llantas": dt.get("car_tires"),
+        }
+
+
+        missing_fields = [
+            campo
+            for campo, valor in required_fields.items()
+            if valor is None or str(valor).strip() == ""
+        ]
+
+        if not cover_image:
+            missing_fields.append("Imagen del vehículo")
+
+        if not document_factura_vehicle:
+            missing_fields.append("Documento de factura")
+
+        if missing_fields:
+            return JsonResponse({
+                "success": False,
+                "status": "warning",
+                "message": {
+                    "message": "Faltan campos obligatorios.",
+                    "missing_fields": missing_fields
+                }
+            })
+
+
         obj = Vehicle(
             is_active = dt.get("is_active", True),
             company_id = company_id,
@@ -474,32 +524,54 @@ def add_vehicle_info(request):
         )
         obj.save()
         id = obj.id
+        image_url = None
+        factura_url = None
 
-        if 'cover-image' in request.FILES and request.FILES['cover-image']:
-            load_file = request.FILES.get('cover-image')            
-            s3Path = f'docs/{company_id}/vehicle/{id}/'
-            file_name, extension = os.path.splitext(load_file.name)                
-            new_name = f"cover-image{extension}"
-            s3Name = s3Path + new_name
+        # imagen
+        s3Path = f'docs/{company_id}/vehicle/{id}/'
+
+        file_name, extension = os.path.splitext(cover_image.name)                
+        new_name = f"cover-image{extension}"
+        s3Name = s3Path + new_name
             
-            upload_to_s3(load_file, bucket_name, s3Name)
+        upload_to_s3(cover_image, bucket_name, s3Name)
     
-            obj.image_path = s3Name
-            obj.save()
+        obj.image_path = s3Name
+        obj.save()
             
-            image_url = generate_presigned_url(bucket_name, s3Name)
+        image_url = generate_presigned_url(bucket_name, s3Name)
+
+
+        # Documento de factura
+        file_name, extension = os.path.splitext(document_factura_vehicle.name)
+        new_name = f"document_factura_vehicle{extension}"
+        s3Name = s3Path + new_name
+
+        upload_to_s3(document_factura_vehicle, bucket_name, s3Name)
+
+        obj.document_factura_vehicle = s3Name
+        obj.save()
+
+        factura_url = generate_presigned_url(bucket_name, s3Name)
 
         response.update({
             "success": True,
             "status": "success",
             "message": "Vehículo agregado exitosamente.",
             "id": obj.id,
-            "image_url": image_url
+            "image_url": image_url,
+            "factura_url": factura_url
         })
     
     except Exception as e:
-        response["error"] = {"message": str(e)}
-        return JsonResponse(response)
+        transaction.set_rollback(True)
+        return JsonResponse({
+                "success": False,
+                "error": {
+                    "message": str(e)
+                }
+            })
+
     
 
     # Crear auditoria
@@ -739,7 +811,8 @@ def get_vehicles_info(request):
             "transmission_type",
             "fuel_type_vehicle",
             "policy_number",
-            "car_tires"
+            "car_tires",
+            "document_factura_vehicle"
         )
         data = data.filter(company_id=context["company"]["id"])
 
@@ -778,7 +851,30 @@ def get_vehicles_info(request):
                         item["image_path"] = tempImgPath
                     else:
                         item["image_path"] = None
-                    
+
+
+                    # BOTÓN VER FACTURA
+                    item["btn_view_factura_vehicle"] = ""
+
+                    if item["document_factura_vehicle"]:
+
+                        print("Factura vehículo:", item["document_factura_vehicle"])
+
+                        tempDoc = generate_presigned_url(
+                            bucket_name,
+                            str(item["document_factura_vehicle"]),
+                        )
+
+                        item["btn_view_factura_vehicle"] = f"""
+                            <a href="{tempDoc}"
+                            target="_blank"
+                            class="btn btn-sm btn-info">
+                                <i class="fa-solid fa-eye"></i>
+                                Ver
+                            </a>
+                        """
+
+
                     item["btn_action"] = f"""
                     <a href="/vehicles/info/{item['id']}/" class="btn btn-primary btn-sm mb-1" title="Ver información">
                         <i class="fa-solid fa-eye"></i>
@@ -799,6 +895,9 @@ def get_vehicles_info(request):
                         item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-info=\"deactivate-item\" title="Desactivar vehículo">
                             <i class="fa-solid fa-power-off"></i>
                         </button>"""
+
+                # except Exception as e:
+                #     print(f"Error processing vehicle with ID {item['id']}: {e}")
 
                 except Exception as e:
                     print(f"Error processing vehicle with ID {item['id']}: {e}")
@@ -849,6 +948,8 @@ def update_vehicle_info(request):
         return JsonResponse(response)
     
     try:
+        document_factura_vehicle = request.FILES.get("document_factura_vehicle")
+
         obj.is_active = dt.get("is_active", obj.is_active)
         obj.name = dt.get("name", obj.name)
         obj.state = dt.get("state")
@@ -867,25 +968,36 @@ def update_vehicle_info(request):
 
 
         obj.save()
+        
+        folder_path = f"docs/{company_id}/vehicle/{id}/"
 
+        # actualizar la imagen
         if 'cover-image' in request.FILES and request.FILES['cover-image'] and True:
             load_file = request.FILES.get('cover-image')
-            folder_path = f"docs/{company_id}/vehicle/{id}/"
             
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)                
             new_name = f"cover-image{extension}"
 
-            # Eliminar archivos de portada anteriores usando glob
-            #old_files = glob.glob(os.path.join(settings.MEDIA_ROOT, folder_path, "cover-image.*"))
-            #for old_file_path in old_files:
-            #    if os.path.exists(old_file_path):
-            #        os.remove(old_file_path)
-            #fs.save(folder_path + new_name, load_file)
             s3Name = folder_path + new_name
             upload_to_s3(load_file, bucket_name, s3Name)
             obj.image_path = folder_path + new_name
             obj.save()
+
+
+        # Actualizar factura
+        if document_factura_vehicle:
+
+            file_name, extension = os.path.splitext(document_factura_vehicle.name)
+            new_name = f"document_factura_vehicle{extension}"
+            s3Name = folder_path + new_name
+
+            upload_to_s3(document_factura_vehicle, bucket_name, s3Name)
+
+            obj.document_factura_vehicle = s3Name
+            obj.save()
+
+
+
         response["status"] = "success"
         response["success"] = True
         response["message"] = "registro actualizado correctamente"
@@ -8024,6 +8136,525 @@ def save_correction_evidence(request):
             return JsonResponse({"success": False, "error": str(e)})
 
     return JsonResponse({"success": False, "error": "Método no permitido"})
+
+
+# responsivas de vehículos---------------------------
+# vista de submodulo responsiva
+@login_required
+def vehicle_responsiva_view(request):
+    context = user_data(request)
+    module_id = 2
+    subModule_id = 39
+
+    access = get_module_user_permissions(context, subModule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+    
+    template = "vehicles/vehicle_responsiva_view.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    return render(request, template , context)
+
+# tabla de datos de responsiva
+@login_required
+def table_vehicle_responsiva_view(request):
+    context = user_data(request)
+    response = {
+        "status": "error",
+        "message": "Sin procesar",
+        "data": []
+    }
+
+    dt = request.GET
+    isList = dt.get("isList", False)
+    subModule_id = 19
+
+    datos = Vehicles_Responsivas.objects.values(
+        "id",
+        "responsible_vehicle_id",
+        "responsible_vehicle__first_name",
+        "responsible_vehicle__last_name",
+        "area_responsable_id",
+        "area_responsable__name",
+        "items",
+        "record",
+        "responsibility_vehicle_pdf",
+        "created_at",
+        "updated_at",
+    )
+
+    modified_data_list = []
+
+    for data in datos:
+
+        modified_data = data.copy()
+
+        # Historial
+        record_string = data.get("record") or "[]"
+
+        try:
+            record_data = json.loads(record_string)
+        except json.JSONDecodeError:
+            record_data = []
+
+        # Convertir rutas del historial a URLs firmadas
+        for record in record_data:
+            file_path = record.get("file_path")
+
+            if file_path:
+                record["file_path"] = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    file_path
+                )
+
+        modified_data["record"] = json.dumps(record_data)
+
+        # PDF actual
+        if data.get("responsibility_vehicle_pdf"):
+            modified_data["responsibility_vehicle_pdf"] = generate_presigned_url(
+                AWS_BUCKET_NAME,
+                data["responsibility_vehicle_pdf"]
+            )
+        else:
+            modified_data["responsibility_vehicle_pdf"] = None
+
+        modified_data_list.append(modified_data)
+
+    if isList:
+
+        response["data"] = list(
+            Vehicles_Responsivas.objects.values(
+                "id",
+                "responsible_infraestructure_id",
+                "responsible_infraestructure__first_name",
+                "responsible_infraestructure__last_name",
+            )
+        )
+
+    else:
+
+        access = get_module_user_permissions(context, subModule_id)
+        access = access["data"]["access"]
+
+        for responsiva in modified_data_list:
+
+            responsiva["btn_action"] = ""
+
+            if access["update"]:
+                responsiva["btn_action"] += f"""
+                    <button
+                        class="btn btn-icon btn-sm btn-primary-light"
+                        data-id="{responsiva['id']}"
+                        data-vehicle-responsiva="update-responsiva"
+                        title="Editar">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                """
+
+            if access["delete"]:
+                responsiva["btn_action"] += f"""
+                    <button
+                        class="btn btn-icon btn-sm btn-danger-light"
+                        data-id="{responsiva['id']}"
+                        data-vehicle-responsiva="delete-responsiva"
+                        title="Eliminar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                """
+
+        response["data"] = modified_data_list
+
+    response["status"] = "success"
+
+    return JsonResponse(response)
+
+# usuarios de la empresa
+@login_required
+def get_users_vehicle_responsiva(request):
+    context = user_data(request)
+    company_id = context["company"]["id"]
+
+    response = {
+        "status": "success",
+        "data": []
+    }
+
+    usuarios = User_Access.objects.filter(
+        company_id=company_id,
+        user__is_active=True
+    ).select_related(
+        "user"
+    ).values(
+        "user_id",
+        "user__first_name",
+        "user__last_name"
+    ).distinct().order_by(
+        "user__first_name",
+        "user__last_name"
+    )
+
+    data = []
+
+    for item in usuarios:
+        data.append({
+            "id": item["user_id"],
+            "first_name": item["user__first_name"],
+            "last_name": item["user__last_name"],
+        })
+
+    response["data"] = data
+
+    return JsonResponse(response)
+
+
+# generar pdf
+@login_required
+def vehicle_responsiva_pdf_view(request):
+    dt = request.GET
+    context = user_data(request)
+
+    context2 = {
+        "title": "Carta Responsiva",
+        "date": timezone.now(),
+        "user": {
+            "name": "",
+            "area": ""
+        },
+        "data": []
+    }
+
+
+    print("esto contiene context 2", context2)
+
+    responsible_id = dt.get("user_id")
+
+    if not responsible_id:
+        responsible_id = context["user"]["id"]
+
+    # usuario = User.objects.filter(id=responsible_id).first()
+
+    # if usuario:
+    #     context2["user"]["name"] = f"{usuario.first_name} {usuario.last_name}"
+
+    usuario = User.objects.filter(id=responsible_id).first()
+    print("Usuario:", usuario)
+
+    if usuario:
+        context2["user"]["name"] = f"{usuario.first_name} {usuario.last_name}"
+
+    responsiva = Vehicles_Responsivas.objects.filter(
+        responsible_vehicle_id=responsible_id
+    ).first()
+
+    print("Responsiva:", responsiva)
+
+    if responsiva:
+        print("Área responsable:", responsiva.area_responsable)
+
+
+    access = User_Access.objects.filter(user=usuario).first()
+
+    if access and access.area:
+        context2["user"]["area"] = access.area.name
+    print("Contexto final:", context2)
+        
+
+    responsiva = Vehicles_Responsivas.objects.filter(
+        responsible_vehicle_id=responsible_id
+    ).first()
+
+    if responsiva and responsiva.area_responsable:
+        context2["user"]["area"] = responsiva.area_responsable.name
+
+    vehicles = Vehicle.objects.filter(
+        company_id=context["company"]["id"],
+        responsible_id=responsible_id,
+        is_active=True
+    )
+
+    for vehicle in vehicles:
+
+        context2["data"].append({
+
+            "brand": vehicle.brand,
+            "model": vehicle.model,
+            "vehicle_type": vehicle.vehicle_type,
+            "color": vehicle.color,
+            "capacity": getattr(vehicle, "capacity", ""),
+            "serial_number": vehicle.serial_number,
+            "plate": vehicle.plate,
+
+        })
+
+    return WeasyPDF(
+        "pdf/vehicle_responsiva_pdf.html",
+        context2
+    ).render()
+
+
+# agregar responsiva de vehiculo
+def add_vehicle_responsiva_pdf(request):
+    context = user_data(request)
+    response = {"status": "error", "message": "sin procesar" }
+    dt = request.POST
+    company_id = context["company"]["id"]
+
+    try:
+        responsible_vehicle = dt.get("responsible_vehicle")
+
+        if responsible_vehicle == None:
+            response["message"] = "Sin Responsable"
+            return JsonResponse(response)
+        
+        responsable = User_Access.objects.filter(user_id = responsible_vehicle)
+
+        if not responsable.exists():
+            response["message"] = "El responsable no existe"
+            return JsonResponse(response)
+
+        responsable = responsable.values()[0]
+        area_id = responsable["area_id"]
+
+        registro = Vehicles_Responsivas.objects.filter(
+            responsible_vehicle = responsible_vehicle
+            ).count()
+
+        if registro >= 1:
+            response["message"] = f"Ya existen {registro} regitro(s) de la responsibla del usuario asignado"
+            return JsonResponse(response)
+
+
+        with transaction.atomic():
+            obj = Vehicles_Responsivas(
+                responsible_vehicle_id=responsible_vehicle,
+                area_responsable_id=area_id
+            )
+            
+            obj.save()
+            id = obj.id
+
+        if 'responsibility_vehicle_pdf' in request.FILES and request.FILES['responsibility_vehicle_pdf']:
+            load_file = request.FILES.get('responsibility_vehicle_pdf')
+            folder_path = f"docs/{company_id}/vehicle/responsiva/{id}/"
+
+            file_name, extension = os.path.splitext(load_file.name)
+            new_name = f"doc_1{extension}"
+            s3Name = folder_path + new_name
+
+            # Guardar archivo
+            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+
+            # Guardar ruta en la tabla
+            obj.responsibility_vehicle_pdf = s3Name
+            # obj.save()
+
+            # Cargar y actualizar el historial existente
+            try:
+                historial = json.loads(obj.record)
+            except (ValueError, TypeError):
+                historial = []
+
+            # Agregar el nuevo registro al historial
+            count = len(historial) + 1
+            historial.append({
+                "id": count,
+                "file_path": str(obj.responsibility_vehicle_pdf),
+                "date": datetime.now().isoformat()
+            })
+
+            # Convertir el historial actualizado a cadena JSON
+            historial_str = json.dumps(historial)
+            obj.record = historial_str
+            obj.save()
+            response["id"] = id
+        response["status"] = "success"
+        response["message"] = "Guardado"
+    except ValidationError as e:
+        response["status"] = "error"
+        response["message"] = e.message_dict
+    except Exception as e:
+        response["status"] = "error"
+        response["message"] = str(e)
+    return JsonResponse(response)
+
+
+# funcion para obtener un registro
+@login_required
+def get_vehicle_responsiva(request):
+
+    response = {
+        "status": "error",
+        "message": "Sin procesar"
+    }
+
+    id = request.GET.get("id")
+
+    try:
+
+        obj = Vehicles_Responsivas.objects.values(
+            "id",
+            "responsible_vehicle_id",
+            "area_responsable_id",
+            "responsibility_vehicle_pdf"
+        ).get(id=id)
+
+        response["status"] = "success"
+        response["data"] = obj
+
+    except Vehicles_Responsivas.DoesNotExist:
+        response["message"] = "No existe el registro."
+
+    return JsonResponse(response)
+
+
+# Editar responsiva
+@login_required
+@csrf_exempt
+def update_vehicle_responsiva_pdf(request):
+    context = user_data(request)
+    response = {"status": "error", "message": "Sin procesar"}
+
+    # obtener informacion
+    if request.method == "GET":
+        id = request.GET.get("id")
+
+        try:
+
+            obj = Vehicles_Responsivas.objects.values(
+                "id",
+                "responsible_vehicle_id",
+                "area_responsable_id",
+                "responsibility_vehicle_pdf"
+            ).get(id=id)
+
+            return JsonResponse({
+                "status": "success",
+                "data": obj
+            })
+
+        except Vehicles_Responsivas.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "No existe el registro."
+            })
+
+    # Actualizar informacion    
+    dt = request.POST
+    company_id = context["company"]["id"]
+
+    try:
+
+        id = dt.get("id")
+        responsible_vehicle = dt.get("responsible_vehicle")
+
+        if not id:
+            response["message"] = "No se recibió el ID de la responsiva."
+            return JsonResponse(response)
+
+        if not responsible_vehicle:
+            response["message"] = "Debe seleccionar un responsable."
+            return JsonResponse(response)
+
+        responsable = User_Access.objects.filter(
+            user_id=responsible_vehicle
+        )
+
+        if not responsable.exists():
+            response["message"] = "El responsable no existe."
+            return JsonResponse(response)
+
+        area_id = responsable.values("area_id").first()["area_id"]
+
+        with transaction.atomic():
+
+            obj = Vehicles_Responsivas.objects.get(id=id)
+
+            obj.responsible_vehicle_id = responsible_vehicle
+            obj.area_responsable_id = area_id
+
+            # Si se cargó una nueva responsiva
+            if request.FILES.get("responsibility_vehicle_pdf"):
+
+                load_file = request.FILES["responsibility_vehicle_pdf"]
+
+                folder_path = (
+                    f"docs/{company_id}/vehicle/responsiva/{id}/"
+                )
+
+                try:
+                    historial = json.loads(obj.record) if obj.record else []
+                except Exception:
+                    historial = []
+
+                _, extension = os.path.splitext(load_file.name)
+
+                new_name = f"doc_{len(historial)+1}{extension}"
+
+                s3name = folder_path + new_name
+
+                upload_to_s3(
+                    load_file,
+                    AWS_BUCKET_NAME,
+                    s3name
+                )
+
+                obj.responsibility_vehicle_pdf = s3name
+
+                historial.append({
+                    "id": len(historial) + 1,
+                    "file_path": s3name,
+                    "date": datetime.now().isoformat()
+                })
+
+                obj.record = json.dumps(historial)
+
+            obj.save()
+
+        response["status"] = "success"
+        response["message"] = "Responsiva actualizada correctamente."
+        response["id"] = obj.id
+
+    except Vehicles_Responsivas.DoesNotExist:
+
+        response["message"] = (
+            f"No existe la responsiva con ID {id}."
+        )
+
+    except ValidationError as e:
+
+        response["message"] = e.message_dict
+
+    except Exception as e:
+
+        response["message"] = str(e)
+
+    return JsonResponse(response)
+
+
+# Eliminar responsiva
+def delete_vehicle_responsiva_pdf(request):
+    response = {"success": False, "data": []}
+    dt = request.POST
+    id = dt.get("id", None)
+
+    if id == None:
+        response["error"] = {"message": "Proporcione un id valido"}
+        response["status"] = "error"
+        response["message"] = "Proporcione un id valido"
+        return JsonResponse(response)
+    try:
+        obj = Vehicles_Responsivas.objects.get(id = id)
+    except Vehicles_Responsivas.DoesNotExist:
+        response["error"] = {"message": "El objeto no existe"}
+        response["status"] = "error"
+        response["message"] = "El objeto no existe"
+        return JsonResponse(response)
+    else:
+        obj.delete()
+    response["success"] = True
+    response["status"] = "success"
+    response["message"] = "Se ha borrado el registro"
+    return JsonResponse(response)
 
 
 # TODO --------------- [ END ] ----------

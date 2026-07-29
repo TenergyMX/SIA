@@ -1,0 +1,72 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Responsivas de Vehículos
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Vehículos</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Responsiva
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+
+    
+<section>
+    <div class="card custom-card">
+        <div class="card-header justify-content-between">
+            <div class="card-title">
+                Responsiva
+            </div>
+            <div class="">
+                {% if access.create %}
+                <button type="button" class="btn btn-sm btn-primary" data-vehicle-responsiva="add-responsive-vehicle"
+                    title="Agregar responsiva">
+                    <i class="fa-solid fa-plus"></i>
+                    Agregar
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-icon btn-sm btn-info-light" data-vehicle-responsiva="refresh-table"
+                    title="Refrescar tabla" data-refresh-table="table_responsiva_vehicle">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsiva-vehicle">
+                <table class="table table-bordered w-100" id="table_responsiva_vehicle">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+</section>
+
+
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+{% include "vehicles/modals/mdl-crud-responsiva-vehicle.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/vehicles/responsiva_vehicle.js' %}"></script>
+<script>
+    const responsables = new Users({
+        list: { id: ".modal select[name='responsible_id']" }
+    });
+   
+</script>
+{% endblock %}

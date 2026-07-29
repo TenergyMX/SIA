@@ -10,37 +10,41 @@ function load_table_equi() {
             url: "/get_equipments_tools/",
             type: "GET",
             dataSrc: "data",
+
             error: function (xhr, error, thrown) {
                 console.error("Error en la carga de datos: ", error);
                 alert("No se pudo cargar la información de los equipos.");
             },
         },
         columns: [
-            { data: "id" },
-            { data: "equipment_category__name" },
-            { data: "equipment_name" },
-            { data: "equipment_type" },
-            { data: "equipment_brand" },
-            { data: "equipment_description" },
-            { data: "cost" },
-            { data: "amount" },
-            { data: "equipment_area__name" },
-            { data: "equipment_responsible__username" },
-            { data: "equipment_location__location_name" },
+            { title: "Id", data: "id" },
+            { title: "Categoría", data: "equipment_category__name" },
+            { title: "Nombre", data: "equipment_name" },
+            { title: "Tipo", data: "equipment_type" },
+            { title: "Marca", data: "equipment_brand" },
+            { title: "Descripción", data: "equipment_description" },
+            { title: "Costo", data: "cost" },
+            { title: "Cantidad", data: "amount" },
+            { title: "Área", data: "equipment_area__name" },
+            { title: "Responsable", data: "equipment_responsible__username" },
+            { title: "Ubicación", data: "equipment_location__location_name" },
             {
                 title: "Ficha técnica",
-                data: function (d) {
-                    if (d["equipment_technical_sheet"]) {
-                        return `<a href="/get_doc/?s3path=${d["equipment_technical_sheet"]}" class="btn btn-sm btn-outline-primary" target="_blank">Ficha técnica</a>`;
-                    } else {
-                        return "Sin Ficha técnica";
-                    }
-                },
+                data: "btn_equipment_technical_sheet",
                 orderable: false,
+                className: "text-center",
             },
             {
+                title: "Factura",
+                data: "btn_document_factura_equipment",
+                orderable: false,
+                className: "text-center",
+            },
+            {
+                title: "Acciones",
                 data: "btn_action",
                 orderable: false,
+                defaultContent: "",
             },
         ],
         language: {
@@ -189,7 +193,7 @@ function add_location() {
         contentType: false,
         processData: false,
         success: function (response) {
-             // Verifica la respuesta
+            // Verifica la respuesta
             if (response.success) {
                 $("#form_location")[0].reset(); // Resetea el formulario
                 $("#mdl-crud-location").modal("hide"); // Cierra el modal
@@ -656,7 +660,6 @@ document.getElementById("form_responsiva").addEventListener("submit", function (
 
 // Función para agregar una responsiva
 function add_responsiva(formData) {
-
     $.ajax({
         url: "/add_responsiva/",
         type: "POST",
@@ -665,7 +668,6 @@ function add_responsiva(formData) {
         contentType: false,
         success: function (response) {
             if (response.success) {
-                
                 $("#form_responsiva")[0].reset(); // Resetear el formulario
                 ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
                 $("#mdl-crud-responsiva").modal("hide");
@@ -723,7 +725,6 @@ function modal_history(button) {
             if (response.success) {
                 var tbody = $("#mdl-crud-history .table-history tbody");
                 tbody.empty(); // Limpiar la tabla
-
 
                 response.data.forEach((item) => {
                     var row = `<tr>

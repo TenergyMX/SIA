@@ -110,7 +110,7 @@ class Vehicles {
                         className: "toggleable",
                         visible: false,
                     },
-                    { title: "Vigencia", data: "validity", className: "toggleable" },
+                    // { title: "Vigencia", data: "validity", className: "toggleable" },
                     {
                         title: "Aseguradora",
                         data: "insurance_company",
@@ -118,6 +118,14 @@ class Vehicles {
                         visible: false,
                     },
                     { title: "Kilometraje", data: "mileage", className: "toggleable" },
+
+                    {
+                        title: "Ver factura",
+                        data: "btn_view_factura_vehicle",
+                        orderable: false,
+                        className: "text-center",
+                    },
+
                     { title: "Acciones", data: "btn_action", orderable: false },
                 ],
             },

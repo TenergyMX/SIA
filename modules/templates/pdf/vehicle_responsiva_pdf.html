@@ -1,0 +1,265 @@
+{% extends "pdf/base_vehicle.html" %}
+{% load static %}
+
+{% block title %}
+Responsiva de Vehículo
+{% endblock %}
+
+{% block content %}
+
+<!-- fecha -->
+<div class="date-container">
+    <span class="date-field">
+        Apaseo el Alto, {{ date|date:"d/m/Y"|default:"____/____/______" }}
+    </span>
+</div>
+
+<!-- condiciones  -->
+<section>
+    <p class="bold-text">
+        PRESENTE: 
+    </p>
+    <p class="bold-text">
+        {{ user.name }}
+    </p>
+    <p class="bold-text">
+        Área: {{ user.area }}
+    </p>
+
+    <p>
+        Debido a las actividades del perfil de puesto que usted actualmente desempeña, le entregamos a usted 
+        un automóvil con las siguientes características:
+    </p>
+
+    <table class="table table-bordered">
+
+        <tbody>
+
+        {% if data %}
+
+            {% for item in data %}
+
+            <tr>
+                <th style="width:35%;">Marca</th>
+                <td>{{ item.brand }}</td>
+            </tr>
+
+            <tr>
+                <th>Modelo</th>
+                <td>{{ item.model }}</td>
+            </tr>
+
+            <tr>
+                <th>Tipo de vehículo</th>
+                <td>{{ item.vehicle_type }}</td>
+            </tr>
+
+            <tr>
+                <th>Color</th>
+                <td>{{ item.color }}</td>
+            </tr>
+
+            <tr>
+                <th>Capacidad</th>
+                <td>{{ item.capacity|default:"N/A" }}</td>
+            </tr>
+
+            <tr>
+                <th>Número de serie</th>
+                <td>{{ item.serial_number }}</td>
+            </tr>
+
+            <tr>
+                <th>Placas actuales</th>
+                <td>{{ item.plate }}</td>
+            </tr>
+
+            {% if not forloop.last %}
+            <tr>
+                <td colspan="2" style="background:#f5f5f5; height:10px;"></td>
+            </tr>
+            {% endif %}
+
+            {% endfor %}
+
+        {% else %}
+
+            <tr>
+                <td colspan="2">
+                    Sin vehículo asignado.
+                </td>
+            </tr>
+
+        {% endif %}
+
+        </tbody>
+
+    </table>
+
+</section>
+
+
+<section>
+
+    <p>                                                                                                   
+        Al respecto, le recordamos que dicho automóvil es una herramienta de trabajo que la empresa le proporciona con el fin de que pueda desempeñar de manera adecuada sus funciones de trabajo y esperamos el buen uso de éste. Asimismo, dicha herramienta de trabajo podrá ser solicitada en cualquier momento para la situación que la empresa decida o que así le convenga.
+    </p>
+
+    <p>
+        De igual manera el automóvil podrá ser auditado en cualquier momento por las áreas acreditadas. La herramienta de trabajo deberá de estar en óptimas condiciones las cuales deberá de conservar para dar una buena imagen.  
+    </p>
+
+    <p>
+        Por último, se deberá de respetar y seguir la política actual (Política de Automóviles como herramienta de trabajo), misma que deberá obligatoriamente de leer y será su responsabilidad estar al pendiente de cualquier modificación de esta.       
+    </p>
+
+    <p class="bold-text">
+        Se realiza el Check List de la Entrega de Automóvil:
+    </p>
+
+    <p>
+        Señale con una X si se entrega:
+    </p>
+
+    <table class="checklist-table">
+        <tr>
+            <td>☐ Extintor</td>
+            <td>☐ Póliza de Seguro</td>
+        </tr>
+        <tr>
+            <td>☐ Tarjeta de Circulación</td>
+            <td>☐ Señalamientos de Precaución</td>
+        </tr>
+        <tr>
+            <td>☐ Caja de Herramientas</td>
+            <td>☐ Gato Hidráulico</td>
+        </tr>
+        <tr>
+            <td>☐ Cable para corriente</td>
+            <td>☐ Llave de Cruz</td>
+        </tr>
+        <tr>
+            <td>☐ Llanta de Refacción</td>
+            <td>☐ Otro: ____________________</td>
+        </tr>
+    </table>
+
+    <p>
+        Indique si tiene algún daño el vehículo:
+    </p>
+
+    <img src="{{ vehicle_image }}" class="vehicle-image">
+
+    <p class="bold-text">
+        Observaciones:
+    </p>
+
+    <div class="observations">
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+    </div>
+    
+</section>
+
+<section>
+    <h3>ACEPTACIÓN DE RESPONSABILIDADES Y CONDICIONES DE USO</h3>
+    <p>
+        Por medio de la presente, manifiesto que he leído, comprendido y acepto la Política de Automóviles como Herramienta de Trabajo vigente de TENERGY, comprometiéndome a cumplir con todas las disposiciones establecidas en ella.
+    </p>
+
+    <p>            
+        Asimismo, reconozco y acepto las siguientes responsabilidades:
+    </p>
+
+
+    <ol>
+
+        <li>
+            USO FUERA DE LA JORNADA LABORAL
+            <p>
+                Cuando la unidad sea utilizada para actividades personales fuera de la jornada laboral, asumiré la responsabilidad de los daños ocasionados a la misma, incluyendo, de manera enunciativa más no limitativa, ponchaduras, daños a cristales, daños estéticos, pérdida total o cualquier otro daño derivado de su uso. En estos casos seré responsable del pago del deducible y demás gastos que correspondan conforme a las condiciones de la aseguradora. 
+            </p>
+           
+        </li>
+
+        <li>
+            ACCIDENTES DURANTE ACTIVIDADES DE TRABAJO
+            <p>
+                Cuando un accidente o daño ocurra durante actividades laborales debidamente comprobables, la empresa cubrirá el deducible y los gastos procedentes derivados del siniestro.
+            </p>
+           
+            <p> 
+                No obstante, cuando exista negligencia comprobada por parte del usuario, incluyendo manejo bajo los efectos del alcohol o sustancias prohibidas, conducción imprudente, abandono de bienes visibles dentro de la unidad que propicien robo o daño, o cualquier otra conducta similar, seré responsable del pago del deducible y de los gastos derivados del daño ocasionado.   
+            </p>
+        </li>
+
+        <li>
+            LIMPIEZA Y CONSERVACIÓN DE LA UNIDAD
+            <p>
+                Me comprometo a mantener la unidad limpia y en óptimas condiciones de imagen, higiene y conservación durante todo el tiempo que permanezca bajo mi resguardo.
+            </p>
+            <p>
+                En caso de que la unidad requiera limpieza profunda derivada de descuido, o reposición de componentes dañados por mal uso, tales como vestiduras, viseras, tapetes, plásticos interiores u otros elementos, asumiré los costos correspondientes.
+            </p>
+        </li>
+
+        <li>
+            MULTAS Y RECARGOS
+            <p>
+                Acepto que cualquier multa, infracción, recargo, gasto de corralón, arrastre o cargo generado por incumplimiento de obligaciones vehiculares o de tránsito será de mi exclusiva responsabilidad, autorizando a la empresa para realizar los descuentos correspondientes conforme a la legislación aplicable.
+            </p>
+          
+        </li>
+
+        <li>
+            VEHÍCULOS NUEVOS
+            <p>
+                En caso de ser asignado un vehículo nuevo, me comprometo a conservarlo en las mismas condiciones en que fue recibido. Cualquier daño atribuible a mal uso, negligencia o falta de cuidado será cubierto por mi cuenta.
+            </p>
+        </li>
+
+        <li>
+            PRÉSTAMO DE UNIDADES
+            <p> 
+                Acepto que la unidad podrá ser utilizada por otro colaborador cuando exista una necesidad operativa autorizada por la empresa. En estos casos, deberé documentar la entrega mediante evidencia fotográfica o cualquier otro medio autorizado y verificar el estado de la unidad al momento de su devolución.
+            </p>
+        </li>
+
+        <li>
+            MANTENIMIENTO PREVENTIVO
+            <p>
+                Me comprometo a llevar la unidad a los mantenimientos preventivos correspondientes dentro de los periodos establecidos por el fabricante y por la empresa, evitando exceder 500 kilómetros posteriores al kilometraje programado para el servicio.
+            </p>
+        </li>     
+
+    </ol>
+
+    <p>
+        Reconozco que los daños derivados de la omisión o retraso injustificado en la realización de los mantenimientos podrán ser atribuidos a mi responsabilidad.    
+    </p>
+    <p>
+        Declaro que conozco las obligaciones descritas anteriormente y acepto cumplirlas durante todo el tiempo que la unidad permanezca bajo mi resguardo.
+    </p>
+
+
+</section>
+
+
+<section class="signature-section">
+
+    <div class="signature">
+        <div class="signature-line"></div>
+        <p>Nombre y Firma Gerencia General</p>
+    </div>
+
+    <div class="signature">
+        <div class="signature-line"></div>
+        <p>Nombre y Firma del usuario</p>
+        <p>Estoy de acuerdo con la entrega de vehículo</p>
+    </div>
+
+</section>
+
+{% endblock %}

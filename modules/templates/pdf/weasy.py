@@ -41,6 +41,15 @@ class WeasyPDF:
                     "footer.png"
                 ).as_uri(),
 
+
+              "vehicle_image":
+                (
+                    pdf_path /
+                    "images" /
+                    "automovil.jpg"
+                ).as_uri(),
+
+
         })
 
 
