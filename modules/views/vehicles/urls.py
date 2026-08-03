@@ -216,6 +216,7 @@ urlpatterns = [
     path("update_vehicle_responsiva_pdf/", views.update_vehicle_responsiva_pdf),
     path("delete_vehicle_responsiva_pdf/", views.delete_vehicle_responsiva_pdf),
 
+    path("generar_plantilla/", views.generarPlantilla),
 
 
 

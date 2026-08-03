@@ -8661,3 +8661,7 @@ def delete_vehicle_responsiva_pdf(request):
 # ! Este es el fin
 
 
+def generarPlantilla(request):
+    return render(request, "pdf/vehicle_responsiva_pdf.html",{
+
+    })
