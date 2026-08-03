@@ -13,7 +13,6 @@ class WeasyPDF:
         self.template = template
         self.context = context or {}
 
-
     def render(self):
 
         pdf_path = (
@@ -42,7 +41,7 @@ class WeasyPDF:
                 ).as_uri(),
 
 
-              "vehicle_image":
+            "vehicle_image":
                 (
                     pdf_path /
                     "images" /
@@ -92,3 +91,5 @@ class WeasyPDF:
 
 
         return response
+
+

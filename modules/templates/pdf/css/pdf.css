@@ -9,7 +9,6 @@
     top: -170px;
     left: -40px;
     right: -40px;
-    width: calc(100% + 80px);
     height: 170px;
 }
 
@@ -28,12 +27,13 @@
 .header-info {
     position: absolute;
     top: 54px;
-    left: 280px;
+    /* left: 280px; */
+    left: calc(280px - 4cm);
     right: 15px;
-    z-index: 2;
+    z-index: 1;
 }
 
-.header-bg {
+/* .header-bg {
     position: absolute;
     inset: 0;
 
@@ -43,7 +43,7 @@
     object-fit: fill;
 
     z-index: 1;
-}
+} */
 
 .footer {
     position: fixed;
