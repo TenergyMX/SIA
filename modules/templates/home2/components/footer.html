@@ -1,0 +1,70 @@
+{% load static %}
+<!-- FOOTER -->
+<footer class="bg-blue-950 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- MAIN -->
+        <div
+            class="py-14 lg:py-16 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
+            <!-- BRAND -->
+            <div class="col-span-2 lg:col-span-2 space-y-5">
+                <!-- LOGO -->
+                <a href="/" class="flex items-center">
+                    <img
+                        src="{% static 'images/logo_blanco.png' %}"
+                        alt="Capital System"
+                        class="h-16 lg:h-20 w-auto">
+                </a>
+                <!-- DESCRIPTION -->
+                <p
+                    class="text-gray-300 text-sm max-w-sm leading-relaxed">
+                    {{ footerModule.brand.description }}
+                </p>
+                <!-- SOCIALS -->
+                <div class="flex items-center gap-3 pt-2">
+                    {% for social in footerModule.socials %}
+                    <a
+                        href="{{ social.url }}"
+                        class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center transition duration-300 {{ social.hover }}">
+                        <span class="material-icons text-white text-lg">
+                            {{ social.icon }}
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- LINKS -->
+            {% for section in footerModule.sections %}
+            <div class="space-y-5">
+                <!-- TITLE -->
+                <h4
+                    class="font-semibold text-sm uppercase tracking-wider text-white">
+                    {{ section.title }}
+                </h4>
+                <!-- LINKS -->
+                <ul class="space-y-3">
+                    {% for link in section.links %}
+                    <li>
+                        <a
+                            href="{{ link.url }}"
+                            class="text-gray-400 hover:text-yellow-400 text-sm transition">
+                            {{ link.name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+        <!-- BOTTOM -->
+        <div
+            class="py-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p
+                class="text-xs text-gray-500 text-center sm:text-left">
+                {{ footerModule.bottom.copyright }}
+            </p>
+            <p class="text-xs text-gray-500">
+                {{ footerModule.bottom.madeWith }}
+            </p>
+        </div>
+    </div>
+</footer>

@@ -32,6 +32,8 @@ import subprocess
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 
+from modules.templates.pdf.weasy import WeasyPDF
+
 
 from django.http import JsonResponse, Http404
 # dotenv_path = join(dirname(dirname(dirname(_file_))), 'awsCred.env')
@@ -1352,3 +1354,517 @@ def update_infraestructure_status_man(request):
         context["status"] = "error"
         context["message"] = e
         return JsonResponse(context, safe=False)
+
+
+# vista de submodulo responsiva
+@login_required
+def infrastructure_responsiva_view(request):
+    context = user_data(request)
+    module_id = 4
+    subModule_id = 26
+
+    access = get_module_user_permissions(context, subModule_id)
+    sidebar = get_sidebar(context, [1, module_id])
+    
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+    
+    template = "infrastructure/responsiva_infrastructure.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    return render(request, template , context)
+
+# tabla de datos de responsiva
+@login_required
+def get_infrastructure_responsiva(request):
+    context = user_data(request)
+    response = {
+        "status": "error",
+        "message": "Sin procesar",
+        "data": []
+    }
+
+    dt = request.GET
+    isList = dt.get("isList", False)
+    subModule_id = 19
+
+    datos = Infraestructure_Responsiva.objects.values(
+        "id",
+        "responsible_infraestructure_id",
+        "responsible_infraestructure__first_name",
+        "responsible_infraestructure__last_name",
+        "area_responsable_id",
+        "area_responsable__name",
+        "items",
+        "record",
+        "responsibility_pdf",
+        "created_at",
+        "updated_at",
+    )
+
+    modified_data_list = []
+
+    for data in datos:
+
+        modified_data = data.copy()
+
+        # Historial
+        record_string = data.get("record") or "[]"
+
+        try:
+            record_data = json.loads(record_string)
+        except json.JSONDecodeError:
+            record_data = []
+
+        # Convertir rutas del historial a URLs firmadas
+        for record in record_data:
+            file_path = record.get("file_path")
+
+            if file_path:
+                record["file_path"] = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    file_path
+                )
+
+        modified_data["record"] = json.dumps(record_data)
+
+        # PDF actual
+        if data.get("responsibility_pdf"):
+            modified_data["responsibility_pdf"] = generate_presigned_url(
+                AWS_BUCKET_NAME,
+                data["responsibility_pdf"]
+            )
+        else:
+            modified_data["responsibility_pdf"] = None
+
+        modified_data_list.append(modified_data)
+
+    if isList:
+
+        response["data"] = list(
+            Infraestructure_Responsiva.objects.values(
+                "id",
+                "responsible_infraestructure_id",
+                "responsible_infraestructure__first_name",
+                "responsible_infraestructure__last_name",
+            )
+        )
+
+    else:
+
+        access = get_module_user_permissions(context, subModule_id)
+        access = access["data"]["access"]
+
+        for item in modified_data_list:
+
+            item["btn_action"] = ""
+
+            if access["update"]:
+                item["btn_action"] += f"""
+                    <button
+                        class="btn btn-icon btn-sm btn-primary-light"
+                        data-id="{item['id']}"
+                        data-infrastructure-responsiva="update-item"
+                        title="Editar">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                """
+
+            if access["delete"]:
+                item["btn_action"] += f"""
+                    <button
+                        class="btn btn-icon btn-sm btn-danger-light"
+                        data-id="{item['id']}"
+                        data-infrastructure-responsiva="delete-item"
+                        title="Eliminar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                """
+
+        response["data"] = modified_data_list
+
+    response["status"] = "success"
+
+    return JsonResponse(response)
+
+
+# usuarios de la empresa
+@login_required
+def get_users_infrastructure_responsiva(request):
+    context = user_data(request)
+    company_id = context["company"]["id"]
+
+    response = {
+        "status": "success",
+        "data": []
+    }
+
+    usuarios = User_Access.objects.filter(
+        company_id=company_id,
+        user__is_active=True
+    ).select_related(
+        "user"
+    ).values(
+        "user_id",
+        "user__first_name",
+        "user__last_name"
+    ).distinct().order_by(
+        "user__first_name",
+        "user__last_name"
+    )
+
+    data = []
+
+    for item in usuarios:
+        data.append({
+            "id": item["user_id"],
+            "first_name": item["user__first_name"],
+            "last_name": item["user__last_name"],
+        })
+
+    response["data"] = data
+
+    return JsonResponse(response)
+
+# generar pdf
+@login_required
+def infrastructure_responsiva_pdf_view(request):
+    dt = request.GET
+    context = user_data(request)
+
+    context2 = {
+        "title": "Carta Responsiva",
+        "user": {
+            "name": ""
+        },
+        "data": []
+    }
+
+    responsible_id = dt.get("user_id")
+
+    if not responsible_id:
+        responsible_id = context["user"]["id"]
+
+    # ==========================
+    # Datos del responsable
+    # ==========================
+    usuario = User.objects.filter(id=responsible_id).first()
+
+    if usuario:
+        context2["user"]["name"] = (
+            f"{usuario.first_name} {usuario.last_name}"
+        )
+
+    # ==========================
+    # Activos asignados
+    # ==========================
+    infraestructura = (
+        InfrastructureItemDetail.objects
+        .filter(
+            company_id=context["company"]["id"],
+            responsible_id=responsible_id
+        )
+        .select_related(
+            "item",
+            "item__category",
+            "item__location"
+        )
+    )
+
+    for activo in infraestructura:
+
+        descripcion = ""
+
+        # Categoría
+        if activo.item.category:
+            descripcion += f"{activo.item.category.name}: "
+
+        # Nombre
+        descripcion += activo.item.name
+
+        # Descripción
+        if activo.item.description:
+            descripcion += f". {activo.item.description}"
+
+        # Ubicación
+        if activo.item.location:
+            descripcion += f". Ubicación: {activo.item.location.name}"
+
+        context2["data"].append({
+
+            "amount": 1,
+
+            "identifier": activo.identifier,
+
+            "description": descripcion
+
+        })
+
+    return WeasyPDF(
+        "pdf/infrastructure_responsiva_infrastructure.html",
+        context2
+    ).render()
+
+
+# agregar responsiva de Infraestructure_Responsiva
+def add_infrastructure_responsiva(request):
+    context = user_data(request)
+    response = {"status": "error", "message": "sin procesar" }
+    dt = request.POST
+    company_id = context["company"]["id"]
+
+    try:
+        responsible_infraestructure = dt.get("responsible_infraestructure")
+
+        if responsible_infraestructure == None:
+            response["message"] = "Sin Responsable"
+            return JsonResponse(response)
+        
+        responsable = User_Access.objects.filter(user_id = responsible_infraestructure)
+
+        if not responsable.exists():
+            response["message"] = "El responsable no existe"
+            return JsonResponse(response)
+
+        responsable = responsable.values()[0]
+        area_id = responsable["area_id"]
+
+        registro = Infraestructure_Responsiva.objects.filter(
+            responsible_infraestructure = responsible_infraestructure
+            ).count()
+
+        if registro >= 1:
+            response["message"] = f"Ya existen {registro} regitro(s) de la responsibla del usuario asignado"
+            return JsonResponse(response)
+
+
+        with transaction.atomic():
+            obj = Infraestructure_Responsiva(
+                responsible_infraestructure_id=responsible_infraestructure,
+                area_responsable_id=area_id
+            )
+            
+            obj.save()
+            id = obj.id
+
+        if 'responsibility_pdf' in request.FILES and request.FILES['responsibility_pdf']:
+            load_file = request.FILES.get('responsibility_pdf')
+            folder_path = f"docs/{company_id}/infrastructure/responsiva/{id}/"
+
+            file_name, extension = os.path.splitext(load_file.name)
+            new_name = f"doc_1{extension}"
+            s3Name = folder_path + new_name
+
+            # Guardar archivo
+            upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
+
+            # Guardar ruta en la tabla
+            obj.responsibility_pdf = s3Name
+            # obj.save()
+
+            # Cargar y actualizar el historial existente
+            try:
+                historial = json.loads(obj.record)
+            except (ValueError, TypeError):
+                historial = []
+
+            # Agregar el nuevo registro al historial
+            count = len(historial) + 1
+            historial.append({
+                "id": count,
+                "file_path": str(obj.responsibility_pdf),
+                "date": datetime.now().isoformat()
+            })
+
+            # Convertir el historial actualizado a cadena JSON
+            historial_str = json.dumps(historial)
+            obj.record = historial_str
+            obj.save()
+            response["id"] = id
+        response["status"] = "success"
+        response["message"] = "Guardado"
+    except ValidationError as e:
+        response["status"] = "error"
+        response["message"] = e.message_dict
+    except Exception as e:
+        response["status"] = "error"
+        response["message"] = str(e)
+    return JsonResponse(response)
+
+
+# funcion para obtener un registro
+@login_required
+def get_infrastructure_responsiva_item(request):
+
+    response = {
+        "status": "error",
+        "message": "Sin procesar"
+    }
+
+    id = request.GET.get("id")
+
+    try:
+
+        obj = Infraestructure_Responsiva.objects.values(
+            "id",
+            "responsible_infraestructure_id",
+            "area_responsable_id",
+            "responsibility_pdf"
+        ).get(id=id)
+
+        response["status"] = "success"
+        response["data"] = obj
+
+    except Infraestructure_Responsiva.DoesNotExist:
+        response["message"] = "No existe el registro."
+
+    return JsonResponse(response)
+
+
+# Editar responsiva
+@login_required
+@csrf_exempt
+def update_infrastructure_responsiva(request):
+    context = user_data(request)
+    response = {"status": "error", "message": "Sin procesar"}
+
+    # obtener informacion
+    if request.method == "GET":
+        id = request.GET.get("id")
+
+        try:
+
+            obj = Infraestructure_Responsiva.objects.values(
+                "id",
+                "responsible_infraestructure_id",
+                "area_responsable_id",
+                "responsibility_pdf"
+            ).get(id=id)
+
+            return JsonResponse({
+                "status": "success",
+                "data": obj
+            })
+
+        except Infraestructure_Responsiva.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "No existe el registro."
+            })
+
+    # Actualizar informacion    
+    dt = request.POST
+    company_id = context["company"]["id"]
+
+    try:
+
+        id = dt.get("id")
+        responsible_infraestructure = dt.get("responsible_infraestructure")
+
+        if not id:
+            response["message"] = "No se recibió el ID de la responsiva."
+            return JsonResponse(response)
+
+        if not responsible_infraestructure:
+            response["message"] = "Debe seleccionar un responsable."
+            return JsonResponse(response)
+
+        responsable = User_Access.objects.filter(
+            user_id=responsible_infraestructure
+        )
+
+        if not responsable.exists():
+            response["message"] = "El responsable no existe."
+            return JsonResponse(response)
+
+        area_id = responsable.values("area_id").first()["area_id"]
+
+        with transaction.atomic():
+
+            obj = Infraestructure_Responsiva.objects.get(id=id)
+
+            obj.responsible_infraestructure_id = responsible_infraestructure
+            obj.area_responsable_id = area_id
+
+            # Si se cargó una nueva responsiva
+            if request.FILES.get("responsibility_pdf"):
+
+                load_file = request.FILES["responsibility_pdf"]
+
+                folder_path = (
+                    f"docs/{company_id}/infrastructure/responsiva/{id}/"
+                )
+
+                try:
+                    historial = json.loads(obj.record) if obj.record else []
+                except Exception:
+                    historial = []
+
+                _, extension = os.path.splitext(load_file.name)
+
+                new_name = f"doc_{len(historial)+1}{extension}"
+
+                s3name = folder_path + new_name
+
+                upload_to_s3(
+                    load_file,
+                    AWS_BUCKET_NAME,
+                    s3name
+                )
+
+                obj.responsibility_pdf = s3name
+
+                historial.append({
+                    "id": len(historial) + 1,
+                    "file_path": s3name,
+                    "date": datetime.now().isoformat()
+                })
+
+                obj.record = json.dumps(historial)
+
+            obj.save()
+
+        response["status"] = "success"
+        response["message"] = "Responsiva actualizada correctamente."
+        response["id"] = obj.id
+
+    except Infraestructure_Responsiva.DoesNotExist:
+
+        response["message"] = (
+            f"No existe la responsiva con ID {id}."
+        )
+
+    except ValidationError as e:
+
+        response["message"] = e.message_dict
+
+    except Exception as e:
+
+        response["message"] = str(e)
+
+    return JsonResponse(response)
+
+
+# Eliminar responsiva
+def delete_infrastructure_responsiva(request):
+    response = {"success": False, "data": []}
+    dt = request.POST
+    id = dt.get("id", None)
+
+    if id == None:
+        response["error"] = {"message": "Proporcione un id valido"}
+        response["status"] = "error"
+        response["message"] = "Proporcione un id valido"
+        return JsonResponse(response)
+    try:
+        obj = Infraestructure_Responsiva.objects.get(id = id)
+    except Infraestructure_Responsiva.DoesNotExist:
+        response["error"] = {"message": "El objeto no existe"}
+        response["status"] = "error"
+        response["message"] = "El objeto no existe"
+        return JsonResponse(response)
+    else:
+        obj.delete()
+    response["success"] = True
+    response["status"] = "success"
+    response["message"] = "Se ha borrado el registro"
+    return JsonResponse(response)
+

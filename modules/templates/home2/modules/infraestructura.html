@@ -1,0 +1,138 @@
+<!-- MODULO INFRAESTRUCTURA -->
+<section id="{{ infrastructureModule.id }}"
+    class="fade-section py-20 lg:py-32 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- HEADER -->
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <div
+                    class="w-14 h-14 bg-blue-900/10 rounded-2xl flex items-center justify-center">
+                    <span class="material-icons text-blue-900 text-3xl">
+                        {{ infrastructureModule.icon }}
+                    </span>
+                </div>
+            </div>
+            <span
+                class="text-sm font-medium text-blue-900 uppercase tracking-wider">
+                {{ infrastructureModule.number }}
+            </span>
+            <h2
+                class="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-900 mt-4 mb-6">
+                Gestión de
+                <span class="text-amber-500">
+                    {{ infrastructureModule.title }}
+                </span>
+            </h2>
+
+            <p class="text-lg text-gray-600 leading-relaxed">
+                {{ infrastructureModule.description }}
+            </p>
+
+        </div>
+
+        <!-- PROPERTY TYPES -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+            {% for property in infrastructureModule.propertyTypes %}
+            <div
+                class="group bg-gray-50 rounded-xl border border-gray-200 p-6 hover:border-amber-400/40 hover:shadow-lg transition-all duration-300">
+                <div
+                    class="w-12 h-12 bg-blue-900/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-400/10 transition-colors">
+                    <span
+                        class="material-icons text-blue-900 group-hover:text-amber-500 transition-colors text-2xl">
+                        {{ property.icon }}
+                    </span>
+                </div>
+                <h3 class="font-semibold text-blue-900 mb-1">
+                    {{ property.title }}
+                </h3>
+                <p class="text-sm text-gray-500">
+                    {{ property.description }}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- CONTENT GRID -->
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+            <!-- FEATURES -->
+            <div class="space-y-4">
+                {% for feature in infrastructureModule.features %}
+                <div
+                    class="group flex gap-5 p-5 bg-gray-50 rounded-xl border border-gray-200 hover:border-blue-900/30 hover:shadow-lg transition-all duration-300">
+                    <div
+                        class="w-12 h-12 bg-blue-900/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-icons text-blue-900 text-2xl">
+                            {{ feature.icon }}
+                        </span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-blue-900 mb-1">
+                            {{ feature.title }}
+                        </h3>
+                        <p class="text-sm text-gray-600 leading-relaxed">
+                            {{ feature.description }}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- PROPERTY CARD -->
+            <div
+                class="bg-gray-50 rounded-2xl border border-gray-200 p-6 shadow-xl">
+                <!-- HEADER -->
+                <div
+                    class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
+                    <div
+                        class="w-14 h-14 bg-amber-400/10 rounded-xl flex items-center justify-center">
+                        <span class="material-icons text-amber-500 text-3xl">
+                            home
+                        </span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-blue-900 text-lg">
+                            Ficha de Inmueble
+                        </h4>
+                        <p class="text-sm text-gray-500">
+                            Información registrada
+                        </p>
+                    </div>
+                </div>
+
+                <!-- INFO GRID -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    {% for info in infrastructureModule.propertyInfo %}
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                        <span class="text-sm text-gray-700">
+                            {{ info }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- FOOTER -->
+                <div
+                    class="bg-blue-900/5 rounded-xl p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="material-icons text-blue-900 text-2xl">
+                            {{ infrastructureModule.statsCard.icon }}
+                        </span>
+                        <div>
+                            <p class="text-sm font-medium text-blue-900">
+                                {{ infrastructureModule.statsCard.title }}
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                {{ infrastructureModule.statsCard.subtitle }}
+                            </p>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-amber-500">
+                        {{ infrastructureModule.statsCard.value }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -169,7 +169,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_ROOT = os.path.join(CORE_DIR, 'staticfiles')
-STATIC_URL = '/staticfiles/'
+STATIC_URL = '/static/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get("EMAIL_HOST")

@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     # Vistas
-    path('computers-equipment/', views.computer_equipment_view),
+    path('computers-equipment/', views.computer_equipment_view),#
     path('computers-equipment/info/<int:equipment_id>/', views.computer_system_details),
     path("computers-equipment/peripheral/", views.computer_peripherals),
     path("computers-equipment/software/", views.computer_software),
@@ -18,7 +18,7 @@ urlpatterns = [
     # Peticiones
     path("add-computer-system/", views.add_computer_system),
     path("get-computer-equipment/", views.get_computer_equipment),
-    path("get-computers-equipment/", views.get_computers_equipment),
+    path("get-computers-equipment/", views.get_computers_equipment),#
     path("update-computer-system/", views.update_computer_system),
     path("delete-computer-system/", views.delete_computer_system),
 

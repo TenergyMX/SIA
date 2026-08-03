@@ -23,8 +23,11 @@
     </div>
 
     <div class="page">
-        {% include "ynex/utils/topbar.html" %}
-        {% include "ynex/utils/sidebar.html" %}
+
+        {% if not showLabels %}
+            {% include "ynex/utils/topbar.html" %}
+            {% include "ynex/utils/sidebar.html" %}
+        {% endif %}
 
         <!-- Start::app-content -->
         <div class="main-content app-content">
@@ -72,7 +75,11 @@
     <!-- simplebar js -->
     <script src="{% static 'assets/js/simplebar.js' %}"></script>
     <script src="{% static 'assets/js/custom.js' %}"></script>
+    
+    {% if not showLabels %}
     <script src="{% static 'assets/js/module.js' %}"></script>
+    {% endif %}
+    
     {% block scripts %} {% endblock %}
     {% if messages %}
         {% for message in messages %}

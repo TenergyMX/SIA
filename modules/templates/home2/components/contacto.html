@@ -1,0 +1,51 @@
+<!-- CONTACTO -->
+<section id="contacto" class="py-20 lg:py-32 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+            <!-- LEFT -->
+            <div class="space-y-8">
+                <!-- HEADER -->
+                <div>
+                    <span
+                        class="inline-block bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                        {{ contactModule.badge }}
+                    </span>
+                    <h2
+                        class="text-4xl lg:text-5xl font-bold text-blue-950 leading-tight mb-6">
+                        {{ contactModule.title.normal }}
+                        <span class="text-yellow-500">
+                            {{ contactModule.title.highlight }}
+                        </span>
+                        {{ contactModule.title.end }}
+                    </h2>
+                    <p class="text-lg text-gray-600 leading-relaxed">
+                        {{ contactModule.description }}
+                    </p>
+                </div>
+                <!-- TRUST SIGNALS -->
+                <div class="space-y-5">
+                    {% for signal in contactModule.trustSignals %}
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="w-12 h-12 rounded-xl {{ signal.bg }} flex items-center justify-center flex-shrink-0">
+                            <span
+                                class="material-icons {{ signal.iconColor }}">
+                                {{ signal.icon }}
+                            </span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-blue-950">
+                                {{ signal.title }}
+                            </h4>
+                            <p class="text-sm text-gray-500">
+                                {{ signal.description }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% include "home2/components/form.html" %}
+        </div>
+    </div>
+</section>

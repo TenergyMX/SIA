@@ -6,8 +6,10 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres_data:/var/lib/postgresql/data/
+    # env_file:
+    #   - ./venv/postgres.env 
     env_file:
-      - ./venv/postgres.env 
+      - ./venv/.env
     networks:
       - dbnet
 
@@ -18,6 +20,7 @@ services:
       - "8000:8000"
     volumes:
       - ./docs/:/app/docs/
+      - ./static/:/app/static/
       - ./staticfiles/:/app/staticfiles/
       - ./users/migrations/:/app/users/migrations
       - ./modules/:/app/modules

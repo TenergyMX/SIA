@@ -39,6 +39,11 @@ from django.shortcuts import render, get_object_or_404
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 
+from django.contrib.staticfiles import finders
+from django.templatetags.static import static
+# from weasyprint import HTML, default_url_fetcher
+
+from modules.templates.pdf.weasy import WeasyPDF
 
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 
@@ -72,6 +77,13 @@ def computer_equipment_view(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     print("estos son los modulos permitidos", context["sidebar"])
+
+    context["dataCatalog"] = get_computers_equipment(request, True)["data"]
+
+    for item in context["dataCatalog"]:
+        print(item)
+
+    #print("esta es la informacion obtenida", context["dataCatalog"])
 
     template = "computer-equipment/computer_equipment.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context)
@@ -231,17 +243,10 @@ def computer_equipment_responsiva_pdf_view(request):
             "identifier" : identifier 
         })
 
-    template = "computer-equipment/print/responsiva.html"
-    template = get_template('computer-equipment/print/responsiva.html')
-
-    html = template.render(context2)
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'inline; filename="reporte.pdf"'
-
-    pisa_status = pisa.CreatePDF(html, dest=response)
-    if pisa_status.err:
-        return HttpResponse('Ocurrió un error al generar el PDF', status=400)
-    return response
+    return WeasyPDF(
+        "pdf/responsiva.html",
+        context2
+    ).render()
 
 @login_required
 def computer_equipment_deliverie_view(request):
@@ -329,6 +334,13 @@ def computer_equipment_deliverie_pdf_view(request):
     template = "computer-equipment/print/deliverie.html"
     template = get_template('computer-equipment/print/deliverie.html')
 
+
+    context2["header_image"] = static("img/encabezado.png")
+    context2["footer_image"] = static("img/pie.png")
+
+    print("HEADER:", context2["header_image"])
+    print("FOOTER:", context2["footer_image"])
+
     html = template.render(context2)
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'inline; filename="reporte.pdf"'
@@ -338,6 +350,20 @@ def computer_equipment_deliverie_pdf_view(request):
         return HttpResponse('Ocurrió un error al generar el PDF', status=400)
     return response
 
+
+
+def link_callback(uri, rel):
+    if uri.startswith("/static/"):
+        uri = uri.replace("/static/", "")
+
+    path = finders.find(uri)
+
+    if path:
+        if isinstance(path, (list, tuple)):
+            path = path[0]
+        return path
+
+    raise Exception(f"No se encontró el archivo estático: {uri}")
 
 # TODO --------------- [ REQUEST ] ----------
 
@@ -476,7 +502,7 @@ def get_computer_equipment(request):
     response["data"] = datos
     return JsonResponse(response)
 
-def get_computers_equipment(request):
+def get_computers_equipment(request, inter = False):
     response = {"success": False}
     context = user_data(request)
     dt = request.GET
@@ -554,6 +580,9 @@ def get_computers_equipment(request):
 
     response["recordsTotal"] = datos.count()
     response["data"] = list(datos)
+
+    if inter:
+        return response
     return JsonResponse(response)
 
 def update_computer_system(request):
@@ -714,7 +743,7 @@ def get_computer_peripherals(request):
         "acquisition_date",
         "location",
         "responsible_id", "responsible__first_name", "responsible__last_name",
-        "peripheral_status", "comments","identifier"
+        "peripheral_status", "comments","identifier", "factura_document",
     )
 
     if context["role"]["id"] not in [1,2,3]:
@@ -729,6 +758,24 @@ def get_computer_peripherals(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in datos:
+            item["btn_view_factura"] = ""
+            if item["factura_document"]:
+
+                tempDoc = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(item["factura_document"]),
+                    inline=True
+                )
+
+                item["btn_view_factura"] = f"""
+                    <a href="{tempDoc}"
+                    target="_blank"
+                    class="btn btn-sm btn-info">
+                        <i class="fa-solid fa-eye"></i>
+                        Ver
+                    </a>
+                """
+
             item["btn_action"] = ""
             if access["update"]:
                 item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-computer-peripheral=\"update-item\">" \
@@ -747,9 +794,14 @@ def add_computer_peripherals(request):
     context = user_data(request)
     response = {"success": False}
     dt = request.POST
+    files = request.FILES
     company_id = context["company"]["id"]
 
     try:
+        # Documento factura
+
+        factura_document = files.get("factura_document")
+
         obj = ComputerPeripheral(
             company_id = company_id,
             name = dt.get("name"),
@@ -765,6 +817,21 @@ def add_computer_peripherals(request):
             comments = dt.get("comments")
         )
         obj.save()
+
+
+        if factura_document:
+            s3Path = f'docs/{company_id}/computer-peripheral/facturas/{obj.id}/'
+            file_name, extension = os.path.splitext(factura_document.name)
+            new_name = f"factura_equipo{obj.id}{extension}"
+            S3name = s3Path + new_name
+
+            upload_to_s3(factura_document, bucket_name, S3name)
+
+            # guardar la ruta
+            obj.factura_document = S3name
+            
+            obj.save()
+
         response["id"] = obj.id
         response["success"] = True
     except Exception as e:
@@ -773,10 +840,11 @@ def add_computer_peripherals(request):
     return JsonResponse(response)
 
 def update_computer_peripheral(request):
+    context = user_data(request)
     response = {"success": False}
     dt = request.POST
-
     id = dt.get("id", None)
+    company_id = context["company"]["id"]
 
     if not id:
         response["error"] = {"message": "No se proporcionó un ID válido"}
@@ -793,6 +861,43 @@ def update_computer_peripheral(request):
         obj.responsible_id = dt.get("responsible_id")
         obj.peripheral_status = dt.get("peripheral_status")
         obj.comments = dt.get("comments")
+
+        # DOCUMENTO FACTURA
+        factura_document = request.FILES.get("factura_document")
+
+        if factura_document:
+
+            # eliminar documento anterior
+            if obj.factura_document:
+                delete_s3_object(
+                    AWS_BUCKET_NAME,
+                    str(obj.factura_document.name)
+                )
+
+            # obtener extensión
+            file_name, extension = os.path.splitext(
+                factura_document.name
+            )
+
+            # nuevo nombre
+            new_name = f"factura_equipo_{obj.id}{extension}"
+
+            # ruta S3
+            s3_path = (
+                f"docs/{company_id}/computer-equipment/"
+                f"facturas/{obj.id}/{new_name}"
+            )
+
+            # subir a S3
+            upload_to_s3(
+                factura_document,
+                AWS_BUCKET_NAME,
+                s3_path
+            )
+
+            # guardar ruta
+            obj.factura_document = s3_path
+
         obj.save()
 
         response["success"] = True
@@ -2314,4 +2419,21 @@ def delete_computer_equipment_softwares(request):
         obj.delete()
     response["success"] = True
     return JsonResponse(response)
+
+
+
+def custom_url_fetcher(url):
+    if url.startswith("/static/"):
+        path = os.path.join(
+            settings.BASE_DIR,
+            "modules",
+            "static",
+            url.replace("/static/", "")
+        )
+
+        return {
+            "file_obj": open(path, "rb")
+        }
+
+    return default_url_fetcher(url)
 # END

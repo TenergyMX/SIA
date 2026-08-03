@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}PDF{% endblock %}</title>
+    <link rel="stylesheet" href="/modules/templates/pdf/css/pdf.css">
+</head>
+
+<body>
+
+<div class="header">
+
+    <!-- Fondo -->
+    <img class="header-bg" src="{{ header_image }}">
+
+    <!-- Tabla -->
+    <div class="header-info">
+        <div class="document-info">
+
+            <div class="row">
+                <div class="cell">
+                    <!-- <strong>Nombre del Documento:</strong> -->
+                    CARTA RESPONSIVA DE ENTREGA DE AUTOMÓVIL (PRESTACIÓN)
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="cell">
+                    <strong>Código:</strong>
+                    F P08-MP 07 02
+                </div>
+
+                <div class="cell">
+                    <strong>Nivel de Revisión:</strong>
+                    02
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="cell">
+                    <strong>Fecha de Emisión:</strong>
+                    22/06/2026
+                </div>
+
+                <div class="cell">
+                    <strong>Página:</strong>
+                    <td>
+    
+                    </td>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- <div class="footer">
+    <img src="{{ footer_image }}">
+</div> -->
+
+<div class="footer">
+    <p>- COPIA NO CONTROLADA AL IMPRIMIR -</p>
+</div>
+
+<div class="content">
+    {% block content %}
+    {% endblock %}
+</div>
+
+</body>
+</html>

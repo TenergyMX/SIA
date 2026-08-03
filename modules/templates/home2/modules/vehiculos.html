@@ -1,0 +1,83 @@
+<!-- MODULO VEHÍCULOS -->
+<section id="{{ vehiclesModule.id }}"
+    class="fade-section py-24 lg:py-32 bg-[#f7f4ef] overflow-hidden">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+            <!-- LEFT -->
+            <div>
+                <!-- HEADER -->
+                <div class="flex items-center gap-4 mb-8">
+                    <!-- ICON -->
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-amber-400/10 flex items-center justify-center">
+                        <span
+                            class="material-icons text-amber-500 text-3xl">
+                            {{ vehiclesModule.icon }}
+                        </span>
+                    </div>
+                    <!-- NUMBER -->
+                    <span
+                        class="text-sm font-semibold tracking-[0.2em] uppercase text-amber-500">
+                        {{ vehiclesModule.number }}
+                    </span>
+                </div>
+                <!-- TITLE -->
+                <h2
+                    class="text-4xl sm:text-5xl lg:text-6xl font-bold text-blue-950 leading-tight mb-8">
+                    Gestión de
+                    <span class="text-amber-500">
+                        {{ vehiclesModule.title }}
+                    </span>
+                </h2>
+                <!-- DESCRIPTION -->
+                <p
+                    class="text-lg lg:text-xl text-slate-600 leading-relaxed max-w-xl mb-10">
+                    {{ vehiclesModule.description }}
+                </p>
+                <!-- FEATURES -->
+                <div class="flex flex-wrap gap-4 mb-10">
+                    {% for feature in vehiclesModule.features %}
+                    <div
+                        class="flex items-center gap-2 px-5 py-3 rounded-full bg-[#efe8dc] text-slate-700 text-sm font-medium">
+                        <span
+                            class="material-icons text-amber-500 text-base">
+                            {{ feature.icon }}
+                        </span>
+                        <span>
+                            {{ feature.text }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            
+            </div>
+            <!-- RIGHT -->
+            <div class="grid md:grid-cols-2 gap-5 auto-rows-fr">
+                {% for card in vehiclesModule.cards %}
+                <div
+                    class="group hover-card h-full bg-[#efe8dc] border border-[#e5dccd] rounded-3xl p-7 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                    <!-- ICON -->
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-amber-400/10 flex items-center justify-center mb-6 group-hover:bg-amber-400/20 transition-colors">
+                        <span
+                            class="material-icons text-amber-500 text-2xl">
+                            {{ card.icon }}
+                        </span>
+                    </div>
+                    <!-- TITLE -->
+                    <h3
+                        class="text-xl font-bold text-blue-950 leading-snug mb-4">
+                        {{ card.title }}
+                    </h3>
+                    <!-- DESCRIPTION -->
+                    <p
+                        class="text-slate-600 leading-relaxed text-[15px]">
+                        {{ card.description }}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>

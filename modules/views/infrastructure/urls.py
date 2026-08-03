@@ -18,12 +18,6 @@ urlpatterns = [
     path("update-infrastructure-item/", views.update_infrastructure_item),
     path("delete-infrastructure-item/", views.delete_infrastructure_item),
 
-    # path("add-infrastructure-review/", views.add_infrastructure_review),
-    # path("get-infrastructure-reviews/", views.get_infrastructure_reviews),
-    # path("update-infrastructure-review/", views.update_infrastructure_review),
-    # path("delete-infrastructure-review/", views.delete_infrastructure_review),
-
-    # path("generates_review/", views.generates_review),
 
     #codigo qr
     path('generate_qr_infraestructure/<str:qr_type>/<int:itemId>/', views.generate_qr_infraestructure),
@@ -49,7 +43,6 @@ urlpatterns = [
     path("get_infrastructure_maintenance_detail/", views.get_infrastructure_maintenance_detail),
 
     path("delete_maintenance_infraestructure/", views.delete_maintenance_infraestructure),
-    # path('get_infraestructure_details/<int:id>/', views.get_infraestructure_details),
     path('update_infrastructure_maintenance/', views.update_infraestructure_maintenance),
 
     path('update_status_mantenance/', views.update_status_mantenance),
@@ -57,9 +50,12 @@ urlpatterns = [
 
     path('ajax/infra-info-by-maintenance/<int:maintenance_id>/', views.get_infrastructure_info_from_maintenance),
 
-
-
-
-
-
+    # responsivas
+    path("infrastructure/responsiva/", views.infrastructure_responsiva_view),
+    path("get_infrastructure_responsiva/", views.get_infrastructure_responsiva),
+    path("get_users_infrastructure_responsiva/", views.get_users_infrastructure_responsiva),
+    path("infrastructure_responsiva_pdf_view/", views.infrastructure_responsiva_pdf_view),
+    path("add_infrastructure_responsiva/", views.add_infrastructure_responsiva),
+    path("update_infrastructure_responsiva/", views.update_infrastructure_responsiva),
+    path("delete_infrastructure_responsiva/", views.delete_infrastructure_responsiva),
 ]

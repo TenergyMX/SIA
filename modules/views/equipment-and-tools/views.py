@@ -28,6 +28,8 @@ from os.path import join, dirname
 from pathlib import Path
 from dateutil.parser import parse
 
+from modules.templates.pdf.weasy import WeasyPDF
+
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 #dotenv_path = join(os.path.dirname(os.path.abspath(__file__)), 'awsCred.env')
 load_dotenv(dotenv_path)
@@ -302,23 +304,52 @@ def get_equipments_tools(request):
             'equipment_responsible__username',
             'equipment_location__id',
             'equipment_location__location_name',
-            'equipment_technical_sheet'
+            'equipment_technical_sheet',
+            'document_factura_equipment'
+
         ))
 
-        modified_data_list = []
-        for data in equipments:
-            modified_data = data.copy()
-
-            file_path = data.get('equipment_technical_sheet')
-            if file_path:
-                technical_sheet = generate_presigned_url(AWS_BUCKET_NAME, file_path)
-                modified_path = technical_sheet
-            else:
-                modified_path = None
-            modified_data['responsibility_letter'] = modified_path
-            modified_data_list.append(modified_data)
-       
         for item in equipments:
+
+            # Botón Ver Ficha Técnica
+            item["btn_equipment_technical_sheet"] = ""
+
+            if item["equipment_technical_sheet"]:
+
+                tempDoc = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(item["equipment_technical_sheet"])
+                )
+
+                item["btn_equipment_technical_sheet"] = f"""
+                    <a href="{tempDoc}"
+                    target="_blank"
+                    class="btn btn-sm btn-primary">
+                        <i class="fa-solid fa-file-lines"></i>
+                        Ver
+                    </a>
+                """
+
+            # Botón Ver Factura
+            item["btn_document_factura_equipment"] = ""
+
+            if item["document_factura_equipment"]:
+
+                tempDoc = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(item["document_factura_equipment"])
+                )
+
+                item["btn_document_factura_equipment"] = f"""
+                    <a href="{tempDoc}"
+                    target="_blank"
+                    class="btn btn-sm btn-info">
+                        <i class="fa-solid fa-eye"></i>
+                        Ver
+                    </a>
+                """
+
+
             item["btn_action"] = ""
             if access["update"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
                 item["btn_action"] += (
@@ -549,6 +580,20 @@ def add_equipment_tools(request):
                     obj.equipment_technical_sheet = s3Name
                     obj.save()
 
+                if 'document_factura_equipment' in request.FILES and request.FILES['document_factura_equipment']:
+                    document_factura_equipment = request.FILES.get('document_factura_equipment')
+
+                    folder_path = f"docs/{company_id}/Equipments_tools/document_factura_equipment/{id}/"
+
+                    file_name, extension = os.path.splitext(document_factura_equipment.name)
+
+                    new_name = f'document_factura_equipment{obj.equipment_name}{extension}'
+                    s3Name = folder_path + new_name
+
+                    upload_to_s3(document_factura_equipment, bucket_name, s3Name)
+                    obj.document_factura_equipment = s3Name
+                    obj.save()
+
             response["status"] = "success"
             response["message"] = "Guardado"
         except ValidationError as e:
@@ -559,7 +604,6 @@ def add_equipment_tools(request):
             response["message"] = str(e)
         return JsonResponse(response) 
     
-#el nombre y siempre lo marca como el nombre ya existe, y solo quiero modificar la cantidad
 # Función para editar los registros de los equipos o herramientas
 @login_required
 @csrf_exempt
@@ -579,7 +623,7 @@ def edit_equipments_tools(request):
         equipment_responsible = request.POST.get('responsible_equipment')
         equipment_location = request.POST.get('equipment_location')
         equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
-
+        document_factura_equipment = request.FILES.get('document_factura_equipment')
         # Validar que el nombre del equipo no esté en uso por otro equipo dentro de la misma empresa, 
         if Equipment_Tools.objects.filter(equipment_name__iexact=equipment_name, company_id=company_id).exclude(id=_id).exists():
             return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra registrado para esta empresa, ingresa otro diferente.'})
@@ -605,6 +649,15 @@ def edit_equipments_tools(request):
                 s3Name = folder_path + new_name
                 upload_to_s3(equipment_technical_sheet, AWS_BUCKET_NAME, s3Name)
                 equipment_tool.equipment_technical_sheet = s3Name
+
+            # Actualizar factura solo si se proporciona un archivo nuevo
+            if document_factura_equipment:
+                folder_path = f"docs/{equipment_tool.company_id}/Equipments_tools/document_factura_equipment/{id}/"
+                file_name, extension = os.path.splitext(document_factura_equipment.name)
+                new_name = f'document_factura_equipment{equipment_tool.equipment_name}{extension}'
+                s3Name = folder_path + new_name
+                upload_to_s3(document_factura_equipment, AWS_BUCKET_NAME, s3Name)
+                equipment_tool.document_factura_equipment = s3Name
 
             equipment_tool.save()
 
@@ -640,10 +693,15 @@ def delete_equipment_tool(request):
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
+
+
+
 #funcion para agregar una responsiva
 @login_required
 @csrf_exempt  
 def add_responsiva(request):
+    print("===== ADD RESPONSIVA =====")
+
     context = user_data(request)
     module_id = 6
     subModule_id = 31
@@ -667,7 +725,11 @@ def add_responsiva(request):
         fecha_entrega = request.POST.get('fecha_entrega')
         times_requested_responsiva = request.POST.get('times_requested_responsiva')
         comments = request.POST.get('comments', '')
-    
+
+        print(request.POST)
+        print(request.POST.dict())
+        print("fecha_entrega:", request.POST.get("fecha_entrega"))
+
         if not fecha_entrega or not isinstance(fecha_entrega, str):
             return JsonResponse({'success': False, 'message': 'Fecha de entrega no proporcionada.'})
         try:
@@ -761,6 +823,7 @@ def add_responsiva(request):
                 requested_amount.amount = available_amount - amount
                 requested_amount.save()
 
+                print("RESPONSIVA GUARDADA")
 
                 # Retornar la respuesta JSON
                 return JsonResponse({
@@ -1226,90 +1289,133 @@ def image_to_base64(image_path):
         return None
 
 #funcion para generar el pdf
-@login_required
-def generate_pdf(request, responsiva_id):
-    logger.info("Se ha llamado a la función generate_pdf con ID: %s", responsiva_id)
+# @login_required
+# def generate_pdf(request, responsiva_id):
+#     logger.info("Se ha llamado a la función generate_pdf con ID: %s", responsiva_id)
     
-    try:
-        responsiva_instance = get_object_or_404(Equipment_Tools_Responsiva, id=responsiva_id)
-        logger.info("Responsiva encontrada, generando PDF...")
+#     try:
+#         responsiva_instance = get_object_or_404(Equipment_Tools_Responsiva, id=responsiva_id)
+#         logger.info("Responsiva encontrada, generando PDF...")
 
-        # Convertir imágenes a Base64
-        header_image_base64 = None
-        footer_image_base64 = None
+#         # Convertir imágenes a Base64
+#         header_image_base64 = None
+#         footer_image_base64 = None
 
-        header_image_path = os.path.join(settings.MEDIA_ROOT, 'modules/templates/equipments-and-tools/responsiva/img/encabezado.png')
-        footer_image_path = os.path.join(settings.MEDIA_ROOT, 'modules/templates/equipments-and-tools/responsiva/img/pie.png')
+#         header_image_path = os.path.join(settings.MEDIA_ROOT, 'modules/templates/equipments-and-tools/responsiva/img/encabezado.png')
+#         footer_image_path = os.path.join(settings.MEDIA_ROOT, 'modules/templates/equipments-and-tools/responsiva/img/pie.png')
 
 
-        logger.info("Ruta de la imagen de encabezado: %s", header_image_path)
-        logger.info("Ruta de la imagen de pie de página: %s", footer_image_path)
+#         logger.info("Ruta de la imagen de encabezado: %s", header_image_path)
+#         logger.info("Ruta de la imagen de pie de página: %s", footer_image_path)
 
-        if os.path.exists(header_image_path):
-            header_image_base64 = f"data:image/png;base64,{image_to_base64(header_image_path)}"
-            logger.info("Imagen de encabezado cargada exitosamente.")
-        else:
-            logger.warning("No se encontró la imagen de encabezado en: %s", header_image_path)
+#         if os.path.exists(header_image_path):
+#             header_image_base64 = f"data:image/png;base64,{image_to_base64(header_image_path)}"
+#             logger.info("Imagen de encabezado cargada exitosamente.")
+#         else:
+#             logger.warning("No se encontró la imagen de encabezado en: %s", header_image_path)
 
-        if os.path.exists(footer_image_path):
-            footer_image_base64 = f"data:image/png;base64,{image_to_base64(footer_image_path)}"
-            logger.info("Imagen de pie de página cargada exitosamente.")
-        else:
-            logger.warning("No se encontró la imagen de pie de página en: %s", footer_image_path)
+#         if os.path.exists(footer_image_path):
+#             footer_image_base64 = f"data:image/png;base64,{image_to_base64(footer_image_path)}"
+#             logger.info("Imagen de pie de página cargada exitosamente.")
+#         else:
+#             logger.warning("No se encontró la imagen de pie de página en: %s", footer_image_path)
 
-        # Contexto para el PDF
-        pdf_context = {
-            'responsiva': responsiva_instance,
-            'responsible_name': responsiva_instance.responsible_equipment.username,
-            'signature_responsible': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_responsible)) if responsiva_instance.signature_responsible else None,
-            'signature_almacen': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_almacen)) if responsiva_instance.signature_almacen else None,
-            'header_image': header_image_base64,
-            'footer_image': footer_image_base64,
-        }
+#         # Contexto para el PDF
+#         pdf_context = {
+#             'responsiva': responsiva_instance,
+#             'responsible_name': responsiva_instance.responsible_equipment.username,
+#             'signature_responsible': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_responsible)) if responsiva_instance.signature_responsible else None,
+#             'signature_almacen': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_almacen)) if responsiva_instance.signature_almacen else None,
+#             'header_image': header_image_base64,
+#             'footer_image': footer_image_base64,
+#         }
 
-        # Generar PDF
-        pdf_file = render_to_pdf('equipments-and-tools/responsiva/responsiva_equipments.html', pdf_context)
+#         # Generar PDF
+#         pdf_file = render_to_pdf('equipments-and-tools/responsiva/responsiva_equipments.html', pdf_context)
 
-        if pdf_file is None:
-            logger.error("Error al generar el PDF.")
-            return JsonResponse({'success': False, 'message': 'Error al generar el PDF.'})
+#         if pdf_file is None:
+#             logger.error("Error al generar el PDF.")
+#             return JsonResponse({'success': False, 'message': 'Error al generar el PDF.'})
 
-        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-        pdf_folder_path = f"docs/{responsiva_instance.company_id}/Equipments_tools/pdfs_responsiva/{timestamp}/"
+#         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+#         pdf_folder_path = f"docs/{responsiva_instance.company_id}/Equipments_tools/pdfs_responsiva/{timestamp}/"
 
-        # Guardar el PDF en AWS S3 Bucket
-        pdf_file_name = f"responsiva_{timestamp}.pdf"
-        s3Name = pdf_folder_path + pdf_file_name
+#         # Guardar el PDF en AWS S3 Bucket
+#         pdf_file_name = f"responsiva_{timestamp}.pdf"
+#         s3Name = pdf_folder_path + pdf_file_name
 
-        try:
-            upload_to_s3(pdf_file, AWS_BUCKET_NAME, s3Name)
-            url = generate_presigned_url(AWS_BUCKET_NAME, s3Name)
-            response = requests.get(url)
+#         try:
+#             upload_to_s3(pdf_file, AWS_BUCKET_NAME, s3Name)
+#             url = generate_presigned_url(AWS_BUCKET_NAME, s3Name)
+#             response = requests.get(url)
     
-            # Store the PDF content in memory using BytesIO
-            pdfFile = BytesIO(response.content)
+#             # Store the PDF content in memory using BytesIO
+#             pdfFile = BytesIO(response.content)
     
-            # Prepare the response
-            pdf_response = HttpResponse(pdfFile.getvalue(), content_type='application/pdf')
+#             # Prepare the response
+#             pdf_response = HttpResponse(pdfFile.getvalue(), content_type='application/pdf')
     
-            # Set headers to open the file in a new browser tab
-            pdf_response['Content-Disposition'] = 'inline; filename="responsiva.pdf"'
+#             # Set headers to open the file in a new browser tab
+#             pdf_response['Content-Disposition'] = 'inline; filename="responsiva.pdf"'
         
-        except Exception as e:
-            logger.error("Error al guardar el PDF: %s", str(e))
-            return JsonResponse({'success': False, 'message': 'Error al guardar el PDF.'})
+#         except Exception as e:
+#             logger.error("Error al guardar el PDF: %s", str(e))
+#             return JsonResponse({'success': False, 'message': 'Error al guardar el PDF.'})
 
-        # URL del PDF
-        pdf_url = f"{request.scheme}:{s3Name}"
-        responsiva_instance.pdf_url = pdf_url  # Actualiza la responsiva si es necesario
-        return pdf_response
+#         # URL del PDF
+#         pdf_url = f"{request.scheme}:{s3Name}"
+#         responsiva_instance.pdf_url = pdf_url  # Actualiza la responsiva si es necesario
+#         return pdf_response
     
-        #return JsonResponse({
-        #    'success': True,
-        #    'message': 'Responsiva generada correctamente',
-        #    'pdf_url': pdf_response
-        #})
+#         #return JsonResponse({
+#         #    'success': True,
+#         #    'message': 'Responsiva generada correctamente',
+#         #    'pdf_url': pdf_response
+#         #})
 
-    except Equipment_Tools_Responsiva.DoesNotExist:
-        logger.error("Responsiva no encontrada. ")
-        return JsonResponse({'success': False, 'message': 'Responsiva no encontrada.'})
+#     except Equipment_Tools_Responsiva.DoesNotExist:
+#         logger.error("Responsiva no encontrada. ")
+#         return JsonResponse({'success': False, 'message': 'Responsiva no encontrada.'})
+
+# Generar pdf
+@login_required
+def equipment_tools_responsiva_pdf_view(request, responsiva_id):
+    responsiva = get_object_or_404(
+        Equipment_Tools_Responsiva,
+        id=responsiva_id
+    )
+
+    context = {
+        "title": "Responsiva de Equipo y Herramienta",
+        "responsiva": responsiva,
+        "responsible_name": responsiva.responsible_equipment.get_full_name()
+        or responsiva.responsible_equipment.username,
+
+        "signature_responsible": (
+            generate_presigned_url(
+                AWS_BUCKET_NAME,
+                str(responsiva.signature_responsible)
+            )
+            if responsiva.signature_responsible else None
+        ),
+
+        "signature_almacen": (
+            generate_presigned_url(
+                AWS_BUCKET_NAME,
+                str(responsiva.signature_almacen)
+            )
+            if responsiva.signature_almacen else None
+        ),
+
+        "data": [{
+            "equipment_name": responsiva.equipment_name.equipment_name,
+            "amount": responsiva.amount,
+            "days": responsiva.times_requested_responsiva,
+            "description": responsiva.comments,
+        }]
+    }
+
+    return WeasyPDF(
+        "pdf/equipment_tools_responsiva.html",
+        context
+    ).render()

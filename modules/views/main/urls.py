@@ -3,7 +3,7 @@ from . import views
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    path('', views.home_view, name='home'),
+    # path('', views.home_view, name='home'),
     path('develop/', views.develop_view),
 
     # path("500/", views.error_500_view),
@@ -14,9 +14,15 @@ urlpatterns = [
     
     path('enviar-cotizacion/', views.enviar_cotizacion, name='enviar_cotizacion'),
     
+    # envia datos
     path('stripe/get-plan/', views.getPlan),
+    
     path('webhooks/stripe/', views.stripWebHook, name='stripe-webhook'),
     path('stripe-cancel/', views.CancelView.as_view(), name='cancel'),
     path('stripe-success/', views.SuccessView.as_view(), name='success'),
-    path('reset-password/', views.siaChangePassword, name="siaChangePassword")
+    path('reset-password/', views.siaChangePassword, name="siaChangePassword"),
+
+    # nuevo landing page
+    path('', views.new_home_view, name='Nuevo home'),
+
 ]

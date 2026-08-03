@@ -207,4 +207,17 @@ urlpatterns = [
     # path('descargar_qr_fuel/', views.descargar_qr_fuel),
     # # path('delete_qr_computer/<str:qr_type>/<int:computerSystemId>/', views.delete_qr_computer),
 
+    # carta responsiva
+    path("vehicles/vehicle_responsiva_view/", views.vehicle_responsiva_view),
+    path("table_vehicle_responsiva_view/", views.table_vehicle_responsiva_view),
+    path("get_users_vehicle_responsiva/", views.get_users_vehicle_responsiva),
+    path("vehicle_responsiva_pdf_view/", views.vehicle_responsiva_pdf_view),
+    path("add_vehicle_responsiva_pdf/", views.add_vehicle_responsiva_pdf),
+    path("update_vehicle_responsiva_pdf/", views.update_vehicle_responsiva_pdf),
+    path("delete_vehicle_responsiva_pdf/", views.delete_vehicle_responsiva_pdf),
+
+    path("generar_plantilla/", views.generarPlantilla),
+
+
+
 ]

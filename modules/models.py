@@ -38,7 +38,9 @@ class Vehicle(models.Model):
     email_verificacion_s2 = models.BooleanField(default=False)
     qr_fuel = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
     fuel_type_vehicle = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
-    car_tires = models.CharField(max_length=60, blank=True, null=True)                                                 # Placa
+    car_tires = models.CharField(max_length=60, blank=True, null=True)      
+    document_factura_vehicle = models.FileField(max_length=500, null=True, blank=True)     
+                                          # Placa
     # apply_tenencia = models.BooleanField(default=False, verbose_name="Aplica tenencia") 
 
     responsible = models.ForeignKey(
@@ -324,6 +326,24 @@ class Carnet_Vehicle(models.Model):
 
 
 
+# tabla de responsivas para vehículos:
+class Vehicles_Responsivas(models.Model):
+    responsible_vehicle= models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable")
+    area_responsable = models.ForeignKey(Area, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Área del responsable")
+    items = models.TextField(blank=True, null=True, verbose_name='Items')
+    record = models.TextField(blank=True, null=True, verbose_name='Historial')
+    responsibility_vehicle_pdf = models.FileField(upload_to='doc/infraestructure/', blank=True, null=True, verbose_name='Responsiva')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+    class Meta:
+        verbose_name = "Responsiva de Vehiculo"
+        verbose_name_plural = "Responsivas de Vehiculos"
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Responsiva de {self.responsible_vehicle}"
+
 
 
 
@@ -437,6 +457,7 @@ class ComputerPeripheral(models.Model):
     peripheral_status = models.CharField(max_length=20, blank=True, null=True, verbose_name="Estado del Periférico")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
     identifier = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name="Identificador")
+    factura_document = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
 
     class Meta:
         verbose_name = "Periférico de Equipo de Computo"
@@ -774,6 +795,23 @@ class MaintenanceAction(models.Model):
     def __str__(self):
         return self.name
 
+# tabla de responsivas para infraestructura:
+class Infraestructure_Responsiva(models.Model):
+    responsible_infraestructure = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable")
+    area_responsable = models.ForeignKey(Area, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Área del responsable")
+    items = models.TextField(blank=True, null=True, verbose_name='Items')
+    record = models.TextField(blank=True, null=True, verbose_name='Historial')
+    responsibility_pdf = models.FileField(upload_to='doc/infraestructure/', blank=True, null=True, verbose_name='Responsiva')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
+
+    class Meta:
+        verbose_name = "Responsiva de Infraestructura"
+        verbose_name_plural = "Responsivas de Infraestructura"
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Responsiva de {self.responsible_infraestructure}"
 
 #tablas de datos para el modulo de servicios--modulo 5 
 #tabla categorias de servicios submodulo num.32
@@ -862,8 +900,9 @@ class Equipment_Tools(models.Model):
     equipment_description = models.TextField(blank=True, null=True, verbose_name="Descripcion")
     cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')
-    equipment_technical_sheet = models.FileField(upload_to='docs/Equipments_tools', blank=True, null=True, verbose_name="Ficha tecnica")
+    equipment_technical_sheet = models.FileField(upload_to='docs/Equipments_tools', max_length=500, blank=True, null=True, verbose_name="Ficha tecnica")
     equipment_location = models.ForeignKey(Equipmets_Tools_locations, on_delete=models.CASCADE, verbose_name="Ubicación" ,blank=True, null=True)
+    document_factura_equipment = models.FileField(upload_to='docs/Equipments_tools', max_length=500, null=True, blank=True, verbose_name="factura")     
 
     
 #tabla de responsivas
@@ -887,10 +926,15 @@ class Equipment_Tools_Responsiva(models.Model):
     email_responsiva_late = models.BooleanField(default=False)
     email_responsiva_date = models.BooleanField(default=False)
 
-
-
-
-
+class PlanHeader(models.Model):
+    stripeClient = models.CharField(max_length=100, null="True", verbose_name="Stripe_cliente")
+    StripeProductss = models.CharField(max_length=100, null="True", verbose_name="Stripe_producto")
+    stripeSubcription = models.CharField(max_length=100, null="True", verbose_name="Stripe_subscripcion")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal")
+    created_at = models.DateField(blank=True, null=True, verbose_name="Fecha de inicio", auto_now=True)
+    q_modules =  models.PositiveIntegerField(blank=True, null=True, default=1, verbose_name="Cantidad de modulos")
+    title = models.CharField(max_length=100, null="True")
 
 #tabla de planes
 class Plans(models.Model):
@@ -914,6 +958,7 @@ class Plans(models.Model):
     ], verbose_name="Unidad de Tiempo")
     end_date_plan = models.DateField(blank=True, null=True, verbose_name="Fecha de fin")
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo total')
+    planHeader = models.ForeignKey(PlanHeader, on_delete=models.CASCADE, blank=True, null=True, verbose_name="planheader")
     
 class StripeProducts(models.Model):
     name = models.CharField(max_length=254, blank=True, null=True)

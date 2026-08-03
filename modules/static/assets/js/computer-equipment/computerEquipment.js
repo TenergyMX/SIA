@@ -21,6 +21,12 @@ class ComputerEquipment {
                 id: null,
                 ajax: {},
             },
+
+            // tarjetas
+            cards: {
+                id: "#computer_cards",
+            },
+
             table: {
                 id: "#computer_equipment_table",
                 ajax: {
@@ -97,6 +103,12 @@ class ComputerEquipment {
         };
 
         self.data = { ...defaultOptions.data, ...options.data };
+
+        if (options.cards) {
+            self.cards = { ...defaultOptions.cards, ...options.cards };
+        } else {
+            self.cards = defaultOptions.cards;
+        }
 
         if (options.infoCard) {
             self.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
@@ -236,10 +248,171 @@ class ComputerEquipment {
                 initComplete: function (settings, json) {},
             });
 
+            self.loadCards();
             delete self.table;
         }
 
         self.setupEventHandlers();
+    }
+
+    loadCards() {
+        const self = this;
+
+        $.ajax({
+            type: "GET",
+            url: self.table.ajax.url,
+            dataType: "json",
+            success: function (response) {
+                let html = "";
+
+                $.each(response.data, function (i, item) {
+                    const responsable =
+                        (item.current_responsible__first_name || "") +
+                        " " +
+                        (item.current_responsible__last_name || "");
+
+                    html += `
+                    <div class="col-xl-4 col-lg-6 col-md-6">
+
+                        <div class="card shadow-sm h-100">
+
+                            <div class="card-body">
+
+                                <div class="d-flex justify-content-between">
+
+                                    <div class="d-flex">
+
+                                        <div class="bg-primary text-white rounded p-2 me-2">
+                                            <i class="fa-solid fa-laptop"></i>
+                                        </div>
+
+                                        <div>
+                                            <h5 class="fw-bold mb-0">
+                                                ${item.name || "-"}
+                                            </h5>
+
+                                            <small class="text-muted">
+                                                ${item.identifier || "-"}
+                                            </small>
+                                        </div>
+
+                                    </div>
+
+                                    <span class="badge bg-primary">
+                                        ${item.brand || "-"}
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                            <div class="px-3 mb-3">
+
+                                <span class="badge bg-info">
+                                    ${item.equipment_type || "-"}
+                                </span>
+
+                                <span class="badge ${
+                                    item.equipment_status == "En uso" ? "bg-success" : "bg-warning"
+                                }">
+                                    ${item.equipment_status || "-"}
+                                </span>
+
+                                <span class="badge ${item.is_active ? "bg-success" : "bg-danger"}">
+
+                                    ${item.is_active ? "Activo" : "Inactivo"}
+
+                                </span>
+
+                            </div>
+
+                            <div class="row px-3">
+
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        Área
+                                    </small>
+
+                                    <h6>
+                                        ${item.area__name || "-"}
+                                    </h6>
+
+                                </div>
+
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        Responsable
+                                    </small>
+
+                                    <h6>
+                                        ${responsable}
+                                    </h6>
+
+                                </div>
+
+                            </div>
+
+                            <div class="row px-3 mt-3">
+
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        Modelo
+                                    </small>
+
+                                    <h6>
+                                        ${item.model || "-"}
+                                    </h6>
+
+                                </div>
+
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        Sistema Operativo
+                                    </small>
+
+                                    <h6>
+                                        ${item.so || "-"}
+                                    </h6>
+
+                                </div>
+
+                            </div>
+
+                            <div class="mx-3 mt-3 p-2 bg-light rounded">
+
+                                ${item.serial_number || "-"}
+
+                            </div>
+
+                            <div class="p-3">
+
+                                <strong>Comentarios:</strong><br>
+
+                                ${item.comments || "Sin comentarios"}
+
+                            </div>
+
+                            <div class="card-footer bg-white">
+
+                                <div class="d-flex justify-content-center gap-2">
+
+                                    ${item.btn_view_factura}
+
+                                    ${item.btn_action}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    `;
+                });
+
+                $(self.cards.id).html(html);
+            },
+        });
     }
 
     setupEventHandlers() {
@@ -253,6 +426,7 @@ class ComputerEquipment {
             switch (option) {
                 case "refresh-table":
                     self.tbl_computerEquipment.ajax.reload();
+                    self.loadCards();
                     break;
                 case "add-item":
                     obj_modal.find("form")[0].reset();
@@ -296,6 +470,7 @@ class ComputerEquipment {
                         .then((message) => {
                             Swal.fire("Exito", message, "success");
                             self.tbl_computerEquipment.ajax.reload();
+                            self.loadCards();
                         })
                         .catch((error) => {
                             Swal.fire("Error", error, "error");
@@ -332,6 +507,7 @@ class ComputerEquipment {
                     }
                     Swal.fire("Exito", "Se han guardado los datos con exito", "success");
                     self.tbl_computerEquipment.ajax.reload();
+                    self.loadCards();
                     obj_modal.modal("hide");
                 },
                 error: function (xhr, status, error) {

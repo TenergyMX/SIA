@@ -53,7 +53,7 @@ urlpatterns = [
 
     #url para generar el pdf de la responsiva
     path("render_to_pdf/", views.render_to_pdf),
-    path("generate_pdf/<int:responsiva_id>/", views.generate_pdf, name='generate_pdf'),
+    path("generate_pdf/<int:responsiva_id>/", views.equipment_tools_responsiva_pdf_view, name='generate_pdf'),
 
     path("get_doc/", views.get_doc)
 ]
