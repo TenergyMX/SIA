@@ -720,133 +720,325 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                 today = date.today()
 
                 for item in obj_vehicles:
-                    vehicle_instance = Vehicle.objects.get(id=item["id"])
-                    link_vehiculo = f"{domain}/vehicles/info/{item['id']}/"
 
-                    # 👉 Buscar el último registro de verificación (sin importar el año)
-                    registro = Vehicle_Verificacion.objects.filter(
-                        vehiculo_id=item["id"]
-                    ).order_by("-fecha_pago").first()
+                    vehicle_instance = Vehicle.objects.get(
+                        id=item["id"]
+                    )
 
+                    link_vehiculo = (
+                        f"{domain}/vehicles/info/{item['id']}/"
+                    )
+
+                    # BUSCAR ÚLTIMO REGISTRO DE VERIFICACIÓN
+                    registro = (
+                        Vehicle_Verificacion.objects
+                        .filter(vehiculo_id=item["id"])
+                        .order_by("-fecha_pago")
+                        .first()
+                    )
+
+                    # VEHÍCULO SIN NINGUNA VERIFICACIÓN
                     if not registro:
-                        # 🚨 Vehículo sin verificación en ningún año
+
                         if not vehicle_instance.email_sin_verificacion:
+
                             response["data"].append({
                                 "alert": "warning",
-                                "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
-                                "title": f"Vehículo sin verificación",
-                                "text": f"Vehículo: {item['name']} no cuenta con ningún registro de verificación",
+                                "icon": (
+                                    "<i class='fa-regular "
+                                    "fa-calendar-clock fs-18'></i>"
+                                ),
+                                "title": "Vehículo sin verificación",
+                                "text": (
+                                    f"Vehículo: {item['name']} "
+                                    f"no cuenta con ningún registro "
+                                    f"de verificación"
+                                ),
                                 "link": link_vehiculo
                             })
 
                             context_email = {
-                                "company": Company.objects.get(id=company_id).name,
-                                "subject": "Alerta de vehículo sin verificación",
+                                "company": Company.objects.get(
+                                    id=company_id
+                                ).name,
+
+                                "subject": (
+                                    "Alerta de vehículo "
+                                    "sin verificación"
+                                ),
+
                                 "modulo": 2,
+
                                 "submodulo": "Verificaciones",
+
                                 "item": vehicle_instance.id,
-                                "title": f"Vehículo {vehicle_instance.name} sin verificación",
+
+                                "title": (
+                                    f"Vehículo "
+                                    f"{vehicle_instance.name} "
+                                    f"sin verificación"
+                                ),
+
                                 "body": (
-                                    f"El vehículo <strong>{vehicle_instance.name}</strong> no tiene ningún registro "
-                                    f"de verificación. "
-                                    f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                                    f"El vehículo "
+                                    f"<strong>"
+                                    f"{vehicle_instance.name}"
+                                    f"</strong> "
+                                    f"no tiene ningún registro "
+                                    f"de verificación."
+                                    f"<br>"
+                                    f"<a href='{link_vehiculo}'>"
+                                    f"Ver detalles del vehículo"
+                                    f"</a>"
                                 )
                             }
+
                             send_notification(context_email)
+
                             vehicle_instance.email_sin_verificacion = True
-                            vehicle_instance.save(update_fields=["email_sin_verificacion"])
+
+                            vehicle_instance.save(
+                                update_fields=[
+                                    "email_sin_verificacion"
+                                ]
+                            )
+
                         continue
 
-                    # Ya tiene registro → calcular diferencia de días
-                    dias_restantes = (registro.fecha_pago - today).days
+                    # CALCULAR DÍAS RESTANTES
+                    dias_restantes = (
+                        registro.fecha_pago - today
+                    ).days
 
-                    # -------- 1️⃣ Falta un mes o menos --------
-                    if 0 < dias_restantes <= 30 and not registro.email_verificacion:
+
+                    if (
+                        dias_restantes < 0
+                        and not registro.comprobante_pago
+                    ):
+
                         response["data"].append({
-                            "alert": "info",
-                            "icon": "<i class='fa-regular fa-calendar-clock fs-18'></i>",
-                            "title": f"Próximo pago de verificación",
-                            "text": f"Vehículo: {item['name']} → Pago en menos de un mes",
+                            "alert": "danger",
+                            "icon": (
+                                "<i class='fa-regular "
+                                "fa-circle-xmark fs-18'></i>"
+                            ),
+                            "title": "Pago de verificación vencido",
+                            "text": (
+                                f"Vehículo: {item['name']} - "
+                                f"NO se realizó en el periodo"
+                            ),
                             "link": link_vehiculo
                         })
 
-                        context_email = {
-                            "company": Company.objects.get(id=company_id).name,
-                            "subject": "Aviso de próximo pago de verificación",
-                            "modulo": 2,
-                            "submodulo": "Verificaciones",
-                            "item": vehicle_instance.id,
-                            "title": f"Próximo pago de verificación - Vehículo: {vehicle_instance.name}",
-                            "body": (
-                                f"El vehículo <strong>{vehicle_instance.name}</strong> debe realizar su verificación "
-                                f"el <strong>{registro.fecha_pago}</strong>.<br>"
-                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                            )
-                        }
-                        send_notification(context_email)
-                        registro.email_verificacion = True
-                        registro.save(update_fields=["email_verificacion"])
-
-                    # -------- 2️⃣ Faltan 3 días o menos --------
-                    elif 0 <= dias_restantes <= 3 and not registro.email_verificacion_days:
-                        response["data"].append({
-                            "alert": "warning",
-                            "icon": "<i class='fa-regular fa-bell fs-18'></i>",
-                            "title": f"Recordatorio urgente",
-                            "text": f"Vehículo: {item['name']} → Faltan {dias_restantes} días",
-                            "link": link_vehiculo
-                        })
-
-                        context_email = {
-                            "company": Company.objects.get(id=company_id).name,
-                            "subject": "Recordatorio: verificación próxima a vencer",
-                            "modulo": 2,
-                            "submodulo": "Verificaciones",
-                            "item": vehicle_instance.id,
-                            "title": f"Recordatorio de verificación - Vehículo: {vehicle_instance.name}",
-                            "body": (
-                                f"El vehículo <strong>{vehicle_instance.name}</strong> debe realizar su verificación el "
-                                f"<strong>{registro.fecha_pago}</strong>. Solo faltan {dias_restantes} días.<br>"
-                                f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
-                            )
-                        }
-                        send_notification(context_email)
-                        registro.email_verificacion_days = True
-                        registro.save(update_fields=["email_verificacion_days"])
-
-                    # -------- 3️⃣ Ya venció --------
-                    elif dias_restantes < 0 and registro.status != "VENCIDO" and not registro.comprobante_pago:
+                        # ENVIAR CORREO UNA SOLA VEZ
                         if not registro.email_verificacion_vencida:
-                            response["data"].append({
-                                "alert": "danger",
-                                "icon": "<i class='fa-regular fa-circle-xmark fs-18'></i>",
-                                "title": f"Pago de verificación vencido",
-                                "text": f"Vehículo: {item['name']} - NO se realizó en el periodo",
-                                "link": link_vehiculo
-                            })
 
                             context_email = {
-                                "company": Company.objects.get(id=company_id).name,
-                                "subject": "Alerta: verificación vencida",
+                                "company": Company.objects.get(
+                                    id=company_id
+                                ).name,
+
+                                "subject": (
+                                    "Alerta: "
+                                    "verificación vencida"
+                                ),
+
                                 "modulo": 2,
+
                                 "submodulo": "Verificaciones",
+
                                 "item": vehicle_instance.id,
-                                "title": f"Verificación vencida - Vehículo: {vehicle_instance.name}",
+
+                                "title": (
+                                    f"Verificación vencida - "
+                                    f"Vehículo: "
+                                    f"{vehicle_instance.name}"
+                                ),
+
                                 "body": (
-                                    f"El vehículo <strong>{vehicle_instance.name}</strong> no realizó su verificación "
-                                    f"en la fecha <strong>{registro.fecha_pago}</strong>. Actualmente se encuentra vencido.<br>"
-                                    f"<a href='{link_vehiculo}'>Ver detalles del vehículo</a>"
+                                    f"El vehículo "
+                                    f"<strong>"
+                                    f"{vehicle_instance.name}"
+                                    f"</strong> "
+                                    f"no realizó su verificación "
+                                    f"en la fecha "
+                                    f"<strong>"
+                                    f"{registro.fecha_pago}"
+                                    f"</strong>."
+                                    f"<br>"
+                                    f"Actualmente se encuentra "
+                                    f"vencido."
+                                    f"<br>"
+                                    f"<a href='{link_vehiculo}'>"
+                                    f"Ver detalles del vehículo"
+                                    f"</a>"
                                 )
                             }
+
                             send_notification(context_email)
+
                             registro.email_verificacion_vencida = True
 
-                        # Actualiza estatus a VENCIDO siempre que aplique
+                        # MARCAR COMO VENCIDO
                         registro.status = "VENCIDO"
-                        registro.save(update_fields=["status", "email_verificacion_vencida"])
+
+                        registro.save(
+                            update_fields=[
+                                "status",
+                                "email_verificacion_vencida"
+                            ]
+                        )
+
+                    # 2. FALTAN 3 DÍAS O MENOS
+                    elif 0 <= dias_restantes <= 3:
+
+                        response["data"].append({
+                            "alert": "warning",
+                            "icon": (
+                                "<i class='fa-regular "
+                                "fa-bell fs-18'></i>"
+                            ),
+                            "title": "Recordatorio urgente",
+                            "text": (
+                                f"Vehículo: {item['name']} → "
+                                f"Faltan {dias_restantes} días"
+                            ),
+                            "link": link_vehiculo
+                        })
+
+                        # ENVIAR CORREO UNA SOLA VEZ
+                        if not registro.email_verificacion_days:
+
+                            context_email = {
+                                "company": Company.objects.get(
+                                    id=company_id
+                                ).name,
+
+                                "subject": (
+                                    "Recordatorio: "
+                                    "verificación próxima a vencer"
+                                ),
+
+                                "modulo": 2,
+
+                                "submodulo": "Verificaciones",
+
+                                "item": vehicle_instance.id,
+
+                                "title": (
+                                    f"Recordatorio de verificación - "
+                                    f"Vehículo: "
+                                    f"{vehicle_instance.name}"
+                                ),
+
+                                "body": (
+                                    f"El vehículo "
+                                    f"<strong>"
+                                    f"{vehicle_instance.name}"
+                                    f"</strong> "
+                                    f"debe realizar su verificación "
+                                    f"el "
+                                    f"<strong>"
+                                    f"{registro.fecha_pago}"
+                                    f"</strong>."
+                                    f"<br>"
+                                    f"Solo faltan "
+                                    f"<strong>"
+                                    f"{dias_restantes}"
+                                    f"</strong> días."
+                                    f"<br>"
+                                    f"<a href='{link_vehiculo}'>"
+                                    f"Ver detalles del vehículo"
+                                    f"</a>"
+                                )
+                            }
+
+                            send_notification(context_email)
+
+                            registro.email_verificacion_days = True
+
+                            registro.save(
+                                update_fields=[
+                                    "email_verificacion_days"
+                                ]
+                            )
+
+                    # 3. FALTA ENTRE 4 Y 30 DÍAS
+                    elif 4 <= dias_restantes <= 30:
+
+                        response["data"].append({
+                            "alert": "info",
+                            "icon": (
+                                "<i class='fa-regular "
+                                "fa-calendar-clock fs-18'></i>"
+                            ),
+                            "title": (
+                                "Próximo pago de verificación"
+                            ),
+                            "text": (
+                                f"Vehículo: {item['name']} → "
+                                f"Pago en menos de un mes"
+                            ),
+                            "link": link_vehiculo
+                        })
+
+                        # ENVIAR CORREO UNA SOLA VEZ
+                        if not registro.email_verificacion:
+
+                            context_email = {
+                                "company": Company.objects.get(
+                                    id=company_id
+                                ).name,
+
+                                "subject": (
+                                    "Aviso de próximo pago "
+                                    "de verificación"
+                                ),
+
+                                "modulo": 2,
+
+                                "submodulo": "Verificaciones",
+
+                                "item": vehicle_instance.id,
+
+                                "title": (
+                                    f"Próximo pago de verificación - "
+                                    f"Vehículo: "
+                                    f"{vehicle_instance.name}"
+                                ),
+
+                                "body": (
+                                    f"El vehículo "
+                                    f"<strong>"
+                                    f"{vehicle_instance.name}"
+                                    f"</strong> "
+                                    f"debe realizar su verificación "
+                                    f"el "
+                                    f"<strong>"
+                                    f"{registro.fecha_pago}"
+                                    f"</strong>."
+                                    f"<br>"
+                                    f"<a href='{link_vehiculo}'>"
+                                    f"Ver detalles del vehículo"
+                                    f"</a>"
+                                )
+                            }
+
+                            send_notification(context_email)
+
+                            registro.email_verificacion = True
+
+                            registro.save(
+                                update_fields=[
+                                    "email_verificacion"
+                                ]
+                            )
 
             except Exception as e:
-                print("Error en verificaciones:", str(e))
+                print(
+                    "Error en verificaciones:",
+                    str(e)
+                )
 
         # SEGUROS
         if 9 in access and access[9]["read"]:

@@ -112,9 +112,23 @@ def vehicles(request):
 @login_required
 def vehicles_details(request, vehicle_id = None):
     context = user_data(request)
+
     context["vehicle"] = {"id": vehicle_id}
+    
     if vehicle_id is not None:
-        context["vehicle_name"] = Vehicle.objects.get(id = vehicle_id).name
+
+        vehicle = Vehicle.objects.get(id=vehicle_id)
+
+        context["vehicle"] = {
+            "id": vehicle.id,
+            "name": vehicle.name,
+            "fuel_type_vehicle": vehicle.fuel_type_vehicle,
+        }
+
+        # context["vehicle_name"] = Vehicle.objects.get(id = vehicle_id).name
+
+        context["vehicle_name"] = vehicle.name
+
     module_id = 2
     subModule_id = 4
     request.session["last_module_id"] = module_id
@@ -456,7 +470,7 @@ def add_vehicle_info(request):
 
     try:
         #documento de factura
-        document_factura_vehicle = files.get("document_factura_vehicle")
+        # document_factura_vehicle = files.get("document_factura_vehicle")
         # imagen 
         cover_image = files.get("cover-image")
 
@@ -487,8 +501,8 @@ def add_vehicle_info(request):
         if not cover_image:
             missing_fields.append("Imagen del vehículo")
 
-        if not document_factura_vehicle:
-            missing_fields.append("Documento de factura")
+        # if not document_factura_vehicle:
+        #     missing_fields.append("Documento de factura")
 
         if missing_fields:
             return JsonResponse({
@@ -524,11 +538,12 @@ def add_vehicle_info(request):
         )
         obj.save()
         id = obj.id
-        image_url = None
-        factura_url = None
+        # image_url = None
+        # factura_url = None
 
         # imagen
-        s3Path = f'docs/{company_id}/vehicle/{id}/'
+        # s3Path = f'docs/{company_id}/vehicle/{id}/'
+        s3Path = f"docs/{company_id}/vehicle/{id}/images/"
 
         file_name, extension = os.path.splitext(cover_image.name)                
         new_name = f"cover-image{extension}"
@@ -542,17 +557,17 @@ def add_vehicle_info(request):
         image_url = generate_presigned_url(bucket_name, s3Name)
 
 
-        # Documento de factura
-        file_name, extension = os.path.splitext(document_factura_vehicle.name)
-        new_name = f"document_factura_vehicle{extension}"
-        s3Name = s3Path + new_name
+        # # Documento de factura
+        # file_name, extension = os.path.splitext(document_factura_vehicle.name)
+        # new_name = f"document_factura_vehicle{extension}"
+        # s3Name = s3Path + new_name
 
-        upload_to_s3(document_factura_vehicle, bucket_name, s3Name)
+        # upload_to_s3(document_factura_vehicle, bucket_name, s3Name)
 
-        obj.document_factura_vehicle = s3Name
-        obj.save()
+        # obj.document_factura_vehicle = s3Name
+        # obj.save()
 
-        factura_url = generate_presigned_url(bucket_name, s3Name)
+        # factura_url = generate_presigned_url(bucket_name, s3Name)
 
         response.update({
             "success": True,
@@ -560,7 +575,7 @@ def add_vehicle_info(request):
             "message": "Vehículo agregado exitosamente.",
             "id": obj.id,
             "image_url": image_url,
-            "factura_url": factura_url
+            # "factura_url": factura_url
         })
     
     except Exception as e:
@@ -573,7 +588,6 @@ def add_vehicle_info(request):
             })
 
     
-
     # Crear auditoria
     try:
         vehiculos = Vehicle.objects.filter(company_id=1).order_by('id')
@@ -657,7 +671,8 @@ def alertas(vehicle_id, detailed=False):
     - Si detailed=True: {"alert": bool, "missing_tables": list}
     - Si detailed=False: bool
     """
-        # Obtener el vehículo
+
+    # Obtener el vehículo
     try:
         vehiculo = Vehicle.objects.get(id=vehicle_id)
     except Vehicle.DoesNotExist:
@@ -668,7 +683,7 @@ def alertas(vehicle_id, detailed=False):
     # apply_tenencia = vehiculo.apply_tenencia
 
     tables = [
-        ("tenencia", Vehicle_Tenencia, "vehiculo_id"),
+        # ("tenencia", Vehicle_Tenencia, "vehiculo_id"),
         ("refrendo", Vehicle_Refrendo, "vehiculo_id"),
         ("verificacion", Vehicle_Verificacion, "vehiculo_id"),
         ("insurance", Vehicle_Insurance, "vehicle_id"),
@@ -708,19 +723,19 @@ def alertas(vehicle_id, detailed=False):
             except Exception as e:
                 print(f"Error checking insurance table: {e}")
 
-        if table_name == "tenencia":
-            try:
-                ultima_tenencia = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
+        # if table_name == "tenencia":
+        #     try:
+        #         ultima_tenencia = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
                 
-                if ultima_tenencia:
-                    fecha_pago = ultima_tenencia.fecha_pago 
-                    fecha_actual = datetime.now().date()
-                    diferencia_dias = (fecha_pago - fecha_actual).days
+        #         if ultima_tenencia:
+        #             fecha_pago = ultima_tenencia.fecha_pago 
+        #             fecha_actual = datetime.now().date()
+        #             diferencia_dias = (fecha_pago - fecha_actual).days
                 
-                    if 0 <= diferencia_dias <= 30:
-                        missing_tables.append(table_name)
-            except Exception as e:
-                print(f"Error checking tenencia table: {e}")
+        #             if 0 <= diferencia_dias <= 30:
+        #                 missing_tables.append(table_name)
+        #     except Exception as e:
+        #         print(f"Error checking tenencia table: {e}")
 
         if table_name == "refrendo":
             try:
@@ -812,7 +827,7 @@ def get_vehicles_info(request):
             "fuel_type_vehicle",
             "policy_number",
             "car_tires",
-            "document_factura_vehicle"
+            # "document_factura_vehicle"
         )
         data = data.filter(company_id=context["company"]["id"])
 
@@ -840,29 +855,59 @@ def get_vehicles_info(request):
             for item in data:
                 try:
                     vehicle_id = item["id"]
-                    item["alert"] = alertas(vehicle_id)
+                    # diccionario de facturas
+                    facturas = {
+                        f.vehiculo_id: f
+                        for f in Facturas_Vehicle.objects.filter(
+                            vehiculo__company_id=context["company"]["id"]
+                        )
+                    }
 
-                    #consulta para mantenimiento en proceso 
-                    maintenance_in_process = Vehicle_Maintenance.objects.filter(vehicle_id=vehicle_id, status="Proceso").exists()
-                    item["maintenance_in_process"] = maintenance_in_process
+                    # item["alert"] = alertas(vehicle_id)
+
+                    if item["is_active"]:
+                    
+                        alerta = alertas(vehicle_id, detailed=True)
+
+                        print(
+                            f"VEHICULO {vehicle_id} - {item['name']} "
+                            f"ALERTA: {alerta['alert']} "
+                            f"FALTANTES: {alerta['missing_tables']}"
+                        )
+
+                        item["alert"] = alerta["alert"]
+
+                        #consulta para mantenimiento en proceso 
+                        maintenance_in_process = Vehicle_Maintenance.objects.filter(vehicle_id=vehicle_id, status="Proceso").exists()
+                        item["maintenance_in_process"] = maintenance_in_process
+
+                    else:
+                        # Vehículo inactivo: no mostrar alertas
+                        item["alert"] = False
+
+                        # Vehículo inactivo: tampoco mostrar alerta de mantenimiento
+                        item["maintenance_in_process"] = False
+                   
                     
                     if item["image_path"]:
                         tempImgPath = generate_presigned_url(bucket_name, item["image_path"])
+                        
                         item["image_path"] = tempImgPath
                     else:
                         item["image_path"] = None
 
 
                     # BOTÓN VER FACTURA
+                    factura = facturas.get(vehicle_id)
+
                     item["btn_view_factura_vehicle"] = ""
 
-                    if item["document_factura_vehicle"]:
-
-                        print("Factura vehículo:", item["document_factura_vehicle"])
+                    # if item["document_factura_vehicle"]:
+                    if factura and factura.document_factura:
 
                         tempDoc = generate_presigned_url(
                             bucket_name,
-                            str(item["document_factura_vehicle"]),
+                            str(factura.document_factura)
                         )
 
                         item["btn_view_factura_vehicle"] = f"""
@@ -895,10 +940,6 @@ def get_vehicles_info(request):
                         item["btn_action"] += """<button class=\"btn btn-danger btn-sm mb-1\" data-vehicle-info=\"deactivate-item\" title="Desactivar vehículo">
                             <i class="fa-solid fa-power-off"></i>
                         </button>"""
-
-                # except Exception as e:
-                #     print(f"Error processing vehicle with ID {item['id']}: {e}")
-
                 except Exception as e:
                     print(f"Error processing vehicle with ID {item['id']}: {e}")
         
@@ -948,7 +989,7 @@ def update_vehicle_info(request):
         return JsonResponse(response)
     
     try:
-        document_factura_vehicle = request.FILES.get("document_factura_vehicle")
+        # document_factura_vehicle = request.FILES.get("document_factura_vehicle")
 
         obj.is_active = dt.get("is_active", obj.is_active)
         obj.name = dt.get("name", obj.name)
@@ -969,7 +1010,9 @@ def update_vehicle_info(request):
 
         obj.save()
         
-        folder_path = f"docs/{company_id}/vehicle/{id}/"
+        # folder_path = f"docs/{company_id}/vehicle/{id}/"
+        folder_path = f"docs/{company_id}/vehicle/{id}/images/"
+
 
         # actualizar la imagen
         if 'cover-image' in request.FILES and request.FILES['cover-image'] and True:
@@ -985,18 +1028,16 @@ def update_vehicle_info(request):
 
 
         # Actualizar factura
-        if document_factura_vehicle:
+        # if document_factura_vehicle:
 
-            file_name, extension = os.path.splitext(document_factura_vehicle.name)
-            new_name = f"document_factura_vehicle{extension}"
-            s3Name = folder_path + new_name
+        #     file_name, extension = os.path.splitext(document_factura_vehicle.name)
+        #     new_name = f"document_factura_vehicle{extension}"
+        #     s3Name = folder_path + new_name
 
-            upload_to_s3(document_factura_vehicle, bucket_name, s3Name)
+        #     upload_to_s3(document_factura_vehicle, bucket_name, s3Name)
 
-            obj.document_factura_vehicle = s3Name
-            obj.save()
-
-
+        #     obj.document_factura_vehicle = s3Name
+        #     obj.save()
 
         response["status"] = "success"
         response["success"] = True
@@ -1309,18 +1350,22 @@ def add_vehicle_refrendo(request):
             fecha_pago = dt.get("fecha_pago"),
             monto = dt.get("monto")
         )
+
         obj.save()
         id = obj.id
 
         # Guardar el archivo en caso de existir
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
             load_file = request.FILES.get('comprobante_pago')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/refrendo/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/refrendo/"
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{vehicle_id}/"
+                f"refrendo/{obj.id}/"
+            )
             file_name, extension = os.path.splitext(load_file.name)
             
             new_name = f"comprobante_pago_{id}{extension}"
-            #fs.save(folder_path + new_name, load_file)
             
             s3Name = folder_path + new_name
             obj.comprobante_pago = folder_path + new_name
@@ -1571,8 +1616,14 @@ def update_vehicle_refrendo(request):
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
             load_file = request.FILES.get('comprobante_pago')
             company_id = request.session.get('company').get('id')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/refrendo/{id}/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/refrendo/{id}/"
+
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{vehicle_id}/"
+                f"refrendo/{id}/"
+            )
+            
             file_name, extension = os.path.splitext(load_file.name)                
             
             new_name = f"comprobante_pago{extension}"
@@ -1768,7 +1819,12 @@ def add_vehicle_verificacion_BACK(request):
         # Guardar el archivo en caso de existir
         if 'comprobante_pago' in request.FILES and request.FILES['comprobante_pago']:
             load_file = request.FILES.get('comprobante_pago')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/verificacion/"
+            # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/verificacion/"
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{vehicle_id}/"
+                f"verificacion/{obj.id}/"
+            )
             #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
             file_name, extension = os.path.splitext(load_file.name)
             
@@ -2124,14 +2180,15 @@ def add_vehicle_responsiva_back(request):
 
             if 'signature' in request.FILES and request.FILES['signature']:
                 load_file = request.FILES.get('signature')
-                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
+                # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehicle_id}/"
+                    f"responsiva/{obj.id}/"
+                )
                 #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
                 file_name, extension = os.path.splitext(load_file.name)
-
-                # Eliminar el archivo anterior con el mismo nombre
-#                for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-#                    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"signature.{item}")
-#                    if os.path.exists(old_file_path): os.remove(old_file_path)
 #             
                 new_name = f"signature{extension}"
                 s3Name = folder_path + new_name
@@ -2142,14 +2199,15 @@ def add_vehicle_responsiva_back(request):
                 obj.save()
         if 'image_path_exit_1' in request.FILES and request.FILES['image_path_exit_1']:
             load_file = request.FILES.get('image_path_exit_1')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-            file_name, extension = os.path.splitext(load_file.name)
+            # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
 
-            # Eliminar el archivo anterior con el mismo nombre
-            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_1.{item}")
-            #    if os.path.exists(old_file_path): os.remove(old_file_path)
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{vehicle_id}/"
+                f"responsiva/{obj.id}/"
+            )
+
+            file_name, extension = os.path.splitext(load_file.name)
             
             new_name = f"salida_1{extension}"
             #fs.save(folder_path + new_name, load_file)
@@ -2159,14 +2217,15 @@ def add_vehicle_responsiva_back(request):
             obj.save()
         if 'image_path_exit_2' in request.FILES and request.FILES['image_path_exit_2']:
             load_file = request.FILES.get('image_path_exit_2')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-            file_name, extension = os.path.splitext(load_file.name)
+            # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/responsiva/"
 
-            # Eliminar el archivo anterior con el mismo nombre
-            #for item in ["png", "jpg", "jpeg", "gif", "tiff", "bmp", "raw"]:
-            #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"salida_2.{item}")
-            #    if os.path.exists(old_file_path): os.remove(old_file_path)
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{vehicle_id}/"
+                f"responsiva{obj.id}/"
+            )
+            
+            file_name, extension = os.path.splitext(load_file.name)
             
             new_name = f"salida_2{extension}"
             #fs.save(folder_path + new_name, load_file)
@@ -2200,6 +2259,7 @@ def get_vehicle_responsiva(request):
         "signature", "destination", "trip_purpose"
     ).order_by("-id")
 
+
     modified_data_list = []
 
     for data in lista:
@@ -2215,12 +2275,14 @@ def get_vehicle_responsiva(request):
         # Genera URLs solo si los valores existen
         if data.get('image_path_exit_1'):
             modified_data['image_path_exit_1'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['image_path_exit_1']))
-        
+            
         if data.get('image_path_exit_2'):
             modified_data['image_path_exit_2'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['image_path_exit_2']))
+
         # Genera URLs solo si los valores existen
         if data.get('image_path_entry_1'):
             modified_data['image_path_entry_1'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['image_path_entry_1']))
+            print("URL de imagen 1:", modified_data['image_path_entry_1'])
 
         if data.get('image_path_entry_2'):
             modified_data['image_path_entry_2'] = generate_presigned_url(AWS_BUCKET_NAME, str(data['image_path_entry_2']))
@@ -2359,8 +2421,8 @@ def get_vehicle_responsiva(request):
 #             "error": str(e)
 #         }, status=500)
 
-        
 
+        
 def get_vehicles_responsiva(request):
     print("entramos a la función de mostrar entradas y salidas")
 
@@ -2372,6 +2434,7 @@ def get_vehicles_responsiva(request):
         is_detail = request.GET.get("detail")
         vehicle_id = request.GET.get("id")
 
+       
         lista = Vehicle_Responsive.objects.values(
             "id", "vehicle_id", "vehicle__name",
             "responsible_id", "responsible__first_name", "responsible__last_name",
@@ -2382,12 +2445,21 @@ def get_vehicles_responsiva(request):
             "signature", "destination", "trip_purpose"
         ).order_by("-id")
 
+
+        print("ESTO CONTIENE LA LISTA", lista.filter(id=vehicle_id).query)
+        print("SIGUIENTE", lista.filter(id=vehicle_id).count())
+        
+
         if context["role"]["id"] in [1, 2]:
             lista = lista.filter(vehicle__company_id=context["company"]["id"])
         else:
             lista = lista.filter(vehicle__responsible_id=context["user"]["id"])
 
         access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+
+        print("detail:", request.GET.get("detail"))
+        print("id:", request.GET.get("id"))
+        print("GET:", request.GET)
 
         # =========================================================
         # DETALLE 
@@ -2565,42 +2637,21 @@ def add_vehicle_insurance(request):
             if 'doc' in request.FILES and request.FILES['doc']:
                 load_file = request.FILES.get('doc')
                 company_id = request.session.get('company').get('id')
-                folder_path = f'docs/{company_id}/vehicle/{vehicle_id}/seguro/'
-                #fs = FileSystemStor0age(location=settings.MEDIA_ROOT)
+                # folder_path = f'docs/{company_id}/vehicle/{vehicle_id}/seguro/'
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehicle_id}/"
+                    f"seguro/{obj.id}/"
+                )
+                
                 file_name, extension = os.path.splitext(load_file.name)
                 new_name = f"doc_{obj.id}{extension}"
-                #zip_buffer = io.BytesIO()
-                # Eliminar el archivo anterior, si existe
-                # Esto no aplica en AWS S3 Buckets
-                #for item in ["pdf", "doc", "docx", "xls", "xlsx"]:
-                #    old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{obj.id}.{item}")
-                #    if os.path.exists(old_file_path):
-                #        os.remove(old_file_path)
-
-                # Crear el archivo ZIP
-                #zip_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"doc_{obj.id}.zip")
-                #os.makedirs(os.path.dirname(zip_file_path), exist_ok=True)
-                #with zipfile.ZipFile(zip_file_path, 'w') as zipf:
-                    # Add the uploaded file to the zip file
-                #    zipf.writestr(file_name + extension, load_file.read())
-
-                #NEW SAVE ZIP IN AWS S3
-                #with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-                    # Add the uploaded file to the ZIP archive
-                    # The first argument is the name the file will have inside the ZIP
-                    # The second argument is the file-like object to add
-                    #zip_file.writestr(load_file.name, load_file.read())
-                 # After writing, move the buffer's pointer back to the start
-                #zip_buffer.seek(0)
-
-                #SAVE FILE WITH THE ORIGINAL EXTENSION
-
 
                 s3Name = folder_path + new_name
 
                 # Guardar la ruta del archivo ZIP en el objeto
                 obj.doc = s3Name
-                #zip_buffer.name = new_name
                 
                 upload_to_s3(load_file, bucket_name, s3Name)
 
@@ -2860,7 +2911,14 @@ def update_vehicle_insurance(request):
         if 'doc' in request.FILES:
             load_file = request.FILES['doc']
             company_id = request.session.get('company').get('id')
-            folder_path = f'docs/{company_id}/vehicle/{obj.vehicle_id}/seguro/'
+            # folder_path = f'docs/{company_id}/vehicle/{obj.vehicle_id}/seguro/'
+
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{obj.vehicle_id}/"
+                f"seguro/{obj.id}/"
+            )
+            
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"doc_{obj.id}{extension}"
             s3Name = folder_path + new_name
@@ -3541,9 +3599,13 @@ def add_vehicle_maintenance(request):
         if 'comprobante' in request.FILES and request.FILES['comprobante']:
             load_file = request.FILES.get('comprobante')
             company_id = request.session.get('company').get('id')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/maintenance/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/maintenance/"
 
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{vehicle_id}/"
+                f"maintenance/{obj.id}/"
+            )
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"comprobante_{id}{extension}"
 
@@ -3740,19 +3802,17 @@ def update_vehicle_maintenance(request):
         if 'comprobante' in request.FILES and request.FILES['comprobante']:
             load_file = request.FILES.get('comprobante')
             company_id = request.session.get('company').get('id')
-            folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/maintenance/"
-            #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/maintenance/"
+
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{vehicle_id}/"
+                f"maintenance/{obj.id}/"
+            )
 
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"comprobante_{id}{extension}"
             s3Name = folder_path + new_name
-            
-            # Eliminar el archivo anterior en caso de existir
-#            for item in ["png", "jpg", "jpeg","gif", "pdf", "doc", "docx", "xls", "xlsx"]:
-#                 old_file_path = os.path.join(settings.MEDIA_ROOT, folder_path, f"comprobante_{id}.{item}")
-#                 if os.path.exists(old_file_path): os.remove(old_file_path)
-            
-            #fs.save(folder_path + new_name, load_file)
             
             obj.comprobante = folder_path + new_name
             upload_to_s3(load_file, bucket_name, s3Name)
@@ -3890,7 +3950,13 @@ def add_vehicle_fuel(request):
 
             if 'payment_receipt' in request.FILES and request.FILES['payment_receipt']:
                 load_file = request.FILES.get('payment_receipt')
-                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
+                # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehicle_id}/"
+                    f"fuel/{obj.id}/"
+                )
 
                 file_name, extension = os.path.splitext(load_file.name)                
                 new_name = f"payment_receipt_{id}{extension}"
@@ -4036,8 +4102,12 @@ def update_vehicle_fuel(request):
 
             if 'payment_receipt' in request.FILES and request.FILES['payment_receipt']:
                 load_file = request.FILES.get('payment_receipt')
-                folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
-                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+                # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/fuel/"
+                folder_path = (
+                                f"docs/{company_id}/"
+                                f"vehicle/{vehicle_id}/"
+                                f"fuel/{obj.id}/"
+                            )
 
                 file_name, extension = os.path.splitext(load_file.name)                
                 new_name = f"payment_receipt_{id}{extension}"
@@ -4230,7 +4300,13 @@ def generate_qr(request, qr_type, vehicle_id):
     buffer.seek(0)
     
     # Definir la ruta del archivo en S3
-    s3Path = f'docs/{company_id}/vehicle/{vehicle_id}/qr/'
+    # s3Path = f'docs/{company_id}/vehicle/{vehicle_id}/qr/'
+
+    s3Path= (
+        f"docs/{company_id}/"
+        f"vehicle/{vehicle_id}/"
+        f"qr/"
+    )
     if qr_type == 'info':
         s3Name = f"qr_info{vehicle_id}.png"
         vehicle.qr_info = s3Path+s3Name
@@ -4645,7 +4721,14 @@ def add_driver(request):
                 # Si hay imagen, procesarla
                 if img:
                     # Generar la ruta de la imagen
-                    s3Path = f'docs/{company_id}/vehicle/conductor/{name_driver}/'
+                    # s3Path = f'docs/{company_id}/vehicle/conductor/{name_driver}/'
+
+                    s3Path = (
+                        f"docs/{company_id}/"
+                        f"vehicle/"
+                        f"conductor/{name_driver}/"
+                    )
+
                     # Obtener el nombre y extensión
                     file_name, extension = os.path.splitext(img.name)
                     # Nuevo nombre de la imagen
@@ -4726,7 +4809,14 @@ def edit_driver(request):
             #actualizar la imagen si es necesario
             if img:
                 # Generar la ruta de la imagen
-                    s3Path = f'docs/{company_id}/vehicle/conductor/{name_driver}/'
+                    # s3Path = f'docs/{company_id}/vehicle/conductor/{name_driver}/'
+
+                    s3Path = (
+                        f"docs/{company_id}/"
+                        f"vehicle/"
+                        f"conductor/{name_driver}/"
+                    )
+                    
                     # Obtener el nombre y extensión
                     file_name, extension = os.path.splitext(img.name)
                     # Nuevo nombre de la imagen
@@ -4834,7 +4924,13 @@ def add_licence(request):
                 )
 
                 if license_driver:
-                    s3Path = f'docs/{company_id}/vehicle/licencia/{name_driver_id}/'
+                    # s3Path = f'docs/{company_id}/vehicle/licencia/{name_driver_id}/'
+                    s3Path = (
+                        f"docs/{company_id}/"
+                        f"vehicle/"
+                        f"licencia/{name_driver_id}/"
+                    )
+                    
                     file_name, extension = os.path.splitext(license_driver.name)
                     new_name = f"licencia_{name_driver_id}{extension}"
                     S3name = s3Path + new_name
@@ -4957,7 +5053,14 @@ def edit_licence(request):
 
             # Actualizar el documento si es necesario
             if license_driver:
-                s3Path = f'docs/{company_id}/vehicle/licencia/{name_driver_id}/'
+                # s3Path = f'docs/{company_id}/vehicle/licencia/{name_driver_id}/'
+
+                s3Path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/"
+                    f"licencia/{name_driver_id}/"
+                )
+                
                 file_name, extension = os.path.splitext(license_driver.name)
                 new_name = f"licencia_{name_driver_id}{extension}"
                 S3name = s3Path + new_name
@@ -5394,7 +5497,14 @@ def evaluate_audit(request):
                     # Si hay una imagen, se procesa
                     if imagen:
                         # Crear un nombre único para la imagen
-                        folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/audit/{audit_id}/"
+                        # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/audit/{audit_id}/"
+
+                        folder_path = (
+                            f"docs/{company_id}/"
+                            f"vehicle/{vehicle_id}/"
+                            f"audit/{audit_id}/"
+                        )
+                        
                         file_name, extension = os.path.splitext(imagen.name)
                         new_name = f"{check_name}{extension}"  # Nombre único basado en el check
                         S3name = folder_path + new_name
@@ -6311,7 +6421,13 @@ def add_placa(request):
             )
 
             if document_placa:
-                s3Path = f'docs/{company_id}/vehicle/placas/{nueva_placa.id}/'
+                # s3Path = f'docs/{company_id}/vehicle/placas/{nueva_placa.id}/'
+                s3Path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehiculo_id}/"
+                    f"placas/{nueva_placa.id}/"
+                )
+                
                 file_name, extension = os.path.splitext(document_placa.name)
                 new_name = f"placa_{nueva_placa.id}{extension}"
                 S3name = s3Path + new_name
@@ -6445,7 +6561,12 @@ def edit_placa(request):
                     delete_s3_object(AWS_BUCKET_NAME, str(placa.document_placa.url[1:]))
                 file_name, extension = os.path.splitext(document.name)
                 new_file_name = f"placa_{plate}{extension}"
-                s3Path = f'docs/{company_id}/vehicle/placa/{plate}/'
+                # s3Path = f'docs/{company_id}/vehicle/placa/{plate}/'
+                s3Path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehiculo_id}/"
+                    f"placa/{plate}/"
+                )
                 S3name = s3Path + new_file_name
                 upload_to_s3(document, AWS_BUCKET_NAME, S3name)
                 placa.document_placa = S3name
@@ -6485,7 +6606,7 @@ def table_factura_vehicle(request):
         row = {
             "id": item.id,
             "number": item.number,
-            "fecha_vencimiento": item.fecha_vencimiento.strftime('%Y-%m-%d'),
+            # "fecha_vencimiento": item.fecha_vencimiento.strftime('%Y-%m-%d'),
             "vehiculo": item.vehiculo.name if item.vehiculo else "",
             #"name_user": f"{item.name_user.first_name} {item.name_user.last_name}" if item.name_user else "",
             #"comments": item.comments or "",
@@ -6530,13 +6651,13 @@ def add_factura(request):
             status = request.POST.get('status', '').strip()
             vehiculo_id = request.POST.get('vehiculo')
             #name_user_id = request.POST.get('name_user')
-            fecha_vencimiento = request.POST.get('fecha_vencimiento')
+            # fecha_vencimiento = request.POST.get('fecha_vencimiento')
             #commsssents = request.POST.get('comments', '').strip()
             document_factura = request.FILES.get('document_factura')
 
             # Validaciones básicas
-            if not number or not status or not vehiculo_id or not fecha_vencimiento:
-                return JsonResponse({'success': False, 'message': 'Los campos Número, Estado, Vehículo y Fecha de emisión son obligatorios.'})
+            # if not number or not status or not vehiculo_id or not fecha_vencimiento:
+            #     return JsonResponse({'success': False, 'message': 'Los campos Número, Estado, Vehículo y Fecha de emisión son obligatorios.'})
 
             vehiculo = Vehicle.objects.get(id=int(vehiculo_id)) if vehiculo_id else None
 
@@ -6548,7 +6669,7 @@ def add_factura(request):
             nueva_factura = Facturas_Vehicle.objects.create(
                 vehiculo=vehiculo,
                 #name_user=name_user,
-                fecha_vencimiento=fecha_vencimiento,
+                # fecha_vencimiento=fecha_vencimiento,
                 number=number,
                 status=status,
                 #comments=comments
@@ -6556,9 +6677,14 @@ def add_factura(request):
 
             # Subir archivo si existe
             if document_factura:
-                s3Path = f'docs/{company_id}/vehicle/facturas/{nueva_factura.id}/'
+                # s3Path = f'docs/{company_id}/vehicle/facturas/{nueva_factura.id}/'
+                s3Path = f"docs/{company_id}/vehicle/{vehiculo}/invoices/{nueva_factura.id}/"
+
                 file_name, extension = os.path.splitext(document_factura.name)
-                new_name = f"factura_{nueva_factura.id}{extension}"
+                
+                # new_name = f"factura_{nueva_factura.id}{extension}"
+                new_name = f"invoice{extension}"
+
                 S3name = s3Path + new_name
 
                 upload_to_s3(document_factura, bucket_name, S3name)
@@ -6574,6 +6700,7 @@ def add_factura(request):
             return JsonResponse({'success': False, 'message': 'El usuario seleccionado no existe.'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'})
+
 
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido.'})
 
@@ -6595,7 +6722,7 @@ def edit_factura(request):
                 "status": factura.status,
                 "vehiculo_id": factura.vehiculo.id if factura.vehiculo else None,
                 #"name_user_id": factura.name_user.id if factura.name_user else None,
-                "fecha_vencimiento": factura.fecha_vencimiento.strftime('%Y-%m-%d'),
+                # "fecha_vencimiento": factura.fecha_vencimiento.strftime('%Y-%m-%d'),
                 #"comments": factura.comments,
                 "document_url": factura.document_factura.url if factura.document_factura else ""
             }
@@ -6610,28 +6737,39 @@ def edit_factura(request):
             status = request.POST.get('status', '').strip()
             vehiculo_id = request.POST.get('vehiculo')
             #name_user_id = request.POST.get('name_user')
-            fecha_vencimiento = request.POST.get('fecha_vencimiento')
+            # fecha_vencimiento = request.POST.get('fecha_vencimiento')
             #comments = request.POST.get('comments', '').strip()
             document_factura = request.FILES.get('document_factura')
 
-            if not number or not status or not vehiculo_id or not fecha_vencimiento:
-                return JsonResponse({'success': False, 'message': 'Campos obligatorios faltantes.'})
+            # if not number or not status or not vehiculo_id or not fecha_vencimiento:
+            #     return JsonResponse({'success': False, 'message': 'Campos obligatorios faltantes.'})
 
             factura = Facturas_Vehicle.objects.get(id=_id)
             factura.number = number
             factura.status = status
             factura.vehiculo = Vehicle.objects.get(id=int(vehiculo_id)) if vehiculo_id else None
             #factura.name_user = User.objects.get(id=int(name_user_id)) if name_user_id else None
-            factura.fecha_vencimiento = fecha_vencimiento
+            # factura.fecha_vencimiento = fecha_vencimiento
             #factura.comments = comments
 
             if document_factura:
                 if factura.document_factura:
                     delete_s3_object(AWS_BUCKET_NAME, str(factura.document_factura.name))
+
                 file_name, extension = os.path.splitext(document_factura.name)
-                new_name = f"factura_{factura.id}{extension}"
-                s3_path = f'docs/{company_id}/vehicle/facturas/{factura.id}/{new_name}'
+                # new_name = f"factura_{factura.id}{extension}"
+                new_name = f"invoice{extension}"
+
+                # s3_path = f'docs/{company_id}/vehicle/facturas/{factura.id}/{new_name}'
+                s3_path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{factura.vehiculo.id}/"
+                    f"invoices/{factura.id}/"
+                    f"{new_name}"
+                )
+                
                 upload_to_s3(document_factura, AWS_BUCKET_NAME, s3_path)
+                # actualizar referencia
                 factura.document_factura = s3_path
 
             factura.save()
@@ -6752,7 +6890,14 @@ def add_card(request):
             )
 
             if document_card:
-                s3Path = f'docs/{company_id}/vehicle/tarjetas/{nueva_tarjeta.id}/'
+                # s3Path = f'docs/{company_id}/vehicle/tarjetas/{nueva_tarjeta.id}/'
+
+                s3Path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehiculo.id}/"
+                    f"tarjetas/{nueva_tarjeta.id}/"
+                )
+                
                 file_name, extension = os.path.splitext(document_card.name)
                 new_name = f"tarjeta_{nueva_tarjeta.id}{extension}"
                 S3name = s3Path + new_name
@@ -6926,7 +7071,7 @@ def edit_card(request):
 
                 file_name, extension = os.path.splitext(document_card.name)
                 new_name = f"tarjeta_{card.id}{extension}"
-                s3_path = f'docs/{company_id}/vehicle/tarjetas/{card.id}/{new_name}'
+                s3_path = f'docs/{company_id}/vehicle/{vehiculo_id}/tarjetas/{card.id}/{new_name}'
 
                 try:
                     upload_to_s3(document_card, AWS_BUCKET_NAME, s3_path)
@@ -7118,7 +7263,12 @@ def add_contract(request):
 
             # Subir archivo si existe
             if document_contract:
-                s3Path = f'docs/{company_id}/vehicle/contratos/{nuevo_contrato.id}/'
+                # s3Path = f'docs/{company_id}/vehicle/contratos/{nuevo_contrato.id}/'
+                s3Path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehiculo_id}/"
+                    f"contratos/{nuevo_contrato.id}/"
+                )
                 file_name, extension = os.path.splitext(document_contract.name)
                 new_name = f"contrato_{nuevo_contrato.id}{extension}"
                 S3name = s3Path + new_name
@@ -7212,7 +7362,7 @@ def edit_contract(request):
 
                 file_name, extension = os.path.splitext(document_contract.name)
                 new_name = f"contrato_{contract.id}{extension}"
-                s3_path = f'docs/{company_id}/vehicle/contratos/{contract.id}/{new_name}'
+                s3_path = f'docs/{company_id}/vehicle/{vehiculo_id}/contratos/{contract.id}/{new_name}'
 
                 try:
                     upload_to_s3(document_contract, bucket_name, s3_path)
@@ -7269,7 +7419,14 @@ def upload_letter_finiquito(request):
             contrato = Contract_Vehicle.objects.get(id=contrato_id)
 
             # Construir ruta y nombre de archivo
-            s3Path = f'docs/{company_id}/vehicle/finiquitos/{contrato.id}/'
+            # s3Path = f'docs/{company_id}/vehicle/finiquitos/{contrato.id}/'
+            s3Path = (
+                f"docs/{company_id}/"
+                f"vehicle/"
+                f"finiquitos/{contrato.id}/"
+            )
+
+
             file_name, extension = os.path.splitext(document_letter.name)
             new_name = f"finiquito_{contrato.id}{extension}"
             S3name = s3Path + new_name
@@ -7417,7 +7574,13 @@ def add_letter_factura(request):
 
             # Subir archivo si existe
             if document_letter_factura:
-                s3Path = f'docs/{company_id}/vehicle/letter_factura/{nuevo_carta_factura.id}/'
+                # s3Path = f'docs/{company_id}/vehicle/letter_factura/{nuevo_carta_factura.id}/'
+                s3Path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehiculo_id}/"
+                    f"letter_factura/{nuevo_carta_factura.id}/"
+                )
+                
                 file_name, extension = os.path.splitext(document_letter_factura.name)
                 new_name = f"contrato_{nuevo_carta_factura.id}{extension}"
                 S3name = s3Path + new_name
@@ -7491,7 +7654,7 @@ def edit_letter_factura(request):
 
                 file_name, extension = os.path.splitext(document_letter_factura.name)
                 new_name = f"carta_factura_{letter_factura.id}{extension}"
-                s3_path = f'docs/{company_id}/vehicle/letter_factura/{letter_factura.id}/{new_name}'
+                s3_path = f'docs/{company_id}/vehicle/{vehiculo_id}/letter_factura/{letter_factura.id}/{new_name}'
 
                 try:
                     upload_to_s3(document_letter_factura, bucket_name, s3_path)
@@ -7632,7 +7795,13 @@ def add_hologram(request):
             )
 
             if document_hologram:
-                s3Path = f'docs/{company_id}/vehicle/hologram/{nuevo_hologram.id}/'
+                # s3Path = f'docs/{company_id}/vehicle/hologram/{nuevo_hologram.id}/'
+                s3Path = (
+                    f"docs/{company_id}/"
+                    f"vehicle/{vehiculo}/"
+                    f"hologram/{nuevo_hologram.id}/"
+                )
+
                 file_name, extension = os.path.splitext(document_hologram.name)
                 new_name = f"contrato_{nuevo_hologram.id}{extension}"
                 S3name = s3Path + new_name
@@ -7748,219 +7917,227 @@ def delete_hologram(request):
 
 
 #CARNET
-@login_required
-def get_vehicles_carnet(request):
-    try:
-        context = user_data(request)
-        company_id = context["company"]["id"]  
+# @login_required
+# def get_vehicles_carnet(request):
+#     try:
+#         context = user_data(request)
+#         company_id = context["company"]["id"]  
 
-        if not company_id:
-            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
-    # Obtener los registros
-        vehiculos = Vehicle.objects.filter(
-            company_id=company_id
-        ).values('id', 'name') 
-        data = list(vehiculos)
-        # print("esta es la lista de vehiculos de la empresa para carta de facturacion:", vehiculos)
-        return JsonResponse({'data': data}, safe=False)
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+#         if not company_id:
+#             return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+#     # Obtener los registros
+#         vehiculos = Vehicle.objects.filter(
+#             company_id=company_id
+#         ).values('id', 'name') 
+#         data = list(vehiculos)
+#         # print("esta es la lista de vehiculos de la empresa para carta de facturacion:", vehiculos)
+#         return JsonResponse({'data': data}, safe=False)
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
-#tabla de carnett
-def table_carnet_vehicle(request):
-    response = {"success": False}
-    context = user_data(request)
-    subModule_id = 37
-    access = get_module_user_permissions(context, subModule_id)["data"]["access"]
+#tabla de carnett   
+# def table_carnet_vehicle(request):
+#     response = {"success": False}
+#     context = user_data(request)
+#     subModule_id = 37
+#     access = get_module_user_permissions(context, subModule_id)["data"]["access"]
 
-    vehicle_id = request.GET.get('vehicle_id')
+#     vehicle_id = request.GET.get('vehicle_id')
 
-    if not vehicle_id:
-        return JsonResponse({"data": []})
+#     if not vehicle_id:
+#         return JsonResponse({"data": []})
 
-    datos = Carnet_Vehicle.objects.select_related("vehiculo").filter(
-        vehiculo_id=vehicle_id
-    )
+#     datos = Carnet_Vehicle.objects.select_related("vehiculo").filter(
+#         vehiculo_id=vehicle_id
+#     )
 
-    data_list = []
+#     data_list = []
 
-    for item in datos:
+#     for item in datos:
 
-        row = {
-            "id": item.id,
-            "vehiculo": item.vehiculo.name if item.vehiculo else "",
-            "date_carnet": item.date_carnet.strftime('%Y-%m-%d') if item.date_carnet else "",
-            "btn_view": "",
-            "btn_action": "",
-        }
+#         row = {
+#             "id": item.id,
+#             "vehiculo": item.vehiculo.name if item.vehiculo else "",
+#             "date_carnet": item.date_carnet.strftime('%Y-%m-%d') if item.date_carnet else "",
+#             "btn_view": "",
+#             "btn_action": "",
+#         }
 
-        # Botón Ver Documento
-        if item.document_carnet:
-            tempDoc = generate_presigned_url(bucket_name, item.document_carnet.name)
-            row["btn_view"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
-                <i class="fa-solid fa-file"></i> Ver 
-            </a>"""
+#         # Botón Ver Documento
+#         if item.document_carnet:
+#             tempDoc = generate_presigned_url(bucket_name, item.document_carnet.name)
+#             row["btn_view"] = f"""<a href="{tempDoc}" class="btn btn-sm btn-info" target="_blank">
+#                 <i class="fa-solid fa-file"></i> Ver 
+#             </a>"""
 
-        # Botón Editar                                                                                                                                                                                                                          
-        if access.get("update"):
-            row["btn_action"] += f"""<button class="btn btn-primary btn-sm" data-vehicle-carnet="update-carnet" 
-                data-id="{item.id}">
-                <i class="fa-solid fa-pen"></i>
-            </button>\n"""
+#         # Botón Editar                                                                                                                                                                                                                          
+#         if access.get("update"):
+#             row["btn_action"] += f"""<button class="btn btn-primary btn-sm" data-vehicle-carnet="update-carnet" 
+#                 data-id="{item.id}">
+#                 <i class="fa-solid fa-pen"></i>
+#             </button>\n"""
 
-        # Botón Eliminar
-        if access.get("delete"):
-            row["btn_action"] += f"""<button class="btn btn-danger btn-sm" data-vehicle-carnet="delete-carnet" data-id="{item.id}">
-                <i class="fa-solid fa-trash"></i>
-            </button>"""
+#         # Botón Eliminar
+#         if access.get("delete"):
+#             row["btn_action"] += f"""<button class="btn btn-danger btn-sm" data-vehicle-carnet="delete-carnet" data-id="{item.id}">
+#                 <i class="fa-solid fa-trash"></i>
+#             </button>"""
 
-        data_list.append(row)
+#         data_list.append(row)
 
-    response.update({"data": data_list, "status": "success", "success": True})
-    return JsonResponse(response)
+#     response.update({"data": data_list, "status": "success", "success": True})
+#     return JsonResponse(response)
 
 # agregar carnet
-def add_carnet(request):
-    context = user_data(request)
-    company_id = context["company"]["id"]
+# def add_carnet(request):
+#     context = user_data(request)
+#     company_id = context["company"]["id"]
 
-    if request.method == 'POST':
-        try:
-            vehiculo_id = request.POST.get('vehiculo_carnet')
-            date_carnet = request.POST.get('date_carnet')
-            document_carnet = request.FILES.get('document_carnet')
+#     if request.method == 'POST':
+#         try:
+#             vehiculo_id = request.POST.get('vehiculo_carnet')
+#             print("esto contiene vehiculo_id", vehiculo_id)
 
-            if not date_carnet:
-                return JsonResponse({'success': False, 'message': 'La fecha es obligatoria.'})
-            if not isinstance(date_carnet, str):
-                return JsonResponse({'success': False, 'message': 'El valor de la fecha no es una cadena válida.'})
+#             date_carnet = request.POST.get('date_carnet')
+#             document_carnet = request.FILES.get('document_carnet')
 
-            try:
-                date_obj = datetime.strptime(date_carnet, "%Y-%m-%d").date()
-            except ValueError:
-                return JsonResponse({'success': False, 'message': 'Formato de fecha inválido.'})
+#             if not date_carnet:
+#                 return JsonResponse({'success': False, 'message': 'La fecha es obligatoria.'})
+#             if not isinstance(date_carnet, str):
+#                 return JsonResponse({'success': False, 'message': 'El valor de la fecha no es una cadena válida.'})
 
-            vehiculo = Vehicle.objects.get(id=int(vehiculo_id))
+#             try:
+#                 date_obj = datetime.strptime(date_carnet, "%Y-%m-%d").date()
+#             except ValueError:
+#                 return JsonResponse({'success': False, 'message': 'Formato de fecha inválido.'})
 
-            nuevo_carnet = Carnet_Vehicle.objects.create(
-                vehiculo=vehiculo,
-                date_carnet=date_obj,
-            )
+#             vehiculo = Vehicle.objects.get(id=int(vehiculo_id))
+#             print("esto contiene vehiculo", vehiculo)
 
-            if document_carnet:
-                s3Path = f'docs/{company_id}/vehicle/carnet/{nuevo_carnet.id}/'
-                file_name, extension = os.path.splitext(document_carnet.name)
-                new_name = f"contrato_{nuevo_carnet.id}{extension}"
-                S3name = s3Path + new_name
+#             nuevo_carnet = Carnet_Vehicle.objects.create(
+#                 vehiculo=vehiculo,
+#                 date_carnet=date_obj,
+#             )
 
-                upload_to_s3(document_carnet, bucket_name, S3name)
+#             if document_carnet:
+#                 # s3Path = f'docs/{company_id}/vehicle/carnet/{nuevo_carnet.id}/'
+#                 s3Path = (
+#                     f"docs/{company_id}/"
+#                     f"vehicle/{vehiculo_id}/"
+#                     f"carnet/{nuevo_carnet.id}/"
+#                 )
+#                 file_name, extension = os.path.splitext(document_carnet.name)
+#                 new_name = f"contrato_{nuevo_carnet.id}{extension}"
+#                 S3name = s3Path + new_name
 
-                nuevo_carnet.document_carnet = S3name
-                nuevo_carnet.save()
+#                 upload_to_s3(document_carnet, bucket_name, S3name)
 
-            return JsonResponse({'success': True, 'message': 'Carnet registrado correctamente.'})
+#                 nuevo_carnet.document_carnet = S3name
+#                 nuevo_carnet.save()
 
-        except Vehicle.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'El vehículo seleccionado no existe.'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'})
+#             return JsonResponse({'success': True, 'message': 'Carnet registrado correctamente.'})
 
-    return JsonResponse({'success': False, 'message': 'Método de solicitud no válido.'})
+#         except Vehicle.DoesNotExist:
+#             return JsonResponse({'success': False, 'message': 'El vehículo seleccionado no existe.'})
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'})
+
+#     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido.'})
 
 # editar carnet
-def edit_carnet(request):
-    context = user_data(request)
-    company_id = context["company"]["id"]
+# def edit_carnet(request):
+#     context = user_data(request)
+#     company_id = context["company"]["id"]
 
-    if request.method == 'GET':
-        carnet_id = request.GET.get('id')
-        try:
-            carnet = Carnet_Vehicle.objects.get(id=carnet_id)
-            data = {
-                "id": carnet.id,
-                "vehiculo_id": carnet.vehiculo.id if carnet.vehiculo else None,
-                "date_carnet": carnet.date_carnet.strftime('%Y-%m-%d'),
-                "document_carnet": carnet.document_carnet.url if carnet.document_carnet else ""
-            }
-            return JsonResponse({"status": "success", "data": data})
-        except Carnet_Vehicle.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "carnet no encontrado"})
+#     if request.method == 'GET':
+#         carnet_id = request.GET.get('id')
+#         try:
+#             carnet = Carnet_Vehicle.objects.get(id=carnet_id)
+#             data = {
+#                 "id": carnet.id,
+#                 "vehiculo_id": carnet.vehiculo.id if carnet.vehiculo else None,
+#                 "date_carnet": carnet.date_carnet.strftime('%Y-%m-%d'),
+#                 "document_carnet": carnet.document_carnet.url if carnet.document_carnet else ""
+#             }
+#             return JsonResponse({"status": "success", "data": data})
+#         except Carnet_Vehicle.DoesNotExist:
+#             return JsonResponse({"status": "error", "message": "carnet no encontrado"})
 
-    elif request.method == 'POST':
-        try:
-            carnet_id = request.POST.get('id')
-            if not carnet_id:
-                return JsonResponse({'success': False, 'message': 'ID de carnet no proporcionado.'})
+#     elif request.method == 'POST':
+#         try:
+#             carnet_id = request.POST.get('id')
+#             if not carnet_id:
+#                 return JsonResponse({'success': False, 'message': 'ID de carnet no proporcionado.'})
 
-            carnet = Carnet_Vehicle.objects.get(id=carnet_id)
+#             carnet = Carnet_Vehicle.objects.get(id=carnet_id)
 
-            vehiculo_id = request.POST.get('vehiculo_carnet') or (carnet.vehiculo.id if carnet.vehiculo else None)
-            date_carnet = request.POST.get('date_carnet') or carnet.date_hologram.strftime('%Y-%m-%d')
-            document_carnet = request.FILES.get('document_carnet')
+#             vehiculo_id = request.POST.get('vehiculo_carnet') or (carnet.vehiculo.id if carnet.vehiculo else None)
+#             date_carnet = request.POST.get('date_carnet') or carnet.date_hologram.strftime('%Y-%m-%d')
+#             document_carnet = request.FILES.get('document_carnet')
 
-            if not vehiculo_id or not date_carnet:
-                return JsonResponse({'success': False, 'message': 'Faltan campos clave.'})
+#             if not vehiculo_id or not date_carnet:
+#                 return JsonResponse({'success': False, 'message': 'Faltan campos clave.'})
 
-            # Convertir fecha
-            try:
-                date_obj = datetime.strptime(date_carnet, "%Y-%m-%d").date()
-            except ValueError:
-                return JsonResponse({'success': False, 'message': 'Formato de fecha inválido.'})
+#             # Convertir fecha
+#             try:
+#                 date_obj = datetime.strptime(date_carnet, "%Y-%m-%d").date()
+#             except ValueError:
+#                 return JsonResponse({'success': False, 'message': 'Formato de fecha inválido.'})
 
-            # Asignar valores nuevos
-            carnet.date_carnet = date_obj
+#             # Asignar valores nuevos
+#             carnet.date_carnet = date_obj
 
-            try:
-                carnet.vehiculo = Vehicle.objects.get(id=int(vehiculo_id))
-            except Vehicle.DoesNotExist:
-                return JsonResponse({'success': False, 'message': 'Vehículo no válido.'})
+#             try:
+#                 carnet.vehiculo = Vehicle.objects.get(id=int(vehiculo_id))
+#             except Vehicle.DoesNotExist:
+#                 return JsonResponse({'success': False, 'message': 'Vehículo no válido.'})
 
-            # Subir archivo si existe
-            if document_carnet:
-                if carnet.document_carnet:
-                    delete_s3_object(bucket_name, str(carnet.document_carnet.name))
+#             # Subir archivo si existe
+#             if document_carnet:
+#                 if carnet.document_carnet:
+#                     delete_s3_object(bucket_name, str(carnet.document_carnet.name))
 
-                file_name, extension = os.path.splitext(document_carnet.name)
-                new_name = f"carnet_{carnet.id}{extension}"
-                s3_path = f'docs/{company_id}/vehicle/carnet/{carnet.id}/{new_name}'
+#                 file_name, extension = os.path.splitext(document_carnet.name)
+#                 new_name = f"carnet_{carnet.id}{extension}"
+#                 s3_path = f'docs/{company_id}/vehicle/{vehiculo_id}/carnet/{carnet.id}/{new_name}'
 
-                try:
-                    upload_to_s3(document_carnet, bucket_name, s3_path)
-                    carnet.document_carnet = s3_path
-                except Exception as e:
-                    return JsonResponse({'success': False, 'message': f'Error al subir archivo: {str(e)}'})
+#                 try:
+#                     upload_to_s3(document_carnet, bucket_name, s3_path)
+#                     carnet.document_carnet = s3_path
+#                 except Exception as e:
+#                     return JsonResponse({'success': False, 'message': f'Error al subir archivo: {str(e)}'})
 
-            carnet.save()
-            return JsonResponse({'success': True, 'message': 'Carnet actualizado correctamente.'})
+#             carnet.save()
+#             return JsonResponse({'success': True, 'message': 'Carnet actualizado correctamente.'})
 
-        except Carnet_Vehicle.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Carnet no encontrado.'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error interno: {str(e)}'})
+#         except Carnet_Vehicle.DoesNotExist:
+#             return JsonResponse({'success': False, 'message': 'Carnet no encontrado.'})
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'message': f'Error interno: {str(e)}'})
 
-    return JsonResponse({'success': False, 'message': 'Método de solicitud inválido.'})
+#     return JsonResponse({'success': False, 'message': 'Método de solicitud inválido.'})
 
 # funcion para eliminar un carnet
-@login_required
-@csrf_exempt
-def delete_carnet(request):                          
-    if request.method == 'POST':
-        form = request.POST
-        _id = form.get('id')
+# @login_required
+# @csrf_exempt
+# def delete_carnet(request):                          
+#     if request.method == 'POST':
+#         form = request.POST
+#         _id = form.get('id')
 
-        if not _id:
-            return JsonResponse({'success': False, 'message': 'No ID provided'})
+#         if not _id:
+#             return JsonResponse({'success': False, 'message': 'No ID provided'})
 
-        try:
-            carnet = Carnet_Vehicle.objects.get(id=_id)
-        except Carnet_Vehicle.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'hologram not found'})
+#         try:
+#             carnet = Carnet_Vehicle.objects.get(id=_id)
+#         except Carnet_Vehicle.DoesNotExist:
+#             return JsonResponse({'success': False, 'message': 'hologram not found'})
 
-        carnet.delete()
+#         carnet.delete()
 
-        return JsonResponse({'success': True, 'message': 'Carnet eliminado correctamente!'})
+#         return JsonResponse({'success': True, 'message': 'Carnet eliminado correctamente!'})
 
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+#     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
 
@@ -8138,7 +8315,7 @@ def save_correction_evidence(request):
     return JsonResponse({"success": False, "error": "Método no permitido"})
 
 
-# responsivas de vehículos---------------------------
+# responsivas pdf de vehículos---------------------------
 # vista de submodulo responsiva
 @login_required
 def vehicle_responsiva_view(request):
@@ -8169,7 +8346,7 @@ def table_vehicle_responsiva_view(request):
     isList = dt.get("isList", False)
     subModule_id = 19
 
-    datos = Vehicles_Responsivas.objects.values(
+    datos = Vehicles_Responsivas_pdf.objects.values(
         "id",
         "responsible_vehicle_id",
         "responsible_vehicle__first_name",
@@ -8223,7 +8400,7 @@ def table_vehicle_responsiva_view(request):
     if isList:
 
         response["data"] = list(
-            Vehicles_Responsivas.objects.values(
+            Vehicles_Responsivas_pdf.objects.values(
                 "id",
                 "responsible_infraestructure_id",
                 "responsible_infraestructure__first_name",
@@ -8342,7 +8519,7 @@ def vehicle_responsiva_pdf_view(request):
     if usuario:
         context2["user"]["name"] = f"{usuario.first_name} {usuario.last_name}"
 
-    responsiva = Vehicles_Responsivas.objects.filter(
+    responsiva = Vehicles_Responsivas_pdf.objects.filter(
         responsible_vehicle_id=responsible_id
     ).first()
 
@@ -8359,7 +8536,7 @@ def vehicle_responsiva_pdf_view(request):
     print("Contexto final:", context2)
         
 
-    responsiva = Vehicles_Responsivas.objects.filter(
+    responsiva = Vehicles_Responsivas_pdf.objects.filter(
         responsible_vehicle_id=responsible_id
     ).first()
 
@@ -8398,14 +8575,17 @@ def add_vehicle_responsiva_pdf(request):
     response = {"status": "error", "message": "sin procesar" }
     dt = request.POST
     company_id = context["company"]["id"]
-
+    print("Esto contiene el post",request.POST)
+    print("Esto contiene el files",request.FILES)
     try:
         responsible_vehicle = dt.get("responsible_vehicle")
+
 
         if responsible_vehicle == None:
             response["message"] = "Sin Responsable"
             return JsonResponse(response)
-        
+
+        # usuario que genera responsiva debe tener los permisos 
         responsable = User_Access.objects.filter(user_id = responsible_vehicle)
 
         if not responsable.exists():
@@ -8415,7 +8595,7 @@ def add_vehicle_responsiva_pdf(request):
         responsable = responsable.values()[0]
         area_id = responsable["area_id"]
 
-        registro = Vehicles_Responsivas.objects.filter(
+        registro = Vehicles_Responsivas_pdf.objects.filter(
             responsible_vehicle = responsible_vehicle
             ).count()
 
@@ -8425,9 +8605,10 @@ def add_vehicle_responsiva_pdf(request):
 
 
         with transaction.atomic():
-            obj = Vehicles_Responsivas(
+            obj = Vehicles_Responsivas_pdf(
                 responsible_vehicle_id=responsible_vehicle,
                 area_responsable_id=area_id
+
             )
             
             obj.save()
@@ -8435,11 +8616,23 @@ def add_vehicle_responsiva_pdf(request):
 
         if 'responsibility_vehicle_pdf' in request.FILES and request.FILES['responsibility_vehicle_pdf']:
             load_file = request.FILES.get('responsibility_vehicle_pdf')
-            folder_path = f"docs/{company_id}/vehicle/responsiva/{id}/"
+
+            id_vehiculo = Vehicle.objects.filter(responsible = responsible_vehicle).first()
+            print("este es el id del vehiculo", id_vehiculo.id)
+            # folder_path = f"docs/{company_id}/vehicle/responsiva/{id}/"
+            folder_path = (
+                f"docs/{company_id}/"
+                f"vehicle/{id_vehiculo.id}/"
+                f"responsiva_pdf/{obj.id}/"
+            )
+
 
             file_name, extension = os.path.splitext(load_file.name)
             new_name = f"doc_1{extension}"
             s3Name = folder_path + new_name
+
+            print("esta es la ruta DE USUARIO NUEVO:",s3Name)
+
 
             # Guardar archivo
             upload_to_s3(load_file, AWS_BUCKET_NAME, s3Name)
@@ -8480,7 +8673,9 @@ def add_vehicle_responsiva_pdf(request):
 
 # funcion para obtener un registro
 @login_required
-def get_vehicle_responsiva(request):
+# def get_vehicle_responsiva(request):
+def get_vehicle_responsiva_pdf(request):
+
 
     response = {
         "status": "error",
@@ -8491,7 +8686,7 @@ def get_vehicle_responsiva(request):
 
     try:
 
-        obj = Vehicles_Responsivas.objects.values(
+        obj = Vehicles_Responsivas_pdf.objects.values(
             "id",
             "responsible_vehicle_id",
             "area_responsable_id",
@@ -8501,7 +8696,7 @@ def get_vehicle_responsiva(request):
         response["status"] = "success"
         response["data"] = obj
 
-    except Vehicles_Responsivas.DoesNotExist:
+    except Vehicles_Responsivas_pdf.DoesNotExist:
         response["message"] = "No existe el registro."
 
     return JsonResponse(response)
@@ -8520,7 +8715,7 @@ def update_vehicle_responsiva_pdf(request):
 
         try:
 
-            obj = Vehicles_Responsivas.objects.values(
+            obj = Vehicles_Responsivas_pdf.objects.values(
                 "id",
                 "responsible_vehicle_id",
                 "area_responsable_id",
@@ -8532,7 +8727,7 @@ def update_vehicle_responsiva_pdf(request):
                 "data": obj
             })
 
-        except Vehicles_Responsivas.DoesNotExist:
+        except Vehicles_Responsivas_pdf.DoesNotExist:
             return JsonResponse({
                 "status": "error",
                 "message": "No existe el registro."
@@ -8567,9 +8762,14 @@ def update_vehicle_responsiva_pdf(request):
 
         with transaction.atomic():
 
-            obj = Vehicles_Responsivas.objects.get(id=id)
+            obj = Vehicles_Responsivas_pdf.objects.get(id=id)
 
+            id_vehiculo = Vehicle.objects.filter(responsible = responsible_vehicle).first()
+
+            print("esta es el id del vehiculo:", id_vehiculo.id)
             obj.responsible_vehicle_id = responsible_vehicle
+
+
             obj.area_responsable_id = area_id
 
             # Si se cargó una nueva responsiva
@@ -8577,10 +8777,15 @@ def update_vehicle_responsiva_pdf(request):
 
                 load_file = request.FILES["responsibility_vehicle_pdf"]
 
-                folder_path = (
-                    f"docs/{company_id}/vehicle/responsiva/{id}/"
-                )
+                # folder_path = (
+                #     f"docs/{company_id}/vehicle/responsiva/{id}/"
 
+                # )
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"vehicles/{id_vehiculo.id}/"
+                    f"responsiva_pdf/{obj.id}/"
+                )
                 try:
                     historial = json.loads(obj.record) if obj.record else []
                 except Exception:
@@ -8591,6 +8796,8 @@ def update_vehicle_responsiva_pdf(request):
                 new_name = f"doc_{len(historial)+1}{extension}"
 
                 s3name = folder_path + new_name
+
+                print("esta es la ruta:",s3name)
 
                 upload_to_s3(
                     load_file,
@@ -8614,7 +8821,7 @@ def update_vehicle_responsiva_pdf(request):
         response["message"] = "Responsiva actualizada correctamente."
         response["id"] = obj.id
 
-    except Vehicles_Responsivas.DoesNotExist:
+    except Vehicles_Responsivas_pdf.DoesNotExist:
 
         response["message"] = (
             f"No existe la responsiva con ID {id}."
@@ -8643,8 +8850,8 @@ def delete_vehicle_responsiva_pdf(request):
         response["message"] = "Proporcione un id valido"
         return JsonResponse(response)
     try:
-        obj = Vehicles_Responsivas.objects.get(id = id)
-    except Vehicles_Responsivas.DoesNotExist:
+        obj = Vehicles_Responsivas_pdf.objects.get(id = id)
+    except Vehicles_Responsivas_pdf.DoesNotExist:
         response["error"] = {"message": "El objeto no existe"}
         response["status"] = "error"
         response["message"] = "El objeto no existe"
