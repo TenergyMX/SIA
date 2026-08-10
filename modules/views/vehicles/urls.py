@@ -192,11 +192,11 @@ urlpatterns = [
     path('delete_hologram/', views.delete_hologram),
 
     # Carnet de servicios
-    path('get_vehicles_carnet/', views.get_vehicles_carnet),
-    path('table_carnet_vehicle/', views.table_carnet_vehicle),
-    path('add_carnet/', views.add_carnet),
-    path('edit_carnet/', views.edit_carnet),
-    path('delete_carnet/', views.delete_carnet),
+    # path('get_vehicles_carnet/', views.get_vehicles_carnet),
+    # path('table_carnet_vehicle/', views.table_carnet_vehicle),
+    # path('add_carnet/', views.add_carnet),
+    # path('edit_carnet/', views.edit_carnet),
+    # path('delete_carnet/', views.delete_carnet),
 
     # desactivar un vehiculo
     path("deactivate_vehicle/", views.deactivate_vehicle),
@@ -217,7 +217,6 @@ urlpatterns = [
     path("delete_vehicle_responsiva_pdf/", views.delete_vehicle_responsiva_pdf),
 
     path("generar_plantilla/", views.generarPlantilla),
-
 
 
 ]

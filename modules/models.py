@@ -39,8 +39,8 @@ class Vehicle(models.Model):
     qr_fuel = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
     fuel_type_vehicle = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
     car_tires = models.CharField(max_length=60, blank=True, null=True)      
-    document_factura_vehicle = models.FileField(max_length=500, null=True, blank=True)     
-                                          # Placa
+    # document_factura_vehicle = models.FileField(max_length=500, null=True, blank=True)     
+    # Placa
     # apply_tenencia = models.BooleanField(default=False, verbose_name="Aplica tenencia") 
 
     responsible = models.ForeignKey(
@@ -289,7 +289,7 @@ class Letter_Facturas_Vehicle(models.Model):
 class Facturas_Vehicle(models.Model):
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True)
     name_user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Nombre del conductor" ,blank=True, null=True)
-    fecha_vencimiento = models.DateField()
+    # fecha_vencimiento = models.DateField()
     number = models.CharField(max_length=255)                                               
     status = models.CharField(max_length=255, null=False, default="blank")
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
@@ -327,7 +327,8 @@ class Carnet_Vehicle(models.Model):
 
 
 # tabla de responsivas para vehículos:
-class Vehicles_Responsivas(models.Model):
+class Vehicles_Responsivas_pdf(models.Model):
+    vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Vehículo")
     responsible_vehicle= models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable")
     area_responsable = models.ForeignKey(Area, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Área del responsable")
     items = models.TextField(blank=True, null=True, verbose_name='Items')
@@ -338,7 +339,7 @@ class Vehicles_Responsivas(models.Model):
 
     class Meta:
         verbose_name = "Responsiva de Vehiculo"
-        verbose_name_plural = "Responsivas de Vehiculos"
+        verbose_name_plural = "Responsivas_pdf de Vehiculos"
         ordering = ['-updated_at']
 
     def __str__(self):

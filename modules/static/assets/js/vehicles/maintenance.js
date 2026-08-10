@@ -64,20 +64,19 @@ class VehiclesMaintenance {
                         data: "status",
                         render: function (data, type, row) {
                             // Verificar si la fecha ya pasó y el estado no es "Proceso" o "Finalizado"
-                            var currentDate = new Date();
-                            var maintenanceDate = new Date(row.date);
+                            // var currentDate = new Date();
+                            // var maintenanceDate = new Date(row.date);
                             var status = data;
 
-                            // Si la fecha ya pasó y el estado no es "Proceso" o "Finalizado", marcar como "Retrasado"
-                            if (
-                                maintenanceDate < currentDate &&
-                                status !== "Proceso" &&
-                                status !== "Finalizado"
-                            ) {
-                                status = "Retrasado"; // Marcamos como Retrasado
-                            }
+                            // // Si la fecha ya pasó y el estado no es "Proceso" o "Finalizado", marcar como "Retrasado"
+                            // if (
+                            //     maintenanceDate < currentDate &&
+                            //     status !== "Proceso" &&
+                            //     status !== "Finalizado"
+                            // ) {
+                            //     status = "Retrasado";
+                            // }
 
-                            // Generar el select con el estado actual y la clase 'status-man'
                             return `
                                 <select class="form-select form-select-sm d-inline-block float-end action-item status-man" data-id="${
                                     row.id

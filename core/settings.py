@@ -37,9 +37,10 @@ except KeyError as e:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG")
-# print(DEBUG)
+print(DEBUG)
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS1', 'localhost').lower().split(',')
+# ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS1', 'localhost').lower().split(',')
+ALLOWED_HOSTS = ['192.168.100.13', 'localhost']
 print("esto contiene allowed_hosts", ALLOWED_HOSTS)
 
 # Build CSRF-trusted origins from ALLOWED_HOSTS
@@ -127,7 +128,7 @@ DATABASES = {
         'NAME': os.environ.get("DATABASE_NAME"),
         'USER': os.environ.get("POSTGRES_USER"),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-        'HOST': os.environ.get('DATABASE_ADDRESS'),  # o '127.0.0.1' si prefieres la dirección IP
+        'HOST': os.environ.get('DATABASE_ADDRESS'), 
         'PORT': os.environ.get('DATABASE_PORT'),       # o el puerto que hayas configurado
     }
 }

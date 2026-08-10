@@ -22,7 +22,7 @@ function table_factura_vehicle(config) {
             { title: "Id", data: "id", className: "toggleable" },
             { title: "Numero o folio", data: "number", className: "toggleable" },
             { title: "Vehículo", data: "vehiculo", className: "toggleable" },
-            { title: "Fecha de Vencimiento ", data: "fecha_vencimiento", className: "toggleable" },
+            // { title: "Fecha de Vencimiento ", data: "fecha_vencimiento", className: "toggleable" },
             { title: "Ver documento", data: "btn_view", className: "toggleable" },
             {
                 title: "Estado",
