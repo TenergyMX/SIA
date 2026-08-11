@@ -358,146 +358,208 @@ class VehiclesResponsiva {
                     break;
                 case "show-info-details":
                     hideShow("#v-responsiva-pane .info", "#v-responsiva-pane .info-details");
+
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_responsiva.row(fila).data();
                     var obj_div = $("#v-responsiva-pane .info-details");
 
-                    $.each(datos, function (index, value) {
-                        if (index === "initial_fuel" || index === "final_fuel") {
-                            obj_div
-                                .find(`[data-key-value="${index}"]`)
-                                .html(isNaN(parseInt(value)) ? "--- %" : parseInt(value) + " %")
-                                .removeClass();
-                        } else {
-                            obj_div
-                                .find(`[data-key-value="${index}"]`)
-                                .html(value || "---")
-                                .removeClass();
-                        }
+                    $.ajax({
+                        url: "/get_vehicles_responsiva/",
+                        type: "GET",
+                        data: {
+                            detail: true,
+                            id: datos["id"],
+                        },
+                        success: function (response) {
+                            if (!response.success || !response.data) {
+                                console.error("No se pudo obtener el detalle");
+                                return;
+                            }
 
-                        if (index === "initial_fuel") {
-                            const posicion = value;
-                            const posiciones = [
-                                { left: 26, top: 21, deg: -65 },
-                                { left: 32, top: 6, deg: -33 },
-                                { left: 44, top: 0, deg: 0 },
-                                { left: 55, top: 6, deg: 33 },
-                                { left: 60, top: 21, deg: 65 },
-                            ];
-                            const index = Math.floor(posicion / 25);
-                            const siguienteIndex = Math.min(index + 1, posiciones.length - 1);
-                            const porcentaje = (posicion - index * 25) / 25;
-                            const left =
-                                posiciones[index].left +
-                                (posiciones[siguienteIndex].left - posiciones[index].left) *
-                                    porcentaje;
-                            const top =
-                                posiciones[index].top +
-                                (posiciones[siguienteIndex].top - posiciones[index].top) *
-                                    porcentaje;
-                            const deg =
-                                posiciones[index].deg +
-                                (posiciones[siguienteIndex].deg - posiciones[index].deg) *
-                                    porcentaje;
-                            obj_div.find(".punta-inicial").css({
-                                left: `${left}%`,
-                                top: `${top}%`,
-                                transform: `rotate(${deg}deg) scale(0.8)`,
+                            var detalle = response.data;
+
+                            console.log("DETALLE RESPONSIVA:", detalle);
+
+                            // $.each(datos, function (index, value) {
+                            $.each(detalle, function (index, value) {
+                                if (index === "initial_fuel" || index === "final_fuel") {
+                                    obj_div
+                                        .find(`[data-key-value="${index}"]`)
+                                        .html(
+                                            isNaN(parseInt(value))
+                                                ? "--- %"
+                                                : parseInt(value) + " %"
+                                        )
+                                        .removeClass();
+                                } else {
+                                    obj_div
+                                        .find(`[data-key-value="${index}"]`)
+                                        .html(value || "---")
+                                        .removeClass();
+                                }
+
+                                // fuel inicial
+                                // if (index === "initial_fuel") {
+                                if (index === "initial_fuel" && value != null) {
+                                    const posicion = value;
+                                    const posiciones = [
+                                        { left: 26, top: 21, deg: -65 },
+                                        { left: 32, top: 6, deg: -33 },
+                                        { left: 44, top: 0, deg: 0 },
+                                        { left: 55, top: 6, deg: 33 },
+                                        { left: 60, top: 21, deg: 65 },
+                                    ];
+                                    const index = Math.floor(posicion / 25);
+                                    const siguienteIndex = Math.min(
+                                        index + 1,
+                                        posiciones.length - 1
+                                    );
+                                    const porcentaje = (posicion - index * 25) / 25;
+                                    const left =
+                                        posiciones[index].left +
+                                        (posiciones[siguienteIndex].left - posiciones[index].left) *
+                                            porcentaje;
+                                    const top =
+                                        posiciones[index].top +
+                                        (posiciones[siguienteIndex].top - posiciones[index].top) *
+                                            porcentaje;
+                                    const deg =
+                                        posiciones[index].deg +
+                                        (posiciones[siguienteIndex].deg - posiciones[index].deg) *
+                                            porcentaje;
+                                    obj_div.find(".punta-inicial").css({
+                                        left: `${left}%`,
+                                        top: `${top}%`,
+                                        transform: `rotate(${deg}deg) scale(0.8)`,
+                                    });
+                                }
+                                // fuel final
+                                // if (index === "final_fuel") {
+                                if (index === "final_fuel" && value != null) {
+                                    const posicion = value;
+                                    const posiciones = [
+                                        { left: 26, top: 21, deg: -65 },
+                                        { left: 32, top: 6, deg: -33 },
+                                        { left: 44, top: 0, deg: 0 },
+                                        { left: 55, top: 6, deg: 33 },
+                                        { left: 60, top: 21, deg: 65 },
+                                    ];
+                                    const index = Math.floor(posicion / 25);
+                                    const siguienteIndex = Math.min(
+                                        index + 1,
+                                        posiciones.length - 1
+                                    );
+                                    const porcentaje = (posicion - index * 25) / 25;
+                                    const left =
+                                        posiciones[index].left +
+                                        (posiciones[siguienteIndex].left - posiciones[index].left) *
+                                            porcentaje;
+                                    const top =
+                                        posiciones[index].top +
+                                        (posiciones[siguienteIndex].top - posiciones[index].top) *
+                                            porcentaje;
+                                    const deg =
+                                        posiciones[index].deg +
+                                        (posiciones[siguienteIndex].deg - posiciones[index].deg) *
+                                            porcentaje;
+                                    obj_div.find(".punta-final").css({
+                                        left: `${left}%`,
+                                        top: `${top}%`,
+                                        transform: `rotate(${deg}deg) scale(0.8)`,
+                                    });
+                                }
                             });
-                        }
-                        if (index === "final_fuel") {
-                            const posicion = value;
-                            const posiciones = [
-                                { left: 26, top: 21, deg: -65 },
-                                { left: 32, top: 6, deg: -33 },
-                                { left: 44, top: 0, deg: 0 },
-                                { left: 55, top: 6, deg: 33 },
-                                { left: 60, top: 21, deg: 65 },
-                            ];
-                            const index = Math.floor(posicion / 25);
-                            const siguienteIndex = Math.min(index + 1, posiciones.length - 1);
-                            const porcentaje = (posicion - index * 25) / 25;
-                            const left =
-                                posiciones[index].left +
-                                (posiciones[siguienteIndex].left - posiciones[index].left) *
-                                    porcentaje;
-                            const top =
-                                posiciones[index].top +
-                                (posiciones[siguienteIndex].top - posiciones[index].top) *
-                                    porcentaje;
-                            const deg =
-                                posiciones[index].deg +
-                                (posiciones[siguienteIndex].deg - posiciones[index].deg) *
-                                    porcentaje;
-                            obj_div.find(".punta-final").css({
-                                left: `${left}%`,
-                                top: `${top}%`,
-                                transform: `rotate(${deg}deg) scale(0.8)`,
-                            });
-                        }
+                            // responsable
+                            // $('[data-key-value="responsible"]').html(
+                            //     datos["responsible__first_name"] + " " + datos["responsible__last_name"] ||
+                            //         "Sin responsable"
+                            // );
+                            $('[data-key-value="responsible"]').html(
+                                (detalle["responsible__first_name"] || "") +
+                                    " " +
+                                    (detalle["responsible__last_name"] || "")
+                            );
+
+                            // imagen salida1
+                            // if (datos["image_path_exit_1"]) {
+                            if (detalle["image_path_exit_1"]) {
+                                $("[alt='image_path_exit_1']")
+                                    // .attr("src", datos["image_path_exit_1"])
+                                    .attr("src", detalle["image_path_exit_1"])
+                                    .closest(".card")
+                                    .removeClass("placeholder");
+                            } else {
+                                $("[alt='image_path_exit_1']")
+                                    .attr("src", "")
+                                    .closest(".card")
+                                    .removeClass("placeholder");
+                            }
+
+                            // IMAGEN SALIDA 2
+                            // if (datos["image_path_exit_2"]) {
+                            if (detalle["image_path_exit_2"]) {
+                                $("[alt='image_path_exit_2']")
+                                    // .attr("src", datos["image_path_exit_2"])
+                                    .attr("src", detalle["image_path_exit_2"])
+                                    .closest(".card")
+                                    .removeClass("placeholder");
+                            } else {
+                                $("[alt='image_path_exit_2']")
+                                    .attr("src", "")
+                                    .closest(".card")
+                                    .removeClass("placeholder");
+                            }
+                            // imagen entrada 1
+                            // # cargar funcion completa
+                            // if (datos["image_path_entry_1"]) {
+                            if (detalle["image_path_entry_1"]) {
+                                $("[alt='image_path_entry_1']")
+                                    // .attr("src", datos["image_path_entry_1"])
+                                    .attr("src", detalle["image_path_entry_1"])
+                                    .closest(".card")
+                                    .removeClass("placeholder");
+                            } else {
+                                $("[alt='image_path_entry_1']")
+                                    .attr("src", "")
+                                    .closest(".card")
+                                    .removeClass("placeholder");
+                            }
+
+                            // imagen entrada 2
+                            // if (datos["image_path_entry_2"]) {
+                            if (detalle["image_path_entry_2"]) {
+                                $("[alt='image_path_entry_2']")
+                                    // .attr("src", datos["image_path_entry_2"])
+                                    .attr("src", detalle["image_path_entry_2"])
+                                    .closest(".card")
+                                    .removeClass("placeholder");
+                            } else {
+                                $("[alt='image_path_entry_2']")
+                                    .attr("src", "")
+                                    .closest(".card")
+                                    .removeClass("placeholder");
+                            }
+                            // firma
+                            // $("[alt='firma']").attr("src", datos["signature"]);
+                            if (detalle["signature"]) {
+                                $("[alt='firma']").attr("src", detalle["signature"]);
+                            } else {
+                                $("[alt='firma']").attr("src", "");
+                            }
+
+                            // ! Actualizamos la info card
+                            if (self.vehicle && self.vehicle.infoCard) {
+                                // self.vehicle.infoCard.vehicle.id = datos["vehicle_id"];
+                                self.vehicle.infoCard.vehicle.id = detalle["vehicle_id"];
+                                self.vehicle.infoCard.ajax.reload();
+                            }
+                        },
+
+                        error: function (xhr, status, error) {
+                            console.error("Error obteniendo detalle de responsiva:", error);
+                        },
                     });
 
-                    $('[data-key-value="responsible"]').html(
-                        datos["responsible__first_name"] + " " + datos["responsible__last_name"] ||
-                            "Sin responsable"
-                    );
-
-                    if (datos["image_path_exit_1"]) {
-                        $("[alt='image_path_exit_1']")
-                            .attr("src", datos["image_path_exit_1"])
-                            .closest(".card")
-                            .removeClass("placeholder");
-                    } else {
-                        $("[alt='image_path_exit_1']")
-                            .attr("src", "")
-                            .closest(".card")
-                            .removeClass("placeholder");
-                    }
-
-                    if (datos["image_path_exit_2"]) {
-                        $("[alt='image_path_exit_2']")
-                            .attr("src", datos["image_path_exit_2"])
-                            .closest(".card")
-                            .removeClass("placeholder");
-                    } else {
-                        $("[alt='image_path_exit_2']")
-                            .attr("src", "")
-                            .closest(".card")
-                            .removeClass("placeholder");
-                    }
-                    // # cargar funcion completa
-                    if (datos["image_path_entry_1"]) {
-                        $("[alt='image_path_entry_1']")
-                            .attr("src", datos["image_path_entry_1"])
-                            .closest(".card")
-                            .removeClass("placeholder");
-                    } else {
-                        $("[alt='image_path_entry_1']")
-                            .attr("src", "")
-                            .closest(".card")
-                            .removeClass("placeholder");
-                    }
-                    // # cargar funcion completa
-                    if (datos["image_path_entry_2"]) {
-                        $("[alt='image_path_entry_2']")
-                            .attr("src", datos["image_path_entry_2"])
-                            .closest(".card")
-                            .removeClass("placeholder");
-                    } else {
-                        $("[alt='image_path_entry_2']")
-                            .attr("src", "")
-                            .closest(".card")
-                            .removeClass("placeholder");
-                    }
-                    // # cargar funcion completa
-                    // firma
-                    $("[alt='firma']").attr("src", datos["signature"]);
-
-                    // ! Actualizamos la info card
-                    if (self.vehicle && self.vehicle.infoCard) {
-                        self.vehicle.infoCard.vehicle.id = datos["vehicle_id"];
-                        self.vehicle.infoCard.ajax.reload();
-                    }
                     break;
                 default:
                     console.log("Opcion dezconocida:" + option);

@@ -2487,6 +2487,18 @@ def get_vehicles_responsiva(request):
 
             data = dict(data)
 
+
+            alerta = alertas_responsiva(
+                data["id"],
+                detailed=True
+            )
+
+            data["alert"] = alerta["alert"]
+            data["alert_type"] = alerta["alert_type"]
+            data["images_count"] = alerta["images_count"]
+            data["missing_images"] = alerta["missing_images"]
+
+
             # fechas
             if data.get("start_date"):
                 data["start_date"] = localtime(data["start_date"]).strftime("%d/%m/%Y %H:%M")
