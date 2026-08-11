@@ -32,6 +32,38 @@ class VehiclesResponsiva {
                     data: {},
                 },
                 columns: [
+                    {
+                        title: "Alerta",
+                        data: "alert_type",
+                        className: "toggleable",
+                        render: function (data, type, row) {
+                            if (data === "danger") {
+                                return `
+                                    <i class="fa-solid fa-triangle-exclamation text-danger fa-shake"
+                                    style="font-size: 18px;"
+                                    title="Faltan ${row.missing_images} imágenes">
+                                    </i>
+                                `;
+                            }
+
+                            if (data === "warning") {
+                                return `
+                                    <i class="fa-solid fa-triangle-exclamation text-warning fa-shake"
+                                    style="font-size: 18px;"
+                                    title="Faltan ${row.missing_images} imágenes">
+                                    </i>
+                                `;
+                            }
+
+                            return `
+                                <i class="fa-solid fa-check text-success fa-shake"
+                                style="font-size: 18px;"
+                                title="4 de 4 imágenes">
+                                </i>
+                            `;
+                        },
+                    },
+
                     { title: "ID", data: "id" },
                     { title: "Vehículo", data: "vehicle__name" },
                     {

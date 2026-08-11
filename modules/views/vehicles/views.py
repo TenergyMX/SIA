@@ -2265,6 +2265,20 @@ def get_vehicle_responsiva(request):
     for data in lista:
         modified_data = data.copy()
 
+        # ALERTA DE IMÁGENES
+
+        alerta = alertas_responsiva(
+            modified_data["id"],
+            detailed=True
+        )
+
+        modified_data["alert"] = alerta["alert"]
+        modified_data["alert_type"] = alerta["alert_type"]
+        modified_data["images_count"] = alerta["images_count"]
+        modified_data["missing_images"] = alerta["missing_images"]
+
+
+
         # **Convertir la fecha a la zona local y formatearla en "DD/MM/YYYY HH:MM"**
         if modified_data.get("start_date"):
             modified_data["start_date"] = localtime(modified_data["start_date"]).strftime("%d/%m/%Y %H:%M")
@@ -2540,7 +2554,34 @@ def get_vehicles_responsiva(request):
             except Exception as e:
                 logger.error(f"Error formateando fechas: {e}")
 
+
+            # =========================================================
+            # ALERTA DE IMÁGENES - ENTRADAS Y SALIDAS
+            # =========================================================
+
+            alerta = alertas_responsiva(
+                modified_data["id"],
+                detailed=True
+            )
+
+            modified_data["alert"] = alerta["alert"]
+            modified_data["alert_type"] = alerta["alert_type"]
+            modified_data["images_count"] = alerta["images_count"]
+            modified_data["missing_images"] = alerta["missing_images"]
             
+
+            print(
+                "RESPONSIVA:",
+                modified_data["id"],
+                "ALERTA:",
+                modified_data["alert"],
+                "TIPO:",
+                modified_data["alert_type"],
+                "IMAGENES:",
+                modified_data["images_count"],
+                "FALTANTES:",
+                modified_data["missing_images"]
+            )
 
             # botón acciones
             check = modified_data["final_mileage"] and modified_data["end_date"]
@@ -8863,6 +8904,92 @@ def delete_vehicle_responsiva_pdf(request):
     response["message"] = "Se ha borrado el registro"
     return JsonResponse(response)
 
+
+# alertas de responsivas (imagenes de entradas y salidas)
+def alertas_responsiva(responsiva_id, detailed=False):
+    """
+    Valida las 4 imágenes de una entrada/salida.
+
+    0-1 imágenes  -> alerta roja
+    2-3 imágenes  -> alerta amarilla
+    4 imágenes    -> sin alerta
+    """
+
+    try:
+        responsiva = Vehicle_Responsive.objects.filter(
+            id=responsiva_id
+        ).values(
+            "image_path_entry_1",
+            "image_path_entry_2",
+            "image_path_exit_1",
+            "image_path_exit_2"
+        ).first()
+
+        if not responsiva:
+            return {
+                "alert": True,
+                "alert_type": "danger",
+                "images_count": 0,
+                "missing_images": 4
+            }
+
+        image_fields = [
+            "image_path_entry_1",
+            "image_path_entry_2",
+            "image_path_exit_1",
+            "image_path_exit_2"
+        ]
+
+        images_count = sum(
+            1
+            for field in image_fields
+            if responsiva.get(field)
+        )
+
+        missing_images = 4 - images_count
+
+        # ==========================================
+        # DETERMINAR ALERTA
+        # ==========================================
+
+        if images_count < 2:
+            alert = True
+            alert_type = "danger"
+
+        elif images_count < 4:
+            alert = True
+            alert_type = "warning"
+
+        else:
+            alert = False
+            alert_type = None
+
+        result = {
+            "alert": alert,
+            "alert_type": alert_type,
+            "images_count": images_count,
+            "missing_images": missing_images
+        }
+
+        if detailed:
+            result["image_fields"] = {
+                field: bool(responsiva.get(field))
+                for field in image_fields
+            }
+
+        return result
+
+    except Exception as e:
+        logger.error(
+            f"Error en alertas_responsiva({responsiva_id}): {e}"
+        )
+
+        return {
+            "alert": True,
+            "alert_type": "danger",
+            "images_count": 0,
+            "missing_images": 4
+        }
 
 # TODO --------------- [ END ] ----------
 # ! Este es el fin
