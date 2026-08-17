@@ -236,6 +236,8 @@ class Vehicle_Maintenance(models.Model):
     email_maintenance = models.BooleanField(default=False)
     email_maintenance_proximo = models.BooleanField(default=False)
     email_maintenance_recordatorio = models.BooleanField(default=False)
+    is_update = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.vehicle} - {self.type} - {self.date}"
     
