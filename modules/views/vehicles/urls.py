@@ -88,15 +88,18 @@ urlpatterns = [
     path("get_vehicle_maintenance_kilometer/", views.get_vehicle_maintenance_kilometer),
     path('update_status_man/', views.update_status_man, name='update_status_man'),  # URL para actualizar el estado
 
-
+    # CALENDARIO
     path("get-vehicles-calendar/", views.get_vehicles_calendar),
 
+    # COMBUSTIBLE
     path("add-vehicle-fuel/", views.add_vehicle_fuel, name="add_vehicle_fuel"),
 
     path("get-vehicle-fuels/", views.get_vehicles_fuels),
     path("get-vehicle-fuels-charts/", views.get_vehicles_fuels_charts),
     path("update-vehicle-fuel/", views.update_vehicle_fuel),
     path("delete-vehicle-fuel/", views.delete_vehicle_fuel),
+
+    # MANTENIMIENTO 
     path("add_maintenance_option/", views.add_vehicle_maintenance),
     path("add_option/", views.add_option),
     path("obtener_opciones/", views.obtener_opciones),
@@ -217,6 +220,8 @@ urlpatterns = [
     path("delete_vehicle_responsiva_pdf/", views.delete_vehicle_responsiva_pdf),
 
     path("generar_plantilla/", views.generarPlantilla),
+
+    path("corregir_status_maintenance/", views.corregir_status_maintenance),
 
 
 ]

@@ -44,24 +44,23 @@ function table_item_maintenance() {
                             row.id
                         }">
                             <option value="Nuevo" ${
-                                status === "Nuevo" ? "selected" : ""
+                                status === "NUEVO" ? "selected" : ""
                             }>Nuevo</option>
-                            <option value="Programado" ${
-                                status === "Programado" ? "selected" : ""
+                            <option value="Próximo" ${
+                                status === "PROXIMO" ? "selected" : ""
                             }>Programado</option>
                             <option value="Proceso" ${
-                                status === "Proceso" ? "selected" : ""
+                                status === "PROCESO" ? "selected" : ""
                             }>Proceso</option>
                             <option value="Reagendado" ${
-                                status === "Reagendado" ? "selected" : ""
+                                status === "REAGENDADO" ? "selected" : ""
                             }>Reagendado</option>
                             <option value="Finalizado" ${
-                                status === "Finalizado" ? "selected" : ""
+                                status === "FINALIZADO" ? "selected" : ""
                             }>Finalizado</option>
                             <option value="Retrasado" ${
-                                status === "Retrasado" ? "selected" : ""
+                                status === "RETRASADO" ? "selected" : ""
                             }>Retrasado</option>
-                        </select>
                     `;
                 },
             },

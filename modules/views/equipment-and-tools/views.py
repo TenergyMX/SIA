@@ -137,7 +137,7 @@ def get_equipments_tools_categorys(request):
    
 
             datos = list(Equipement_category.objects.filter(
-                        empresa__id=empresa_id
+                        empresa__id=empresa_id, is_active=True
                     ).distinct().values())
             for item in datos:
                 item["btn_action"] = ""
@@ -176,6 +176,7 @@ def add_equipment_category(request):
     tipo_user = context["role"]["name"]
 
     empresa_id = context["company"]["id"]
+
     if request.method == 'POST':
         try:
             name = request.POST.get('name')
@@ -187,7 +188,21 @@ def add_equipment_category(request):
 
             if not name or not short_name:
                 raise ValidationError("Nombre y nombre corto son obligatorios.")
-            
+
+            # validacion
+            categoria_existente = Equipement_category.objects.filter(
+                empresa=empresa,
+                is_active=True
+            ).filter(
+                Q(name__iexact=name) |
+                Q(short_name__iexact=short_name)
+            ).first()
+
+            if categoria_existente:
+                raise ValidationError(
+                    "Ya existe una categoría activa con ese nombre o nombre corto."
+                )
+
             # Crear una nueva categoría
             with transaction.atomic():
                 Equipement_category.objects.create(
@@ -195,7 +210,7 @@ def add_equipment_category(request):
                     name=name,
                     short_name=short_name,
                     description=description,
-                    is_active=is_active
+                    is_active=True
                 )
             
             return JsonResponse({'success': True, 'message': 'Categoría agregada correctamente!'})
@@ -254,7 +269,9 @@ def delete_category(request):
         except Equipement_category.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Category not found'})
 
-        category.delete()
+        # category.delete()
+        category.is_active = False
+        category.save(update_fields=['is_active'])
 
         return JsonResponse({'success': True, 'message': 'Categoría eliminada correctamente!'})
 
@@ -288,7 +305,7 @@ def get_equipments_tools(request):
 
         equipments = list(Equipment_Tools.objects.select_related(
             'equipment_category', 'equipment_area', 'equipment_responsible', 'equipment_location'
-        ).filter(company_id=company_id).values(
+        ).filter(company_id=company_id, is_active=True).values(
             'id',
             'equipment_category__id',
             'equipment_category__name',
@@ -305,7 +322,9 @@ def get_equipments_tools(request):
             'equipment_location__id',
             'equipment_location__location_name',
             'equipment_technical_sheet',
-            'document_factura_equipment'
+            'document_factura_equipment',
+            'comments',
+            'has_serial_number'
 
         ))
 
@@ -349,7 +368,26 @@ def get_equipments_tools(request):
                     </a>
                 """
 
+            # Botón Desglose de equipo
+            item["btn_equipment_breakdown"] = ""
 
+            if access["read"] is True and (
+                area.lower() == "almacen"
+                or tipo_user.lower() in ["administrador", "super usuario"]
+            ):
+                item["btn_equipment_breakdown"] = (
+                    f"<button type='button' "
+                    f"name='identifiers' "
+                    f"class='btn btn-icon btn-sm btn-success-light' "
+                    f"data-equipments-tools='view-identifiers' "
+                    f"data-id='{item['id']}' "
+                    f"aria-label='Desglose de equipo' "
+                    f"title='Desglose de equipo'>"
+                    f"<i class='fa-solid fa-list'></i>"
+                    f"</button>"
+                )
+
+            # Botones de acciones
             item["btn_action"] = ""
             if access["update"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
                 item["btn_action"] += (
@@ -528,7 +566,6 @@ def add_equipment_tools(request):
     subModule_id = 30
     access = get_module_user_permissions(context, subModule_id)  
     
-
     access = access["data"]["access"]
     area = context["area"]["name"]
     create = access["create"]
@@ -539,7 +576,7 @@ def add_equipment_tools(request):
         equipment_name = request.POST.get('equipment_name')
         
         # Check if equipment_name already exists
-        if Equipment_Tools.objects.filter(equipment_name__iexact=equipment_name, company_id=company_id).exists():
+        if Equipment_Tools.objects.filter(equipment_name__iexact=equipment_name, company_id=company_id, is_active=True).exists():
             return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra regristado para esta empresa, ingresa otro diferente.'})
         
         try:
@@ -557,19 +594,33 @@ def add_equipment_tools(request):
                     equipment_area_id = request.POST.get('equipment_area'),
                     equipment_responsible_id = request.POST.get('responsible_equipment'),
                     equipment_location_id = request.POST.get('equipment_location'),
-                    
+                    comments = request.POST.get('comments'),
+                    has_serial_number = request.POST.get("has_serial_number") == "1"
                 )
+
                 if not all([obj.company_id, obj.equipment_category, obj.equipment_name, obj.equipment_type, 
                         obj.equipment_brand, obj.equipment_description, obj.cost, obj.amount, 
                         obj.equipment_area, obj.equipment_responsible, obj.equipment_location]):
                     return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
                 obj.save()
-                id = obj.id
+                equipment_id = obj.id
+                # id = obj.id
+
+                generate_identificador_equipment_tool(
+                    equipment_id,
+                    company_id,
+                    obj.amount
+                )
 
                 if 'equipment_technical_sheet' in request.FILES and request.FILES['equipment_technical_sheet']:
                     equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
 
-                    folder_path = f"docs/{company_id}/Equipments_tools/technical_sheet/{id}/"
+                    # folder_path = f"docs/{company_id}/Equipments_tools/{obj_id}/technical_sheet/{id}/"
+                    folder_path = (
+                        f"docs/{company_id}/"
+                        f"Equipments_tools/{equipment_id}/"
+                        f"technical_sheet/{equipment_id}/"
+                    )
 
                     file_name, extension = os.path.splitext(equipment_technical_sheet.name)
 
@@ -583,7 +634,13 @@ def add_equipment_tools(request):
                 if 'document_factura_equipment' in request.FILES and request.FILES['document_factura_equipment']:
                     document_factura_equipment = request.FILES.get('document_factura_equipment')
 
-                    folder_path = f"docs/{company_id}/Equipments_tools/document_factura_equipment/{id}/"
+                    # folder_path = f"docs/{company_id}/Equipments_tools/{obj_id}/document_factura_equipment/{id}/"
+
+                    folder_path = (
+                        f"docs/{company_id}/"
+                        f"Equipments_tools/{equipment_id}/"
+                        f"document_factura_equipment/{equipment_id}/"
+                    )
 
                     file_name, extension = os.path.splitext(document_factura_equipment.name)
 
@@ -603,7 +660,75 @@ def add_equipment_tools(request):
             response["status"] = "error"
             response["message"] = str(e)
         return JsonResponse(response) 
-    
+
+
+# generar identificador de cada registro
+def generate_identificador_equipment_tool(item_id, company_id, cantidad):
+    try:
+        item = Equipment_Tools.objects.get(id=item_id)
+        company = Company.objects.get(id=company_id)
+        base_name = item.equipment_name.replace(' ', '').upper()[:3]
+        company_code = company.name.replace(' ', '').upper()[:3]
+        prefix = f"{company_code}-{base_name}-"
+
+        print(f"Generando identificadores para {cantidad} items de '{item.equipment_name}'")
+
+        # Buscar el último número usado con ese prefijo
+        last_detail = (
+            Equipments_Tools_Detail.objects
+            .filter(company=company, identifier__startswith=prefix)
+            .order_by("-identifier")
+            .first()
+        )
+
+        if last_detail:
+            match = re.search(rf"{prefix}(\d+)", last_detail.identifier)
+            last_number = int(match.group(1)) if match else 0
+        else:
+            last_number = 0
+
+        cantidad = int(cantidad)
+
+        detalles_creados = []
+
+        for i in range(1, int(cantidad) + 1):
+            number = last_number + i
+            identifier = f"{prefix}{str(number).zfill(4)}"
+
+            detalle = Equipments_Tools_Detail.objects.create(
+                equipment_tool=item,
+                company=company,
+                name=item.equipment_name,
+                identifier=identifier,
+                serial_number=None,
+                is_active=True,
+                is_deactivated=False,
+                state="DISPONIBLE",
+            )
+
+            detalles_creados.append(detalle)
+            print(f"Identificador generado y guardado: {identifier}")
+
+        return detalles_creados
+
+    except Equipment_Tools.DoesNotExist:
+        print(
+            f"Error: Equipment_Tools {item_id} no encontrado."
+        )
+        return []
+
+    except Company.DoesNotExist:
+        print(
+            f"Error: Company {company_id} no encontrada."
+        )
+        return []
+
+    except Exception as e:
+        print(
+            f"Error al generar identificadores: {str(e)}"
+        )
+        return []
+
 # Función para editar los registros de los equipos o herramientas
 @login_required
 @csrf_exempt
@@ -611,7 +736,14 @@ def edit_equipments_tools(request):
     context = user_data(request)
     company_id = context["company"]["id"]
     if request.method == 'POST':
-        _id = request.POST.get('id')
+        _id = request.POST.get('id')       
+
+        if not _id:
+            return JsonResponse({
+                'success': False,
+                'message': 'No se recibió el ID del equipo.'
+            }, status=400) 
+        
         equipment_category_id = request.POST.get('equipment_category')
         equipment_name = request.POST.get('equipment_name').strip()
         equipment_type = request.POST.get('equipment_type')
@@ -624,50 +756,142 @@ def edit_equipments_tools(request):
         equipment_location = request.POST.get('equipment_location')
         equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
         document_factura_equipment = request.FILES.get('document_factura_equipment')
-        # Validar que el nombre del equipo no esté en uso por otro equipo dentro de la misma empresa, 
-        if Equipment_Tools.objects.filter(equipment_name__iexact=equipment_name, company_id=company_id).exclude(id=_id).exists():
-            return JsonResponse({'success': False, 'message': 'Este nombre ya se encuentra registrado para esta empresa, ingresa otro diferente.'})
+        comments = request.POST.get('comments', '').strip()
+        has_serial_number = request.POST.get('has_serial_number') 
 
         try:
-            equipment_tool = Equipment_Tools.objects.get(id=_id)
-            equipment_tool.equipment_category_id = equipment_category_id
-            equipment_tool.equipment_name = equipment_name
-            equipment_tool.equipment_type = equipment_type
-            equipment_tool.equipment_brand = equipment_brand
-            equipment_tool.equipment_description = equipment_description
-            equipment_tool.cost = cost
-            equipment_tool.amount = amount
-            equipment_tool.equipment_area_id = equipment_area
-            equipment_tool.equipment_responsible_id = equipment_responsible
-            equipment_tool.equipment_location_id = equipment_location
+            equipment_tool = Equipment_Tools.objects.get(
+                id=_id,
+                company_id=company_id
+            )
 
-            # Actualizar ficha técnica solo si se proporciona un archivo nuevo
-            if equipment_technical_sheet:
-                folder_path = f"docs/{equipment_tool.company_id}/Equipments_tools/technical_sheet/{id}/"
-                file_name, extension = os.path.splitext(equipment_technical_sheet.name)
-                new_name = f'equipment_technical_sheet_{equipment_tool.equipment_name}{extension}'
-                s3Name = folder_path + new_name
-                upload_to_s3(equipment_technical_sheet, AWS_BUCKET_NAME, s3Name)
-                equipment_tool.equipment_technical_sheet = s3Name
+            if Equipment_Tools.objects.filter(
+                equipment_name__iexact=equipment_name,
+                is_active=True,
+                company_id=company_id
+            ).exclude(
+                id=equipment_tool.id
+            ).exists():
 
-            # Actualizar factura solo si se proporciona un archivo nuevo
-            if document_factura_equipment:
-                folder_path = f"docs/{equipment_tool.company_id}/Equipments_tools/document_factura_equipment/{id}/"
-                file_name, extension = os.path.splitext(document_factura_equipment.name)
-                new_name = f'document_factura_equipment{equipment_tool.equipment_name}{extension}'
-                s3Name = folder_path + new_name
-                upload_to_s3(document_factura_equipment, AWS_BUCKET_NAME, s3Name)
-                equipment_tool.document_factura_equipment = s3Name
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Este nombre ya se encuentra registrado para esta empresa, ingresa otro diferente.'
+                })
 
-            equipment_tool.save()
+            with transaction.atomic():
 
-            return JsonResponse({'success': True, 'message': 'Equipo editado correctamente!'})
+                # Guardar la cantidad anterior antes de modificar
+                cantidad_anterior = int(equipment_tool.amount or 0)
+                cantidad_nueva = int(amount or 0)
+
+                equipment_tool.equipment_category_id = equipment_category_id
+                equipment_tool.equipment_name = equipment_name
+                equipment_tool.equipment_type = equipment_type
+                equipment_tool.equipment_brand = equipment_brand
+                equipment_tool.equipment_description = equipment_description
+                equipment_tool.cost = cost
+                equipment_tool.amount = amount
+                equipment_tool.equipment_area_id = equipment_area
+                equipment_tool.equipment_responsible_id = equipment_responsible
+                equipment_tool.equipment_location_id = equipment_location
+                equipment_tool.comments = comments
+                equipment_tool.has_serial_number = has_serial_number
+
+
+                # Actualizar ficha técnica solo si se proporciona un archivo nuevo
+                if equipment_technical_sheet:
+                    folder_path = (
+                        f"docs/{equipment_tool.company_id}/"
+                        f"Equipments_tools/{equipment_tool.id}/"
+                        f"technical_sheet/{equipment_tool.id}/"
+                    )
+                    file_name, extension = os.path.splitext(equipment_technical_sheet.name)
+                    new_name = f'equipment_technical_sheet_{equipment_tool.equipment_name}{extension}'
+                    s3Name = folder_path + new_name
+                    upload_to_s3(equipment_technical_sheet, AWS_BUCKET_NAME, s3Name)
+                    equipment_tool.equipment_technical_sheet = s3Name
+
+                # Actualizar factura solo si se proporciona un archivo nuevo
+                if document_factura_equipment:
+                    folder_path = (
+                        f"docs/{equipment_tool.company_id}/"
+                        f"Equipments_tools/{equipment_tool.id}/"
+                        f"document_factura_equipment/{equipment_tool.id}/"
+                    )                    
+                    file_name, extension = os.path.splitext(document_factura_equipment.name)
+                    new_name = f'document_factura_equipment{equipment_tool.equipment_name}{extension}'
+                    s3Name = folder_path + new_name
+                    upload_to_s3(document_factura_equipment, AWS_BUCKET_NAME, s3Name)
+                    equipment_tool.document_factura_equipment = s3Name
+
+                equipment_tool.save()
+
+                # sincronizar identificadores
+                detalles = Equipments_Tools_Detail.objects.filter(
+                    equipment_tool=equipment_tool,
+                    company_id=company_id
+                )
+
+                cantidad_actual = detalles.filter(
+                    is_active=True
+                ).count()
+
+                # La cantidad aumentó
+                if cantidad_nueva > cantidad_actual:
+
+                    faltantes = cantidad_nueva - cantidad_actual                  
+                    # Generar únicamente los identificadores faltantes
+                    generate_identificador_equipment_tool(
+                        equipment_tool.id,
+                        company_id,
+                        faltantes
+                    )
+
+                # La cantidad disminuyó
+                elif cantidad_nueva < cantidad_actual:
+
+                    sobrantes = cantidad_actual - cantidad_nueva
+                    
+                    # Tomar los últimos identificadores creados para desactivarlos primero.
+                    detalles_a_desactivar = detalles.filter(
+                        is_active=True
+                    ).order_by('-id')[:sobrantes]
+
+                    for detalle in detalles_a_desactivar:
+                        detalle.is_active = False
+                        detalle.is_deactivated = True
+
+                        detalle.save()
+
+                # La cantidad no cambió
+                else:
+                    print(
+                        "La cantidad no cambió. "
+                        "No se modifican los identificadores."
+                    )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Equipo editado correctamente!'
+            })
 
         except Equipment_Tools.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Equipo no encontrado'}, status=404)
+            return JsonResponse({
+                'success': False,
+                'message': 'Equipo no encontrado'
+            }, status=404)
+
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'message': 'La cantidad debe ser un número válido.'
+            }, status=400)
 
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error interno del servidor: {str(e)}'}, status=500)
+            return JsonResponse({
+                'success': False,
+                'message': f'Error interno del servidor: {str(e)}'
+            }, status=500)
 
     return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
 
@@ -687,9 +911,19 @@ def delete_equipment_tool(request):
         except Equipment_Tools.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'equipments and tools not found'})
 
-        equipment_tool.delete()
+        # equipment_tool.delete()
+        equipment_tool.is_active = False
+        equipment_tool.save(update_fields=['is_active'])
 
-        return JsonResponse({'success': True, 'message': 'Equipo eliminado correctamente!'})
+        # desactivar los detalles
+        Equipments_Tools_Detail.objects.filter(
+            equipment_tool=equipment_tool
+        ).update(
+            is_active=False,
+            is_deactivated=True
+        )
+
+        return JsonResponse({'success': True, 'message': 'Equipo desactivado correctamente!'})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
@@ -1419,3 +1653,319 @@ def equipment_tools_responsiva_pdf_view(request, responsiva_id):
         "pdf/equipment_tools_responsiva.html",
         context
     ).render()
+
+
+# tabla de informacion de un equipo o herramienta
+def get_equipment_tools_details(request):
+    equipment_tool_id = request.GET.get("id")
+    data = []
+
+    if equipment_tool_id:
+        try:
+            equipment_tool = Equipment_Tools.objects.get(
+                id = equipment_tool_id
+            )
+
+            has_serial_number = equipment_tool.has_serial_number
+
+            registros = (
+                Equipments_Tools_Detail.objects
+                .filter(equipment_tool=equipment_tool)
+                .values(
+                    "id",
+                    "identifier",
+                    "responsible__id",
+                    "responsible__first_name",
+                    "responsible__last_name",
+                    "assignment_date",
+                    "serial_number",
+                    "equipment_location__location_name",
+                    "is_active",
+                    "is_deactivated",
+                    "state",
+                )
+            )
+
+            for r in registros:
+                # RESPONSABLE
+                tiene_responsable = (
+                    r["responsible__first_name"]
+                    or r["responsible__last_name"]
+                )
+
+                responsable = (
+                    f"{r['responsible__first_name'] or ''} "
+                    f"{r['responsible__last_name'] or ''}"
+                ).strip()
+
+                if not responsable:
+                    responsable = "Disponible"
+
+                # NÚMERO DE SERIE
+                serial_number = r["serial_number"] or ""
+
+                equipment_location = (
+                    r["equipment_location__location_name"]
+                    or "Sin ubicación"
+                )
+
+                # FECHA
+                fecha_asignacion = (
+                    r["assignment_date"].strftime("%Y-%m-%d")
+                    if r["assignment_date"]
+                    else ""
+                )
+
+                # AGREGAR REGISTRO
+                data.append({
+
+                    "id": r["id"],
+                    "identificador": r["identifier"],
+                    "state": r["state"],
+                    "responsable": responsable,
+                    "responsable_id": (
+                        r["responsible__id"]
+                        if tiene_responsable
+                        else None
+                    ),
+                    "tiene_responsable": bool(
+                        tiene_responsable
+                    ),
+                    "fecha_asignacion": fecha_asignacion,
+                    "serial_number": serial_number,
+                    "equipment_location": equipment_location,
+                    "is_active": r["is_active"],
+                    "is_deactivated": r["is_deactivated"],
+
+                })
+
+            return JsonResponse({
+                "success": True,
+                # numero de serie del equipo
+                "has_serial_number": has_serial_number,
+                "data": data
+            })
+        except Equipment_Tools.DoesNotExist:
+            return JsonResponse({
+                "success": False,
+                "message": "El equipo o herramienta no existe."
+            }, status=404)
+    return JsonResponse({
+        "success": True,
+        "has_serial_number": False,
+        "data": data
+    })
+
+
+# guardar numero de serie
+@login_required
+@csrf_exempt
+def save_equipment_tool_serial_number(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
+
+    detalle_id = request.POST.get("detalle_id")
+    numero_serie = request.POST.get("serial_number", "").strip()
+
+    # VALIDACIONES
+    if not detalle_id:
+        return JsonResponse({
+            "success": False,
+            "message": "No se recibió el detalle del equipo."
+        })
+
+    if not numero_serie:
+        return JsonResponse({
+            "success": False,
+            "message": "El número de serie es obligatorio."
+        })
+
+    try:
+        detalle = Equipments_Tools_Detail.objects.get(
+            id=detalle_id
+        )
+        # VALIDAR DUPLICADO
+        existe = (
+            Equipments_Tools_Detail.objects
+            .filter(
+                serial_number=numero_serie
+            )
+            .exclude(
+                id=detalle.id
+            )
+            .exists()
+        )
+
+        if existe:
+            return JsonResponse({
+                "success": False,
+                "message":
+                    "Este número de serie ya está registrado en otro equipo."
+            })
+
+        # GUARDAR
+        detalle.serial_number = numero_serie
+
+        detalle.save(
+            update_fields=[
+                "serial_number"
+            ]
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message":
+                "Número de serie guardado correctamente.",
+            "data": {
+                "id": detalle.id,
+                "serial_number":
+                    detalle.serial_number
+            }
+
+        })
+
+    except Equipments_Tools_Detail.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "message":
+                "No se encontró el detalle del equipo."
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "message":
+                f"Error al guardar el número de serie: {str(e)}"
+        })
+
+
+
+@login_required
+def modal_equipment_tool_detail(request):
+    detail_id = request.GET.get("id")
+    if not detail_id:
+        return JsonResponse({
+            "success": False,
+            "message": "No se recibió el identificador."
+        })
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        detail = Equipments_Tools_Detail.objects.get(
+            id=detail_id,
+            company_id=company_id
+        )
+
+        return JsonResponse({
+            "success": True,
+            "data": {
+                "id": detail.id,
+                "identifier": detail.identifier,
+                "name": detail.name,
+            }
+        })
+
+    except Equipments_Tools_Detail.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "El detalle no existe."
+        }, status=404)
+
+
+# dar de baja un equipo
+@login_required
+def disable_equipment_tool_detail(request):
+    print("funcion para dar de baja un registro de detalles")
+
+    detail_id = request.POST.get("detail_id")
+    print("id de detalle", detail_id)
+    action = request.POST.get("action")
+    print("la accion es:", action)
+    if not detail_id:
+        return JsonResponse({
+            "success": False,
+            "message": "No se recibió el ID del detalle."
+        })
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        detail = Equipments_Tools_Detail.objects.get(
+            id=detail_id,
+            company_id=company_id
+        )
+        # DESHABILITAR
+        if action == "disable":
+            reason = request.POST.get("reason")
+            description = request.POST.get("description", "").strip()
+            evidence = request.FILES.get("evidence")
+
+            if not reason:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe seleccionar un motivo de baja."
+                })
+
+            if not description:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe ingresar una descripción."
+                })
+
+            detail.is_active = False
+            detail.is_deactivated = True
+            detail.state = "BAJA"
+            detail.deactivation_reason = reason
+            detail.deactivation_description = description
+            detail.deactivated_at = timezone.now()
+
+            if evidence:
+                detail.deactivation_evidence = evidence
+
+            detail.save()
+
+            return JsonResponse({
+                "success": True,
+                "message": "El equipo o herramienta ha sido dado de baja correctamente."
+            })
+
+        # HABILITAR
+        elif action == "enable":
+            detail.is_active = True
+            detail.is_deactivated = False
+            detail.state = "DISPONIBLE"
+            # Limpiar información de la baja
+            detail.deactivation_reason = None
+            detail.deactivation_description = None
+            detail.deactivated_at = None
+
+            detail.save()
+
+            return JsonResponse({
+                "success": True,
+                "message": "El equipo o herramienta ha sido habilitado correctamente."
+            })
+        else:
+            return JsonResponse({
+                "success": False,
+                "message": "Acción no válida."
+            })
+
+    except Equipments_Tools_Detail.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "message": "El equipo o herramienta no existe."
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "message": f"Error interno: {str(e)}"
+        }, status=500)
+
+
+

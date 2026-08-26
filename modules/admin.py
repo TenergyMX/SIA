@@ -3,13 +3,32 @@ from .models import *
 
 # Register your models here.
 admin.site.register(Vehicle)
+# @admin.register(Vehicle)
+# class VehicleAdmin(admin.ModelAdmin):
+#     search_fields = (
+#         'name',
+#         'plate',
+#         'brand',
+#         'model',
+#         'serial_number',
+#     )
+
+
+# @admin.register(Provider)
+# class ProviderAdmin(admin.ModelAdmin):
+#     search_fields = (
+#         'name',
+#         'phone_number',
+#         'address',
+#     )
+
 admin.site.register(Vehicle_Tenencia)
 admin.site.register(Vehicle_Refrendo)
 admin.site.register(Vehicle_Verificacion)
 admin.site.register(Vehicle_Responsive)
 admin.site.register(Vehicle_Insurance)
 admin.site.register(Vehicle_Audit)
-admin.site.register(Vehicle_Maintenance)
+#admin.site.register(Vehicle_Maintenance)
 admin.site.register(Vehicle_fuel)
 admin.site.register(Vehicle_Maintenance_Kilometer)
 
@@ -19,8 +38,8 @@ admin.site.register(Software)
 admin.site.register(SoftwareInstallation)
 admin.site.register(ComputerEquipment_Maintenance)
 
-@admin.register(ComputerEquipment_Audit)
 
+@admin.register(ComputerEquipment_Audit)
 class ComputerEquipment_AuditAdmin(admin.ModelAdmin):
     list_display = ('computerSystem', 'audit_date', 'is_checked', 'is_visible')
     search_fields = ('computerSystem__name', 'audit_date')
@@ -104,3 +123,112 @@ admin.site.register(VehicleAuditCorrection)
 admin.site.register(PlanHeader)
 admin.site.register(Infraestructure_Responsiva)
 admin.site.register(Vehicles_Responsivas_pdf)
+admin.site.register(Equipments_Tools_Detail)
+from django.contrib import admin
+from .models import Vehicle_Maintenance
+
+
+@admin.register(Vehicle_Maintenance)
+class VehicleMaintenanceAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'vehicle',
+        'type',
+        'status',
+        'date',
+        'provider',
+        'cost',
+        'mileage',
+        'is_checked',
+        'email_maintenance',
+        'email_maintenance_proximo',
+        'email_maintenance_recordatorio',
+        'created_at',
+        'is_update'
+    )
+
+    list_filter = (
+        'type',
+        'date',
+        'status',
+        'is_checked',
+        'email_maintenance',
+        'email_maintenance_proximo',
+        'email_maintenance_recordatorio',
+        'provider',
+    )
+
+    search_fields = (
+        'vehicle__name',
+        'vehicle',
+        'provider',
+        'type',
+        'general_notes',
+        'actions',
+        'status',
+    )
+
+    date_hierarchy = 'date'
+
+    ordering = ('-date', '-created_at')
+
+    list_per_page = 25
+
+    readonly_fields = (
+        'created_at',
+    )
+
+    fieldsets = (
+        (
+            'Información del mantenimiento',
+            {
+                'fields': (
+                    'vehicle',
+                    'type',
+                    'date',
+                    'provider',
+                    'cost',
+                    'mileage',
+                    'time',
+                    'is_update',
+                )
+            },
+        ),
+        (
+            'Detalles',
+            {
+                'fields': (
+                    'general_notes',
+                    'actions',
+                    'comprobante',
+                )
+            },
+        ),
+        (
+            'Estado',
+            {
+                'fields': (
+                    'is_checked',
+                    'status',
+                )
+            },
+        ),
+        (
+            'Notificaciones',
+            {
+                'fields': (
+                    'email_maintenance',
+                    'email_maintenance_proximo',
+                    'email_maintenance_recordatorio',
+                )
+            },
+        ),
+        (
+            'Información del sistema',
+            {
+                'fields': (
+                    'created_at',
+                )
+            },
+        ),
+    )

@@ -84,21 +84,24 @@ class VehiclesMaintenance {
                                     <option value="Nuevo" ${
                                         status === "Nuevo" ? "selected" : ""
                                     }>Nuevo</option>
-                                    <option value="Programado" ${
-                                        status === "Programado" ? "selected" : ""
-                                    }>Programado</option>
+                                    <option value="Próximo" ${
+                                        status === "PROXIMO" ? "selected" : ""
+                                    }>Próximo</option>
                                     <option value="Proceso" ${
                                         status === "Proceso" ? "selected" : ""
                                     }>Proceso</option>
                                     <option value="Reagendado" ${
-                                        status === "Reagendado" ? "selected" : ""
+                                        status === "REAGENDADO" ? "selected" : ""
                                     }>Reagendado</option>
                                     <option value="Finalizado" ${
-                                        status === "Finalizado" ? "selected" : ""
+                                        status === "FINALIZADO" ? "selected" : ""
                                     }>Finalizado</option>
                                     <option value="Retrasado" ${
                                         status === "Retrasado" ? "selected" : ""
-                                    }>Retrasado</option>
+                                    }>Retrasado</option> 
+                                    <option value="NO PAGADO" ${
+                                        status === "NO PAGADO" ? "selected" : ""
+                                    }>No pagado</option>
                                 </select>
                             `;
                         },

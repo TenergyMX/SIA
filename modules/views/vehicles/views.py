@@ -3831,6 +3831,23 @@ def update_vehicle_maintenance(request):
         actions = ""
 
     try:
+        # Detectar si la fecha fue modificada
+        fecha_modificada = False
+
+        nueva_fecha = None
+
+        if dt.get("date"):
+            nueva_fecha = datetime.strptime(
+                dt.get("date"),
+                "%Y-%m-%d"
+            ).date()
+
+            # Comparar la fecha que tenía el registro
+            if obj.date != nueva_fecha:
+                fecha_modificada = True
+
+        # -------------------------------------------
+
         if dt.get("vehicle_id"):
             obj.vehicle_id = dt.get("vehicle_id")
         if dt.get("provider_id"):
@@ -3847,8 +3864,21 @@ def update_vehicle_maintenance(request):
             obj.time = dt.get("time")
         if dt.get("general_note"):
             obj.general_notes = dt.get("general_note", None)
-        obj.status = "PROGRAMADO"
+        obj.status = "FINALIZADO"
+        obj.is_checked = True
         obj.actions = actions
+
+        # modificar edstado de acuerdo con la fecha
+        if fecha_modificada:
+            obj.status = "REAGENDADO"
+            obj.is_update = True
+            obj.is_checked = False
+
+        else:
+            obj.status = "FINALIZADO"
+            obj.is_checked = True
+
+        # guardar
         obj.save()
         
         # Guardar el archivo en caso de existir
@@ -8509,9 +8539,22 @@ def get_users_vehicle_responsiva(request):
         "data": []
     }
 
+
+    # IDs de usuarios que tienen al menos un vehículo asignado
+    usuarios_con_vehiculo = Vehicle.objects.filter(
+        company_id=company_id,
+        is_active=True,
+        responsible__isnull=False
+    ).values_list(
+        "responsible_id",
+        flat=True               
+    ).distinct()
+
+    # usuarios que tiene vewhiculos
     usuarios = User_Access.objects.filter(
         company_id=company_id,
-        user__is_active=True
+        user__is_active=True, 
+        user_id__in = usuarios_con_vehiculo
     ).select_related(
         "user"
     ).values(
@@ -8605,7 +8648,7 @@ def vehicle_responsiva_pdf_view(request):
     for vehicle in vehicles:
 
         context2["data"].append({
-
+            "name": vehicle.name,
             "brand": vehicle.brand,
             "model": vehicle.model,
             "vehicle_type": vehicle.vehicle_type,
@@ -8613,7 +8656,6 @@ def vehicle_responsiva_pdf_view(request):
             "capacity": getattr(vehicle, "capacity", ""),
             "serial_number": vehicle.serial_number,
             "plate": vehicle.plate,
-
         })
 
     return WeasyPDF(
@@ -9003,6 +9045,12 @@ def alertas_responsiva(responsiva_id, detailed=False):
             "missing_images": 4
         }
 
+
+
+# corregir status
+def corregir_status_maintenance(request):
+    Vehicle_Maintenance.objects.filter(status__contains="XIMO").update(status="PROXIMO")
+    return HttpResponse("Hello World!")
 # TODO --------------- [ END ] ----------
 # ! Este es el fin
 

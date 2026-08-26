@@ -1208,15 +1208,14 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 
 
             for mantenimiento in obj_mantenimiento:
-
                 # Si ya pasó la fecha y no tiene comprobante → NO PAGADO
-                if mantenimiento.date and mantenimiento.date < hoy and not mantenimiento.comprobante:
+                if mantenimiento.date and mantenimiento.date < hoy and mantenimiento.status == "PROXIMO":
                     mantenimiento.status = "NO PAGADO"
                     mantenimiento.save()
 
-                # Si está próximo (ej. 7 días antes) → PRÓXIMO
-                elif mantenimiento.date and hoy <= mantenimiento.date <= (hoy + timedelta(days=7)):
-                    mantenimiento.status = "PRÓXIMO"
+                # Si está próximo (ej. 7 días antes) → PRÓXIMO 
+                elif mantenimiento.date and hoy <= mantenimiento.date <= (hoy + timedelta(days=7)) and mantenimiento.status in ["NUEVO", "nuevo", "Nuevo", "REAGENDADO", "reagendado", "Reagendado", "PROCESO", "proceso", "Proceso"]:
+                    mantenimiento.status = "PROXIMO"
                     mantenimiento.save()
 
                 # Si es nuevo y aún no ha sido atendido
@@ -1224,8 +1223,28 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     mantenimiento.status = "NUEVO"
                     mantenimiento.save()
 
+                # Si la fecha es superior a la fecha registrada y aún no ha sido atendido, colocar el status en -> RETRASADO
+                elif mantenimiento.date and mantenimiento.date <= hoy and mantenimiento.status == "PROXIMO" and mantenimiento.is_checked == False:
+                    mantenimiento.status = "RETRASADO"
+                    mantenimiento.save()
+
+                # Finalizado
+                elif mantenimiento.status in ["RETRASADO", "NO PAGADO"] and mantenimiento.is_checked == True:
+                    mantenimiento.status = "FINALIZADO"
+                    mantenimiento.save()
+
+                # # Finalizado
+                # elif mantenimiento.status in ["REAGENDADO", "NO PAGADO"] and mantenimiento.is_checked == True:
+                #     mantenimiento.status = "FINALIZADO"
+                #     mantenimiento.save()
+
+
+                else:
+                    print("Ignorar Registro")
+
             # --- 2. ENVIAR CORREOS SEGÚN EL ESTADO ---
             for mantenimiento in obj_mantenimiento:
+                print(mantenimiento.vehicle)
                 campo_email = None
                 
                 # URL completa al vehículo
@@ -1233,7 +1252,9 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                 link_vehiculo = f"{domain}/vehicles/info/{mantenimiento.vehicle.id}/"
                 
                 # Mensajes según estado
-                if mantenimiento.status == "NUEVO" and not mantenimiento.email_maintenance:
+                print(mantenimiento.status)
+                if mantenimiento.status in ["NUEVO", "Nuevo", "nuevo"] and mantenimiento.email_maintenance == False:
+                    print("Preparar correo para un mantenimiento nuevo, registrado")
                     campo_email = "email_maintenance"
                     descripcion = (
                         f"Se ha creado un nuevo mantenimiento para el vehículo <strong>{mantenimiento.vehicle.name}</strong>. "
@@ -1241,21 +1262,25 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         f"<a href='{link_vehiculo}'>Ver mantenimiento</a>."
                     )
 
-                elif mantenimiento.status == "PRÓXIMO" and not mantenimiento.email_maintenance_proximo:
+                elif mantenimiento.status == "PROXIMO" and mantenimiento.email_maintenance_proximo == False:
+                    print("Preparar correo para un mantenimiento nuevo, registrado2")
                     campo_email = "email_maintenance_proximo"
                     descripcion = (
                         f"El mantenimiento del vehículo <strong>{mantenimiento.vehicle.name}</strong> esta en estado próximo. "
                         f"Revisa y realiza las acciones necesarias aquí: <a href='{link_vehiculo}'>Ver mantenimiento</a>."
                     )
 
-                elif mantenimiento.status == "NO PAGADO" and not mantenimiento.email_maintenance_recordatorio:
+                elif mantenimiento.status == "NO PAGADO" and mantenimiento.email_maintenance_recordatorio == False:
+                    print("Preparar correo para un mantenimiento nuevo, registrado3")
                     campo_email = "email_maintenance_recordatorio"
                     descripcion = (
                         f"El mantenimiento del vehículo <strong>{mantenimiento.vehicle.name}</strong> ha vencido y aún no se ha registrado el pago. "
                         f"Por favor realiza el mantemiento, y sube el comprobante aquí: <a href='{link_vehiculo}'>Ver mantenimiento</a>."
                     )
+                else:
+                    print("Preparar correo para un mantenimiento nuevo, registrado4")
 
-
+                print(f"Este es el campo email {campo_email}")
                 if campo_email:
                     response["data"].append({
                         "alert": "danger",
@@ -1292,7 +1317,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     send_notification(context_email)
                     setattr(mantenimiento, campo_email, True)
                     mantenimiento.save(update_fields=[campo_email])
-                    # print("el corro se envio correctamente")
+                    print("el corro se envio correctamente")
         # Respuesta final
         response["recordsTotal"] = len(response["data"])
         response["success"] = True
