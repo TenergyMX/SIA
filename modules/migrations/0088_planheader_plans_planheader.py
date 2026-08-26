@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('users', '0012_company_accept_terms_company_accept_terms_date'),
-        ('modules', '0087_alter_payments_services_proof_payment'),
+        ('modules', '0087_remove_computerequipment_maintenance_document_and_more'),
     ]
 
     operations = [
