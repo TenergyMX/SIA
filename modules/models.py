@@ -327,7 +327,6 @@ class Carnet_Vehicle(models.Model):
     document_carnet = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de carnet")
 
 
-
 # tabla de responsivas para vehículos:
 class Vehicles_Responsivas_pdf(models.Model):
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Vehículo")
@@ -346,10 +345,6 @@ class Vehicles_Responsivas_pdf(models.Model):
 
     def __str__(self):
         return f"Responsiva de {self.responsible_vehicle}"
-
-
-
-
 
 # Todo ----- [2] [ EQUIPOS DE COMPUTO ] -----
 class ComputerSystem(models.Model):
@@ -729,7 +724,6 @@ class Items_locations(models.Model):
     status = models.BooleanField(default=True, verbose_name="¿Está activa la ubicación?")
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True) 
   
-
 class Infrastructure_Item(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     category = models.ForeignKey(Infrastructure_Category, on_delete=models.CASCADE, verbose_name="categoría", related_name='items')
@@ -773,8 +767,6 @@ class InfrastructureItemDetail(models.Model):
     def __str__(self):
         return f"{self.name} - {self.identifier}"
 
-
-
 class Infrastructure_maintenance(models.Model):
     identifier = models.ForeignKey(InfrastructureItemDetail, on_delete=models.CASCADE, verbose_name="Item")
     type_maintenance = models.CharField(max_length=32, blank=True, null=True)
@@ -785,7 +777,6 @@ class Infrastructure_maintenance(models.Model):
     actions = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=255, null=False, default="blank")
     comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de pago o de matenimiento")
-
 
 
 class MaintenanceAction(models.Model):
@@ -872,11 +863,11 @@ class Equipement_category(models.Model):
         name_lower = self.name.lower() if self.name else None
         short_name_lower = self.short_name.lower() if self.short_name else None
         #Validación del nombre de la empresa 
-        if name_lower and Equipement_category.objects.exclude(pk=self.pk).filter(empresa=self.empresa, name__iexact=name_lower).exists():
+        if name_lower and Equipement_category.objects.exclude(pk=self.pk).filter(empresa=self.empresa, is_active=True, name__iexact=name_lower).exists():
             raise ValidationError({'name': 'El nombre ya existe en la base de datos para esta empresa. Ingresa un nombre diferente.'})
 
         # Validación del nombre corto por empresa
-        if short_name_lower and Equipement_category.objects.exclude(pk=self.pk).filter(empresa=self.empresa, short_name__iexact=short_name_lower).exists():
+        if short_name_lower and Equipement_category.objects.exclude(pk=self.pk).filter(empresa=self.empresa, is_active=True, short_name__iexact=short_name_lower).exists():
             raise ValidationError({'short_name': 'El nombre corto ya existe en la base de datos para esta empresa. Ingresa un nombre corto diferente.'})
 
 
@@ -900,12 +891,14 @@ class Equipment_Tools(models.Model):
     equipment_brand = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Marca")
     equipment_description = models.TextField(blank=True, null=True, verbose_name="Descripcion")
     cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
-    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad')
+    amount = models.IntegerField(default=0.0, blank=True, null=True, verbose_name='Cantidad de equipos')
     equipment_technical_sheet = models.FileField(upload_to='docs/Equipments_tools', max_length=500, blank=True, null=True, verbose_name="Ficha tecnica")
     equipment_location = models.ForeignKey(Equipmets_Tools_locations, on_delete=models.CASCADE, verbose_name="Ubicación" ,blank=True, null=True)
     document_factura_equipment = models.FileField(upload_to='docs/Equipments_tools', max_length=500, null=True, blank=True, verbose_name="factura")     
+    comments = models.TextField(blank=True, null=True, verbose_name="Comentarios de equipo o herramienta")
+    has_serial_number = models.BooleanField(default=False, verbose_name="Cuenta con número de serie")
+    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
 
-    
 #tabla de responsivas
 class Equipment_Tools_Responsiva(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
@@ -926,6 +919,50 @@ class Equipment_Tools_Responsiva(models.Model):
     email_responsiva_next = models.BooleanField(default=False)
     email_responsiva_late = models.BooleanField(default=False)
     email_responsiva_date = models.BooleanField(default=False)
+
+
+# tabla de desglose de informacion de un equipo o herramienta
+class Equipments_Tools_Detail(models.Model):
+    equipment_tool = models.ForeignKey(Equipment_Tools, on_delete=models.CASCADE, related_name='details')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255) 
+    identifier = models.CharField(max_length=255, unique=True)  
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal", blank=True, null=True)
+    assignment_date = models.DateField(blank=True, null=True, verbose_name="Fecha de asignación")
+    created_at = models.DateTimeField(auto_now_add=True)
+    serial_number = models.CharField(max_length=255, unique=True, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    is_deactivated = models.BooleanField(default=False)
+    # informacion de baja
+    DEACTIVATION_REASONS = [
+        ("VENDIDO", "Vendido"),
+        ("OBSOLETO", "Obsoleto"),
+        ("PERDIDO", "Perdido"),
+        ("BAJA", "Baja"),
+        ("ROBADO", "Robado"),
+    ]
+
+    deactivation_reason = models.CharField( max_length=20, choices=DEACTIVATION_REASONS, blank=True, null=True, verbose_name="Motivo de baja")
+    deactivation_description = models.TextField( blank=True, null=True, verbose_name="Descripción de la baja")
+    deactivated_at = models.DateTimeField( blank=True, null=True, verbose_name="Fecha de baja")
+
+    # ubicacion
+    equipment_location = models.ForeignKey(Equipmets_Tools_locations, on_delete=models.SET_NULL, blank=True, null=True, related_name='equipment_tool_details', verbose_name="Ubicación")
+
+    
+    STATE_CHOICES = [
+        ("DISPONIBLE", "Disponible"),
+        ("ASIGNADO", "Asignado"),
+        ("BAJA", "Baja"),
+    ]
+    state = models.CharField(max_length=64, choices=STATE_CHOICES, default="DISPONIBLE", verbose_name="Estado del equipó")# Estado del equipo
+
+    class Meta:
+        verbose_name = "Detalle de equipo o herramienta"
+        verbose_name_plural = "Detalles de equipo o herramienta"
+
+    def __str__(self):
+        return f"{self.name} - {self.identifier}"
 
 class PlanHeader(models.Model):
     stripeClient = models.CharField(max_length=100, null="True", verbose_name="Stripe_cliente")

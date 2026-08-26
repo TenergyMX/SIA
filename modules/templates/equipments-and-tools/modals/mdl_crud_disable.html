@@ -1,0 +1,176 @@
+<div
+    class="modal fade effect-scale"
+    id="mdl-crud-enable"
+    tabindex="-1"
+    aria-labelledby="modalDisable"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+
+        <form id="formdisable">
+
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                id="disable_detail_id"
+                name="detail_id">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h1
+                        class="modal-title fs-5"
+                        id="modalDisable">
+                        Dar de baja equipo o herramienta
+                    </h1>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar">
+                    </button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <div class="row g-3">
+
+                        <!-- Identificador -->
+                        <div class="col-md-6">
+
+                            <label
+                                for="disable_identifier"
+                                class="form-label">
+                                Identificador
+                            </label>
+
+                            <input
+                                type="text"
+                                id="disable_identifier"
+                                name="identifier"
+                                class="form-control"
+                                readonly>
+
+                        </div>
+
+
+                        <!-- Motivo -->
+                        <div class="col-md-6">
+
+                            <label
+                                for="disable_reason"
+                                class="form-label">
+                                Motivo de baja
+                            </label>
+
+                            <select
+                                name="reason"
+                                id="disable_reason"
+                                class="form-select"
+                                required>
+
+                                <option
+                                    value=""
+                                    disabled
+                                    selected>
+                                    Seleccione un motivo
+                                </option>
+
+                                <option value="VENDIDO">
+                                    Vendido
+                                </option>
+
+                                <option value="OBSOLETO">
+                                    Obsoleto
+                                </option>
+
+                                <option value="PERDIDO">
+                                    Perdido
+                                </option>
+
+                                <option value="BAJA">
+                                    Baja
+                                </option>
+
+                                <option value="ROBADO">
+                                    Robado
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- Descripción -->
+                        <div class="col-md-12">
+
+                            <label
+                                for="disable_description"
+                                class="form-label">
+                                Descripción
+                            </label>
+
+                            <textarea
+                                id="disable_description"
+                                name="description"
+                                class="form-control"
+                                rows="3"
+                                maxlength="500"
+                                placeholder="Describa el motivo de la baja"
+                                required></textarea>
+
+                        </div>
+
+
+                        <!-- Evidencia 1-->
+                        <div class="col-md-6">
+                            <label for="driver_image">Evidencia 1</label>
+                            <input type="file" id="evidence1" name="evidence1_image" class="form-control" accept="image/*" >
+                        </div>
+                        <div class="col-md-12 text-center mb-2">
+                            <picture>
+                                <img id="image_preview1"  alt="" class="img-fluid" style="max-height: 200px; display: none;">
+                            </picture>
+                        </div>
+
+                         <!-- Evidencia 2-->
+                        <div class="col-md-6">
+                            <label for="driver_image">Evidencia 2</label>
+                            <input type="file" id="evidence2" name="evidence2_image" class="form-control" accept="image/*" >
+                        </div>
+                        <div class="col-md-12 text-center mb-2">
+                            <picture>
+                                <img id="image_preview2"  alt="" class="img-fluid" style="max-height: 200px; display: none;">
+                            </picture>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="submit"
+                        class="btn btn-danger">
+                        <i class="fas fa-ban me-1"></i>
+                        Dar de baja
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

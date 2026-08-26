@@ -1,0 +1,26 @@
+<div class="modal fade effect-scale" id="mdl-crud-equipment-tool" tabindex="-1" aria-labelledby="modalAsignarUbicacion" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form id="formAsignarUbicacion">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modalAsignarUbicacionLabel">Asignar ubicación</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="detalle_id">
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Ubicación</label>
+                        <select id="location" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una ubicación</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

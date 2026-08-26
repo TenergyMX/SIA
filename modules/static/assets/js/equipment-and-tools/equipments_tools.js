@@ -28,6 +28,7 @@ function load_table_equi() {
             { title: "Área", data: "equipment_area__name" },
             { title: "Responsable", data: "equipment_responsible__username" },
             { title: "Ubicación", data: "equipment_location__location_name" },
+            { title: "Comentarios", data: "comments" },
             {
                 title: "Ficha técnica",
                 data: "btn_equipment_technical_sheet",
@@ -40,6 +41,14 @@ function load_table_equi() {
                 orderable: false,
                 className: "text-center",
             },
+            {
+                title: "Desglose de equipo",
+                data: "btn_equipment_breakdown",
+                orderable: false,
+                searchable: false,
+                className: "text-center",
+            },
+
             {
                 title: "Acciones",
                 data: "btn_action",
@@ -235,35 +244,35 @@ function add_location() {
 function add_equipment() {
     var obj_modal = $("#mdl-crud-equipments-tools");
     obj_modal.modal("show");
-    get_equipment_categories(); // Llama a la función para cargar categorías al abrir el modal
-    get_equipment_areas(); //llama a ala funcion para cargar las areas existentes
-    get_responsible_users(); // Cargar los responsables
+    get_equipment_categories();
+    get_equipment_areas();
+    get_responsible_users();
     get_locations();
 }
 
 // Función para agregar un equipo o herramienta
 function add_equipment_tool() {
-    var form = $("#form_add_equipments_tools")[0]; // Obtén el formulario
-    var formData = new FormData(form); // Crea un FormData del formulario
+    var form = $("#form_add_equipments_tools")[0];
+    var formData = new FormData(form);
 
     $.ajax({
-        url: "/add_equipment_tools/", // URL del endpoint
-        type: "POST", // Método POST
-        data: formData, // Datos del formulario
-        processData: false, // No procesar los datos
-        contentType: false, // No establecer el tipo de contenido
+        url: "/add_equipment_tools/",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
         success: function (response) {
             if (response.status == "success") {
                 // Si la respuesta es exitosa
-                $("#form_add_equipments_tools")[0].reset(); // Resetea el formulario
-                $("#mdl-crud-equipments-tools").modal("hide"); // Cierra el modal
+                $("#form_add_equipments_tools")[0].reset();
+                $("#mdl-crud-equipments-tools").modal("hide");
                 Swal.fire({
                     title: "¡Éxito!",
                     text: response.message,
                     icon: "success",
                     timer: 1500,
                 });
-                $("#table_equipments_tools").DataTable().ajax.reload(); // Recarga la tabla
+                $("#table_equipments_tools").DataTable().ajax.reload();
             } else {
                 // Si la respuesta no es exitosa
                 Swal.fire({
@@ -293,12 +302,13 @@ function edit_button(boton) {
     var row = $(boton).closest("tr");
     var data = $("#table_equipments_tools").DataTable().row(row).data();
 
+    console.log("esto contiene el data", data);
     // Mostrar el modal de edición
     $("#mdl-crud-equipments-tools").modal("show");
     $("#mdl-crud-equipments-tools .modal-title").text("Editar equipo");
 
     // Rellenar el formulario con los datos del equipo
-    $('#form_add_equipments_tools [name="id"]').val(data.id);
+    $("#equipment_tool_id").val(data.id);
     $('#form_add_equipments_tools [name="equipment_name"]').val(data.equipment_name);
     $('#form_add_equipments_tools [name="equipment_type"]').val(data.equipment_type);
     $('#form_add_equipments_tools [name="equipment_brand"]').val(data.equipment_brand);
@@ -307,7 +317,11 @@ function edit_button(boton) {
     $('#form_add_equipments_tools [name="amount"]').val(data.amount);
     $('#form_add_equipments_tools [name="equipment_area"]').val(data.equipment_area);
     $('#form_add_equipments_tools [name="equipment_responsible"]').val(data.equipment_responsible);
-
+    $('#form_add_equipments_tools [name="comments"]').val(data.comments);
+    $('#form_add_equipments_tools [name="has_serial_number"]').prop(
+        "checked",
+        data.has_serial_number
+    );
     // Cargar categorías y seleccionar la categoría actual
     get_equipment_categories(data.equipment_category__id);
 
@@ -627,16 +641,6 @@ document.getElementById("form_responsiva").addEventListener("submit", function (
         }
     }
 
-    // if (!hasDrawing) {
-    //     Swal.fire({
-    //         title: "Error",
-    //         text: "Es necesario que el responsable firme, el campo está vacío.",
-    //         icon: "warning",
-    //         timer: 1500,
-    //     });
-    //     return; // Detener el envío del formulario
-    // }
-
     // Crear FormData para enviar
     const form = $("#form_responsiva")[0]; // Obtener el formulario
     const formData = new FormData(form);
@@ -755,6 +759,483 @@ function modal_history(button) {
                 text: "Hubo un problema al obtener el historial.",
                 icon: "error",
             });
+        },
+    });
+}
+
+// clic en la lista de información
+$(document).on("click", "button[data-equipments-tools='view-identifiers']", function () {
+    const itemId = $(this).data("id");
+
+    console.log("ID del equipo:", itemId);
+
+    verDesgloseEquipmentTool(itemId);
+});
+
+// CARGAR / RECARGAR DESGLOSE DE EQUIPO O HERRAMIENTA
+function verDesgloseEquipmentTool(itemId) {
+    window.currentEquipmentToolId = itemId;
+
+    $.ajax({
+        url: "/get_equipment_tools_details/",
+        method: "GET",
+        data: {
+            id: itemId,
+        },
+        success: function (response) {
+            if (!response.success) {
+                alert("No se pudieron obtener los detalles.");
+                return;
+            }
+
+            const container = $("#equipment-tools-detail-container");
+            const hasSerialNumber = response.has_serial_number === true;
+
+            container.empty();
+
+            const table = $(`
+                <table
+                    class="table table-bordered table-hover w-100"
+                    id="equipment_tool-detail-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Id</th>
+                            <th>Identificador</th>
+                            <th>Estado</th>
+                            <th>Responsable</th>
+                            <th>Fecha de asignación</th>
+                            ${hasSerialNumber ? "<th>Número de serie</th>" : ""}
+                            <th>Ubicación</th>
+                            <th>Acciones</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody></tbody>
+
+                </table>
+            `);
+
+            container.append(table);
+
+            const tbody = table.find("tbody");
+
+            response.data.forEach(function (item) {
+                const responsableHTML = item.tiene_responsable
+                    ? `
+                            <span>
+                                ${item.responsable}
+                            </span>
+
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-warning ms-2 assign-responsible"
+                                data-id="${item.id}"
+                                data-responsable-id="${item.responsable_id}"
+                                title="Editar responsable">
+
+                                <i class="fas fa-user-edit"></i>
+
+                            </button>
+                        `
+                    : `
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary assign-responsible"
+                                data-id="${item.id}"
+                                title="Asignar responsable">
+
+                                <i class="fas fa-user-plus"></i>
+
+                            </button>
+                        `;
+
+                const fechaHTML = item.fecha_asignacion
+                    ? item.fecha_asignacion
+                    : `
+                            <span class="text-muted">
+                                Sin fecha de asignación
+                            </span>
+                        `;
+
+                let serialHTML = "";
+
+                if (hasSerialNumber) {
+                    if (item.serial_number && item.serial_number.trim() !== "") {
+                        serialHTML = `
+                            <span>
+                                ${item.serial_number}
+                            </span>
+                        
+                        `;
+
+                        if (item.is_active) {
+                            serialHTML += `
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary edit-serial-number"
+                                    data-id="${item.id}"
+                                    data-serial-number="${item.serial_number}"
+                                    title="Editar número de serie">
+
+                                    <i class="fas fa-edit"></i>
+
+                                </button>
+                            `;
+                        }
+                    } else {
+                        if (item.is_active) {
+                            serialHTML = `
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary add-serial-number"
+                                    data-id="${item.id}"
+                                    data-serial-number=""
+                                    title="Agregar número de serie">
+
+                                    <i class="fas fa-edit"></i>
+
+                                </button>
+                            `;
+                        } else {
+                            // Deshabilitado y sin número de serie
+                            serialHTML = `
+                                <span class="text-muted">
+                                    Sin número de serie
+                                </span>
+                            `;
+                        }
+                    }
+                }
+
+                const serialTD = hasSerialNumber ? `<td>${serialHTML}</td>` : "";
+
+                const locationHTML =
+                    item.equipment_location && item.equipment_location !== "Sin ubicación"
+                        ? item.equipment_location
+                        : `
+                            <span class="text-muted">
+                                Sin ubicación
+                            </span>
+                        `;
+
+                let actionHTML = "";
+
+                if (item.is_active) {
+                    // ACTIVO → DESHABILITAR
+                    actionHTML = `
+                        <button
+                            type="button"
+                            class="btn btn-icon btn-sm btn-danger-light toggle-equipment-detail"
+                            data-id="${item.id}"
+                            data-action="disable"
+                            title="Deshabilitar">
+
+                            <i class="fa-solid fa-ban"></i>
+
+                        </button>
+                    `;
+                } else {
+                    // DESHABILITADO → HABILITAR
+                    actionHTML = `
+                        <button
+                            type="button"
+                            class="btn btn-icon btn-sm btn-success-light toggle-equipment-detail"
+                            data-id="${item.id}"
+                            data-action="enable"
+                            title="Habilitar">
+
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                    `;
+                }
+
+                tbody.append(`
+
+                    <tr>
+
+                        <td>
+                            ${item.id}
+                        </td>
+                        <td>
+                            ${item.identificador}
+                        </td>
+                        <td>
+                            ${item.state}
+                        </td>
+                        <td>
+                            ${responsableHTML}
+                        </td>
+                        <td>
+                            ${fechaHTML}
+                        </td>
+                        
+                        ${serialTD}
+                        
+                        <td>
+                            ${locationHTML}
+                        </td>
+                        <td class="text-center">
+                            ${actionHTML}
+                        </td>
+                    </tr>
+                `);
+            });
+
+            table.DataTable({
+                destroy: true,
+                responsive: true,
+                autoWidth: false,
+                pageLength: 10,
+
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+                },
+            });
+
+            $("#info_equipment_tool").modal("show");
+        },
+
+        error: function (xhr, status, error) {
+            alert("Ocurrió un error al obtener los detalles.");
+        },
+    });
+}
+
+// Agregar / editar número de serie
+$(document).on("click", ".add-serial-number, .edit-serial-number", function () {
+    const id = $(this).data("id");
+    const numeroSerie = $(this).attr("data-serial-number") || "";
+
+    const modal = $("#mdl-crud-numero-serie");
+    const inputSerial = $("#serial_number");
+    const inputId = $("#detalle_id");
+    const titulo = $("#modalAsignarNumeroSerie");
+
+    // limpiar
+    inputSerial.val("");
+    inputId.val("");
+
+    // Cargar ID
+    inputId.val(id);
+
+    // EDITAR
+    if (numeroSerie.trim() !== "") {
+        inputSerial.val(numeroSerie);
+        titulo.text("Editar Número de Serie");
+    }
+
+    // AGREGAR
+    else {
+        inputSerial.val("");
+        titulo.text("Asignar Número de Serie");
+    }
+
+    // Mostrar modal
+    modal.modal("show");
+});
+
+// agregar numero de serie
+$("#mdl-crud-numero-serie form").on("submit", function (e) {
+    e.preventDefault();
+
+    const form = this;
+    const obj_modal = $("#mdl-crud-numero-serie");
+    const inputSerial = $("#serial_number");
+    const inputId = $("#detalle_id");
+    const datos = new FormData(form);
+
+    $.ajax({
+        type: "POST",
+        url: "/save_equipment_tool_serial_number/",
+        data: datos,
+        processData: false,
+        contentType: false,
+
+        success: function (response) {
+            if (!response.success && response.error) {
+                Swal.fire("Error", response.error["message"], "error");
+                return;
+            }
+
+            if (!response.success && response.warning) {
+                Swal.fire("Advertencia", response.warning["message"], "warning");
+                return;
+            }
+
+            if (!response.success) {
+                Swal.fire("Error", response.message || "Ocurrió un error inesperado", "error");
+                return;
+            }
+
+            inputSerial.val("");
+            inputId.val("");
+
+            form.reset();
+
+            // Cerrar modal
+            const modalElement = document.getElementById("mdl-crud-numero-serie");
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+
+            if (window.currentEquipmentToolId) {
+                verDesgloseEquipmentTool(window.currentEquipmentToolId);
+            }
+
+            Swal.fire("Éxito", "El número de serie se ha guardado correctamente.", "success");
+        },
+
+        error: function (xhr, status, error) {
+            console.error("Error del servidor:", error);
+            console.error(xhr.responseText);
+
+            Swal.fire(
+                "Error del servidor",
+                "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.",
+                "error"
+            );
+        },
+    });
+});
+
+// HABILITAR O DESHABILITAR UN EQUIPO O HERRAMIENTA (MOSTRAR ELO FORMULARIO)
+$(document).on("click", ".toggle-equipment-detail", function () {
+    const id = $(this).data("id");
+    const action = $(this).data("action");
+
+    console.log("Detalle:", id);
+    console.log("Acción:", action);
+
+    // DESHABILITAR
+    if (action === "disable") {
+        $.ajax({
+            url: "/modal_equipment_tool_detail/",
+            type: "GET",
+
+            data: {
+                id: id,
+            },
+            success: function (response) {
+                if (!response.success) {
+                    Swal.fire(
+                        "Error",
+                        response.message || "No se pudo obtener la información.",
+                        "error"
+                    );
+                    return;
+                }
+
+                // CARGAR DATOS DEL EQUIPO EN EL MODAL
+                $("#disable_detail_id").val(response.data.id);
+                $("#disable_identifier").val(response.data.identifier);
+                $("#disable_reason").val("");
+                $("#disable_description").val("");
+                $("#disable_equipment_image").val("");
+
+                // Mostrar modal
+                $("#mdl-crud-enable").modal("show");
+            },
+
+            error: function (xhr) {
+                console.error("Error:", xhr.responseText);
+
+                Swal.fire("Error", "No se pudo obtener la información del equipo.", "error");
+            },
+        });
+
+        return;
+    }
+
+    // HABILITAR
+    if (action === "enable") {
+        Swal.fire({
+            title: "¿Habilitar equipo o herramienta?",
+            text: "El equipo volverá a estar disponible.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Sí, habilitar",
+            cancelButtonText: "Cancelar",
+            reverseButtons: true,
+        }).then(function (result) {
+            if (!result.isConfirmed) {
+                return;
+            }
+            cambiarEstadoEquipmentTool(id, "enable");
+        });
+    }
+});
+
+// LLAMAR A LA FUNCION PARA DESHABILITAR
+$(document).on("submit", "#formdisable", function (e) {
+    e.preventDefault();
+
+    disable_equipment_tool_detail();
+});
+
+// DAR DE BAJA EQUIPO O HERRAMIENTA
+function disable_equipment_tool_detail() {
+    var form = $("#formdisable")[0];
+    var formData = new FormData(form);
+
+    console.log("Datos enviados:");
+
+    formData.set("action", "disable");
+
+    $.ajax({
+        url: "/disable_equipment_tool_detail/",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+
+        success: function (response) {
+            console.log("Respuesta:", response);
+
+            if (response.success) {
+                // LIMPIAR FORMULARIO
+                $("#formdisable")[0].reset();
+
+                // CERRAR MODAL
+                $("#mdl-crud-enable").modal("hide");
+
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+
+                // RECARGAR DESGLOSE
+                if (window.currentEquipmentToolId) {
+                    verDesgloseEquipmentTool(window.currentEquipmentToolId);
+                }
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message,
+                    icon: "error",
+                });
+            }
+        },
+
+        error: function (xhr, status, error) {
+            console.error("Error al dar de baja:", xhr.responseText);
+
+            Swal.fire({
+                title: "¡Error!",
+                text: "Hubo un error al dar de baja el equipo. Intenta nuevamente.",
+                icon: "error",
+            });
+        },
+
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRFToken", $('input[name="csrfmiddlewaretoken"]').val());
         },
     });
 }

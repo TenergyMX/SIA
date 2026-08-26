@@ -123,7 +123,7 @@ admin.site.register(VehicleAuditCorrection)
 admin.site.register(PlanHeader)
 admin.site.register(Infraestructure_Responsiva)
 admin.site.register(Vehicles_Responsivas_pdf)
-
+admin.site.register(Equipments_Tools_Detail)
 from django.contrib import admin
 from .models import Vehicle_Maintenance
 

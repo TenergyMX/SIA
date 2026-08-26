@@ -26,3 +26,10 @@ postgres/siaDB.pgsql
 modules/.DS_Store
 .DS_Store
 modules/static/assets/json/
+modules/migrations/0108_infrastructure_item_comments.py
+modules/migrations/0109_remove_infrastructure_item_comments_and_more.py
+modules/migrations/0110_equipments_tools_detail.py
+modules/migrations/0110_equipments_tools_detail.py
+modules/migrations/0111_alter_equipments_tools_detail_serial_number.py
+modules/migrations/0112_equipment_tools_has_serial_number.py
+modules/migrations/0113_equipments_tools_detail_state.py

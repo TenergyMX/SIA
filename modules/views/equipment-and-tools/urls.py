@@ -55,5 +55,12 @@ urlpatterns = [
     path("render_to_pdf/", views.render_to_pdf),
     path("generate_pdf/<int:responsiva_id>/", views.equipment_tools_responsiva_pdf_view, name='generate_pdf'),
 
-    path("get_doc/", views.get_doc)
+    path("get_doc/", views.get_doc),
+    # tabla de información de un equipo o herramienta
+    path("get_equipment_tools_details/", views.get_equipment_tools_details),
+    # agregar numero de serie
+    path("save_equipment_tool_serial_number/", views.save_equipment_tool_serial_number),
+    path("modal_equipment_tool_detail/", views.modal_equipment_tool_detail),
+    # dar de baja un equipo
+    path("disable_equipment_tool_detail/", views.disable_equipment_tool_detail),
 ]
