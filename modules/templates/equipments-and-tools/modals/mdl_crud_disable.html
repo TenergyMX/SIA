@@ -126,36 +126,68 @@
 
                         </div>
 
-
-                        <!-- Evidencia 1-->
+                        <!-- EVIDENCIA 1 -->
                         <div class="col-md-6">
-                            <label for="driver_image">Evidencia 1</label>
-                            <input type="file" id="evidence1" name="evidence1_image" class="form-control" accept="image/*" >
-                        </div>
-                        <div class="col-md-12 text-center mb-2">
-                            <picture>
-                                <img id="image_preview1"  alt="" class="img-fluid" style="max-height: 200px; display: none;">
-                            </picture>
+
+                            <label
+                                for="evidence1"
+                                class="form-label">
+                                Evidencia 1
+                            </label>
+
+                            <input type="file" id="evidence1" name="evidence1_image" class="form-control" accept="image/*">
+
+                            <!-- Previsualización -->
+                            <div class="text-center mt-3">
+                                <picture>
+                                    <img id="image_preview1" alt="Previsualización evidencia 1" class="img-fluid rounded"
+                                        style="
+                                            max-height: 200px;
+                                            max-width: 100%;
+                                            display: none;
+                                        ">
+                                </picture>
+                            </div>
                         </div>
 
-                         <!-- Evidencia 2-->
+
+                        <!-- EVIDENCIA 2 -->
                         <div class="col-md-6">
-                            <label for="driver_image">Evidencia 2</label>
-                            <input type="file" id="evidence2" name="evidence2_image" class="form-control" accept="image/*" >
-                        </div>
-                        <div class="col-md-12 text-center mb-2">
-                            <picture>
-                                <img id="image_preview2"  alt="" class="img-fluid" style="max-height: 200px; display: none;">
-                            </picture>
-                        </div>
 
+                            <label
+                                for="evidence2"
+                                class="form-label">
+                                Evidencia 2
+                            </label>
+
+                            <input
+                                type="file"
+                                id="evidence2"
+                                name="evidence2_image"
+                                class="form-control"
+                                accept="image/*">
+
+                            <!-- Previsualización -->
+                            <div
+                                class="text-center mt-3">
+
+                                <picture>
+                                    <img
+                                        id="image_preview2"
+                                        alt="Previsualización evidencia 2"
+                                        class="img-fluid rounded"
+                                        style="
+                                            max-height: 200px;
+                                            max-width: 100%;
+                                            display: none;
+                                        ">
+                                </picture>
+                            </div>
+                        </div>
                     </div>
-
                 </div>
 
-
                 <div class="modal-footer">
-
                     <button
                         type="submit"
                         class="btn btn-danger">

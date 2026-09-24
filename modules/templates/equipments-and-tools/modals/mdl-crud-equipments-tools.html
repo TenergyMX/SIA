@@ -99,9 +99,32 @@
                         </div>
                     </div>
 
-                    <div class="col-md-8">
+                    <div class="col-md-4">
                         <label for="">Comentarios</label>
                         <textarea name="comments" class="form-control" rows="1" placeholder="Comentarios"></textarea>
+                    </div>
+
+                    
+                    <!--Imagen del equipo -->
+                    <div class="col-md-4">
+                        <label
+                            for="image"
+                            class="form-label">
+                            Fotografía
+                        </label>
+                        <input type="file" id="image" name="image" class="form-control" accept="image/*">
+
+                        <!-- Previsualización -->
+                        <div class="text-center mt-3">
+                            <picture>
+                                <img id="image_preview" alt="Previsualización imagen" class="img-fluid rounded"
+                                    style="
+                                        max-height: 200px;
+                                        max-width: 100%;
+                                        display: none;
+                                    ">
+                            </picture>
+                        </div>
                     </div>
 
                 </div>

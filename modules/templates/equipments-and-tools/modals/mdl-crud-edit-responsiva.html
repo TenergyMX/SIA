@@ -1,6 +1,6 @@
 <div class="modal fade effect-scaleform_edit_responsiva" id="mdl-crud-edit-responsiva" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
-        <form name="" class="modal-content" id="form_edit_responsiva" onsubmit="edit_date_responsiva(); return false" method="POST">
+        <form name="" class="modal-content" id="form_edit_responsiva" method="POST">
             <div class="modal-header">
                 <h1 class="modal-title fs-5">Actualizar fecha de entrega </h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -10,12 +10,45 @@
                     {% csrf_token %}
                     <input type="hidden" name="id" value="0">
                     <input type="hidden" name="times_requested_responsiva" value="0"> 
-
                 </div>
-                <div class="row g-3">
-                    <div class="col-md-4" >
+                <div class="row g-2">
+                    <div class="col-md-6" >
                         <label for="fecha_edit">Ingresa la nueva fecha</label>
                         <input type="date" id="fecha_edit" name="fecha_edit" class="form-control" placeholder="Fecha actualizada">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="">Motivo de cambio</label>
+                        <textarea id="reason_date_change" name="reason_date_change" class="form-control" rows="1" placeholder="Motivo de cambio en la fecha"></textarea>
+                    </div>
+
+                    <!-- Campo para la firma del almacén -->
+                    <div class="col-md col-lg text-center inicial">
+                        <label for="" class="d-block text-start">
+                            Firma:
+                        </label>
+                        <canvas
+                            id="canvas-signature-almacen2"
+                            width="350"
+                            height="180"
+                            style="
+                                border: 2px dotted #cccccc;
+                                border-radius: 5px;
+                                cursor: crosshair;
+                            "
+                        ></canvas>
+                        <div class="row justify-content-center g-2">
+                            <div class="col-5 col-lg-3">
+                                <button type="button" id="canvas-signature-btn-clear-almacen2" class="btn btn-danger btn-sm w-100" title="Limpiar todo">
+                                    <i class="fa-solid fa-broom-wide"></i>
+                                </button>
+                            </div>
+                            <div class="col-5 col-lg-3">
+                                <button type="button" id="canvas-signature-btn-undo-almacen2" class="btn btn-primary btn-sm w-100" title="Regresar">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -29,6 +29,14 @@ function load_table_equi() {
             { title: "Responsable", data: "equipment_responsible__username" },
             { title: "Ubicación", data: "equipment_location__location_name" },
             { title: "Comentarios", data: "comments" },
+
+            {
+                title: "Fotografía",
+                data: "btn_equipment_image",
+                orderable: false,
+                searchable: false,
+                className: "text-center",
+            },
             {
                 title: "Ficha técnica",
                 data: "btn_equipment_technical_sheet",
@@ -263,8 +271,7 @@ function add_equipment_tool() {
         contentType: false,
         success: function (response) {
             if (response.status == "success") {
-                // Si la respuesta es exitosa
-                $("#form_add_equipments_tools")[0].reset();
+                clear_equipment_tool_form();
                 $("#mdl-crud-equipments-tools").modal("hide");
                 Swal.fire({
                     title: "¡Éxito!",
@@ -379,7 +386,7 @@ function edit_equipments_tools() {
     });
 }
 
-//funcion para eliminar los datos
+// Función para eliminar/desactivar los datos
 function delete_equipment_tool(boton) {
     var row = $(boton).closest("tr");
     var data = $("#table_equipments_tools").DataTable().row(row).data();
@@ -392,21 +399,24 @@ function delete_equipment_tool(boton) {
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
         confirmButtonText: "Sí, elimínalo!",
+        cancelButtonText: "Cancelar",
     }).then((result) => {
         if (result.isConfirmed) {
-            // Si el usuario confirma la eliminación, hacer la solicitud AJAX
             $.ajax({
                 url: "/delete_equipment_tool/",
                 type: "POST",
+
                 data: {
                     id: data.id,
                 },
+
                 beforeSend: function (xhr) {
                     xhr.setRequestHeader(
                         "X-CSRFToken",
                         $('input[name="csrfmiddlewaretoken"]').val()
                     );
                 },
+
                 success: function (response) {
                     if (response.success) {
                         Swal.fire({
@@ -414,22 +424,58 @@ function delete_equipment_tool(boton) {
                             text: response.message,
                             icon: "success",
                             timer: 1500,
+                            showConfirmButton: false,
                         }).then(() => {
-                            // Recargar la tabla después de la eliminación exitosa
-                            $("#table_equipments_tools").DataTable().ajax.reload();
+                            $("#table_equipments_tools").DataTable().ajax.reload(null, false);
                         });
                     } else {
-                        Swal.fire("Error", response.message, "error");
+                        Swal.fire({
+                            title: "No se puede eliminar",
+                            text: response.message,
+                            icon: "warning",
+                            confirmButtonText: "Aceptar",
+                        });
                     }
                 },
+
                 error: function (xhr, status, error) {
-                    wh;
-                    console.error("Error al eliminar el equipo:", error);
-                    Swal.fire("Error", "Hubo un error al eliminar el equipo.", "error");
+                    console.error("Error al eliminar el equipo:", xhr.responseJSON);
+
+                    let mensaje = "Hubo un error al eliminar el equipo.";
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        mensaje = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        title: "No se puede eliminar",
+                        text: mensaje,
+                        icon: "warning",
+                        confirmButtonText: "Aceptar",
+                    });
                 },
             });
         }
     });
+}
+
+// Función para limpiar completamente el formulario de equipos y herramientas
+function clear_equipment_tool_form() {
+    const form = $("#form_add_equipments_tools")[0];
+    form.reset();
+    $("#equipment_tool_id").val("");
+
+    $('#form_add_equipments_tools [name="equipment_category"]').val("");
+    $('#form_add_equipments_tools [name="equipment_area"]').val("");
+    $('#form_add_equipments_tools [name="equipment_responsible"]').val("");
+    $('#form_add_equipments_tools [name="equipment_location"]').val("");
+
+    $('#form_add_equipments_tools [name="equipment_category"]').val(null).trigger("change");
+    $('#form_add_equipments_tools [name="equipment_area"]').val(null).trigger("change");
+    $('#form_add_equipments_tools [name="equipment_responsible"]').val(null).trigger("change");
+    $('#form_add_equipments_tools [name="equipment_location"]').val(null).trigger("change");
+
+    $('#form_add_equipments_tools [name="has_serial_number"]').prop("checked", false);
+    $("#mdl-crud-equipments-tools .modal-title").text("Agregar equipo");
+    $("#form_add_equipments_tools").attr("onsubmit", "add_equipment_tool(); return false");
 }
 
 //Función para cargar los nombres de los usuarios para agregar una nueva responsiva
@@ -664,6 +710,17 @@ document.getElementById("form_responsiva").addEventListener("submit", function (
 
 // Función para agregar una responsiva
 function add_responsiva(formData) {
+    Swal.fire({
+        title: "Guardando responsiva...",
+        text: "La plataforma está procesando la información. Por favor, espera.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
     $.ajax({
         url: "/add_responsiva/",
         type: "POST",
@@ -672,8 +729,8 @@ function add_responsiva(formData) {
         contentType: false,
         success: function (response) {
             if (response.success) {
-                $("#form_responsiva")[0].reset(); // Resetear el formulario
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+                $("#form_responsiva")[0].reset();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 $("#mdl-crud-responsiva").modal("hide");
 
                 Swal.fire({
@@ -728,21 +785,43 @@ function modal_history(button) {
         success: function (response) {
             if (response.success) {
                 var tbody = $("#mdl-crud-history .table-history tbody");
-                tbody.empty(); // Limpiar la tabla
+                tbody.empty();
 
                 response.data.forEach((item) => {
+                    //fecha
+                    var dateReceipt = item.date_receipt;
+                    if (!dateReceipt) {
+                        dateReceipt = "Sin fecha de actualización";
+                    }
+
+                    //estado
+                    var status = item.status_equipment;
+                    if (status === "Aceptado") {
+                        status = "En uso";
+                    }
+
+                    //pdf
+                    var pdfButton =
+                        '<button class="btn btn-primary-light btn-sm btn-generate-responsiva-pdf" ' +
+                        'data-responsiva-id="' +
+                        item.id +
+                        '">' +
+                        '<i class="fa-solid fa-file-pdf"></i> Generar PDF' +
+                        "</button>";
+
                     var row = `<tr>
                         <td>${item.id}</td>
                         <td>${item.equipment_name__equipment_name}</td>
                         <td>${item.responsible_equipment__username}</td>
-                        <td>${item.date_receipt}</td>
-                        <td>${item.status_equipment}</td>
+                        <td>${dateReceipt}</td>
+                        <td>${status}</td>
+                        <td>${pdfButton}</td>
                     </tr>`;
                     tbody.append(row);
                 });
 
                 if (response.data.length === 0) {
-                    tbody.append(`<tr><td colspan="5">No hay historial disponible</td></tr>`);
+                    tbody.append(`<tr><td colspan="6">No hay historial disponible</td></tr>`);
                 }
             } else {
                 Swal.fire({
@@ -762,13 +841,45 @@ function modal_history(button) {
         },
     });
 }
+//generar pdf
+$(document).on("click", ".btn-generate-responsiva-pdf", function () {
+    const responsivaId = $(this).data("responsiva-id");
+
+    $.ajax({
+        url: "/generate_pdf/" + responsivaId + "/",
+        type: "GET",
+        xhrFields: {
+            responseType: "blob",
+        },
+
+        success: function (blob) {
+            const url = window.URL.createObjectURL(blob);
+
+            Swal.fire({
+                title: "¡Éxito!",
+                text: "PDF generado exitosamente",
+                icon: "success",
+                timer: 1500,
+            }).then(() => {
+                window.open(url, "_blank");
+            });
+        },
+
+        error: function (xhr, error, thrown) {
+            console.error("Error al generar PDF:", thrown);
+
+            Swal.fire({
+                title: "¡Error!",
+                text: "No se pudo generar el PDF.",
+                icon: "error",
+            });
+        },
+    });
+});
 
 // clic en la lista de información
 $(document).on("click", "button[data-equipments-tools='view-identifiers']", function () {
     const itemId = $(this).data("id");
-
-    console.log("ID del equipo:", itemId);
-
     verDesgloseEquipmentTool(itemId);
 });
 
@@ -805,6 +916,7 @@ function verDesgloseEquipmentTool(itemId) {
                             <th>Identificador</th>
                             <th>Estado</th>
                             <th>Responsable</th>
+                            <th>Fotografía</th>
                             <th>Fecha de asignación</th>
                             ${hasSerialNumber ? "<th>Número de serie</th>" : ""}
                             <th>Ubicación</th>
@@ -859,6 +971,32 @@ function verDesgloseEquipmentTool(itemId) {
                                 Sin fecha de asignación
                             </span>
                         `;
+
+                const fotografiaHTML = item.fotografia
+                    ? `
+                        <div class="d-flex align-items-center gap-2">
+                            ${item.fotografia}
+
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary add-photo"
+                                data-id="${item.id}"
+                                title="Editar fotografía">
+
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                    `
+                    : `
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-primary add-photo"
+                            data-id="${item.id}"
+                            title="Agregar fotografía">
+
+                            <i class="fa-solid fa-upload"></i>
+                        </button>
+                    `;
 
                 let serialHTML = "";
 
@@ -969,11 +1107,12 @@ function verDesgloseEquipmentTool(itemId) {
                             ${responsableHTML}
                         </td>
                         <td>
+                            ${fotografiaHTML}
+                        </td>
+                        <td>
                             ${fechaHTML}
                         </td>
-                        
                         ${serialTD}
-                        
                         <td>
                             ${locationHTML}
                         </td>
@@ -1005,34 +1144,51 @@ function verDesgloseEquipmentTool(itemId) {
 }
 
 // Agregar / editar número de serie
-$(document).on("click", ".add-serial-number, .edit-serial-number", function () {
-    const id = $(this).data("id");
-    const numeroSerie = $(this).attr("data-serial-number") || "";
-
+$(document).on("click", ".add-serial-number, .edit-serial-number, .add-photo", function () {
+    const button = $(this);
     const modal = $("#mdl-crud-numero-serie");
-    const inputSerial = $("#serial_number");
+    const id = $(this).data("id");
     const inputId = $("#detalle_id");
-    const titulo = $("#modalAsignarNumeroSerie");
+    const inputFile = $("#individual_photo_equipments_tools");
+    const inputSerial = $("#serial_number");
 
     // limpiar
     inputSerial.val("");
     inputId.val("");
-
+    inputFile.val("");
     // Cargar ID
     inputId.val(id);
+
+    if (button.hasClass("add-photo")) {
+        $("#serial_number").removeAttr("required");
+        $(".placeholder-serial-number").addClass("d-none");
+        $("#modalAsignarNumeroSerie").html("Asignar Fotografía");
+        $("#individual_photo_equipments_tools").attr("required", true);
+        $(".placeholder-photo").removeClass("d-none");
+        modal.modal("show");
+        return;
+    } else {
+        $("#individual_photo_equipments_tools").removeAttr("required");
+        $(".placeholder-photo").addClass("d-none");
+        $("#modalAsignarNumeroSerie").html("Asignar Número de serie");
+        $("#serial_number").attr("required", true);
+        $(".placeholder-serial-number").removeClass("d-none");
+    }
+
+    const numeroSerie = $(this).attr("data-serial-number") || "";
+
+    const titulo = $("#modalAsignarNumeroSerie");
 
     // EDITAR
     if (numeroSerie.trim() !== "") {
         inputSerial.val(numeroSerie);
         titulo.text("Editar Número de Serie");
     }
-
     // AGREGAR
     else {
         inputSerial.val("");
         titulo.text("Asignar Número de Serie");
     }
-
     // Mostrar modal
     modal.modal("show");
 });
@@ -1087,7 +1243,11 @@ $("#mdl-crud-numero-serie form").on("submit", function (e) {
                 verDesgloseEquipmentTool(window.currentEquipmentToolId);
             }
 
-            Swal.fire("Éxito", "El número de serie se ha guardado correctamente.", "success");
+            Swal.fire({
+                title: "Éxito",
+                text: response.message,
+                icon: "success",
+            });
         },
 
         error: function (xhr, status, error) {
@@ -1103,13 +1263,10 @@ $("#mdl-crud-numero-serie form").on("submit", function (e) {
     });
 });
 
-// HABILITAR O DESHABILITAR UN EQUIPO O HERRAMIENTA (MOSTRAR ELO FORMULARIO)
+// HABILITAR O DESHABILITAR UN EQUIPO O HERRAMIENTA (MOSTRAR EL FORMULARIO)
 $(document).on("click", ".toggle-equipment-detail", function () {
     const id = $(this).data("id");
     const action = $(this).data("action");
-
-    console.log("Detalle:", id);
-    console.log("Acción:", action);
 
     // DESHABILITAR
     if (action === "disable") {
@@ -1182,8 +1339,6 @@ function disable_equipment_tool_detail() {
     var form = $("#formdisable")[0];
     var formData = new FormData(form);
 
-    console.log("Datos enviados:");
-
     formData.set("action", "disable");
 
     $.ajax({
@@ -1194,14 +1349,119 @@ function disable_equipment_tool_detail() {
         contentType: false,
 
         success: function (response) {
-            console.log("Respuesta:", response);
-
             if (response.success) {
-                // LIMPIAR FORMULARIO
-                $("#formdisable")[0].reset();
+                const detailId = $("#disable_detail_id").val();
 
-                // CERRAR MODAL
+                // RESPONSIVA
+                if (window.disableDetailFromResponsiva) {
+                    if (!window.detailsConfiguredForDisable) {
+                        window.detailsConfiguredForDisable = [];
+                    }
+
+                    // Guardar el detalle configurado
+                    if (!window.detailsConfiguredForDisable.includes(String(detailId))) {
+                        window.detailsConfiguredForDisable.push(String(detailId));
+                    }
+
+                    // Limpiar formulario de baja
+                    form.reset();
+
+                    $("#disable_detail_id").val("");
+                    $("#disable_identifier").val("");
+                    $("#disable_reason").val("");
+                    $("#disable_description").val("");
+
+                    $("#evidence1").val("");
+                    $("#evidence2").val("");
+
+                    $("#image_preview1").attr("src", "").hide();
+                    $("#image_preview2").attr("src", "").hide();
+
+                    $("#mdl-crud-enable").modal("hide");
+
+                    setTimeout(function () {
+                        const configuredIds = window.detailsConfiguredForDisable || [];
+
+                        const statusValue = $("#status_equipment").val();
+
+                        const statusName =
+                            {
+                                0: "Regresado",
+                                1: "Incompleto",
+                                2: "Dañado",
+                                3: "No devuelto",
+                            }[statusValue] || statusValue;
+
+                        // INCOMPLETO
+                        if (statusName === "Incompleto") {
+                            const pending = window.pendingIncompleteResponsiva;
+
+                            if (!pending) {
+                                console.error("No existe información pendiente de Incompleto.");
+                                return;
+                            }
+
+                            const requiredAmount = parseInt(pending.amountToDeactivate, 10);
+
+                            // aún faltan equipos por configurar
+                            if (configuredIds.length < requiredAmount) {
+                                $("#mdl-crud-status-responsiva").modal("show");
+
+                                renderConfiguredDetails();
+
+                                return;
+                            }
+
+                            // Ya se configuraron todos los necesarios
+                            $("#mdl-crud-status-responsiva").modal("show");
+
+                            setTimeout(function () {
+                                continuarBajasResponsiva();
+                            }, 300);
+
+                            return;
+                        }
+
+                        // DAÑADO
+                        if (statusName === "Dañado") {
+                            $("#mdl-crud-status-responsiva").modal("show");
+
+                            // Mostrar los equipos que ya fueron configurados
+                            renderConfiguredDetails();
+
+                            return;
+                        }
+
+                        // otro estado
+                        $("#mdl-crud-status-responsiva").modal("show");
+                    }, 300);
+
+                    return;
+                }
+
+                form.reset();
+
+                $("#disable_detail_id").val("");
+                $("#disable_identifier").val("");
+                $("#disable_reason").val("");
+                $("#disable_description").val("");
+
+                $("#evidence1").val("");
+                $("#evidence2").val("");
+
+                $("#image_preview1").attr("src", "").hide();
+
+                $("#image_preview2").attr("src", "").hide();
+
                 $("#mdl-crud-enable").modal("hide");
+
+                if (window.currentEquipmentToolId) {
+                    verDesgloseEquipmentTool(window.currentEquipmentToolId);
+                }
+
+                if ($.fn.DataTable.isDataTable("#table_equipments_tools")) {
+                    $("#table_equipments_tools").DataTable().ajax.reload(null, false);
+                }
 
                 Swal.fire({
                     title: "¡Éxito!",
@@ -1210,11 +1470,6 @@ function disable_equipment_tool_detail() {
                     timer: 1500,
                     showConfirmButton: false,
                 });
-
-                // RECARGAR DESGLOSE
-                if (window.currentEquipmentToolId) {
-                    verDesgloseEquipmentTool(window.currentEquipmentToolId);
-                }
             } else {
                 Swal.fire({
                     title: "¡Error!",
@@ -1225,8 +1480,6 @@ function disable_equipment_tool_detail() {
         },
 
         error: function (xhr, status, error) {
-            console.error("Error al dar de baja:", xhr.responseText);
-
             Swal.fire({
                 title: "¡Error!",
                 text: "Hubo un error al dar de baja el equipo. Intenta nuevamente.",
@@ -1239,3 +1492,155 @@ function disable_equipment_tool_detail() {
         },
     });
 }
+
+// PREVISUALIZACIÓN EVIDENCIA 1
+document.getElementById("evidence1").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview1");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// PREVISUALIZACIÓN EVIDENCIA 2
+document.getElementById("evidence2").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview2");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// HABILITAR EQUIPO O HERRAMIENTA
+function cambiarEstadoEquipmentTool(id, action) {
+    console.log("Cambiando estado del detalle:", id);
+    console.log("Acción:", action);
+    $.ajax({
+        url: "/disable_equipment_tool_detail/",
+        type: "POST",
+        data: {
+            detail_id: id,
+            action: action,
+            csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').first().val(),
+        },
+        success: function (response) {
+            console.log("Respuesta al habilitar:", response);
+            if (response.success) {
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+
+                // Recargar el desglose
+                if (window.currentEquipmentToolId) {
+                    verDesgloseEquipmentTool(window.currentEquipmentToolId);
+                }
+
+                if ($.fn.DataTable.isDataTable("#table_equipments_tools")) {
+                    $("#table_equipments_tools").DataTable().ajax.reload(null, false);
+                }
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message || "No se pudo habilitar el equipo.",
+                    icon: "error",
+                });
+            }
+        },
+
+        error: function (xhr, status, error) {
+            console.error("Error al habilitar:", xhr.responseText);
+
+            Swal.fire({
+                title: "¡Error!",
+                text: "Hubo un error al habilitar el equipo. Intenta nuevamente.",
+                icon: "error",
+            });
+        },
+    });
+}
+
+// HABILITAR EQUIPO O HERRAMIENTA
+function cambiarEstadoEquipmentTool(id, action) {
+    console.log("Cambiando estado del detalle:", id);
+    console.log("Acción:", action);
+    $.ajax({
+        url: "/disable_equipment_tool_detail/",
+        type: "POST",
+        data: {
+            detail_id: id,
+            action: action,
+            csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').first().val(),
+        },
+        success: function (response) {
+            console.log("Respuesta al habilitar:", response);
+            if (response.success) {
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message || "No se pudo habilitar el equipo.",
+                    icon: "error",
+                });
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error("Error al habilitar:", xhr.responseText);
+            Swal.fire({
+                title: "¡Error!",
+                text: "Hubo un error al habilitar el equipo. Intenta nuevamente.",
+                icon: "error",
+            });
+        },
+    });
+}
+// PREVISUALIZACIÓN IMAGEN
+document.getElementById("image").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});

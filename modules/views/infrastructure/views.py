@@ -329,9 +329,6 @@ def get_infrastructure_items(request):
                     "<i class='fa-solid fa-image'></i>" \
                     "</a>\n"
 
-
-
-
     response["data"] = list(datos)
     response["status"] = "success"
     return JsonResponse(response)
@@ -777,9 +774,6 @@ def add_item_location(request):
             return JsonResponse({'success': False, 'message': 'Error interno del servidor.'}, status=500)
 
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido.'}, status=405)
-
-
-
 
 
 def get_infrastructure_item_details(request):

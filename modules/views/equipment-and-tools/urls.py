@@ -49,6 +49,7 @@ urlpatterns = [
     path("validar_fecha/", views.validar_fecha),
     #funcion para aprovar las responsivas
     path("approve_responsiva/", views.approve_responsiva),
+    # cancelar solicitud de responsiva
     path("cancel_responsiva/", views.cancel_responsiva),
 
     #url para generar el pdf de la responsiva
@@ -63,4 +64,12 @@ urlpatterns = [
     path("modal_equipment_tool_detail/", views.modal_equipment_tool_detail),
     # dar de baja un equipo
     path("disable_equipment_tool_detail/", views.disable_equipment_tool_detail),
+
+    # submodulo para equipos y herramientas deshabilitados
+    path("equipment_tools_removed/", views.equipment_tools_removed),
+    # tabla de equipos y herramientas desahabilitados
+    path("get_equipment_tools_removed/", views.get_equipment_tools_removed),
+
+    # obtener los registros para una responsiva incompleta
+    path("get_responsiva_details/", views.get_responsiva_details),
 ]
