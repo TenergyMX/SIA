@@ -76,7 +76,7 @@ admin.site.register(Equipement_category)
 admin.site.register(Equipment_Tools)
 admin.site.register(Equipment_Tools_Responsiva)
 admin.site.register(Equipmets_Tools_locations)
-admin.site.register(Detail_Responsiva)
+# admin.site.register(Detail_Responsiva)
 
 #tablas del modulo de servicios 
 admin.site.register(Services_Category)
