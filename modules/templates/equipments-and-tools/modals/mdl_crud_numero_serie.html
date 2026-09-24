@@ -2,7 +2,7 @@
 
     <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
 
-        <form id="formAsignarNumeroSerie">
+        <form id="formAsignarNumeroSerie" enctype="multipart/form-data">
 
             {% csrf_token %}
 
@@ -22,13 +22,12 @@
                         data-bs-dismiss="modal"
                         aria-label="Cerrar">
                     </button>
-
                 </div>
 
                 <div class="modal-body">
                     <input type="hidden" id="detalle_id" name="detalle_id">
 
-                    <div class="col-md-12">
+                    <div class="col-md-12 placeholder-serial-number">
                         <label
                             for="serial_number"
                             class="form-label">
@@ -44,6 +43,10 @@
                             minlength="3"
                             maxlength="50"
                             required>
+                    </div>
+                    <div class="col-md-12 placeholder-photo d-none">
+                        <label for="photo" class="form-label">Fotografía individual</label>
+                        <input type="file" id="individual_photo_equipments_tools" name="photo" class="form-control" accept="image/png,image/jpeg,image/jpg">
                     </div>
                 </div>
 

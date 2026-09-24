@@ -7,11 +7,11 @@
             </div>
             <div class="modal-body">
                 <div class="d-none">
-                    {% csrf_token %}
+                     {% csrf_token %}
                     <input type="hidden" name="id" value="0">
                 </div>
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label for="status_equipment">Estado del equipo o herramienta</label>
                         <select id="status_equipment" name="status_equipment" class="form-select">
                             <option value="" disabled selected>Seleccione el estado del equipo</option>
@@ -21,11 +21,34 @@
                             <option value="3">No devuelto</option>
                         </select>                                              
                     </div>
-                    <div id="return_amount_group" class="col-md-4 mb-4 d-none">
+
+                    <div id="return_amount_group" class="col-md-6 mb-4 d-none">
                         <label for="return_amount" class="form-label">Cantidad a devolver</label>
                         <input type="number" id="return_amount" name="return_amount" class="form-control" min="0">
                     </div>
-                    <div id="comments" class="col-md-12 mb-4 d-none">
+
+                    <!-- Equipos que serán dados de baja --> 
+                    <div id="details_to_deactivate_group" class="col-md-6 mb-4 d-none"> 
+                        <label for="details_to_deactivate" class="form-label"> 
+                            Equipos/herramientas a dar de baja 
+                        </label> 
+                        <select 
+                            id="details_to_deactivate" 
+                            name="details_to_deactivate" 
+                            class="form-select" 
+                            multiple 
+                        > 
+                        </select> 
+                        <small class="text-muted"> 
+                            Selecciona los equipos o herramientas que serán dados de baja. 
+                        </small> 
+                    </div>
+
+                    <div id="selected_details_to_deactivate" class="col-md-6 mb-4">
+                        
+                    </div>
+
+                    <div id="comments_group" class="col-md-6 mb-4 d-none">
                         <label for="comments" class="form-label">Comentarios</label>
                         <input type="text" id="comments" name="comments" class="form-control" placeholder="Comentarios y notas" maxlength="255">
                     </div>
@@ -58,7 +81,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
             <div class="modal-footer">

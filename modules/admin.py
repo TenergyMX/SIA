@@ -41,7 +41,7 @@ admin.site.register(ComputerEquipment_Maintenance)
 
 @admin.register(ComputerEquipment_Audit)
 class ComputerEquipment_AuditAdmin(admin.ModelAdmin):
-    list_display = ('computerSystem', 'audit_date', 'is_checked', 'is_visible')
+    list_display = ('computerSystem', 'audit_date', 'is_checked', 'is_visible', 'created_at')
     search_fields = ('computerSystem__name', 'audit_date')
     list_filter = ('audit_date', 'is_checked', 'is_visible')
     
@@ -76,6 +76,7 @@ admin.site.register(Equipement_category)
 admin.site.register(Equipment_Tools)
 admin.site.register(Equipment_Tools_Responsiva)
 admin.site.register(Equipmets_Tools_locations)
+admin.site.register(Detail_Responsiva)
 
 #tablas del modulo de servicios 
 admin.site.register(Services_Category)

@@ -28,7 +28,9 @@ from os.path import join, dirname
 from pathlib import Path
 from dateutil.parser import parse
 
-from modules.templates.pdf.weasy import WeasyPDF
+from modules.templates.pdf.weasy import WeasyPDF    
+
+from django.db.models import Count, Q
 
 dotenv_path = join(dirname(dirname(dirname(__file__))), 'awsCred.env')
 #dotenv_path = join(os.path.dirname(os.path.abspath(__file__)), 'awsCred.env')
@@ -257,27 +259,54 @@ def edit_category(request):
 @login_required
 @csrf_exempt
 def delete_category(request):
-    if request.method == 'POST':
-        form = request.POST
-        _id = form.get('id')
+    if request.method != 'POST':
 
-        if not _id:
-            return JsonResponse({'success': False, 'message': 'No ID provided'})
+        return JsonResponse({
+            'success': False,
+            'message': 'Método de solicitud inválido.' 
+        }, status=405)
 
-        try:
-            category = Equipement_category.objects.get(id=_id)
-        except Equipement_category.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Category not found'})
+    _id = request.POST.get('id')
 
-        # category.delete()
-        category.is_active = False
-        category.save(update_fields=['is_active'])
+    if not _id:
+        return JsonResponse({
+            'success': False, 
+            'message': 'No se proporciono el ID de la categoría.'
+        }, status=400)
+    
+    try:
+        category = Equipement_category.objects.get(id=_id)
 
-        return JsonResponse({'success': True, 'message': 'Categoría eliminada correctamente!'})
+    except Equipement_category.DoesNotExist:
+        return JsonResponse({
+            'success': False, 
+            'message': 'La categoría no existe'
+            }, status=404)
 
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+    # validar si la categoria tiene equipos o herramienats registradas
+    has_equipment = Equipment_Tools.objects.filter(
+        equipment_category=category,
+        is_active=True
+    ).exists()
 
-#-------------------------------------------------------------------------------
+    if has_equipment:
+        return JsonResponse({
+            'success': False,
+            'message': (
+                'No se puede eliminar esta categoría, porque tiene equipos o herramientas registrados.'
+            )
+        }, status=400)
+
+    # Desactivar la categoria
+    category.is_active = False
+    category.save(update_fields=['is_active'])
+
+    return JsonResponse({
+        'success': True, 
+        'message': 'Categoría eliminada correctamente!'
+    })
+
+
 # Tabla de datos para los equipos y herramientas
 def get_doc(request):
     file_path = request.GET.get("s3path", "sin informacion")
@@ -292,7 +321,6 @@ def get_equipments_tools(request):
     subModule_id = 30
 
     try:
-
         access = get_module_user_permissions(context, subModule_id)["data"]["access"]
         area = context["area"]["name"]
         tipo_user = context["role"]["name"]
@@ -305,7 +333,7 @@ def get_equipments_tools(request):
 
         equipments = list(Equipment_Tools.objects.select_related(
             'equipment_category', 'equipment_area', 'equipment_responsible', 'equipment_location'
-        ).filter(company_id=company_id, is_active=True).values(
+        ).filter(company_id=company_id, is_active=True).annotate(available_amount=Count('details', filter=Q( details__company_id=company_id, details__is_active=True, details__is_deactivated=False, details__state='DISPONIBLE'))).values(
             'id',
             'equipment_category__id',
             'equipment_category__name',
@@ -314,7 +342,8 @@ def get_equipments_tools(request):
             'equipment_brand',
             'equipment_description',
             'cost',
-            'amount',
+            # 'amount',
+            'available_amount',
             'equipment_area__id',
             'equipment_area__name',
             'equipment_responsible__id',
@@ -323,12 +352,53 @@ def get_equipments_tools(request):
             'equipment_location__location_name',
             'equipment_technical_sheet',
             'document_factura_equipment',
+            'image',
             'comments',
             'has_serial_number'
-
-        ))
+            )
+        )
 
         for item in equipments:
+            # cantidad
+            item["amount"] = item["available_amount"]
+
+            item["btn_equipment_image"] = ""
+
+            if item["image"]:
+
+                tempImage = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(item["image"])
+                )
+
+                item["btn_equipment_image"] = f"""
+                    <a href="{tempImage}"
+                       target="_blank"
+                       title="Ver fotografía">
+                        <img
+                            src="{tempImage}"
+                            alt="Fotografía de {item['equipment_name']}"
+                            class="rounded border"
+                            style="
+                                width: 70px;
+                                height: 70px;
+                                object-fit: cover;
+                                cursor: pointer;
+                            "
+                        >
+                    </a>
+                """
+
+            else:
+
+                item["btn_equipment_image"] = """
+                    <span class="text-muted">
+                        <i class="fa-solid fa-image-slash"></i>
+                        Sin imagen
+                    </span>
+                """
+
+
 
             # Botón Ver Ficha Técnica
             item["btn_equipment_technical_sheet"] = ""
@@ -429,6 +499,7 @@ def get_equipments_tools(request):
         response["message"] = str(e)
 
     return JsonResponse(response)
+
 
 # Vista para obtener las categorías de equipos
 @login_required
@@ -604,7 +675,6 @@ def add_equipment_tools(request):
                     return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios.'}, status=400)
                 obj.save()
                 equipment_id = obj.id
-                # id = obj.id
 
                 generate_identificador_equipment_tool(
                     equipment_id,
@@ -612,10 +682,38 @@ def add_equipment_tools(request):
                     obj.amount
                 )
 
+                # IMAGEN DEL EQUIPO / HERRAMIENTA
+                if "image" in request.FILES and request.FILES["image"]:
+
+                    image = request.FILES.get("image")
+
+                    folder_path = (
+                        f"docs/{company_id}/"
+                        f"Equipments_tools/{equipment_id}/"
+                        f"image/{equipment_id}/"
+                    )
+
+                    file_name, extension = os.path.splitext(image.name)
+
+                    new_name = (
+                        f"equipment_image_{obj.equipment_name}"
+                        f"{extension}"
+                    )
+
+                    s3Name = folder_path + new_name
+
+                    upload_to_s3(
+                        image,
+                        bucket_name,
+                        s3Name
+                    )
+
+                    obj.image = s3Name
+                    obj.save(update_fields=["image"])
+
                 if 'equipment_technical_sheet' in request.FILES and request.FILES['equipment_technical_sheet']:
                     equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
 
-                    # folder_path = f"docs/{company_id}/Equipments_tools/{obj_id}/technical_sheet/{id}/"
                     folder_path = (
                         f"docs/{company_id}/"
                         f"Equipments_tools/{equipment_id}/"
@@ -634,8 +732,6 @@ def add_equipment_tools(request):
                 if 'document_factura_equipment' in request.FILES and request.FILES['document_factura_equipment']:
                     document_factura_equipment = request.FILES.get('document_factura_equipment')
 
-                    # folder_path = f"docs/{company_id}/Equipments_tools/{obj_id}/document_factura_equipment/{id}/"
-
                     folder_path = (
                         f"docs/{company_id}/"
                         f"Equipments_tools/{equipment_id}/"
@@ -650,6 +746,7 @@ def add_equipment_tools(request):
                     upload_to_s3(document_factura_equipment, bucket_name, s3Name)
                     obj.document_factura_equipment = s3Name
                     obj.save()
+                    
 
             response["status"] = "success"
             response["message"] = "Guardado"
@@ -735,197 +832,371 @@ def generate_identificador_equipment_tool(item_id, company_id, cantidad):
 def edit_equipments_tools(request):
     context = user_data(request)
     company_id = context["company"]["id"]
-    if request.method == 'POST':
-        _id = request.POST.get('id')       
 
-        if not _id:
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Método de solicitud inválido'
+        })
+
+    _id = request.POST.get('id')
+
+    if not _id:
+        return JsonResponse({
+            'success': False,
+            'message': 'No se recibió el ID del equipo.'
+        }, status=400)
+
+    equipment_category_id = request.POST.get('equipment_category')
+    equipment_name = request.POST.get('equipment_name', '').strip()
+    equipment_type = request.POST.get('equipment_type')
+    equipment_brand = request.POST.get('equipment_brand')
+    equipment_description = request.POST.get('equipment_description')
+    cost = request.POST.get('cost')
+    amount = request.POST.get('amount')
+    equipment_area = request.POST.get('equipment_area')
+    equipment_responsible = request.POST.get('responsible_equipment')
+    equipment_location = request.POST.get('equipment_location')
+
+    equipment_technical_sheet = request.FILES.get(
+        'equipment_technical_sheet'
+    )
+    document_factura_equipment = request.FILES.get(
+        'document_factura_equipment'
+    )
+
+    image = request.FILES.get('image')
+
+    comments = request.POST.get('comments', '').strip()
+    has_serial_number = (
+        request.POST.get('has_serial_number') == '1'
+    )
+
+    try:
+        cantidad_nueva = int(amount or 0)
+
+        if cantidad_nueva < 0:
             return JsonResponse({
                 'success': False,
-                'message': 'No se recibió el ID del equipo.'
-            }, status=400) 
-        
-        equipment_category_id = request.POST.get('equipment_category')
-        equipment_name = request.POST.get('equipment_name').strip()
-        equipment_type = request.POST.get('equipment_type')
-        equipment_brand = request.POST.get('equipment_brand')
-        equipment_description = request.POST.get('equipment_description')
-        cost = request.POST.get('cost')
-        amount = request.POST.get('amount')
-        equipment_area = request.POST.get('equipment_area')
-        equipment_responsible = request.POST.get('responsible_equipment')
-        equipment_location = request.POST.get('equipment_location')
-        equipment_technical_sheet = request.FILES.get('equipment_technical_sheet')
-        document_factura_equipment = request.FILES.get('document_factura_equipment')
-        comments = request.POST.get('comments', '').strip()
-        has_serial_number = request.POST.get('has_serial_number') 
+                'message': 'La cantidad no puede ser negativa.'
+            }, status=400)
 
-        try:
-            equipment_tool = Equipment_Tools.objects.get(
-                id=_id,
-                company_id=company_id
+        with transaction.atomic():
+
+            # OBTENER EL EQUIPO
+            equipment_tool = (
+                Equipment_Tools.objects
+                .select_for_update()
+                .get(
+                    id=_id,
+                    company_id=company_id
+                )
             )
 
-            if Equipment_Tools.objects.filter(
-                equipment_name__iexact=equipment_name,
-                is_active=True,
-                company_id=company_id
-            ).exclude(
-                id=equipment_tool.id
-            ).exists():
+            # VALIDAR NOMBRE DUPLICADO
+            if (
+                Equipment_Tools.objects
+                .filter(
+                    equipment_name__iexact=equipment_name,
+                    is_active=True,
+                    company_id=company_id
+                )
+                .exclude(id=equipment_tool.id)
+                .exists()
+            ):
 
                 return JsonResponse({
                     'success': False,
-                    'message': 'Este nombre ya se encuentra registrado para esta empresa, ingresa otro diferente.'
+                    'message': (
+                        'Este nombre ya se encuentra registrado '
+                        'para esta empresa, ingresa otro diferente.'
+                    )
                 })
 
-            with transaction.atomic():
-
-                # Guardar la cantidad anterior antes de modificar
-                cantidad_anterior = int(equipment_tool.amount or 0)
-                cantidad_nueva = int(amount or 0)
-
-                equipment_tool.equipment_category_id = equipment_category_id
-                equipment_tool.equipment_name = equipment_name
-                equipment_tool.equipment_type = equipment_type
-                equipment_tool.equipment_brand = equipment_brand
-                equipment_tool.equipment_description = equipment_description
-                equipment_tool.cost = cost
-                equipment_tool.amount = amount
-                equipment_tool.equipment_area_id = equipment_area
-                equipment_tool.equipment_responsible_id = equipment_responsible
-                equipment_tool.equipment_location_id = equipment_location
-                equipment_tool.comments = comments
-                equipment_tool.has_serial_number = has_serial_number
-
-
-                # Actualizar ficha técnica solo si se proporciona un archivo nuevo
-                if equipment_technical_sheet:
-                    folder_path = (
-                        f"docs/{equipment_tool.company_id}/"
-                        f"Equipments_tools/{equipment_tool.id}/"
-                        f"technical_sheet/{equipment_tool.id}/"
-                    )
-                    file_name, extension = os.path.splitext(equipment_technical_sheet.name)
-                    new_name = f'equipment_technical_sheet_{equipment_tool.equipment_name}{extension}'
-                    s3Name = folder_path + new_name
-                    upload_to_s3(equipment_technical_sheet, AWS_BUCKET_NAME, s3Name)
-                    equipment_tool.equipment_technical_sheet = s3Name
-
-                # Actualizar factura solo si se proporciona un archivo nuevo
-                if document_factura_equipment:
-                    folder_path = (
-                        f"docs/{equipment_tool.company_id}/"
-                        f"Equipments_tools/{equipment_tool.id}/"
-                        f"document_factura_equipment/{equipment_tool.id}/"
-                    )                    
-                    file_name, extension = os.path.splitext(document_factura_equipment.name)
-                    new_name = f'document_factura_equipment{equipment_tool.equipment_name}{extension}'
-                    s3Name = folder_path + new_name
-                    upload_to_s3(document_factura_equipment, AWS_BUCKET_NAME, s3Name)
-                    equipment_tool.document_factura_equipment = s3Name
-
-                equipment_tool.save()
-
-                # sincronizar identificadores
-                detalles = Equipments_Tools_Detail.objects.filter(
+            # OBTENER DESGLOSE
+            detalles = (
+                Equipments_Tools_Detail.objects
+                .select_for_update()
+                .filter(
                     equipment_tool=equipment_tool,
                     company_id=company_id
                 )
+            )
 
-                cantidad_actual = detalles.filter(
-                    is_active=True
-                ).count()
+            # CONTAR CANTIDAD ACTIVA REAL
+            cantidad_actual = detalles.filter(
+                is_active=True,
+                is_deactivated=False
+            ).count()
+            # SI LA CANTIDAD AUMENTÓ
+            if cantidad_nueva > cantidad_actual:
+                faltantes = cantidad_nueva - cantidad_actual
+                generate_identificador_equipment_tool(
+                    equipment_tool.id,
+                    company_id,
+                    faltantes
+                )
 
-                # La cantidad aumentó
-                if cantidad_nueva > cantidad_actual:
+            # SI LA CANTIDAD DISMINUYÓ
+            elif cantidad_nueva < cantidad_actual:
+                sobrantes = cantidad_actual - cantidad_nueva
+             
+                disponibles_para_desactivar = (
+                    detalles
+                    .filter(
+                        is_active=True,
+                        is_deactivated=False,
+                        state='DISPONIBLE'
+                    )
+                    .order_by('-id')
+                )
+                cantidad_disponible = (
+                    disponibles_para_desactivar.count()
+                )
+                if cantidad_disponible < sobrantes:
+                    return JsonResponse({
+                        'success': False,
+                        'message': (
+                            f'No es posible reducir la cantidad '
+                            f'a {cantidad_nueva}. '
+                            f'Se necesitan desactivar {sobrantes} '
+                            f'equipo(s), pero únicamente hay '
+                            f'{cantidad_disponible} disponible(s). '
+                            f'Los equipos asignados no pueden '
+                            f'desactivarse automáticamente.'
+                        )
+                    })
 
-                    faltantes = cantidad_nueva - cantidad_actual                  
-                    # Generar únicamente los identificadores faltantes
-                    generate_identificador_equipment_tool(
-                        equipment_tool.id,
-                        company_id,
-                        faltantes
+                detalles_a_desactivar = list(
+                    disponibles_para_desactivar[:sobrantes]
+                )
+
+                for detalle in detalles_a_desactivar:
+                    detalle.is_active = False
+                    detalle.is_deactivated = True
+                    detalle.state = 'BAJA'
+                    detalle.deactivated_at = timezone.now()
+
+                    detalle.save(
+                        update_fields=[
+                            'is_active',
+                            'is_deactivated',
+                            'state',
+                            'deactivated_at'
+                        ]
                     )
 
-                # La cantidad disminuyó
-                elif cantidad_nueva < cantidad_actual:
+                
+            # VOLVER A CALCULAR LA CANTIDAD REAL
+            cantidad_activa_final = (
+                Equipments_Tools_Detail.objects
+                .filter(
+                    equipment_tool=equipment_tool,
+                    company_id=company_id,
+                    is_active=True,
+                    is_deactivated=False
+                )
+                .count()
+            )
 
-                    sobrantes = cantidad_actual - cantidad_nueva
-                    
-                    # Tomar los últimos identificadores creados para desactivarlos primero.
-                    detalles_a_desactivar = detalles.filter(
-                        is_active=True
-                    ).order_by('-id')[:sobrantes]
 
-                    for detalle in detalles_a_desactivar:
-                        detalle.is_active = False
-                        detalle.is_deactivated = True
+            # ACTUALIZAR INFORMACIÓN DEL EQUIPO PRINCIPAL
+            equipment_tool.equipment_category_id = (
+                equipment_category_id
+            )
+            equipment_tool.equipment_name = equipment_name
+            equipment_tool.equipment_type = equipment_type
+            equipment_tool.equipment_brand = equipment_brand
 
-                        detalle.save()
+            equipment_tool.equipment_description = (
+                equipment_description
+            )
+            equipment_tool.cost = cost
+            # GuardaR la cantidad reaL de detalles activos.
+            equipment_tool.amount = cantidad_activa_final
 
-                # La cantidad no cambió
-                else:
-                    print(
-                        "La cantidad no cambió. "
-                        "No se modifican los identificadores."
-                    )
+            equipment_tool.equipment_area_id = equipment_area
+            equipment_tool.equipment_responsible_id = (
+                equipment_responsible
+            )
+            equipment_tool.equipment_location_id = (
+                equipment_location
+            )
+            equipment_tool.comments = comments
+            equipment_tool.has_serial_number = (
+                has_serial_number
+            )
+            # FICHA TÉCNICA
+            if equipment_technical_sheet:
 
-            return JsonResponse({
-                'success': True,
-                'message': 'Equipo editado correctamente!'
-            })
+                folder_path = (
+                    f"docs/{equipment_tool.company_id}/"
+                    f"Equipments_tools/{equipment_tool.id}/"
+                    f"technical_sheet/{equipment_tool.id}/"
+                )
 
-        except Equipment_Tools.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'Equipo no encontrado'
-            }, status=404)
+                file_name, extension = os.path.splitext(
+                    equipment_technical_sheet.name
+                )
 
-        except ValueError:
-            return JsonResponse({
-                'success': False,
-                'message': 'La cantidad debe ser un número válido.'
-            }, status=400)
+                new_name = (
+                    f'equipment_technical_sheet_'
+                    f'{equipment_tool.equipment_name}'
+                    f'{extension}'
+                )
 
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': f'Error interno del servidor: {str(e)}'
-            }, status=500)
+                s3Name = folder_path + new_name
 
-    return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
+                upload_to_s3(
+                    equipment_technical_sheet,
+                    AWS_BUCKET_NAME,
+                    s3Name
+                )
+
+                equipment_tool.equipment_technical_sheet = (
+                    s3Name
+                )
+
+            # FACTURA
+            if document_factura_equipment:
+                folder_path = (
+                    f"docs/{equipment_tool.company_id}/"
+                    f"Equipments_tools/{equipment_tool.id}/"
+                    f"document_factura_equipment/"
+                    f"{equipment_tool.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    document_factura_equipment.name
+                )
+                new_name = (
+                    f'document_factura_equipment'
+                    f'{equipment_tool.equipment_name}'
+                    f'{extension}'
+                )
+                s3Name = folder_path + new_name
+                upload_to_s3(
+                    document_factura_equipment,
+                    AWS_BUCKET_NAME,
+                    s3Name
+                )
+                equipment_tool.document_factura_equipment = (
+                    s3Name
+                )
+
+
+            # IMAGEN DEL EQUIPO / HERRAMIENTA
+            if image:
+
+                folder_path = (
+                    f"docs/{equipment_tool.company_id}/"
+                    f"Equipments_tools/{equipment_tool.id}/"
+                    f"image/{equipment_tool.id}/"
+                )
+
+                file_name, extension = os.path.splitext(image.name)
+
+                new_name = (
+                    f"equipment_image_{equipment_tool.equipment_name}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    image,
+                    AWS_BUCKET_NAME,
+                    s3Name
+                )
+
+                equipment_tool.image = s3Name
+            # GUARDAR
+            equipment_tool.save()
+           
+        return JsonResponse({
+            'success': True,
+            'message': 'Equipo editado correctamente!',
+            'amount': cantidad_activa_final
+        })
+
+    except Equipment_Tools.DoesNotExist:
+
+        return JsonResponse({
+            'success': False,
+            'message': 'Equipo no encontrado'
+        }, status=404)
+
+    except ValueError:
+
+        return JsonResponse({
+            'success': False,
+            'message': 'La cantidad debe ser un número válido.'
+        }, status=400)
+
+    except Exception as e:
+
+        print(f"ERROR EDITANDO EQUIPO: {str(e)}")
+
+        return JsonResponse({
+            'success': False,
+            'message': (
+                f'Error interno del servidor: {str(e)}'
+            )
+        }, status=500)
+
+
+
 
 #funcion para eliminar los equipos
 @login_required
 @csrf_exempt
 def delete_equipment_tool(request):
-    if request.method == 'POST':
-        form = request.POST
-        _id = form.get('id')
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Método de solicitud inválido.'
+        }, status=405)
 
-        if not _id:
-            return JsonResponse({'success': False, 'message': 'No ID provided'})
+    _id = request.POST.get('id')
 
-        try:
-            equipment_tool = Equipment_Tools.objects.get(id=_id)
-        except Equipment_Tools.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'equipments and tools not found'})
+    if not _id:
+        return JsonResponse({
+            'success': False, 
+            'message': 'No se proporcionó el Id del equipo o herramienta.'
+        }, status=400)
 
-        # equipment_tool.delete()
-        equipment_tool.is_active = False
-        equipment_tool.save(update_fields=['is_active'])
+    try:
+        equipment_tool = Equipment_Tools.objects.get(id=_id)
 
-        # desactivar los detalles
-        Equipments_Tools_Detail.objects.filter(
-            equipment_tool=equipment_tool
-        ).update(
-            is_active=False,
-            is_deactivated=True
-        )
+    except Equipment_Tools.DoesNotExist:
+        return JsonResponse({
+            'success': False, 
+            'message': 'El equipo o herramienta no existe'
+        }, status=404)
 
-        return JsonResponse({'success': True, 'message': 'Equipo desactivado correctamente!'})
+    # validar si el equipo tiene desgloses activos 
+    has_details = Equipments_Tools_Detail.objects.filter(
+        equipment_tool=equipment_tool,
+        is_active=True
+    ).exists()
 
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+    if has_details:
+        return JsonResponse({
+            'success': False,
+            'message': (
+                'No se puede eliminar este registro, porque tiene registros en su desglose,'
+                'desactiva cada uno.'
+            )
+        }, status=400)
+
+    # si no tiene desglose desactivar
+    equipment_tool.is_active = False
+    equipment_tool.save(update_fields=['is_active'])
+
+    return JsonResponse({
+        'success': True, 
+        'message': 'Equipo desactivado correctamente'
+    })
 
 
 
@@ -934,7 +1205,6 @@ def delete_equipment_tool(request):
 @login_required
 @csrf_exempt  
 def add_responsiva(request):
-    print("===== ADD RESPONSIVA =====")
 
     context = user_data(request)
     module_id = 6
@@ -958,11 +1228,7 @@ def add_responsiva(request):
         amount = float(request.POST.get('amount', 0))
         fecha_entrega = request.POST.get('fecha_entrega')
         times_requested_responsiva = request.POST.get('times_requested_responsiva')
-        comments = request.POST.get('comments', '')
-
-        print(request.POST)
-        print(request.POST.dict())
-        print("fecha_entrega:", request.POST.get("fecha_entrega"))
+        comments = request.POST.get('comments', '') 
 
         if not fecha_entrega or not isinstance(fecha_entrega, str):
             return JsonResponse({'success': False, 'message': 'Fecha de entrega no proporcionada.'})
@@ -982,13 +1248,30 @@ def add_responsiva(request):
         try:
             with transaction.atomic():
                 # Obtener el equipo solicitado
-                requested_amount = Equipment_Tools.objects.filter(equipment_name=equipment_name, company_id=company_id).first()
+                requested_amount = Equipment_Tools.objects.filter(equipment_name=equipment_name, company_id=company_id, is_active=True).first()
+                if not requested_amount:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'El equipo o herramienta no existe.'
+                    })
                 
                 # Verificar la cantidad disponible
-                available_amount = float(requested_amount.amount)
-                if amount > available_amount:
-                    return JsonResponse({'success': False, 'message': 'No contamos con la cantidad seleccionada.'})
+                available_amount = Equipments_Tools_Detail.objects.filter(
+                    equipment_tool=requested_amount,
+                    company_id=company_id,
+                    is_active=True,
+                    is_deactivated=False,
+                    state="DISPONIBLE"
+                ).count()
 
+                if amount > available_amount:
+                    return JsonResponse({
+                        'success': False,
+                        'message': (
+                            f'No contamos con la cantidad solicitada. '
+                            f'Actualmente hay {available_amount} equipos disponibles.'
+                        )
+                    })
                 # Determinar el estado del equipo basado en la fecha de entrega
                 status_equipment = 'Atrasado' if fecha_entrega_date < fecha_inicio else 'Aceptado'
 
@@ -1022,24 +1305,22 @@ def add_responsiva(request):
                 if signature_file.content_type == 'image/png':
                     if file_data[0:8] == b'\x89PNG\r\n':
                         # Comprobar que no sea completamente blanca
-                        if file_data.count(b'\xFF') == len(file_data) - 12:  # Ignora los primeros 12 bytes de la cabecera
+                        if file_data.count(b'\xFF') == len(file_data) - 12:  
                             return JsonResponse({'success': False, 'message': 'La firma no puede ser completamente blanca.'})
  
  
                 # Usar un timestamp para el nombre del archivo de la firma
                 timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-                folder_path = f"docs/{company_id}/Equipments_tools/signatureResponsivas/{timestamp}/"  # Ruta de la firma
+                folder_path = f"docs/{company_id}/Equipments_tools/signatureResponsivas/{timestamp}/"  
 
                 # Generar un nombre único para la firma
                 new_name = f"signature_{timestamp}.png"
                 s3Name = folder_path + new_name
                 upload_to_s3(signature_file, AWS_BUCKET_NAME, s3Name)
-                #fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-                #fs.save(os.path.join(folder_path, new_name), signature_file)
                 
 
                 # Crear la nueva responsiva del equipo
-                Equipment_Tools_Responsiva.objects.create(
+                responsiva = Equipment_Tools_Responsiva.objects.create(
                     company_id = company_id,
                     equipment_name=requested_amount,
                     responsible_equipment=responsible,
@@ -1050,20 +1331,14 @@ def add_responsiva(request):
                     times_requested_responsiva=times_requested_responsiva,
                     signature_responsible=s3Name, 
                     comments=comments,
+                    fecha_registro = timezone.now() - timedelta(hours=6)
+
                 )
-
-
-                # Actualizar la cantidad del equipo
-                requested_amount.amount = available_amount - amount
-                requested_amount.save()
-
-                print("RESPONSIVA GUARDADA")
 
                 # Retornar la respuesta JSON
                 return JsonResponse({
                     'success': True,
                     'message': 'Responsiva agregada correctamente',
-                    #'pdf_url': pdf_url  
                 })
 
         except Equipment_Tools.DoesNotExist:
@@ -1084,7 +1359,7 @@ def render_to_pdf(template_src, context_dict):
     pdf = pisa.CreatePDF(html, dest=result)
 
     if pdf.err:
-        return None  # Devuelve None si hay un error al crear el PDF
+        return None  
 
     result.seek(0)
     return result
@@ -1122,8 +1397,8 @@ def get_responsible_user(request):
 def get_responsiva(request):
     response = {"status": "error", "message": "Sin procesar"}
     context = user_data(request)
-    print("esta informacion contiene el context de tabla de resposnisvs:", context)
     isList = request.GET.get("isList", False)
+    responsiva_id = request.GET.get("responsiva_id")
     subModule_id = 31
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
@@ -1140,14 +1415,20 @@ def get_responsiva(request):
     try:
         if tipo_user in ["administrador", "almacen", "super usuario"]:
 
+            filtros = {
+                "company_id": company_id,
+            }
+            if responsiva_id:
+                filtros["id"] = responsiva_id
+
             responsiva = list(Equipment_Tools_Responsiva.objects.select_related(
-                'equipment_name', 'responsible_equipment'
+                'equipment_name', 'responsible_equipment', 'status_modified_by'
             ).filter(
-                company_id=company_id,
-            ).values(
+                **filtros
+            ).order_by('-fecha_registro').values(
                 'id', 
-                'equipment_name__equipment_name',  # nombre del equipo
-                'responsible_equipment__username',  # nombre del usuario
+                'equipment_name__equipment_name',  
+                'responsible_equipment__username',  
                 'amount',
                 'status_equipment',
                 'fecha_inicio',
@@ -1156,13 +1437,20 @@ def get_responsiva(request):
                 'date_receipt',
                 'comments',
                 'status_modified',
-            ))
+                'fecha_registro',
+                'status_modified_by__username',
+            )
+        )
         else:
-            print(f"Consultando registros para el usuario: {user_name}")
+            filtros = {
+                "responsible_equipment__username__iexact": user_name,
+            }
+            if responsiva_id:
+                filtros["id"] = responsiva_id
 
             responsiva = list(Equipment_Tools_Responsiva.objects.select_related(
-                'equipment_name', 'responsible_equipment'
-            ).filter(responsible_equipment__username__iexact=user_name).values(
+                'equipment_name', 'responsible_equipment', 'status_modified_by'
+            ).filter(**filtros).order_by('-fecha_registro').values(
                 'id',
                 'equipment_name__equipment_name',
                 'responsible_equipment__username',
@@ -1174,14 +1462,29 @@ def get_responsiva(request):
                 'date_receipt',
                 'comments',
                 'status_modified',
-            ))
-            
-            print(f"Registros encontrados: {responsiva}")
+                'fecha_registro',
+                'status_modified_by__username',
+            )
+        )
+        print(f"Registros encontrados: {responsiva}")
 
         for item in responsiva:
             item["btn_action"] = ""
             item["boton_action"] = ""
 
+            is_user_applicant = (
+                item['responsible_equipment__username'] and
+                item['responsible_equipment__username'].lower() == user_name
+            )
+
+            can_edit_date = (
+                access["update"] and
+                (
+                    area.lower() == "almacen" or
+                    tipo_user.lower() in ["administrador", "super usuario"] or
+                    is_user_applicant
+                )
+            )
 
             if access["update"] and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
                 if item['status_equipment'] == 'Solicitado':
@@ -1206,11 +1509,11 @@ def get_responsiva(request):
                     )
 
             # Incluir el botón de editar en la columna de date_receipt
-            if access["update"] and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+            if can_edit_date:
                 if item['status_equipment'] in ['Aceptado', 'Atrasado']:
                     edit_button = (
                         "<button type='button' class='btn btn-icon btn-sm btn-primary-light edit-btn' "
-                        "onclick='edit_date(this)' aria-label='info'>"
+                        "onclick='edit_date(this)' aria-label='Editar feccha de recepción'>"
                         "<i class='fa-solid fa-pen'></i>"
                         "</button> "
                     )
@@ -1272,17 +1575,21 @@ logger = logging.getLogger(__name__)
 def status_responsiva(request):
     context = user_data(request)
     company_id = context["company"]["id"]
+    user_id = context["user"]["id"]
     if request.method == 'POST':
         try:
-            company_id = company_id
-            equipment_id = request.POST.get('id')
+            equipment_id = request.POST.get('id') 
             status_value = request.POST.get('status_equipment')
             comments = request.POST.get('comments')
             return_amount = request.POST.get('return_amount')
+
+            # id de los equipos a dar de baja
+            details_to_deactivate = request.POST.getlist("details_to_deactivate")
+
             signature_almacen_file = request.FILES.get('signature_almacen')
 
             # Obtener la responsiva
-            responsiva = Equipment_Tools_Responsiva.objects.get(id=equipment_id)
+            responsiva = Equipment_Tools_Responsiva.objects.get(id=equipment_id, company_id=company_id)
 
             # Validaciones de la firma del almacén
             if not signature_almacen_file or signature_almacen_file.size == 0:
@@ -1315,50 +1622,340 @@ def status_responsiva(request):
 
             status_name = STATUS_CHOICES.get(status_value, 'Desconocido')
 
+            if status_name not in ['Regresado', 'Incompleto', 'Dañado', 'No devuelto']:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'El estado seleccionado no es válido para devolver el equipo.'
+                }, status=400)
+
+           
             with transaction.atomic():
-                # Cambiar el estado siempre que no sea el mismo
-                if responsiva.status_equipment != status_name:
-                    responsiva.status_equipment = status_name
-                    responsiva.comments = comments
-                    responsiva.date_receipt = timezone.now().date()
-                    responsiva.signature_almacen = s3Name
 
-                    # Solo marcar como modificado si el estado cambia
-                    responsiva.status_modified = True
-                    responsiva.save()
+                equipment_tool = responsiva.equipment_name
 
-                    # Actualiza el equipo relacionado
-                    equipment_tool = responsiva.equipment_name
-                    if status_name == 'Regresado':
-                        equipment_tool.amount += responsiva.amount
-                    elif status_name == 'Incompleto':
-                        if return_amount >= responsiva.amount:
-                            return JsonResponse({'success': False, 'message': 'No es posible que esté incompleto, te prestamos menos.'}, status=400)
-                        equipment_tool.amount += return_amount
-                    equipment_tool.save()
+                # Detalles actuales asignados a la responsiva
+                detalles_asignados = Equipments_Tools_Detail.objects.filter(
+                    responsiva=responsiva,
+                    equipment_tool=equipment_tool,
+                    company_id=company_id,
+                    state="ASIGNADO",
+                    is_active=True,
+                    is_deactivated=False
+                ).order_by("id")
 
-                    return JsonResponse({'success': True, 'message': 'La responsiva ha sido actualizada correctamente.'}, status=200)
-                else:
-                    return JsonResponse({'success': False, 'message': 'No se realizaron cambios en el estado del equipo.'}, status=400)
+                total_detalles = detalles_asignados.count()
 
-        except Equipment_Tools_Responsiva.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'La responsiva no existe.'}, status=404)
 
-        except Exception as e:
-            logger.error('Error en status_responsiva: %s', str(e))
-            return JsonResponse({'success': False, 'message': 'Error interno del servidor.'}, status=500)
+                # REGRESADO
+                if status_name == "Regresado":
 
-    return JsonResponse({'success': False, 'message': 'Método no permitido.'}, status=405)
+                    detail_ids = list(
+                        detalles_asignados.values_list("id", flat=True)
+                    )
+                    
+                    detalles_asignados.update(
+                        state="DISPONIBLE",
+                        responsible=None,
+                        responsiva=None
+                    )
+                    #actualiza los registros de la responsiva
+                    Detail_Responsiva.objects.filter(
+                        responsiva=responsiva,
+                        details_equipment_tool__in=detail_ids
+                    ).update(
+                        status_equipment_tool="REGRESADO"
+                    )
+                # INCOMPLETO
+                elif status_name == "Incompleto":
+
+                    if return_amount <= 0:
+                        return JsonResponse({
+                            "success": False,
+                            "message": "La cantidad devuelta debe ser mayor a cero."
+                        }, status=400)
+
+                    if return_amount >= responsiva.amount:
+                        return JsonResponse({
+                            "success": False,
+                            "message": (
+                                "La cantidad devuelta debe ser menor "
+                                "a la cantidad prestada."
+                            )
+                        }, status=400)
+
+                    # Cantidad de equipos que NO fueron devueltos
+                    cantidad_a_desactivar = responsiva.amount - return_amount
+
+                    try:
+                        detail_ids = [
+                            int(detail_id)
+                            for detail_id in details_to_deactivate
+                        ]
+                    except (TypeError, ValueError):
+
+                        return JsonResponse({
+                            "success": False,
+                            "message": "Los equipos seleccionados no son válidos."
+                        }, status=400)
+
+
+                    if len(detail_ids) != cantidad_a_desactivar:
+
+                        return JsonResponse({
+                            "success": False,
+                            "message": (
+                                f"Debes seleccionar exactamente "
+                                f"{cantidad_a_desactivar} equipo(s) "
+                                f"para dar de baja."
+                            )
+                        }, status=400)
+
+                    # Buscar equipos configurados para dar de baja
+                    detalles_a_desactivar = Equipments_Tools_Detail.objects.filter(
+                        id__in=detail_ids,
+                        equipment_tool=equipment_tool,
+                        company_id=company_id,
+                        responsiva=responsiva,
+                        is_active=False,
+                        is_deactivated=True,
+                        state="BAJA"
+                    )
+
+                    # Verificar que todos estén correctamente configurados
+                    if detalles_a_desactivar.count() != cantidad_a_desactivar:
+
+                        return JsonResponse({
+                            "success": False,
+                            "message": (
+                                "Uno o más equipos seleccionados "
+                                "no han sido configurados correctamente "
+                                "para darse de baja."
+                            )
+                        }, status=400)
+
+                    # Equipos devueltos
+                    detalles_a_regresar = detalles_asignados.exclude(
+                        id__in=detail_ids
+                    )
+
+                    ids_regresados = list(
+                        detalles_a_regresar.values_list(
+                            "id",
+                            flat=True
+                        )
+                    )
+
+                    # editar equipos regresados
+                    detalles_a_regresar.update(
+                        state="DISPONIBLE",
+                        responsible=None,
+                        responsiva=None
+                    )
+
+                    # equipos no devueltos
+                    actualizados_no_devueltos = Detail_Responsiva.objects.filter(
+                        responsiva_id=responsiva.id,
+                        details_equipment_tool_id__in=detail_ids
+                    ).update(
+                        status_equipment_tool="NO DEVUELTO"
+                    )
+
+                    # actualizar equipos regresados
+                    actualizados_regresados = Detail_Responsiva.objects.filter(
+                        responsiva_id=responsiva.id,
+                        details_equipment_tool_id__in=ids_regresados
+                    ).update(
+                        status_equipment_tool="REGRESADO"
+                    )
+
+                # DAÑADO
+                elif status_name == "Dañado":
+
+                    if not details_to_deactivate:
+
+                        return JsonResponse({
+                            "success": False,
+                            "message": (
+                                "Debes seleccionar al menos un equipo "
+                                "dañado para continuar."
+                            )
+                        }, status=400)
+
+                    try:
+                        detail_ids = [
+                            int(detail_id)
+                            for detail_id in details_to_deactivate
+                        ]
+                    except (TypeError, ValueError):
+
+                        return JsonResponse({
+                            "success": False,
+                            "message": ( f"No puedes seleccionar más de " f"{total_detalles} equipo(s)." )
+                        }, status=400)
+
+                    # equipos configurados para baja
+                    detalles_a_desactivar = Equipments_Tools_Detail.objects.filter(
+                        id__in=detail_ids,
+                        equipment_tool=equipment_tool,
+                        company_id=company_id,
+                        responsiva=responsiva,
+                        is_active=False,
+                        is_deactivated=True,
+                        state="BAJA"
+                    )
+
+                    # validar equipos a dar de baja
+                    if detalles_a_desactivar.count() != len(detail_ids):
+
+                        return JsonResponse({
+                            "success": False,
+                            "message": (
+                                "Uno o más equipos seleccionados "
+                                "no han sido configurados correctamente "
+                                "para darse de baja."
+                            )
+                        }, status=400)
+
+                    # Al menos una imagen por equipo
+                    for detalle in detalles_a_desactivar: 
+                        if not detalle.evidence1_image and not detalle.evidence2_image: 
+                            return JsonResponse({ 
+                                "success": False, 
+                                "message": ( f"El equipo {detalle.identifier} " "debe tener al menos una imagen " "como evidencia del daño." 
+                            ) 
+                        }, status=400)
+
+                    # equipos devueltos 
+                    detalles_a_regresar = detalles_asignados.exclude(
+                        id__in=detail_ids
+                    )
+
+                    ids_regresados = list(
+                        detalles_a_regresar.values_list(
+                            "id",
+                            flat=True
+                        )
+                    )
+
+                    # regresar equipos no dañados
+                    detalles_a_regresar.update(
+                        state="DISPONIBLE",
+                        responsible=None,
+                        responsiva=None
+                    )
+
+                    # actualizar historial de equipos dañados
+                    Detail_Responsiva.objects.filter(
+                        responsiva_id=responsiva.id,
+                        details_equipment_tool_id__in=detail_ids
+                    ).update(
+                        status_equipment_tool="DAÑADO"
+                    )
+
+                    # actualizar historial de equipos regresados
+                    Detail_Responsiva.objects.filter(
+                        responsiva_id=responsiva.id,
+                        details_equipment_tool_id__in=ids_regresados
+                    ).update(
+                        status_equipment_tool="REGRESADO"
+                    )
+
+                # NO DEVUELTO
+                elif status_name == "No devuelto":
+
+                    # Obtener los IDs antes de modificar los detalles
+                    detail_ids = list(
+                        detalles_asignados.values_list("id", flat=True)
+                    )
+
+                    detalles_asignados.update(
+                        state="BAJA",
+                        is_active=False,
+                        is_deactivated=True,
+                        deactivation_reason="PERDIDO",
+                        deactivation_description=(
+                            "Equipo no devuelto por el responsable."
+                        ),
+                        deactivated_at=timezone.now(),
+                        responsible=None,
+                        #assignment_date=None,
+                        responsiva=None
+                    )
+
+                    #actualiza los registros de la responsiva
+                    Detail_Responsiva.objects.filter(
+                        responsiva=responsiva,
+                        details_equipment_tool__in=detail_ids
+                    ).update(
+                        status_equipment_tool="NO DEVUELTO"
+                    )
+
+                    print(
+                        f"{total_detalles} detalle(s) marcado(s) como BAJA."
+                    )
+
+                # ACTUALIZAR RESPONSIVA
+                responsiva.status_equipment = status_name
+                responsiva.comments = comments
+                responsiva.date_receipt = timezone.now().date()
+                responsiva.signature_almacen = s3Name
+                responsiva.status_modified = True
+                responsiva.status_modified_by_id = user_id
+                responsiva.save()
+
+                cantidad_disponible = ( 
+                    Equipments_Tools_Detail.objects 
+                    .filter( 
+                        equipment_tool=equipment_tool, 
+                        company_id=company_id, is_active=True, 
+                        is_deactivated=False, 
+                        state="DISPONIBLE" ) 
+                        .count() 
+                    ) 
+                    
+                equipment_tool.amount = cantidad_disponible 
+                equipment_tool.save( 
+                    update_fields=['amount'] 
+                )
+
+                return JsonResponse({ 
+                    'success': True, 
+                    'message': 'La responsiva ha sido actualizada correctamente.' 
+                }, status=200)
+            
+        except Equipment_Tools_Responsiva.DoesNotExist: 
+            return JsonResponse({ 
+                'success': False, 
+                'message': 'La responsiva no existe.' 
+            }, status=404) 
+        except Exception as e: 
+            logger.error( 
+                'Error en status_responsiva: %s', 
+                str(e) 
+            ) 
+            
+        return JsonResponse({ 
+            'success': False, 
+            'message': 'Error interno del servidor.' 
+        }, status=500) 
+    return JsonResponse({ 
+        'success': False, 
+        'message': 'Método no permitido.' }, 
+    status=405)
 
 
 # Función para aprobar la responsiva del equipo
 @login_required
 @csrf_exempt
 def approve_responsiva(request):
-    if request.method == 'POST':
+
+        if request.method != 'POST': return JsonResponse({ 'success': False, 'message': 'Método no permitido.' }, status=405)
         try:
-            equipment_id = request.POST.get('id')
-            responsiva = Equipment_Tools_Responsiva.objects.get(id=equipment_id)  # Obtener la responsiva
+            responsiva_id = request.POST.get('id')
+            if not responsiva_id: return JsonResponse({ 'success': False, 'message': 'No se recibió el ID de la responsiva.' }, status=400)
+
+            # obtener responsiva
+            responsiva = Equipment_Tools_Responsiva.objects.select_related('equipment_name', 'responsible_equipment').get(id=responsiva_id)
 
             # Validar que no se puede aprobar si ya fue cancelada
             if responsiva.status_equipment == 'Cancelado':
@@ -1372,65 +1969,235 @@ def approve_responsiva(request):
             if responsiva.status_equipment == 'Aceptado':
                 return JsonResponse({'success': False, 'message': 'La responsiva ya ha sido aceptada, no puede ser aprobada de nuevo.'}, status=400)
 
+            # datos de la solicitud
+            equipment_tool = responsiva.equipment_name 
+            responsable = responsiva.responsible_equipment 
+            cantidad_solicitada = int(responsiva.amount)
+
+            # transaccion
             with transaction.atomic():
-                # Cambiar el estado de la responsiva
+            # BUSCAR EQUIPOS DISPONIBLES
+
+                detalles_disponibles = list(
+                    Equipments_Tools_Detail.objects
+                    .select_for_update()
+                    .filter(
+                        equipment_tool=equipment_tool,
+                        company_id=responsiva.company_id,
+                        is_active=True,
+                        is_deactivated=False,
+                        state="DISPONIBLE",
+                    )
+                    .order_by('id')[:cantidad_solicitada]
+                )
+
+                cantidad_disponible = len(detalles_disponibles)
+
+                # VALIDAR CANTIDAD
+                if cantidad_disponible < cantidad_solicitada:
+                    return JsonResponse({
+                        'success': False,
+                        'message': (
+                            f'No hay suficientes equipos disponibles. '
+                            f'Solicitados: {cantidad_solicitada}. '
+                            f'Disponibles: {cantidad_disponible}.'
+                        )
+                    }, status=400)
+
+                # ASIGNAR EQUIPOS
+                fecha_asignacion = timezone.now().date()
+
+                for detalle in detalles_disponibles:
+
+                    detalle.responsible = responsable
+                    detalle.assignment_date = fecha_asignacion
+                    detalle.state = "ASIGNADO"
+                    detalle.responsiva = responsiva
+
+                    detalle.save(
+                        update_fields=[
+                            'responsible',
+                            'assignment_date',
+                            'state',
+                            'responsiva'
+                        ]
+                    )
+
+
+                    with transaction.atomic():
+                        Detail_Responsiva.objects.create(
+                            responsiva=responsiva,
+                            details_equipment_tool=detalle,
+                            status_equipment_tool="ASIGNADO"
+                           
+                        )
+
+                # Actualizar responsiva
                 responsiva.status_equipment = 'Aceptado'
-                responsiva.status_modified = True  # Marcar como modificada
-                responsiva.save()
+                responsiva.status_modified = True 
+                responsiva.save(update_fields=[
+                    'status_equipment',
+                    'status_modified'
+                ])
 
-                # Actualiza el estado en Equipment_Tools también
-                equipment_tool = responsiva.equipment_name
-                equipment_tool.status = 'Aceptado'  # Cambia el estado del equipo
-                equipment_tool.save()
+                # actualizar la cantidad disponible del equipo principal
+                cantidad_disponible_restante = (
+                    Equipments_Tools_Detail.objects.filter(
+                        equipment_tool=equipment_tool,
+                        company_id=responsiva.company_id,
+                        is_active=True,
+                        state="DISPONIBLE"
+                    )
+                    .count()
+                )
 
-                return JsonResponse({'success': True, 'message': 'La responsiva fue aceptada correctamente.'})
+                equipment_tool.amount = cantidad_disponible_restante
+                equipment_tool.save(update_fields=['amount'])
+
+                return JsonResponse({ 
+                    'success': True, 
+                    'message': ( 
+                        f'La responsiva fue aceptada correctamente. ' 
+                        f'Se asignaron {cantidad_solicitada} ' 
+                        f'equipos al usuario.' 
+                        ), 
+                    'assigned': cantidad_solicitada, 
+                    'available': cantidad_disponible_restante 
+                })
+
+        except Equipment_Tools_Responsiva.DoesNotExist: 
+            return JsonResponse({ 
+                'success': False, 
+                'message': 'La responsiva no existe.' 
+            }, status=404)
+
+        except ValueError: 
+            return JsonResponse({ 
+                'success': False, 
+                'message': 'La cantidad solicitada no es válida.' 
+            }, status=400)
+
+        except Exception as e: 
+            logger.error( 
+                'Error en approve_responsiva: %s', 
+                str(e) 
+            ) 
+            return JsonResponse({ 
+                'success': False, 
+                'message': 'Error interno del servidor.' 
+            }, status=500)
         
-        except Equipment_Tools_Responsiva.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'La responsiva no existe.'}, status=404)
-        
-        except Exception as e:
-            logger.error('Error en approve_responsiva: %s', str(e))
-            return JsonResponse({'success': False, 'message': 'Error interno del servidor.'}, status=500)
-
-    return JsonResponse({'success': False, 'message': 'Método no permitido.'}, status=405)
-
 
 # Función para cancelar la responsiva del usuario
 @login_required
 @csrf_exempt
 def cancel_responsiva(request):
-    if request.method == 'POST':
-        try:
-            equipment_id = request.POST.get('id')
-            responsiva = Equipment_Tools_Responsiva.objects.get(id=equipment_id)
 
-            # Verificar si la responsiva ya fue cancelada
-            if responsiva.status_equipment == 'Cancelado':  
-                return JsonResponse({'success': False, 'message': 'La responsiva ya ha sido cancelada, no puede ser cancelada de nuevo.'}, status=400)
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Método no permitido.'
+        }, status=405)
 
-            # Verificar si la responsiva ya fue aceptada
-            if responsiva.status_equipment == 'Aceptado':
-                return JsonResponse({'success': False, 'message': 'La responsiva ya ha sido aceptada, no puede ser cancelada.'}, status=400)
+    try:
+        responsiva_id = request.POST.get('id')
 
-            with transaction.atomic():
-                equipment_tool = responsiva.equipment_name
-                equipment_tool.amount += responsiva.amount  # Regresar la cantidad al equipo
-                equipment_tool.save()
+        if not responsiva_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'No se recibió el ID de la responsiva.'
+            }, status=400)
 
-                # Marcar la responsiva como cancelada
-                responsiva.status_equipment = 'Cancelado'
-                responsiva.save()
+        # Obtener la responsiva
+        responsiva = (
+            Equipment_Tools_Responsiva.objects
+            .select_related('equipment_name')
+            .get(id=responsiva_id)
+        )
 
-            return JsonResponse({'success': True, 'message': 'La responsiva ha sido cancelada y la cantidad ha sido regresada.'}, status=200)
+        # VALIDAR SI YA ESTÁ CANCELADA
+        if responsiva.status_equipment == 'Cancelado':
 
-        except Equipment_Tools_Responsiva.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'La responsiva no existe.'}, status=404)
+            return JsonResponse({
+                'success': False,
+                'message': (
+                    'La responsiva ya ha sido cancelada, '
+                    'no puede ser cancelada de nuevo.'
+                )
+            }, status=400)
 
-        except Exception as e:
-            logger.error('Error en cancel_responsiva: %s', str(e))
-            return JsonResponse({'success': False, 'message': 'Error interno del servidor.'}, status=500)
+        # VALIDAR SI YA FUE ACEPTADA
+        if responsiva.status_equipment == 'Aceptado':
 
-    return JsonResponse({'success': False, 'message': 'Método no permitido.'}, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': (
+                    'La responsiva ya ha sido aceptada, '
+                    'no puede ser cancelada.'
+                )
+            }, status=400)
+
+        with transaction.atomic():
+
+            equipment_tool = responsiva.equipment_name
+            # CANCELAR LA RESPONSIVA
+            responsiva.status_equipment = 'Cancelado'
+            responsiva.status_modified = True
+
+            responsiva.save(
+                update_fields=[
+                    'status_equipment',
+                    'status_modified'
+                ]
+            )
+
+            # RECALCULAR CANTIDAD DISPONIBLE
+            cantidad_disponible = (
+                Equipments_Tools_Detail.objects
+                .filter(
+                    equipment_tool=equipment_tool,
+                    company_id=responsiva.company_id,
+                    is_active=True,
+                    is_deactivated=False,
+                    state="DISPONIBLE"
+                )
+                .count()
+            )
+
+            # Actualizar la cantidad de la tabla principal
+            equipment_tool.amount = cantidad_disponible
+
+            equipment_tool.save(
+                update_fields=['amount']
+            )
+
+        return JsonResponse({
+            'success': True,
+            'message': (
+                'La responsiva ha sido cancelada correctamente.'
+            ),
+            'available': cantidad_disponible
+        }, status=200)
+
+    except Equipment_Tools_Responsiva.DoesNotExist:
+
+        return JsonResponse({
+            'success': False,
+            'message': 'La responsiva no existe.'
+        }, status=404)
+
+    except Exception as e:
+
+        logger.error(
+            'Error en cancel_responsiva: %s',
+            str(e)
+        )
+
+        return JsonResponse({
+            'success': False,
+            'message': f'Error interno: {str(e)}'
+        }, status=500)
+
 
 #función para obtener la fecha actual del servidor 
 def get_server_date(request):
@@ -1439,37 +2206,183 @@ def get_server_date(request):
     return JsonResponse({'server_date':server_date})
 
 #funcion para actualizar la fecha de entrega y actualizar el tiempo requerido
+@login_required
+@csrf_exempt
 def edit_date_responsiva(request):
-    if request.method == 'POST':
+
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Método no permitido.'
+        })
+
+    try:
+
+        # obtener datos
+        fecha_entrega = request.POST.get('fecha_edit')
+        id_responsiva = request.POST.get('id')
+        reason_date_change = request.POST.get('reason_date_change')
+        # Firma enviada 
+        signature_almacen = request.FILES.get('signature_almacen')
+        # Usuario que está realizando el cambio
+        usuario_actual = request.user
+        # Fecha actual
+        fecha_actual = timezone.now().date()
+        fecha_entrega_date = parse_date(fecha_entrega)
+
+        if not fecha_entrega_date:
+            return JsonResponse({
+                'success': False,
+                'message': 'La fecha de entrega no es válida.'
+            })
+        if fecha_entrega_date <= fecha_actual:
+            return JsonResponse({
+                'success': False,
+                'message': 'La fecha de entrega debe ser mayor a la fecha actual.'
+            })
+
+        # validar motivo
+        if not reason_date_change or not reason_date_change.strip():
+            return JsonResponse({
+                'success': False,
+                'message': 'El motivo de cambio es obligatorio.'
+            })
+        # obtener responsiva
         try:
-            fecha_entrega = request.POST.get('fecha_edit')
-            id_responsiva = request.POST.get('id')
-            
-            # Obtener la fecha actual
-            fecha_actual = timezone.now().date()
 
-            # Validar la fecha de entrega
-            fecha_entrega_date = parse_date(fecha_entrega)
-            if not fecha_entrega_date or fecha_entrega_date <= fecha_actual:
-                return JsonResponse({'success': False, 'message': 'La fecha de entrega debe ser mayor a la fecha actual.'})
-            
-            try:
-                responsiva = Equipment_Tools_Responsiva.objects.get(id=id_responsiva)
-                responsiva.fecha_entrega = fecha_entrega_date
-                # Calcular el tiempo requerido
-                tiempo_requerido = (fecha_entrega_date - responsiva.fecha_inicio).days
-                responsiva.times_requested_responsiva = tiempo_requerido
-                responsiva.status_equipment = "Aceptado"
-                responsiva.save()
+            responsiva = Equipment_Tools_Responsiva.objects.get(
+                id=id_responsiva
+            )
 
-                return JsonResponse({'success': True, 'message': 'Fecha de entrega actualizada exitosamente.'})
-            except Equipment_Tools_Responsiva.DoesNotExist:
-                return JsonResponse({'success': False, 'message': 'Responsiva no encontrada.'})
+        except Equipment_Tools_Responsiva.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Responsiva no encontrada.'
+            })
 
-        except ValueError:
-            return JsonResponse({'success': False, 'message': 'Fecha de entrega inválida.'})
-    return JsonResponse({'success': False, 'message': 'Método no permitido.'})
 
+        # comprobar si es el mismo usuario
+        mismo_usuario = (
+            usuario_actual.id == responsiva.responsible_equipment_id
+        )
+        # validar la firma de almacen
+        if not mismo_usuario and not signature_almacen:
+            return JsonResponse({
+                'success': False,
+                'message': 'La firma de almacén es obligatoria para este cambio.'
+            })
+        # calcular el tiempo solicitdo
+        if responsiva.fecha_inicio:
+            tiempo_requerido = (
+                fecha_entrega_date - fecha_actual
+            ).days
+        else:
+            tiempo_requerido = 0
+
+        with transaction.atomic():
+
+            # Guardar detalles actuales
+            detalles_anterior = list(
+                Detail_Responsiva.objects.filter(
+                    responsiva=responsiva
+                )
+            )
+
+            # cerrar responsiva anterior
+            responsiva.status_equipment = "Regresado"
+            responsiva.status_modified = True
+            responsiva.status_modified_by = usuario_actual
+            responsiva.reason_date_change = reason_date_change
+            # Fecha en la que se recibió/cerró la responsiva
+            responsiva.date_receipt = fecha_actual
+
+            # Guardar firma de almacén
+            if signature_almacen:
+                responsiva.signature_almacen = signature_almacen
+            responsiva.save()
+
+            # crear nueva responsiva
+            nueva_responsiva = Equipment_Tools_Responsiva.objects.create(
+                company=responsiva.company,
+                equipment_name=responsiva.equipment_name,
+                responsible_equipment=responsiva.responsible_equipment,
+                amount=responsiva.amount,
+                # Nueva fecha de inicio
+                fecha_inicio=fecha_actual,
+                # Nueva fecha de entrega
+                fecha_entrega=fecha_entrega_date,
+                # nuevo tiempo calculado
+                times_requested_responsiva=tiempo_requerido,
+
+                # Conservar la firma del empleado
+                signature_responsible=responsiva.signature_responsible,
+
+                comments=responsiva.comments,
+
+                # NUEVA RESPONSIVA
+                status_equipment="Aceptado",
+
+                status_modified=True,
+
+                status_modified_by=usuario_actual,
+
+                reason_date_change=reason_date_change,
+
+                fecha_registro=timezone.now() - timedelta(hours=6)
+            )
+
+
+            # copiar los equipos de manera individual
+            for detalle in detalles_anterior:
+
+                #obtener el detalle especifico del equipo
+                detalle_equipo = detalle.details_equipment_tool
+                #actualizar la relacion del equipo con la nueva responsiva
+                detalle_equipo.responsiva = nueva_responsiva
+                detalle_equipo.state = "ASIGNADO"
+                detalle_equipo.is_active = True
+                detalle_equipo.is_deactivated=False
+                detalle_equipo.save(
+                    update_fields=[
+                        "responsiva",
+                        "state",
+                        "is_active",
+                        "is_deactivated"
+                    ]
+                )
+
+                #crear el nuevo registro historico de la responsiva
+                Detail_Responsiva.objects.create(
+                    responsiva=nueva_responsiva,
+                    details_equipment_tool=detalle_equipo,
+                    status_equipment_tool="ASIGNADO"
+                )
+
+        return JsonResponse({
+            'success': True,
+            'message': (
+                'La fecha fue actualizada correctamente.'
+                'La responsiva anterior fue cerrada y se creó '
+                'una nueva responsiva con el mismo desglose.'
+            ),
+            'old_responsiva_id': responsiva.id,
+            'new_responsiva_id': nueva_responsiva.id,
+            'same_user': mismo_usuario
+        })
+
+    except Exception as e:
+        print(
+            "ERROR AL ACTUALIZAR FECHA DE RESPONSIVA:",
+            str(e)
+        )
+
+        return JsonResponse({
+            'success': False,
+            'message': (
+                'Ocurrió un error al actualizar '
+                'la fecha de entrega.'
+            )
+        })
 
 #funcion para obtener el historial de los equipos y herramientas
 @csrf_exempt
@@ -1478,7 +2391,8 @@ def get_equipment_history(request):
         equipment_id = request.POST.get('equipment_id')
         
         try:
-            responsivas = Equipment_Tools_Responsiva.objects.filter(equipment_name__id=equipment_id).values(
+            responsivas = Equipment_Tools_Responsiva.objects.filter(equipment_name__id=equipment_id).exclude(
+                status_equipment='Cancelado').values(
                 'id',
                 'equipment_name__equipment_name', 
                 'responsible_equipment__username',
@@ -1522,133 +2436,144 @@ def image_to_base64(image_path):
         logger.error("Error al leer la imagen: %s", str(e))
         return None
 
-#funcion para generar el pdf
-# @login_required
-# def generate_pdf(request, responsiva_id):
-#     logger.info("Se ha llamado a la función generate_pdf con ID: %s", responsiva_id)
-    
-#     try:
-#         responsiva_instance = get_object_or_404(Equipment_Tools_Responsiva, id=responsiva_id)
-#         logger.info("Responsiva encontrada, generando PDF...")
 
-#         # Convertir imágenes a Base64
-#         header_image_base64 = None
-#         footer_image_base64 = None
-
-#         header_image_path = os.path.join(settings.MEDIA_ROOT, 'modules/templates/equipments-and-tools/responsiva/img/encabezado.png')
-#         footer_image_path = os.path.join(settings.MEDIA_ROOT, 'modules/templates/equipments-and-tools/responsiva/img/pie.png')
-
-
-#         logger.info("Ruta de la imagen de encabezado: %s", header_image_path)
-#         logger.info("Ruta de la imagen de pie de página: %s", footer_image_path)
-
-#         if os.path.exists(header_image_path):
-#             header_image_base64 = f"data:image/png;base64,{image_to_base64(header_image_path)}"
-#             logger.info("Imagen de encabezado cargada exitosamente.")
-#         else:
-#             logger.warning("No se encontró la imagen de encabezado en: %s", header_image_path)
-
-#         if os.path.exists(footer_image_path):
-#             footer_image_base64 = f"data:image/png;base64,{image_to_base64(footer_image_path)}"
-#             logger.info("Imagen de pie de página cargada exitosamente.")
-#         else:
-#             logger.warning("No se encontró la imagen de pie de página en: %s", footer_image_path)
-
-#         # Contexto para el PDF
-#         pdf_context = {
-#             'responsiva': responsiva_instance,
-#             'responsible_name': responsiva_instance.responsible_equipment.username,
-#             'signature_responsible': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_responsible)) if responsiva_instance.signature_responsible else None,
-#             'signature_almacen': generate_presigned_url(AWS_BUCKET_NAME, str(responsiva_instance.signature_almacen)) if responsiva_instance.signature_almacen else None,
-#             'header_image': header_image_base64,
-#             'footer_image': footer_image_base64,
-#         }
-
-#         # Generar PDF
-#         pdf_file = render_to_pdf('equipments-and-tools/responsiva/responsiva_equipments.html', pdf_context)
-
-#         if pdf_file is None:
-#             logger.error("Error al generar el PDF.")
-#             return JsonResponse({'success': False, 'message': 'Error al generar el PDF.'})
-
-#         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-#         pdf_folder_path = f"docs/{responsiva_instance.company_id}/Equipments_tools/pdfs_responsiva/{timestamp}/"
-
-#         # Guardar el PDF en AWS S3 Bucket
-#         pdf_file_name = f"responsiva_{timestamp}.pdf"
-#         s3Name = pdf_folder_path + pdf_file_name
-
-#         try:
-#             upload_to_s3(pdf_file, AWS_BUCKET_NAME, s3Name)
-#             url = generate_presigned_url(AWS_BUCKET_NAME, s3Name)
-#             response = requests.get(url)
-    
-#             # Store the PDF content in memory using BytesIO
-#             pdfFile = BytesIO(response.content)
-    
-#             # Prepare the response
-#             pdf_response = HttpResponse(pdfFile.getvalue(), content_type='application/pdf')
-    
-#             # Set headers to open the file in a new browser tab
-#             pdf_response['Content-Disposition'] = 'inline; filename="responsiva.pdf"'
-        
-#         except Exception as e:
-#             logger.error("Error al guardar el PDF: %s", str(e))
-#             return JsonResponse({'success': False, 'message': 'Error al guardar el PDF.'})
-
-#         # URL del PDF
-#         pdf_url = f"{request.scheme}:{s3Name}"
-#         responsiva_instance.pdf_url = pdf_url  # Actualiza la responsiva si es necesario
-#         return pdf_response
-    
-#         #return JsonResponse({
-#         #    'success': True,
-#         #    'message': 'Responsiva generada correctamente',
-#         #    'pdf_url': pdf_response
-#         #})
-
-#     except Equipment_Tools_Responsiva.DoesNotExist:
-#         logger.error("Responsiva no encontrada. ")
-#         return JsonResponse({'success': False, 'message': 'Responsiva no encontrada.'})
-
-# Generar pdf
+# Generar PDF de responsiva de Equipo y Herramienta
 @login_required
 def equipment_tools_responsiva_pdf_view(request, responsiva_id):
     responsiva = get_object_or_404(
-        Equipment_Tools_Responsiva,
+        Equipment_Tools_Responsiva.objects.select_related(
+            "equipment_name",
+            "responsible_equipment",
+            "company",
+        ),
         id=responsiva_id
     )
+    # Obtener el desglose de la responsiva
+    detalles_responsiva = (
+        Detail_Responsiva.objects
+        .filter(
+            responsiva=responsiva,
+            details_equipment_tool__isnull=False
+        )
+        .select_related(
+            "details_equipment_tool",
+            "details_equipment_tool__equipment_tool",
+            "details_equipment_tool__equipment_location",
+        )
+        .order_by("details_equipment_tool__id")
+    )
 
+    detalles = []
+
+    for detalle_responsiva in detalles_responsiva:
+
+        detalle = detalle_responsiva.details_equipment_tool
+
+
+        print("==========================================")
+        print("RESPONSIVA:", responsiva.id)
+        print("DETAIL RESPONSIVA ID:", detalle_responsiva.id)
+        print("DETALLE EQUIPO ID:", detalle.id)
+        print("IDENTIFICADOR:", detalle.identifier)
+        print("STATUS DETAIL RESPONSIVA:", detalle_responsiva.status_equipment_tool)
+        print("STATE EQUIPO:", detalle.state)
+
+        detalles.append({
+            "id": detalle.id,
+
+            # Información individual
+            "identifier": detalle.identifier,
+            "name": detalle.name,
+            "serial_number": detalle.serial_number,
+
+            # Fechas
+            "assignment_date": detalle.assignment_date,
+            "modification_date": detalle.modification_date,
+
+            # Responsable
+            "responsible": (
+                detalle.responsible.get_full_name()
+                if detalle.responsible
+                else None
+            ),
+
+            # Estado individual dentro de la responsiva
+            "status": detalle_responsiva.status_equipment_tool,
+
+            # Estado actual del detalle
+            "state": detalle.state,
+
+            # Ubicación
+            "location": (
+                str(detalle.equipment_location)
+                if detalle.equipment_location
+                else None
+            ),
+
+            # Fotografía
+            "photo": (
+                generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(detalle.photo)
+                )
+                if detalle.photo
+                else None
+            ),
+        })
+
+    # RESPONSABLE
+    responsible_name = (
+        responsiva.responsible_equipment.get_full_name()
+        or responsiva.responsible_equipment.username
+    )
+    # FIRMAS
+    signature_responsible = (
+        generate_presigned_url(
+            AWS_BUCKET_NAME,
+            str(responsiva.signature_responsible)
+        )
+        if responsiva.signature_responsible
+        else None
+    )
+
+    signature_almacen = (
+        generate_presigned_url(
+            AWS_BUCKET_NAME,
+            str(responsiva.signature_almacen)
+        )
+        if responsiva.signature_almacen
+        else None
+    )
+    # Contexto
     context = {
+
         "title": "Responsiva de Equipo y Herramienta",
         "responsiva": responsiva,
-        "responsible_name": responsiva.responsible_equipment.get_full_name()
-        or responsiva.responsible_equipment.username,
-
-        "signature_responsible": (
-            generate_presigned_url(
-                AWS_BUCKET_NAME,
-                str(responsiva.signature_responsible)
-            )
-            if responsiva.signature_responsible else None
-        ),
-
-        "signature_almacen": (
-            generate_presigned_url(
-                AWS_BUCKET_NAME,
-                str(responsiva.signature_almacen)
-            )
-            if responsiva.signature_almacen else None
-        ),
-
-        "data": [{
-            "equipment_name": responsiva.equipment_name.equipment_name,
-            "amount": responsiva.amount,
-            "days": responsiva.times_requested_responsiva,
-            "description": responsiva.comments,
-        }]
+        # Responsable temporal
+        "responsible_name": responsible_name,
+        # Fechas de la responsiva
+        "fecha_inicio": responsiva.fecha_inicio,
+        "fecha_entrega": responsiva.fecha_entrega,
+        # Tiempo solicitado
+        "times_requested": responsiva.times_requested_responsiva,
+        # Cantidad
+        "amount": responsiva.amount,
+        # Estado
+        "status": responsiva.status_equipment,
+        # Fecha de recibido
+        "date_receipt": responsiva.date_receipt,
+        # Comentarios
+        "comments": responsiva.comments,
+        # Equipo padre
+        "equipment": responsiva.equipment_name,
+        # Desglose individual
+        "details": detalles,
+        # Cantidad real de detalles
+        "details_count": len(detalles),
+        # Firmas
+        "signature_responsible": signature_responsible,
+        "signature_almacen": signature_almacen,
     }
-
     return WeasyPDF(
         "pdf/equipment_tools_responsiva.html",
         context
@@ -1683,6 +2608,7 @@ def get_equipment_tools_details(request):
                     "is_active",
                     "is_deactivated",
                     "state",
+                    "photo"
                 )
             )
 
@@ -1716,6 +2642,27 @@ def get_equipment_tools_details(request):
                     else ""
                 )
 
+                # FOTOGRAGIA
+                fotografia = False
+                if r["photo"]:
+                    tUrl = generate_presigned_url( AWS_BUCKET_NAME, str(r["photo"]))
+                    fotografia = f"""
+                    <a href="{tUrl}"
+                       target="_blank"
+                       title="Ver fotografía">
+                        <img
+                            src="{tUrl}"
+                            alt="Fotografía de {r['identifier']}"
+                            class="rounded border"
+                            style="
+                                width: 70px;
+                                height: 70px;
+                                object-fit: cover;
+                                cursor: pointer;
+                            "
+                        >
+                    </a>
+                """
                 # AGREGAR REGISTRO
                 data.append({
 
@@ -1731,6 +2678,7 @@ def get_equipment_tools_details(request):
                     "tiene_responsable": bool(
                         tiene_responsable
                     ),
+                    "fotografia" : fotografia if fotografia else None,
                     "fecha_asignacion": fecha_asignacion,
                     "serial_number": serial_number,
                     "equipment_location": equipment_location,
@@ -1761,6 +2709,8 @@ def get_equipment_tools_details(request):
 @login_required
 @csrf_exempt
 def save_equipment_tool_serial_number(request):
+    context = user_data(request)
+    company_id = context["company"]["id"]
 
     if request.method != "POST":
         return JsonResponse({
@@ -1768,9 +2718,56 @@ def save_equipment_tool_serial_number(request):
             "message": "Método no permitido."
         }, status=405)
 
+
     detalle_id = request.POST.get("detalle_id")
+    
     numero_serie = request.POST.get("serial_number", "").strip()
 
+    detalle = Equipments_Tools_Detail.objects.get(
+        id=detalle_id, company_id=company_id
+    )
+
+
+    # image
+    if "photo" in request.FILES:
+    
+        image = request.FILES.get("photo")
+
+        if image:
+
+            folder_path = (
+                f"docs/{company_id}/"
+                f"Equipments_tools/{detalle_id}/"
+                f"image/{detalle_id}/"
+            )
+
+            file_name, extension = os.path.splitext(image.name)
+
+            new_name = (
+                f"equipment_image_{detalle_id}"
+                f"{extension}"
+            )
+
+            s3Name = folder_path + new_name
+
+            if detalle.photo:
+                delete_s3_object(AWS_BUCKET_NAME, str(detalle.photo))
+
+            upload_to_s3(
+                image,
+                bucket_name,
+                s3Name
+            )
+
+            detalle.photo = s3Name
+            detalle.save(update_fields=["photo"])
+
+        return JsonResponse({
+            "success": True,
+            "message":
+                "Imagen guardada correctamente."
+        })
+    
     # VALIDACIONES
     if not detalle_id:
         return JsonResponse({
@@ -1877,33 +2874,34 @@ def modal_equipment_tool_detail(request):
             "message": "El detalle no existe."
         }, status=404)
 
-
-# dar de baja un equipo
+# dar de baja / habilitar un equipo
 @login_required
 def disable_equipment_tool_detail(request):
-    print("funcion para dar de baja un registro de detalles")
 
     detail_id = request.POST.get("detail_id")
-    print("id de detalle", detail_id)
     action = request.POST.get("action")
-    print("la accion es:", action)
+
     if not detail_id:
         return JsonResponse({
             "success": False,
             "message": "No se recibió el ID del detalle."
         })
+
     try:
         context = user_data(request)
         company_id = context["company"]["id"]
-        detail = Equipments_Tools_Detail.objects.get(
-            id=detail_id,
-            company_id=company_id
-        )
+        detail = Equipments_Tools_Detail.objects.get(id=detail_id, company_id=company_id)
+
         # DESHABILITAR
         if action == "disable":
             reason = request.POST.get("reason")
-            description = request.POST.get("description", "").strip()
-            evidence = request.FILES.get("evidence")
+            description = request.POST.get(
+                "description",
+                ""
+            ).strip()
+            # Archivos
+            evidence1 = request.FILES.get("evidence1_image")
+            evidence2 = request.FILES.get("evidence2_image")
 
             if not reason:
                 return JsonResponse({
@@ -1917,55 +2915,415 @@ def disable_equipment_tool_detail(request):
                     "message": "Debe ingresar una descripción."
                 })
 
+            if not evidence1 and not evidence2:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe adjuntar al menos una imagen como evidencia de la baja."
+                })
+
+            # Cambiar estado
             detail.is_active = False
             detail.is_deactivated = True
             detail.state = "BAJA"
+
+            # Información de la baja
             detail.deactivation_reason = reason
             detail.deactivation_description = description
-            detail.deactivated_at = timezone.now()
+            detail.deactivated_at = timezone.now() - timedelta(hours=6)
 
-            if evidence:
-                detail.deactivation_evidence = evidence
+            # Usuario que realizó la baja
+            detail.user_modification = request.user
+
+            # Ruta base
+            equipment_id = detail.equipment_tool_id
+
+            # Evidencia 1
+            if evidence1:
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"Equipments_tools/{equipment_id}/"
+                    f"evidence1_image/{detail.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    evidence1.name
+                )
+
+                new_name = (
+                    f"evidence1_image"
+                    f"{detail.identifier}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    evidence1,
+                    bucket_name,
+                    s3Name
+                )
+
+                detail.evidence1_image = s3Name
+
+            # Evidencia 2
+            if evidence2:
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"Equipments_tools/{equipment_id}/"
+                    f"evidence2_image/{detail.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    evidence2.name
+                )
+
+                new_name = (
+                    f"evidence2_image"
+                    f"{detail.identifier}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    evidence2,
+                    bucket_name,
+                    s3Name
+                )
+
+                detail.evidence2_image = s3Name
 
             detail.save()
 
             return JsonResponse({
                 "success": True,
-                "message": "El equipo o herramienta ha sido dado de baja correctamente."
+                "message": (
+                    "El equipo o herramienta "
+                    "ha sido dado de baja correctamente."
+                )
             })
 
         # HABILITAR
         elif action == "enable":
+
+            # Cambiar estado
             detail.is_active = True
             detail.is_deactivated = False
             detail.state = "DISPONIBLE"
-            # Limpiar información de la baja
+
+            # Registrar usuario de activación
+            detail.user_activation = request.user
+
+            # Registrar fecha y hora de activación
+            detail.modification_date = timezone.now() - timedelta(hours=6)
+
+            # Limpiar información de baja
             detail.deactivation_reason = None
             detail.deactivation_description = None
             detail.deactivated_at = None
 
             detail.save()
 
-            return JsonResponse({
-                "success": True,
-                "message": "El equipo o herramienta ha sido habilitado correctamente."
-            })
+            return JsonResponse({ "success": True, "message": ("El equipo o herramienta " "ha sido habilitado correctamente.")})
+
+        # ACCIÓN NO VÁLIDA
         else:
-            return JsonResponse({
-                "success": False,
-                "message": "Acción no válida."
-            })
+
+            return JsonResponse({"success": False, "message": "Acción no válida."})
 
     except Equipments_Tools_Detail.DoesNotExist:
+
         return JsonResponse({
             "success": False,
             "message": "El equipo o herramienta no existe."
         }, status=404)
+
     except Exception as e:
+
         return JsonResponse({
             "success": False,
             "message": f"Error interno: {str(e)}"
         }, status=500)
 
+# submodulo de equipos y herramientas eliminadas
+@login_required
+def equipment_tools_removed(request):
+    context = user_data(request)
+    module_id = 6
+    subModule_id = 40
+    request.session["last_module_id"] = module_id
+
+    sidebar = get_sidebar(context, [1, module_id])
+    access = get_module_user_permissions(context, subModule_id)
+    for module in sidebar["data"]:
+        for submodule in module.get("submodules", []):
+            submodule["title"] = submodule["title"].strip() 
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+    template = "equipments-and-tools/equipment_tools_removed.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    return render(request, template, context)
 
 
+# Funcion para obtener los equipos y herramientas dadas de baja
+@csrf_exempt
+def get_equipment_tools_removed(request):
+
+    response = {
+        "status": "error",
+        "message": "Sin procesar",
+        "data": []
+    }
+
+    context = user_data(request)
+
+    try:
+        company_id = context["company"]["id"]
+
+        bajas = list(
+            Equipments_Tools_Detail.objects
+            .select_related(
+                "equipment_tool",
+                "company",
+                "user_modification",
+            )
+            .filter(
+                company_id=company_id,
+                is_deactivated=True,
+                state = "BAJA"
+            ).order_by("-id")
+            .values(
+                "id",
+                "identifier",
+                "state",
+                "evidence1_image",
+                "evidence2_image",
+                "deactivation_reason",
+                "deactivation_description",
+                "deactivated_at",
+
+                "user_modification__id", 
+                "user_modification__first_name", 
+                "user_modification__last_name", 
+                "user_modification__username",
+
+                "equipment_tool__equipment_name",
+            )
+
+
+        )
+
+
+        for item in bajas:
+            #obtener el ultimo detalle
+            ultimo_detalle_responsiva = (
+                Detail_Responsiva.objects.filter(details_equipment_tool_id=item["id"]).select_related(
+                    "responsiva",
+                    "responsiva__responsible_equipment"
+                ).order_by("-id").first()
+            ) 
+            if (
+                ultimo_detalle_responsiva
+                and ultimo_detalle_responsiva.responsiva
+                and ultimo_detalle_responsiva.responsiva.responsible_equipment
+            ):          
+                responsable = (
+                    ultimo_detalle_responsiva
+                    .responsiva
+                    .responsible_equipment
+                )
+
+                nombre = (
+                    f"{responsable.first_name} "
+                    f"{responsable.last_name}"
+                ).strip()
+
+                item["last_responsible"] = (
+                    nombre
+                    if nombre
+                    else responsable.username
+                )
+
+
+
+            else:
+                item["last_responsible"] = ""
+
+        # Catálogo de motivos
+        motivos = dict(
+            Equipments_Tools_Detail.DEACTIVATION_REASONS
+        )
+
+        for item in bajas: 
+            # ESTADO
+            item["state"] = item["state"] or ""
+
+            # USUARIO QUE REALIZÓ LA BAJA 
+            if item["user_modification__id"]: 
+                nombre = ( 
+                    f"{item['user_modification__first_name']} " 
+                    f"{item['user_modification__last_name']}" 
+                ).strip() 
+                item["user_modification"] = ( 
+                    nombre 
+                    if nombre 
+                    else item["user_modification__username"] 
+                ) 
+            else: 
+                item["user_modification"] = ""
+
+            # EVIDENCIA 1
+            if item["evidence1_image"]:
+
+                try:
+                    item["evidence1_image"] = generate_presigned_url(
+                        AWS_BUCKET_NAME,
+                        str(item["evidence1_image"])
+                    )
+                except Exception as e:
+                    item["evidence1_image"] = ""
+
+            else:
+                item["evidence1_image"] = ""
+
+            # EVIDENCIA 2
+            if item["evidence2_image"]:
+
+                try:
+                    item["evidence2_image"] = generate_presigned_url(
+                        AWS_BUCKET_NAME,
+                        str(item["evidence2_image"])
+                    )
+                except Exception as e:
+                    item["evidence2_image"] = ""
+
+            else:
+                item["evidence2_image"] = ""
+
+            # MOTIVO DE BAJA
+            item["deactivation_reason"] = motivos.get(
+                item["deactivation_reason"],
+                item["deactivation_reason"] or ""
+            )
+
+            # DESCRIPCIÓN
+            item["deactivation_description"] = (
+                item["deactivation_description"] or ""
+            )
+
+            # FECHA DE BAJA 
+            if item["deactivated_at"]: 
+                item["deactivated_at_sort"] = ( 
+                    item["deactivated_at"].strftime("%Y-%m-%d %H:%M:%S") 
+                ) 
+                item["deactivated_at"] = ( 
+                    item["deactivated_at"].strftime("%d/%m/%Y %H:%M") 
+                ) 
+            else: 
+                item["deactivated_at_sort"] = "" 
+                item["deactivated_at"] = ""
+
+        response["data"] = bajas
+        response["status"] = "success"
+        response["message"] = (
+            "Equipos y herramientas dadas de baja "
+            "cargados correctamente"
+        )
+
+    except Exception as e:
+        response["status"] = "error"
+        response["message"] = str(e)
+
+    return JsonResponse(response)
+
+
+@login_required
+@csrf_exempt
+def get_responsiva_details(request):
+    response = {
+        "success": False,
+        "message": "Sin procesar",
+        "data": []
+    }
+
+    context = user_data(request)
+    company_id = context["company"]["id"]
+
+    try:
+        responsiva_id = request.GET.get("responsiva_id")
+
+        print("GET RESPONSIVA DETAILS")
+        print("Responsiva ID:", responsiva_id)
+        print("Company ID:", company_id)
+
+        if not responsiva_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el ID de la responsiva.",
+                "data": []
+            }, status=400)
+
+        # Buscar la responsiva perteneciente a la empresa
+        responsiva = Equipment_Tools_Responsiva.objects.get(
+            id=responsiva_id,
+            company_id=company_id
+        )
+
+        equipment_tool = responsiva.equipment_name
+
+        # Obtener únicamente los detalles que están asignados a esta responsiva
+        detalles_asignados = Equipments_Tools_Detail.objects.filter(
+            responsiva=responsiva,
+            equipment_tool=equipment_tool,
+            company_id=company_id,
+            state="ASIGNADO",
+            is_active=True,
+            is_deactivated=False
+        ).order_by("id")
+
+        data = []
+
+        for detalle in detalles_asignados:
+            data.append({
+                "id": detalle.id,
+                "identifier": detalle.identifier,
+            })
+
+        print("Detalles encontrados:", len(data))
+
+        for detalle in data:
+            print(
+                "Detalle:",
+                detalle["id"],
+                "| Identificador:",
+                detalle["identifier"]
+            )
+
+
+        return JsonResponse({
+            "success": True,
+            "message": "Detalles obtenidos correctamente.",
+            "data": data
+        })
+
+    except Equipment_Tools_Responsiva.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "message": "La responsiva no existe.",
+            "data": []
+        }, status=404)
+
+    except Exception as e:
+        logger.error(
+            "Error en get_responsiva_details: %s",
+            str(e)
+        )
+
+        print("ERROR get_responsiva_details:", str(e))
+
+        return JsonResponse({
+            "success": False,
+            "message": "Error interno del servidor.",
+            "data": []
+        }, status=500)

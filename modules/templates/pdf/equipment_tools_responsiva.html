@@ -5,34 +5,82 @@
 <p>
 Yo,
 <strong>{{ responsible_name }}</strong>,
-certifico haber recibido el siguiente material detallado a continuación, el cual se me ha asignado para el desempeño de mis funciones laborales. A continuación, se encuentra la lista de equipos asignados:
+certifico haber recibido el siguiente material detallado a continuación, el cual se me ha asignado para el desempeño de mis funciones laborales. Con la fecha de inicio <strong>{{ fecha_inicio|date:"d/m/Y" }}</strong>, y fecha de entrega <strong>{{ fecha_entrega|date:"d/m/Y" }}</strong>
+A continuación, se encuentra la lista de equipos asignados:
 </p>
 
+<br>
+
+<!-- Desglose individual -->
+<p class="fw-bold"> Desglose de equipos asignados </p>
+
 <table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Equipo/Herramienta</th>
-            <th>Cantidad</th>
-            <th>Días</th>
-            <th>Descripción</th>
-        </tr>
-    </thead>
 
-    <tbody>
+<thead>
+    <tr>
+        <th>#</th>
+        <th>Identificador</th>
+        <th>Equipo / Herramienta</th>
+        <th>Número de serie</th>
+        <th>Fecha de asignación</th>
+        <th>Estado</th>
+    </tr>
+</thead>
 
-    {% for item in data %}
-        <tr>
-            <td>{{ item.equipment_name }}</td>
-            <td>{{ item.amount }}</td>
-            <td>{{ item.days }}</td>
-            <td>{{ item.description }}</td>
-        </tr>
+<tbody>
+
+    {% for detalle in details %}
+    <tr>
+        <td>
+            {{ forloop.counter }}
+        </td>
+        <td>
+            {{ detalle.identifier }}
+        </td>
+        <td>
+            {{ detalle.name }}
+        </td>
+        <td>
+            {% if detalle.serial_number %}
+                {{ detalle.serial_number }}
+            {% else %}
+                N/A
+            {% endif %}
+        </td>
+        <td>
+            {% if detalle.assignment_date %}
+                {{ detalle.assignment_date|date:"d/m/Y" }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+
+    
+        <td>
+            {% if detalle.status %}
+                {{ detalle.status }}
+            {% else %}
+                ASIGNADO
+            {% endif %}
+        </td>
+    </tr>
+
+    {% empty %}
+
+    <tr>
+        <td colspan="7">
+            No existen equipos registrados en el desglose.
+        </td>
+    </tr>
     {% endfor %}
 
-    </tbody>
+</tbody>
 </table>
-
 <br>
+{% if comments %}
+<p> <strong>Comentarios:</strong> {{ comments }} </p>
+{% endif %}
+
 
 <p>
 Él cual me comprometo a cuidar, mantener en buen estado, utilizar  única y exclusivamente para asuntos relacionados con mi actividad laboral y cumplir con las Políticas Internas de la Empresa  y descritas en el documento, responsabilizándome de los mismos bajo cualquier circunstancia en términos de los artículos 134, fracción VI y 135, fracciones III y IX de la Ley Federal del Trabajo, obligándome a cubrir su costo en caso de pérdida por negligencia de mi parte. 

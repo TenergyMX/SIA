@@ -39,9 +39,6 @@ class Vehicle(models.Model):
     qr_fuel = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
     fuel_type_vehicle = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
     car_tires = models.CharField(max_length=60, blank=True, null=True)      
-    # document_factura_vehicle = models.FileField(max_length=500, null=True, blank=True)     
-    # Placa
-    # apply_tenencia = models.BooleanField(default=False, verbose_name="Aplica tenencia") 
 
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,
@@ -849,7 +846,7 @@ class Payments_Services(models.Model):
     email_payment = models.BooleanField(default=False)
     email_payment_unpaid = models.BooleanField(default=False)
 
-#tablas para el modulo de equipos y herramientas--modulo 6 num.6
+#tablas para el modulo de equipos y herramientas--modulo 6 
 #tabla categorias
 class Equipement_category(models.Model):
     empresa = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
@@ -872,7 +869,6 @@ class Equipement_category(models.Model):
         if short_name_lower and Equipement_category.objects.exclude(pk=self.pk).filter(empresa=self.empresa, is_active=True, short_name__iexact=short_name_lower).exists():
             raise ValidationError({'short_name': 'El nombre corto ya existe en la base de datos para esta empresa. Ingresa un nombre corto diferente.'})
 
-
     def save(self, *args, **kwargs):
         self.full_clean()  # Llamar al método clean() antes de guardar
         super().save(*args, **kwargs)
@@ -893,13 +889,14 @@ class Equipment_Tools(models.Model):
     equipment_brand = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Marca")
     equipment_description = models.TextField(blank=True, null=True, verbose_name="Descripcion")
     cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Costo')
-    amount = models.IntegerField(default=0.0, blank=True, null=True, verbose_name='Cantidad de equipos')
+    amount = models.IntegerField(default=0, blank=True, null=True, verbose_name='Cantidad de equipos')
     equipment_technical_sheet = models.FileField(upload_to='docs/Equipments_tools', max_length=500, blank=True, null=True, verbose_name="Ficha tecnica")
     equipment_location = models.ForeignKey(Equipmets_Tools_locations, on_delete=models.CASCADE, verbose_name="Ubicación" ,blank=True, null=True)
     document_factura_equipment = models.FileField(upload_to='docs/Equipments_tools', max_length=500, null=True, blank=True, verbose_name="factura")     
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios de equipo o herramienta")
     has_serial_number = models.BooleanField(default=False, verbose_name="Cuenta con número de serie")
     is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
+    image = models.FileField(upload_to='docs/', blank=True, null=True)     
 
 #tabla de responsivas
 class Equipment_Tools_Responsiva(models.Model):
@@ -915,13 +912,18 @@ class Equipment_Tools_Responsiva(models.Model):
     date_receipt = models.DateField(blank=True, null=True, verbose_name="Fecha de recibido")
     signature_almacen = models.FileField(upload_to='docs/Equipments_tools/signatures/', blank=True, null=True, verbose_name="Firma de almacen")
     comments = models.CharField(blank=True, null=True, max_length=300, default='Regular', verbose_name="Comentarios")
-    status_modified = models.BooleanField(default=False, verbose_name="Estado modificado")  # Campo para rastrear modificaciones del estado
+    status_modified = models.BooleanField(default=False, verbose_name="Estado modificado") 
+    # responsible_almacen 
+    status_modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='equipment_tools_responsiva_status_modified', verbose_name="Responsable de almacén")
+    reason_date_change = models.TextField(blank=True, null=True, verbose_name="Motivo por el cambio de fecha")
+
     email_responsiva = models.BooleanField(default=False)
     email_responsiva_aceptada = models.BooleanField(default=False)
     email_responsiva_next = models.BooleanField(default=False)
     email_responsiva_late = models.BooleanField(default=False)
     email_responsiva_date = models.BooleanField(default=False)
-
+    email_responsiva_cancelada = models.BooleanField(default=False)
+    fecha_registro = models.DateTimeField(blank=True, null=True, verbose_name="Fecha de registro")
 
 # tabla de desglose de informacion de un equipo o herramienta
 class Equipments_Tools_Detail(models.Model):
@@ -931,10 +933,14 @@ class Equipments_Tools_Detail(models.Model):
     identifier = models.CharField(max_length=255, unique=True)  
     responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal", blank=True, null=True)
     assignment_date = models.DateField(blank=True, null=True, verbose_name="Fecha de asignación")
+    modification_date = models.DateTimeField(blank=True, null=True, verbose_name="Fecha de activacion")
+    user_modification = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="Usuario que realizó la modificación", blank=True, null=True, related_name="equipment_tools_modifications")
+    user_activation = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="Usuario que realizó la activación", blank=True, null=True, related_name="equipment_tools_activations")
     created_at = models.DateTimeField(auto_now_add=True)
     serial_number = models.CharField(max_length=255, unique=True, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_deactivated = models.BooleanField(default=False)
+    responsiva = models.ForeignKey(Equipment_Tools_Responsiva, on_delete=models.SET_NULL, blank=True, null=True, related_name="equipment_details", verbose_name="Responsiva")
     # informacion de baja
     DEACTIVATION_REASONS = [
         ("VENDIDO", "Vendido"),
@@ -950,7 +956,6 @@ class Equipments_Tools_Detail(models.Model):
 
     # ubicacion
     equipment_location = models.ForeignKey(Equipmets_Tools_locations, on_delete=models.SET_NULL, blank=True, null=True, related_name='equipment_tool_details', verbose_name="Ubicación")
-
     
     STATE_CHOICES = [
         ("DISPONIBLE", "Disponible"),
@@ -958,6 +963,10 @@ class Equipments_Tools_Detail(models.Model):
         ("BAJA", "Baja"),
     ]
     state = models.CharField(max_length=64, choices=STATE_CHOICES, default="DISPONIBLE", verbose_name="Estado del equipó")# Estado del equipo
+    evidence1_image = models.FileField(upload_to='docs/', blank=True, null=True)          
+    evidence2_image = models.FileField(upload_to='docs/', blank=True, null=True)          
+    photo = models.FileField(upload_to='docs/', blank=True, null=True)          
+
 
     class Meta:
         verbose_name = "Detalle de equipo o herramienta"
@@ -965,6 +974,23 @@ class Equipments_Tools_Detail(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.identifier}"
+
+#Tabla que guardara el contenido de cada registro de la tabla de responsiva(Equipment_Tools_Responsiva), pudiendo indentificar especificamente el equipo que se presto
+#será registro por equipo 
+class Detail_Responsiva(models.Model):
+    responsiva = models.ForeignKey(Equipment_Tools_Responsiva, on_delete=models.SET_NULL, blank=True, null=True, related_name="details_responsiva", verbose_name="Responsiva")
+    details_equipment_tool = models.ForeignKey(Equipments_Tools_Detail, on_delete=models.SET_NULL, blank=True, null=True, related_name="details_equipment", verbose_name="detalle del equipo")
+
+    # informacion de baja
+    STATUS_CHOICES = [
+        ("ASIGNADO", "Asignado"),
+        ("REGRESADO", "Regresado"),
+        ("BAJA", "Baja"),
+        ("NO DEVUELTO", "No devuelto"),
+        ("DAÑADO", "Dañado"),
+    ]
+    status_equipment_tool = models.CharField( max_length=20, choices=STATUS_CHOICES, blank=True, null=True, verbose_name="Motivo de baja")
+    
 
 class PlanHeader(models.Model):
     stripeClient = models.CharField(max_length=100, null="True", verbose_name="Stripe_cliente")

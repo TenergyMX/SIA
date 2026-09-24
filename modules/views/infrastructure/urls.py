@@ -18,7 +18,6 @@ urlpatterns = [
     path("update-infrastructure-item/", views.update_infrastructure_item),
     path("delete-infrastructure-item/", views.delete_infrastructure_item),
 
-
     #codigo qr
     path('generate_qr_infraestructure/<str:qr_type>/<int:itemId>/', views.generate_qr_infraestructure),
     path('check_qr_infraestructure/<int:itemId>/', views.check_qr_infraestructure),

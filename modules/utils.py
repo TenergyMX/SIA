@@ -431,80 +431,394 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         response["success"] = True
         response["data"] = []
 
+
+    # ============================================================
     # EQUIPO Y HERRAMIENTAS (Módulo 6)
+    # ============================================================
+
     if id_module == 6:
+
         area = uridecode(area.lower())
-        if rol in [1, 2, 3] or area == "almacen":
+
+        # OBTENER RESPONSIVAS SEGÚN ROL
+        if rol in [1, 2, 3] or area == "Almacen":
+
+
             obj_responsivas = Equipment_Tools_Responsiva.objects.filter(
-                company_id=company_id       
+                company_id=company_id
             )
+
         elif rol == 4:
+
+
             obj_responsivas = Equipment_Tools_Responsiva.objects.filter(
                 responsible_equipment=user_id
             )
 
+        # USUARIOS DE ALMACÉN
         qsUser = User_Access.objects.filter(
-            company__id=company_id, 
+            company__id=company_id,
             area__company__id=company_id,
-            area__name='Almacén'
+            area__name='Almacen'
         )
 
-        # Notificaciones de estado "Solicitado"
-        for responsiva in obj_responsivas.filter(status_equipment='Solicitado'):
+        recipient_emails = [
+            item.user.email
+            for item in qsUser
+            if item.user.email
+        ]
+
+
+        solicitadas = obj_responsivas.filter(
+            status_equipment='Solicitado'
+        )
+
+
+        for responsiva in solicitadas:
+
             response["data"].append({
                 "alert": "warning",
                 "icon": "<i class=\"fa-solid fa-exclamation-triangle fs-18\"></i>",
                 "title": "Equipo solicitado",
-                "text": f"El equipo '{responsiva.equipment_name.equipment_name}' está en estado 'Solicitado'.",
-                "link": f"/equipment/info/{responsiva.equipment_name.id}/"
+                "text": (
+                    f"El equipo "
+                    f"'{responsiva.equipment_name.equipment_name}' "
+                    f"está en estado 'Solicitado'."
+                ),
+                "link": (
+                    f"/responsiva/?responsiva_id={responsiva.id}"
+                )
             })
-            
-            recipient_emails = [item.user.email for item in qsUser]
+
+            # VALIDAR SI YA SE ENVIO EL CORREO
             if not responsiva.email_responsiva and recipient_emails:
+
                 message_data = {
-                    "title": f"Solicitud del equipo: {responsiva.equipment_name.equipment_name}",
-                    "body": f"El equipo <strong>{responsiva.equipment_name.equipment_name}</strong> ha sido solicitado por el empleado <strong>{responsiva.responsible_equipment.username}</strong>. Por favor, revisa la solicitud correspondiente."
+                    "title": (
+                        f"Solicitud del equipo: "
+                        f"{responsiva.equipment_name.equipment_name}"
+                    ),
+                    "body": (
+                        f"El equipo "
+                        f"<strong>"
+                        f"{responsiva.equipment_name.equipment_name}"
+                        f"</strong> "
+                        f"ha sido solicitado por el usuario "
+                        f"<strong>"
+                        f"{responsiva.responsible_equipment.username}"
+                        f"</strong>. "
+                        f"Por favor, revisa la solicitud correspondiente."
+                    )
                 }
-               
+
                 context_email = {
-                    "company": Company.objects.get(id=company_id).name,
-                    "subject": "Correo de notificación",
+                    "company": Company.objects.get(
+                        id=company_id
+                    ).name,
+                    "subject": "Solicitud de equipo pendiente",
                     "modulo": 6,
                     "submodulo": "Responsiva",
                     "item": responsiva.equipment_name.id,
                     "title": message_data["title"],
-                    "body": message_data["body"]
+                    "body": message_data["body"],
+                    "to": recipient_emails,  
                 }
+                
+                send_notification(context_email)
+                responsiva.email_responsiva = True
 
-        # Notificaciones cuando la solicitud es aceptada
-        for responsiva in obj_responsivas.filter(status_equipment__iexact='Aceptado'): 
+                responsiva.save(
+                    update_fields=["email_responsiva"]
+                )
+            
+        # NOTIFICACIONES CUANDO LA SOLICITUD ES ACEPTADA
+        aceptadas = obj_responsivas.filter(
+            status_equipment__iexact='Aceptado'
+        )
+
+        for responsiva in aceptadas:
+
             if not responsiva.email_responsiva_aceptada:
+
                 response["data"].append({
                     "alert": "success",
                     "icon": "<i class='fa-solid fa-check-circle fs-18'></i>",
                     "title": "Solicitud aceptada",
-                    "text": f"Tu solicitud del equipo '{responsiva.equipment_name.equipment_name}' ha sido aceptada.",
-                    "link": f"/equipment/info/{responsiva.equipment_name.id}/"
+                    "text": (
+                        f"Tu solicitud del equipo "
+                        f"'{responsiva.equipment_name.equipment_name}' "
+                        f"ha sido aceptada."
+                    ),
+                    "link": (
+                        f"/responsiva/?responsiva_id={responsiva.id}"
+                    )
                 })
 
                 message_data = {
                     "title": "Solicitud aceptada",
-                    "body": f"Tu solicitud del equipo <strong>{responsiva.equipment_name.equipment_name}</strong> ha sido aceptada."
+                    "body": (
+                        f"Tu solicitud del equipo "
+                        f"<strong>"
+                        f"{responsiva.equipment_name.equipment_name}"
+                        f"</strong> "
+                        f"ha sido aceptada. "
+                        f"Por favor, revisa la fecha programada "
+                        f"para la entrega."
+                    )
                 }
-                
+
                 context_email = {
-                    "company": Company.objects.get(id=company_id).name,
-                    "subject": "Correo de notificación",
+                    "company": Company.objects.get(
+                        id=company_id
+                    ).name,
+                    "subject": "Solicitud de equipo aceptada",
                     "modulo": 6,
                     "submodulo": "Responsiva",
                     "item": responsiva.equipment_name.id,
                     "title": message_data["title"],
-                    "body": message_data["body"]
+                    "body": message_data["body"],
+                    "to": [responsiva.responsible_equipment.email],
                 }
-        # Respuesta final
+
+                send_notification(context_email)
+
+                responsiva.email_responsiva_aceptada = True
+
+                responsiva.save(
+                    update_fields=["email_responsiva_aceptada"]
+                )
+
+        # NOTIFICACIONES CUANDO LA SOLICITUD ES CANCELADA
+
+        canceladas = Equipment_Tools_Responsiva.objects.filter(
+            company_id=company_id,
+            responsible_equipment_id=user_id,
+            status_equipment__iexact='Cancelado'
+        )
+
+        for responsiva in canceladas:
+            response["data"].append({
+                "alert": "danger",
+                "icon": (
+                    "<i class='fa-solid "
+                    "fa-circle-xmark fs-18'></i>"
+                ),
+                "title": "Solicitud cancelada",
+                "text": (
+                    f"La solicitud del equipo "
+                    f"'{responsiva.equipment_name.equipment_name}' "
+                    f"ha sido cancelada."
+                ),
+                "link": f"/responsiva/?responsiva_id={responsiva.id}"
+
+            })
+
+            if not responsiva.email_responsiva_cancelada:
+
+                message_data = {
+                    "title": "Solicitud de equipo cancelada",
+                    "body": (
+                        f"La solicitud del equipo "
+                        f"<strong>"
+                        f"{responsiva.equipment_name.equipment_name}"
+                        f"</strong> "
+                        f"ha sido cancelada. "
+                        f"Por favor, revisa la información de la "
+                        f"responsiva para consultar los detalles."
+                    )
+                }
+
+                context_email = {
+                    "company": Company.objects.get(
+                        id=company_id
+                    ).name,
+                    "subject": "Solicitud de equipo cancelada",
+                    "modulo": 6,
+                    "submodulo": "Responsiva",
+                    "item": responsiva.id,
+                    "title": message_data["title"],
+                    "body": message_data["body"],
+                    "to": [responsiva.responsible_equipment.email],
+                }
+
+                send_notification(context_email)
+
+                responsiva.email_responsiva_cancelada = True
+
+                responsiva.save(
+                    update_fields=[
+                        "email_responsiva_cancelada"
+                    ]
+                )
+                
+        # NOTIFICACIONES CUANDO LA ENTREGA ESTÁ RETRASADA
+
+        for responsiva in obj_responsivas.filter(
+            status_equipment__iexact='Aceptado'
+        ):
+
+            if (
+                responsiva.fecha_entrega
+                and responsiva.fecha_entrega < fecha_actual
+                and not responsiva.status_modified
+            ):
+
+                dias_retraso = (
+                    fecha_actual - responsiva.fecha_entrega
+                ).days
+
+                response["data"].append({
+                    "alert": "danger",
+                    "icon": "<i class='fa-solid fa-clock fs-18'></i>",
+                    "title": (
+                        f"Entrega retrasada "
+                        f"{dias_retraso} días"
+                    ),
+                    "text": (
+                        f"El equipo "
+                        f"'{responsiva.equipment_name.equipment_name}' "
+                        f"tiene una entrega retrasada."
+                    ),
+                    "link": (
+                        f"/responsiva/?responsiva_id={responsiva.id}"
+                    )
+                })
+
+                if not responsiva.email_responsiva_late:
+
+                    message_data = {
+                        "title": (
+                            f"Entrega retrasada: "
+                            f"{responsiva.equipment_name.equipment_name}"
+                        ),
+                        "body": (
+                            f"La entrega del equipo "
+                            f"<strong>"
+                            f"{responsiva.equipment_name.equipment_name}"
+                            f"</strong> "
+                            f"estaba programada para el día "
+                            f"<strong>"
+                            f"{responsiva.fecha_entrega}"
+                            f"</strong> "
+                            f"y actualmente presenta un retraso de "
+                            f"<strong>"
+                            f"{dias_retraso} días"
+                            f"</strong>. "
+                            f"Por favor, verifica el estado de la entrega."
+                        )
+                    }
+
+                    context_email = {
+                        "company": Company.objects.get(
+                            id=company_id
+                        ).name,
+                        "subject": (
+                            "Alerta: entrega de equipo retrasada"
+                        ),
+                        "modulo": 6,
+                        "submodulo": "Responsiva",
+                        "item": responsiva.equipment_name.id,
+                        "title": message_data["title"],
+                        "body": message_data["body"],
+                        "to": [responsiva.responsible_equipment.email],
+
+                    }
+
+                    send_notification(context_email)
+
+                    responsiva.email_responsiva_late = True
+
+                    responsiva.save(
+                        update_fields=["email_responsiva_late"]
+                    )
+
+        # NOTIFICACIÓN CUANDO LA ENTREGA ESTÁ PRÓXIMA
+        for responsiva in obj_responsivas.filter(
+            status_equipment__iexact='Aceptado'
+        ):
+
+            if responsiva.fecha_entrega:
+
+                dias_restantes = (
+                    responsiva.fecha_entrega - fecha_actual
+                ).days
+
+                if 0 <= dias_restantes <= 3:
+
+                    response["data"].append({
+                        "alert": "info",
+                        "icon": (
+                            "<i class='fa-solid "
+                            "fa-calendar-days fs-18'></i>"
+                        ),
+                        "title": (
+                            f"Entrega próxima en "
+                            f"{dias_restantes} días"
+                        ),
+                        "text": (
+                            f"El equipo "
+                            f"'{responsiva.equipment_name.equipment_name}' "
+                            f"está próximo a ser entregado."
+                        ),
+                        "link": (
+                            f"/responsiva/?responsiva_id={responsiva.id}"
+                        )
+                    })
+
+                    if not responsiva.email_responsiva_next:
+                        message_data = {
+                            "title": (
+                                f"Entrega próxima: "
+                                f"{responsiva.equipment_name.equipment_name}"
+                            ),
+                            "body": (
+                                f"La entrega del equipo "
+                                f"<strong>"
+                                f"{responsiva.equipment_name.equipment_name}"
+                                f"</strong> "
+                                f"está programada para el día "
+                                f"<strong>"
+                                f"{responsiva.fecha_entrega}"
+                                f"</strong>. "
+                                f"Faltan "
+                                f"<strong>"
+                                f"{dias_restantes} días"
+                                f"</strong> "
+                                f"para la entrega."
+                            )
+                        }
+
+                        context_email = {
+                            "company": Company.objects.get(
+                                id=company_id
+                            ).name,
+                            "subject": (
+                                "Recordatorio: "
+                                "entrega próxima de equipo"
+                            ),
+                            "modulo": 6,
+                            "submodulo": "Responsiva",
+                            "item": responsiva.equipment_name.id,
+                            "title": message_data["title"],
+                            "body": message_data["body"],
+                            "to": [responsiva.responsible_equipment.email],
+                        }
+
+                        send_notification(context_email)
+
+                        responsiva.email_responsiva_next = True
+
+                        responsiva.save(
+                            update_fields=["email_responsiva_next"]
+                        )
+
+        # RESPUESTA FINAL
         response["recordsTotal"] = len(response["data"])
         response["success"] = True
+
         return response
+
+
             
     # SERVICIOS (Módulo 5)
     elif id_module == 5:
@@ -540,14 +854,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": f"Recordatorio de Pago próximo: {pago.name_service_payment.name_service}",
                         "body": f"El servicio <strong>{pago.name_service_payment.name_service}</strong> tiene un pago próximo programado para el <strong>{pago.next_date_payment}</strong>. Por favor, realiza el pago correspondiente."
                     }
-                    # Send_Email(
-                    #     subject="Recordatorio de Pago de Servicio Próximo",
-                    #     recipient=recipient_emails_servicios,
-                    #     model_instance=pago,
-                    #     message_data=message_data,
-                    #     model_name=Payments_Services,
-                    #     field_to_update="email_payment"
-                    # )
 
                     context_email = {
                         "company": Company.objects.get(id=company_id).name,
@@ -558,7 +864,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": message_data["title"],
                         "body": message_data["body"]
                     }
-                    # send_notification(context_email)
                     print("Contexto del correo enviado (servicio próximo):", context_email)
 
             # Notificaciones para servicios con pago "no pagado"
@@ -576,7 +881,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                         "title": f"Recordatorio de Servicio No Pagado: {pago.name_service_payment.name_service}",
                         "body": f"El servicio <strong>{pago.name_service_payment.name_service}</strong> tiene un pago no realizado programado para el <strong>{pago.next_date_payment}</strong>. Por favor, realiza el pago correspondiente."
                     }
-                    
 
                     context_email = {
                         "company": Company.objects.get(id=company_id).name,
@@ -594,7 +898,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
 
     # VEHÍCULOS (Módulo 2)
     elif id_module == 2:
-        # area = uridecode(area.lower())
         # if area == "almacen":
         obj_vehicles = Vehicle.objects.filter(company_id=company_id).values().exclude(is_active=False)
         if rol not in roles_usuario:
@@ -1336,8 +1639,17 @@ def send_notification(context):
         else:
             # Obtener nombre del módulo
             modulo = Module.objects.get(pk=context["modulo"]).name
-            # print(modulo)
-            # print(context["company"])
+
+            print("\n================================================")
+            print("           SEND_NOTIFICATION")
+            print("================================================")
+            print("Context recibido:")
+            print(context)
+            print("Módulo:", modulo)
+            print("Empresa:", context["company"])
+            print("Submódulo:", context["submodulo"])
+            print("Item ID:", context["item"])
+            print("================================================")
             
 
             # Filtrar por empresa y módulo
@@ -1345,19 +1657,40 @@ def send_notification(context):
                 company__name=context["company"],
                 mods=modulo
             )
-            # print(emails.first().itemsID, type(emails.first().itemsID[0]))
-            # Filtrar por ID de ítem o comodín (0)
+
+            print("\n>>> Notification_System empresa + modulo")
+            print("Cantidad:", emails.count())
+
+            for registro in emails:
+                print(
+                    "ID:", registro.id,
+                    "| usuario:", registro.usuario,
+                    "| cats:", registro.cats,
+                    "| itemsID:", registro.itemsID
+                )
+
             emails = emails.filter(
                 Q(itemsID__contains=[context["item"]]) | Q(itemsID__contains=[0])
             )
-            # print(emails)
-            # print(context["submodulo"])
-            # print("-----------")
+            print("\n>>> Notification_System después de filtrar ITEM")
+            print("Cantidad:", emails.count())
+
+            for registro in emails:
+                print(
+                    "ID:", registro.id,
+                    "| usuario:", registro.usuario,
+                    "| cats:", registro.cats,
+                    "| itemsID:", registro.itemsID
+                )
+
             # Separar notificaciones generales y específicas
             emails_all = emails.filter(cats="todos")
             emails_one = emails.filter(cats=context["submodulo"])
-            # print(emails_all)
-            # print(emails_one)
+
+            print("\n>>> FILTRO CATEGORIA")
+            print("emails_all:", emails_all.count())
+            print("emails_one:", emails_one.count())
+
             emails_responsable = Vehicle.objects.filter(id=context["item"]).values_list('responsible__email', flat=True).distinct()
 
             # Unificar lista inicial
@@ -1366,18 +1699,14 @@ def send_notification(context):
                 list(emails_one.values_list("usuario", flat=True)) + 
                 list(emails_responsable)
             ))
-            # print("_____________________________-----")
-            # print(usuarios_raw)
+            
             destinatarios_finales = []
 
             for usuario_val in usuarios_raw:
-                # print(usuario_val)
                 
                 if es_correo_valido(usuario_val):
-                    # Es correo, lo agregamos directo
                     destinatarios_finales.append(usuario_val)
                 else:
-                    # Es un área, buscamos todos los usuarios de esa empresa y área
                     accesos = User_Access.objects.filter(
                         company__name=context["company"],
                         area__name=usuario_val
@@ -1390,8 +1719,10 @@ def send_notification(context):
             # Eliminar duplicados
             destinatarios_finales = list(set(destinatarios_finales))
 
-        # print("esto contiene los destinatarios finales:", destinatarios_finales)
-        
+        print("\n>>> DESTINATARIOS FINALES")
+        print(destinatarios_finales)
+        print("Cantidad:", len(destinatarios_finales))
+
         # Verificar si hay destinatarios
         if not destinatarios_finales:
             print("No hay destinatarios para esta notificación.")
@@ -1401,7 +1732,6 @@ def send_notification(context):
         from_email = settings.EMAIL_HOST_USER
         subject = context["title"]
         
-        # Color opcional
         header_color = context.get("color", "#A5C334")  
 
         html_content = f"""
@@ -1472,7 +1802,7 @@ def send_notification(context):
         email = EmailMultiAlternatives(subject, "", from_email, destinatarios_finales)
         email.attach_alternative(html_content, "text/html")
         email.send()
-        # print(f"Correo enviado correctamente a: {destinatarios_finales}")
+        print(f"Correo enviado correctamente a: {destinatarios_finales}")
     
     except Exception as e:
         print(f"Error al enviar el correo: {e}")
@@ -1525,26 +1855,16 @@ def Send_Email(subject, recipient, model_instance, message_data, model_name, fie
         # Enviar y verificar
         sent_count = email.send()
         if sent_count > 0:
-            # print(f"Correo enviado exitosamente a {recipient}.")
 
             # Actualizar el campo solo si se envió
             with transaction.atomic():
                 instance = model_name.objects.get(pk=model_instance.pk)
                 setattr(instance, field_to_update, True)
                 instance.save()
-            # print(f"Campo {field_to_update} actualizado correctamente.")
         else:
             print(f"No se pudo enviar el correo a {recipient}. No se actualiza el campo.")
 
-        # email.send()
-        # print("Correo enviado exitosamente.")
-
-        # Actualizar el campo de notificación en la base de datos
-        # with transaction.atomic():
-        #     instance = model_name.objects.get(pk=model_instance.pk)
-        #     setattr(instance, field_to_update, True)
-        #     instance.save()
-        # print(f"Campo {field_to_update} actualizado correctamente.")
+       
 
     except model_name.DoesNotExist:
         print("No se encontró un registro correspondiente en la base de datos.")
