@@ -2,11 +2,11 @@
 
 from django.db import migrations, models
 
-
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('modules', '0106_vehicles_responsivas_pdf_vehiculo'),
+        ('modules', '0101_vehicles_responsivas'),
+        ('modules', '0089_computersystem_interval_maintenance'),
     ]
 
     operations = [

@@ -977,19 +977,19 @@ class Equipments_Tools_Detail(models.Model):
 
 #Tabla que guardara el contenido de cada registro de la tabla de responsiva(Equipment_Tools_Responsiva), pudiendo indentificar especificamente el equipo que se presto
 #será registro por equipo 
-# class Detail_Responsiva(models.Model):
-#     responsiva = models.ForeignKey(Equipment_Tools_Responsiva, on_delete=models.SET_NULL, blank=True, null=True, related_name="details_responsiva", verbose_name="Responsiva")
-#     details_equipment_tool = models.ForeignKey(Equipments_Tools_Detail, on_delete=models.SET_NULL, blank=True, null=True, related_name="details_equipment", verbose_name="detalle del equipo")
+class Detail_Responsiva(models.Model):
+    responsiva = models.ForeignKey(Equipment_Tools_Responsiva, on_delete=models.SET_NULL, blank=True, null=True, related_name="details_responsiva", verbose_name="Responsiva")
+    details_equipment_tool = models.ForeignKey(Equipments_Tools_Detail, on_delete=models.SET_NULL, blank=True, null=True, related_name="details_equipment", verbose_name="detalle del equipo")
 
-#     # informacion de baja
-#     STATUS_CHOICES = [
-#         ("ASIGNADO", "Asignado"),
-#         ("REGRESADO", "Regresado"),
-#         ("BAJA", "Baja"),
-#         ("NO DEVUELTO", "No devuelto"),
-#         ("DAÑADO", "Dañado"),
-#     ]
-#     status_equipment_tool = models.CharField( max_length=20, choices=STATUS_CHOICES, blank=True, null=True, verbose_name="Motivo de baja")
+    # informacion de baja
+    STATUS_CHOICES = [
+        ("ASIGNADO", "Asignado"),
+        ("REGRESADO", "Regresado"),
+        ("BAJA", "Baja"),
+        ("NO DEVUELTO", "No devuelto"),
+        ("DAÑADO", "Dañado"),
+    ]
+    status_equipment_tool = models.CharField( max_length=20, choices=STATUS_CHOICES, blank=True, null=True, verbose_name="Motivo de baja")
     
 
 class PlanHeader(models.Model):
