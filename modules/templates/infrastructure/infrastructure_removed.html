@@ -4,14 +4,14 @@
 {% block content %}
 <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
     <h1 class="page-title fw-semibold fs-18 mb-0">
-        Categorías de Infraestructura
-    </h1> 
+        Activos Eliminados de Infraestructura
+    </h1>
     <div class="ms-md-1 ms-0">
         <nav>
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item">Infraestructura</li>
                 <li class="breadcrumb-item active" aria-current="page">
-                    Categorias de infraestructura
+                   Activos Eliminados de Infraestructura
                 </li>
             </ol>
         </nav>
@@ -23,14 +23,11 @@
         <div class="card custom-card">
             <div class="card-header justify-content-between">
                 <div class="card-title">
-                    Categorías de Infraestructura
+                    Activos Eliminados de Infraestructura
                 </div>
                 <div class="">
-                    <button type="button" class="btn btn-sm btn-primary" data-infrastructure-category="add-category" title="Agregar" aria-label="add">
-                        <i class="fa-solid fa-plus"></i>
-                        Agregar
-                    </button>
-                    <button type="button" class="btn btn-sm btn-info-light" data-infrastructure-category="refresh-table"
+                    
+                    <button type="button" class="btn btn-sm btn-info-light" data-infrastructure-item="refresh-table"
                         title="Refrescar tabla" aria-label="refresh">
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
@@ -38,7 +35,7 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive w-100">
-                    <table class="table table-bordered w-100" id="infraestructura-category-table">
+                    <table class="table table-bordered w-100" id="infraestructura-removed-table">
                         <thead></thead>
                         <tbody></tbody>
                         <tfoot></tfoot>
@@ -50,22 +47,16 @@
 </section>
 {% endblock %}
 
-
 {% block modals %}
-{% include "infrastructure/modals/mdl-crud-category.html" %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+
 {% endblock %}
 
 {% block head %} {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'assets/js/users/users.js' %}"></script>
-<script src="{% static 'assets/js/infrastructure/category.js' %}"></script>
-<script src="{% static 'assets/js/infrastructure/items.js' %}"></script>
+<script src="{% static 'assets/js/infrastructure/infrastructure_removed.js' %}"></script>
 
 
-<script>
-    const categoria = new InfrastructureCategory({
-        table: { id: "#infraestructura-category-table" }
-    });
-</script>
 {% endblock %}

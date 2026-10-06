@@ -55,7 +55,7 @@ def equipments_and_tools(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-#permisos para agregar categorias
+    #permisos para agregar categorias
     context["area"] = context["area"]["name"].lower()
     context["create"] = access["data"]["access"]["create"]
     context["tipo_user"] = context["role"]["name"].lower
@@ -63,7 +63,7 @@ def equipments_and_tools(request):
 
     template = "equipments-and-tools/equipments_and_tools.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
-    
+
 #submodulo de equipos y herramientas
 @login_required
 def equipments_tools(request):
@@ -2469,14 +2469,6 @@ def equipment_tools_responsiva_pdf_view(request, responsiva_id):
 
         detalle = detalle_responsiva.details_equipment_tool
 
-
-        print("==========================================")
-        print("RESPONSIVA:", responsiva.id)
-        print("DETAIL RESPONSIVA ID:", detalle_responsiva.id)
-        print("DETALLE EQUIPO ID:", detalle.id)
-        print("IDENTIFICADOR:", detalle.identifier)
-        print("STATUS DETAIL RESPONSIVA:", detalle_responsiva.status_equipment_tool)
-        print("STATE EQUIPO:", detalle.state)
 
         detalles.append({
             "id": detalle.id,

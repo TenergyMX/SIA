@@ -20,49 +20,49 @@ function table_item_maintenance() {
             { title: "Fecha", data: "date", className: "toggleable" },
             { title: "Costo", data: "cost", className: "toggleable" },
             { title: "Proveedor", data: "provider__name", className: "toggleable" },
+
             {
-                title: "Status",
+                title: "Estado",
                 data: "status",
                 render: function (data, type, row) {
-                    // Verificar si la fecha ya pasó y el estado no es "Proceso" o "Finalizado"
                     var currentDate = new Date();
                     var maintenanceDate = new Date(row.date);
-                    var status = data;
 
-                    // Si la fecha ya pasó y el estado no es "Proceso" o "Finalizado", marcar como "Retrasado"
+                    var status = (data || "").toUpperCase();
+
                     if (
                         maintenanceDate < currentDate &&
-                        status !== "Proceso" &&
-                        status !== "Finalizado"
+                        status !== "PROCESO" &&
+                        status !== "FINALIZADO"
                     ) {
-                        status = "Retrasado"; // Marcamos como Retrasado
+                        status = "RETRASADO";
                     }
 
-                    // Generar el select con el estado actual y la clase 'status-mantenance'
+                    var statusText = {
+                        NUEVO: "Nuevo",
+                        PROXIMO: "Programado",
+                        PROCESO: "Proceso",
+                        REAGENDADO: "Reagendado",
+                        FINALIZADO: "Finalizado",
+                        RETRASADO: "Retrasado",
+                    };
+
+                    var statusClass = {
+                        NUEVO: "bg-primary",
+                        PROXIMO: "bg-warning",
+                        PROCESO: "bg-warning",
+                        REAGENDADO: "bg-secondary",
+                        FINALIZADO: "bg-success",
+                        RETRASADO: "bg-danger",
+                    };
+
                     return `
-                        <select class="form-select form-select-sm d-inline-block float-end action-item status-mantenance" data-id="${
-                            row.id
-                        }">
-                            <option value="Nuevo" ${
-                                status === "NUEVO" ? "selected" : ""
-                            }>Nuevo</option>
-                            <option value="Próximo" ${
-                                status === "PROXIMO" ? "selected" : ""
-                            }>Programado</option>
-                            <option value="Proceso" ${
-                                status === "PROCESO" ? "selected" : ""
-                            }>Proceso</option>
-                            <option value="Reagendado" ${
-                                status === "REAGENDADO" ? "selected" : ""
-                            }>Reagendado</option>
-                            <option value="Finalizado" ${
-                                status === "FINALIZADO" ? "selected" : ""
-                            }>Finalizado</option>
-                            <option value="Retrasado" ${
-                                status === "RETRASADO" ? "selected" : ""
-                            }>Retrasado</option>
+                        <span class="badge ${statusClass[status] || "bg-warning"}">
+                            ${statusText[status] || status}
+                        </span>
                     `;
                 },
+                className: "toggleable",
             },
 
             {
@@ -493,23 +493,6 @@ function delete_maintenance_infraestructure(boton) {
     });
 }
 
-// $(document).on("click", "[data-maintenance-action='view-maintenance']", function () {
-//     let id = $(this).data("id");
-
-//     $.ajax({
-//         url: `/get_maintenance_detail/${id}/`,
-//         type: "GET",
-//         success: function (response) {
-//             if (response.success) {
-//                 mostrarDetallesInfraestructura(response.data);
-//             }
-//         },
-//         error: function () {
-//             alert("Error al obtener los detalles del mantenimiento.");
-//         },
-//     });
-// });
-
 // Manejar el cambio de estado en el select con la clase 'status-mantenance'
 $(document).on("change", ".status-mantenance", function () {
     var newStatus = $(this).val();
@@ -570,7 +553,7 @@ $(document).on("click", '[data-maintenance-action="view-maintenance"]', function
         if (response.detail_html && response.maintenance_html) {
             // Cargar info en los bloques correspondientes
             $(".info-details .col-md-4").html(response.detail_html);
-            $(".info-details .col-md-8").find(".card.mb-3").next().remove(); // Limpia mantenimiento anterior
+            $(".info-details .col-md-8").find(".card.mb-3").next().remove();
             $(".info-details .col-md-8").append(response.maintenance_html);
             hideShow("#v-deliverie-pane .info", "#v-deliverie-pane .info-details");
         } else {
@@ -633,25 +616,38 @@ function update_status_man() {
 
 function handleFileChange(input) {
     const files = input.files;
+
+    const $btnArchivo = $("#btn_ver_comprobante");
+
     if (files.length > 0) {
         const file = files[0];
 
-        // Validar si es una imagen
-        if (file.type.startsWith("image/")) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                $("#preview_comprobante").attr("src", e.target.result).show();
-            };
-            reader.readAsDataURL(file);
-        } else {
-            $("#preview_comprobante").hide().attr("src", "");
-            alert("Por favor selecciona un archivo de imagen válido.");
+        const esPDF = file.type === "application/pdf";
+        const esImagen = file.type.startsWith("image/");
+
+        if (!esPDF && !esImagen) {
+            alert("Por favor selecciona un archivo PDF o una imagen válida.");
+
+            $(input).val("");
+
+            $btnArchivo.hide().attr("href", "#");
+
+            $("#form_maintenance_infraestructure_info .action-item").attr("disabled", true);
+
+            return;
         }
+
+        //const fileURL = URL.createObjectURL(file);
+        //$btnArchivo.attr("href", fileURL).show();
+
         $("#form_maintenance_infraestructure_info .action-item").removeAttr("disabled");
     } else {
+        $btnArchivo.hide().attr("href", "#");
+
         $("#form_maintenance_infraestructure_info .action-item").each(function () {
             $(this).find("option:first").prop("selected", true);
         });
+
         $("#form_maintenance_infraestructure_info .action-item").attr("disabled", true);
     }
 }

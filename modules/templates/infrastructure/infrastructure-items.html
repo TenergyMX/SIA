@@ -4,14 +4,14 @@
 {% block content %}
 <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
     <h1 class="page-title fw-semibold fs-18 mb-0">
-        Items
+        Registros de Infraestructura
     </h1>
     <div class="ms-md-1 ms-0">
         <nav>
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item">Infraestructura</li>
                 <li class="breadcrumb-item active" aria-current="page">
-                    Items
+                   Registro de Infraestructura
                 </li>
             </ol>
         </nav>
@@ -23,10 +23,10 @@
         <div class="card custom-card">
             <div class="card-header justify-content-between">
                 <div class="card-title">
-                    Items de Categorias
+                    Registro de Infraestructura
                 </div>
                 <div class="">
-                    <button type="button" class="btn btn-sm btn-primary" data-infrastructure-item="add-item" title="Agregar usuario" aria-label="add">
+                    <button type="button" class="btn btn-sm btn-primary" data-infrastructure-item="add-item" title="Agregar categoría" aria-label="add">
                         <i class="fa-solid fa-plus"></i>
                         Agregar
                     </button>
@@ -58,7 +58,8 @@
 {% include "infrastructure/modals/mdl-crud-item-location.html" %}
 {% include "infrastructure/modals/mdl-crud-detaill.html" %}
 {% include "infrastructure/modals/mdl-crud-responsable.html" %}
-
+{% include "infrastructure/modals/mdl-crud-photo-infraestructure.html" %}
+{% include "infrastructure/modals/mdl-crud-disable-infrastructure.html" %}
 {% endblock %}
 
 {% block head %} {% endblock %}

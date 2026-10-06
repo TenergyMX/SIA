@@ -1585,7 +1585,7 @@ function cambiarEstadoEquipmentTool(id, action) {
     });
 }
 
-// HABILITAR EQUIPO O HERRAMIENTA
+//DESHABILITAR EQUIPO O HERRAMIENTA
 function cambiarEstadoEquipmentTool(id, action) {
     console.log("Cambiando estado del detalle:", id);
     console.log("Acción:", action);

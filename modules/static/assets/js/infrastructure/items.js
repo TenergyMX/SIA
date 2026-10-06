@@ -189,13 +189,13 @@ class InfrastructureItem {
                     break;
                 case "update-item":
                     var fila = $(this).closest("tr");
-                    var datos = self.tbl_infraesstructure_items.row(fila).data(); // <-- Primero se obtiene
+                    var datos = self.tbl_infraesstructure_items.row(fila).data();
 
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
                     obj_modal.find(".modal-header").html("Actualizar item de infraestructura");
 
-                    get_items_locations(datos["location_id"]); // <-- Ya tienes datos["location_id"]
+                    get_items_locations(datos["location_id"]); //
 
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='update']").show();
@@ -219,16 +219,27 @@ class InfrastructureItem {
                     var data = new FormData();
 
                     data.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
+
                     data.append("id", datos["id"]);
 
                     deleteItem(url, data)
                         .then((message) => {
-                            Swal.fire("Exito", message, "success");
+                            Swal.fire({
+                                title: "Éxito",
+                                text: message,
+                                icon: "success",
+                            });
+
                             self.tbl_infraesstructure_items.ajax.reload();
                         })
                         .catch((error) => {
-                            Swal.fire("Error", error, "error");
+                            Swal.fire({
+                                title: "Error",
+                                text: error,
+                                icon: "error",
+                            });
                         });
+
                     break;
 
                 default:
@@ -353,15 +364,18 @@ function add_item_location() {
         data: formData,
         contentType: false,
         processData: false,
+
         success: function (response) {
             // Verifica la respuesta
             if (response.success) {
                 $("#form_item_location")[0].reset();
-                $("#mdl-crud-item-location").modal("hide"); // Cierra el modal
+                $("#mdl-crud-item-location").modal("hide");
 
                 // Actualiza el select de ubicaciones
                 var select = $("#item_location");
+
                 var newOption = new Option(response.new_location.name, response.new_location.id);
+
                 select.append(newOption);
 
                 Swal.fire({
@@ -378,88 +392,45 @@ function add_item_location() {
                 });
             }
         },
+
         error: function (xhr, status, error) {
             console.error("Error al guardar la ubicación:", error);
+
+            console.error("Respuesta del servidor:", xhr.responseJSON);
+
+            var message = "Hubo un error al guardar la ubicación. Intenta nuevamente.";
+
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+
             Swal.fire({
                 title: "¡Error!",
-                text: "Hubo un error al guardar la ubicación. Intenta nuevamente.",
+                text: message,
                 icon: "error",
             });
         },
+
         beforeSend: function (xhr) {
             xhr.setRequestHeader("X-CSRFToken", $('input[name="csrfmiddlewaretoken"]').val());
         },
     });
 }
 
+//Tabla de desglose de cada activo registrado
 $(document).on("click", "button[data-infrastructure-item='view-identifiers']", function () {
-    console.log("entramos a la funcion de ver identificadores");
-    console.log("este es eñ id del boton", $(this).data("id"));
     const itemId = $(this).data("id");
 
+    // Guardar el ID del activo
     $("#mdl-crud-detaill").data("item-id", itemId);
 
-    $.ajax({
-        url: "/get_infrastructure_item_details/",
-        method: "GET",
-        data: { id: itemId },
+    // Cargar información
+    cargarDetallesInfraestructura(itemId);
 
-        success: function (response) {
-            if (response.success) {
-                const table = $("#item-detail-table");
-
-                if ($.fn.DataTable.isDataTable(table)) {
-                    table.DataTable().destroy();
-                }
-
-                const tbody = table.find("tbody");
-                tbody.empty();
-
-                response.data.forEach((item) => {
-                    const responsableHTML = item.tiene_responsable
-                        ? `<span>${item.responsable}</span>
-                        <button class="btn btn-sm btn-warning ms-2 assign-responsible" data-id="${item.id}" data-responsable-id="${item.responsable_id}">
-                            <i class="fas fa-user-edit me-1"></i> Editar responsable
-                        </button>`
-                        : `<button class="btn btn-sm btn-primary assign-responsible" data-id="${item.id}">
-                            <i class="fas fa-user-plus me-1"></i> Asignar responsable
-                        </button>`;
-
-                    const fechaHTML =
-                        item.fecha_asignacion !== ""
-                            ? item.fecha_asignacion
-                            : `<span class="text-muted">Sin fecha</span>`;
-
-                    const qrHTML = item.btn_qr || "";
-
-                    tbody.append(`
-                        <tr>
-                            <td>${item.id}</td>
-                            <td>${item.identificador}</td>
-                            <td>${responsableHTML}</td>
-                            <td>${fechaHTML}</td>
-                            <td>${qrHTML}</td>
-                        </tr>
-                    `);
-                });
-
-                // Inicializa DataTables con traducción en español
-                table.DataTable({
-                    responsive: true,
-                    autoWidth: false,
-                    language: {
-                        url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-                    },
-                });
-
-                $("#mdl-crud-detaill").modal("show");
-            } else {
-                alert("No se pudieron obtener los detalles.");
-            }
-        },
-    });
+    $("#mdl-crud-detaill").modal("show");
 });
 
+//mostrar modal para asignar responsable
 $(document).on("click", ".assign-responsible", function () {
     const id = $(this).data("id");
     const responsableId = $(this).data("responsable-id");
@@ -478,10 +449,10 @@ $(document).on("click", ".assign-responsible", function () {
             select.append(`<option value="${u.id}" ${selected}>${u.name}</option>`);
         });
     });
-
     $("#mdl-crud-responsable").modal("show");
 });
 
+//Asignar responsable
 $("#formAsignarResponsable").submit(function (e) {
     e.preventDefault();
 
@@ -507,46 +478,10 @@ $("#formAsignarResponsable").submit(function (e) {
                     icon: "success",
                     timer: 1500,
                 });
-                // Volver a cargar los datos
+                // Volver a cargar la tabla de informacion
                 const itemId = $("#mdl-crud-detaill").data("item-id");
                 if (itemId) {
-                    $.ajax({
-                        url: "/get_infrastructure_item_details/",
-                        method: "GET",
-                        data: { id: itemId },
-                        success: function (response) {
-                            if (response.success) {
-                                const tbody = $("#mdl-crud-detaill tbody");
-                                tbody.empty();
-
-                                response.data.forEach((item) => {
-                                    const responsableHTML = item.tiene_responsable
-                                        ? `<span>${item.responsable}</span>
-                                        <button class="btn btn-sm btn-warning ms-2 assign-responsible" data-id="${item.id}" data-responsable-id="${item.responsable_id}">
-                                            <i class="fas fa-user-edit me-1"></i> Editar responsable
-                                        </button>`
-                                        : `<button class="btn btn-sm btn-primary assign-responsible" data-id="${item.id}">
-                                            <i class="fas fa-user-plus me-1"></i> Asignar responsable
-                                        </button>`;
-
-                                    const fechaHTML =
-                                        item.fecha_asignacion !== ""
-                                            ? item.fecha_asignacion
-                                            : `<span class="text-muted">Sin fecha</span>`;
-
-                                    tbody.append(`
-                                        <tr>
-                                            <td>${item.id}</td>
-                                            <td>${item.identificador}</td>
-                                            <td>${responsableHTML}</td>
-                                            <td>${fechaHTML}</td>
-                                            <td>${item.btn_qr || ""}</td>
-                                        </tr>
-                                    `);
-                                });
-                            }
-                        },
-                    });
+                    cargarDetallesInfraestructura(itemId);
                 }
             } else {
                 Swal.fire({
@@ -567,16 +502,505 @@ $("#formAsignarResponsable").submit(function (e) {
     });
 });
 
-$(document).on("click", ".generate-qr", function () {
-    const itemId = $(this).data("id");
+// Mostrar formulario para agregar fotografia
+$(document).on("click", ".assign-photo-infraestructure", function () {
+    const id = $(this).data("id");
+    const photo_infraestructure = $(this).data("photo-infraestructure");
 
-    $("#infra-item-id").val(itemId);
+    console.log("ID del detalle:", id);
+    console.log("Fotografía actual:", photo_infraestructure);
 
-    $("#mdl-crud-qr")
-        .modal({
-            backdrop: false,
-            focus: true,
-            keyboard: true,
-        })
-        .css("z-index", 1065);
+    $("#detalle_photo_id").val(id);
+
+    const modalTitle = photo_infraestructure ? "Editar Fotografía" : "Asignar Fotografía";
+
+    $("#modalPhotoInfraestructure").text(modalTitle);
+
+    $("#mdl-crud-photo-infraestructure").modal("show");
+});
+
+// Guardar una fotografía del activo
+$(document).on("submit", "#formPhotoInfraestructure", function (e) {
+    e.preventDefault();
+
+    console.log("Entramos a guardar una fotografía");
+
+    const form = this;
+    const formData = new FormData(form);
+
+    console.log("Detalle ID:", formData.get("detalle_id"));
+    console.log("Fotografía:", formData.get("photo"));
+
+    Swal.fire({
+        title: "Guardando fotografía...",
+        text: "Espera un momento.",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
+    $.ajax({
+        url: "/save_photo_infrastructure/",
+        type: "POST",
+
+        data: formData,
+
+        processData: false,
+        contentType: false,
+
+        success: function (response) {
+            console.log("Respuesta guardar fotografía:", response);
+
+            if (response.success) {
+                $("#mdl-crud-photo-infraestructure").modal("hide");
+
+                form.reset();
+                const itemId = $("#mdl-crud-detaill").data("item-id");
+
+                if (itemId) {
+                    cargarDetallesInfraestructura(itemId);
+                }
+
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message,
+                    icon: "error",
+                });
+            }
+        },
+
+        error: function (xhr, status, error) {
+            console.error("Error al guardar la fotografía:", error);
+
+            console.error("Respuesta del servidor:", xhr.responseText);
+
+            Swal.fire({
+                title: "¡Error!",
+                text: "No se pudo guardar la fotografía.",
+                icon: "error",
+            });
+        },
+    });
+});
+
+//Función para cargar el desglose de cada registro
+function cargarDetallesInfraestructura(itemId) {
+    Swal.fire({
+        title: "Cargando información...",
+        text: "Espera un momento.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: function () {
+            Swal.showLoading();
+        },
+    });
+
+    $.ajax({
+        url: "/get_infrastructure_item_details/",
+        method: "GET",
+
+        data: {
+            id: itemId,
+        },
+
+        success: function (response) {
+            console.log("RESPUESTA GET DETALLES:", response);
+
+            if (!response.success) {
+                alert("No se pudieron obtener los detalles.");
+                return;
+            }
+
+            const table = $("#item-detail-table");
+
+            if ($.fn.DataTable.isDataTable(table)) {
+                table.DataTable().destroy();
+            }
+
+            table.DataTable({
+                destroy: true,
+                processing: true,
+                responsive: true,
+                autoWidth: false,
+
+                data: response.data,
+
+                columns: [
+                    {
+                        title: "Id",
+                        data: "id",
+                    },
+
+                    {
+                        title: "Identificador",
+                        data: "identificador",
+                    },
+
+                    {
+                        title: "Fecha de asignación",
+                        data: "fecha_asignacion",
+
+                        render: function (data, type, row) {
+                            return data !== ""
+                                ? data
+                                : `
+                                    <span class="text-muted">
+                                        Sin fecha
+                                    </span>
+                                `;
+                        },
+                    },
+
+                    {
+                        title: "Responsable",
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+
+                        render: function (data, type, row) {
+                            if (!row.is_active) {
+                                if (row.tiene_responsable) {
+                                    return `
+                                        <span>
+                                            ${row.responsable}
+                                        </span>
+                                    `;
+                                }
+
+                                return `
+                                    <span class="text-muted">
+                                        Sin responsable
+                                    </span>
+                                `;
+                            }
+
+                            if (row.tiene_responsable) {
+                                return `
+                                    <span>
+                                        ${row.responsable}
+                                    </span>
+
+                                    <button
+                                        class="btn btn-sm btn-warning ms-2 assign-responsible"
+                                        data-id="${row.id}"
+                                        data-responsable-id="${row.responsable_id}">
+
+                                        <i class="fas fa-user-edit me-1"></i>
+                                        Editar responsable
+
+                                    </button>
+                                `;
+                            } else {
+                                return `
+                                    <button
+                                        class="btn btn-sm btn-primary assign-responsible"
+                                        data-id="${row.id}">
+
+                                        <i class="fas fa-user-plus me-1"></i>
+                                        Asignar responsable
+
+                                    </button>
+                                `;
+                            }
+                        },
+                    },
+
+                    // FOTOGRAFÍA
+                    {
+                        title: "Fotografía",
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+
+                        render: function (data, type, row) {
+                            // EQUIPO DESACTIVADO
+                            if (!row.is_active) {
+                                // Si tiene fotografía, solo mostrarla
+                                if (row.fotografia) {
+                                    return `
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            ${row.fotografia}
+                                        </div>
+                                    `;
+                                }
+
+                                // Si no tiene fotografía
+                                return `
+                                    <span class="text-muted">
+                                        Sin fotografía
+                                    </span>
+                                `;
+                            }
+
+                            // EQUIPO ACTIVO
+                            if (row.fotografia) {
+                                return `
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+
+                                        ${row.fotografia}
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-warning assign-photo-infraestructure"
+                                            data-id="${row.id}"
+                                            title="Editar fotografía">
+
+                                            <i class="fa-regular fa-pen-to-square"></i>
+
+                                        </button>
+
+                                    </div>
+                                `;
+                            } else {
+                                return `
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-info-light assign-photo-infraestructure"
+                                        data-id="${row.id}"
+                                        title="Asignar fotografía">
+
+                                        <i class="fa-solid fa-file-circle-plus"></i>
+
+                                    </button>
+                                `;
+                            }
+                        },
+                    },
+
+                    // ACCIONES
+                    {
+                        title: "Acciones",
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+
+                        render: function (data, type, row) {
+                            if (row.is_active) {
+                                // ACTIVO → DESHABILITAR
+                                return `
+                                    <button
+                                        type="button"
+                                        class="btn btn-icon btn-sm btn-danger-light toggle-infrastructure-detail"
+                                        data-id="${row.id}"
+                                        data-action="disable"
+                                        title="Deshabilitar">
+
+                                        <i class="fa-solid fa-ban"></i>
+
+                                    </button>
+                                `;
+                            } else {
+                                // DESHABILITADO
+                                return `
+                                    <span
+                                        class="badge bg-danger-transparent text-danger"
+                                        title="Activo desactivado">
+
+                                        <i class="fa-solid fa-ban me-1"></i>
+                                        Desactivado
+
+                                    </span>
+                                `;
+                            }
+                        },
+                    },
+                ],
+
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+                },
+
+                pageLength: 10,
+            });
+            Swal.close();
+        },
+
+        error: function (xhr, error, thrown) {
+            console.error("Error al obtener los detalles:", error);
+
+            alert("No se pudieron cargar los detalles de la infraestructura.");
+        },
+    });
+}
+
+//Abrir el modal para editar fotografia de cada activo
+$(document).on("click", ".assign-photo-infraestructure", function () {
+    const id = $(this).data("id");
+    $("#detalle_photo_id").val(id);
+    $("#modalPhotoInfraestructure").text("Editar fotografía");
+    $("#individual_photo_infraestructure").val("");
+    $("#mdl-crud-photo-infraestructure").modal("show");
+});
+
+// Deshabilitar un activo de infraestructura (formulario)
+$(document).on("click", ".toggle-infrastructure-detail", function () {
+    const id = $(this).data("id");
+    const action = $(this).data("action");
+
+    // DESHABILITAR
+    if (action === "disable") {
+        $.ajax({
+            url: "/modal_infrastructure_detail/",
+            type: "GET",
+
+            data: {
+                id: id,
+            },
+            success: function (response) {
+                if (!response.success) {
+                    Swal.fire(
+                        "Error",
+                        response.message || "No se pudo obtener la información.",
+                        "error"
+                    );
+                    return;
+                }
+
+                $("#disable_detail_id").val(response.data.id);
+                $("#disable_identifier").val(response.data.identifier);
+                $("#disable_reason").val("");
+                $("#disable_description").val("");
+                $("#disable_infrastructure_image").val("");
+
+                $("#mdl-crud-enable-infrastructure").modal("show");
+            },
+
+            error: function (xhr) {
+                console.error("Error:", xhr.responseText);
+
+                Swal.fire("Error", "No se pudo obtener la información del equipo.", "error");
+            },
+        });
+
+        return;
+    }
+});
+
+// Dar de baja un activo de infraestructura
+$(document).on("submit", "#formdisableInfrastructure", function (e) {
+    e.preventDefault();
+
+    const form = this;
+    const formData = new FormData(form);
+
+    formData.append("action", "disable");
+
+    const detailId = $("#disable_detail_id").val();
+
+    Swal.fire({
+        title: "Guardando información...",
+        text: "Espera un momento.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: function () {
+            Swal.showLoading();
+        },
+    });
+
+    $.ajax({
+        url: "/disable_infrastructure_detail/",
+
+        type: "POST",
+
+        data: formData,
+
+        processData: false,
+
+        contentType: false,
+
+        success: function (response) {
+            if (response.success) {
+                $("#mdl-crud-enable-infrastructure").modal("hide");
+
+                form.reset();
+
+                $("#image_preview1").attr("src", "").hide();
+
+                $("#image_preview2").attr("src", "").hide();
+
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+
+                const itemId = $("#mdl-crud-detaill").data("item-id");
+
+                if (itemId) {
+                    cargarDetallesInfraestructura(itemId);
+                }
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message || "No se pudo deshabilitar el activo.",
+                    icon: "error",
+                });
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error("Error al deshabilitar:", error);
+            console.error("Respuesta servidor:", xhr.responseText);
+
+            Swal.fire({
+                title: "¡Error!",
+                text: "Hubo un error al deshabilitar el activo.",
+                icon: "error",
+            });
+        },
+    });
+});
+
+// PREVISUALIZACIÓN EVIDENCIA 1
+document.getElementById("evidence1").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview1");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// PREVISUALIZACIÓN EVIDENCIA 2
+document.getElementById("evidence2").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview2");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
 });

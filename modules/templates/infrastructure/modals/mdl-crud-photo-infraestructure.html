@@ -1,0 +1,78 @@
+<div class="modal fade effect-scale" id="mdl-crud-photo-infraestructure" tabindex="-1" aria-labelledby="modalPhotoInfraestructure" aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+
+        <form id="formPhotoInfraestructure" enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h1
+                        class="modal-title fs-5"
+                        id="modalPhotoInfraestructure">
+                        Asignar Fotografía
+                    </h1>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <input
+                        type="hidden"
+                        id="detalle_photo_id"
+                        name="detalle_id"
+                    >
+
+                    <div class="col-md-12 placeholder-photo">
+
+                        <label
+                            for="individual_photo_infraestructure"
+                            class="form-label">
+                            Fotografía individual
+                        </label>
+
+                        <input
+                            type="file"
+                            id="individual_photo_infraestructure"
+                            name="photo"
+                            class="form-control"
+                            accept="image/png,image/jpeg,image/jpg"
+                        >
+
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button
+                        type="submit"
+                        class="btn btn-success">
+                        Guardar
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                        Cerrar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>

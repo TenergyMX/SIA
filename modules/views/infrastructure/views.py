@@ -95,13 +95,13 @@ def infrastructure_maintenance_view(request):
 # TODO --------------- [ REQUEST ] ----------
 
 def get_infrastructure_categorys(request):
-    response = { "status": "error", "message": "Sin procesar" }
+    response = { "status"   : "error", "message": "Sin procesar" }
     context = user_data(request)
     dt = request.GET
     subModule_id = 23
     isList = dt.get("isList", False)
     company_id = context["company"]["id"]
-    datos = Infrastructure_Category.objects.filter(empresa__id=company_id).distinct().values()
+    datos = Infrastructure_Category.objects.filter(empresa__id=company_id, is_active=True).distinct().values()
 
     if isList:
         datos = datos.values("id", "name", "short_name")
@@ -168,7 +168,6 @@ def add_infrastructure_item(request):
         )
         obj.save()
         _id = obj.id
-        print(f"Infrastructure_Item creado con ID: {_id}")
 
         # Guardar archivos en S3 si existen
         if 'technical_sheet' in request.FILES and request.FILES['technical_sheet']:
@@ -178,10 +177,8 @@ def add_infrastructure_item(request):
             new_name = f"technical_sheet_{_id}{extension}"
             s3_path = folder_path + new_name
 
-            print(f"Subiendo technical_sheet a: {s3_path}")
             upload_to_s3(load_file, bucket_name, s3_path)
             obj.technical_sheet = s3_path
-            print("Technical sheet subida exitosamente.")
 
         if 'invoice' in request.FILES and request.FILES['invoice']:
             load_file = request.FILES.get('invoice')
@@ -190,10 +187,8 @@ def add_infrastructure_item(request):
             new_name = f"invoice_{_id}{extension}"
             s3_path = folder_path + new_name
 
-            print(f"Subiendo invoice a: {s3_path}")
             upload_to_s3(load_file, bucket_name, s3_path)
             obj.invoice = s3_path
-            print("Invoice subida exitosamente.")
 
         if 'image' in request.FILES and request.FILES['image']:
             load_file = request.FILES.get('image')
@@ -202,15 +197,12 @@ def add_infrastructure_item(request):
             new_name = f"image_{_id}{extension}"
             s3_path = folder_path + new_name
 
-            print(f"Subiendo image a: {s3_path}")
             upload_to_s3(load_file, bucket_name, s3_path)
             obj.image = s3_path
-            print("Image subida exitosamente.")
 
         obj.save()
 
         generate_identificador(_id,company_id, cantidad)
-        print("Infrastructure_Item actualizado con rutas de archivos.")
 
         response["id"] = obj.id
         response["status"] = "success"
@@ -231,8 +223,6 @@ def generate_identificador(item_id, company_id, cantidad):
         base_name = item.name.replace(' ', '').upper()[:3]
         company_code = company.name.replace(' ', '').upper()[:3]
         prefix = f"{company_code}-{base_name}-"
-
-        print(f"Generando identificadores para {cantidad} items de '{item.name}'")
 
         # Buscar el último número usado con ese prefijo
         last_detail = (
@@ -256,7 +246,7 @@ def generate_identificador(item_id, company_id, cantidad):
                 item=item,
                 company=company,
                 name=item.name,
-                identifier=identifier
+                identifier=identifier, 
             )
             print(f"Identificador generado y guardado: {identifier}")
 
@@ -279,7 +269,7 @@ def get_infrastructure_items(request):
     category_name = dt.get("category_name", "Infraestructura de Seguridad")
     responsible_id = dt.get("responsible_id")
 
-    datos = Infrastructure_Item.objects.filter(company_id = company_id).values(
+    datos = Infrastructure_Item.objects.filter(company_id = company_id, is_active = True ).values(
         "id",
         "company_id", "company__name",
         "category_id", "category__name",
@@ -287,8 +277,9 @@ def get_infrastructure_items(request):
         "is_active", "start_date","technical_sheet",
         "invoice", "image",
         "location_id", "location__name",
-
     )
+
+
     if isList:
         datos = datos.filter(is_active = True).values("id", "category_id", "category__name", "name")
         if category_id:
@@ -462,24 +453,47 @@ def delete_infrastructure_item(request):
     response = {"status": "error", "message": "Sin procesar"}
     context = user_data(request)
     dt = request.POST
-    id = dt.get("id")
+    item_id = dt.get("id")
 
-    if id == None:
+    if not item_id:
         response["error"] = {"message": "Proporcione un id valido"}
         response["message"] = "Proporcione un id valido"
-        return JsonResponse(response)
+        return JsonResponse(response, status=400)
+
     try:
-        obj = Infrastructure_Item.objects.get(id = id)
+        obj = Infrastructure_Item.objects.get(id = item_id)
     except Infrastructure_Item.DoesNotExist:
         response["error"] = {"message": "El objeto no existe"}
         response["message"] = "El objeto no existe"
-        return JsonResponse(response)
-    else:
-        obj.delete()
-    response["success"] = True
-    response["status"] = "success"
-    response["message"] = "Eliminado correctamente"
-    return JsonResponse(response)
+        return JsonResponse(response, status=404)
+
+    # validar si el registro tiene desgloses activos 
+    has_details = InfrastructureItemDetail.objects.filter(
+        item=obj,
+        is_active=True
+    ).exists()
+
+    if has_details:
+        return JsonResponse({
+            'success': False,
+            'error': {
+                "message": (
+                    "No se puede desactivar este registro porque "
+                    "tiene registros activos en su desglose. "
+                    "Desactiva cada uno antes de desactivar el activo principal."
+                )
+            }
+        })
+
+    # si no tiene desglose desactivar
+    obj.is_active = False
+    obj.save(update_fields=['is_active'])
+
+    return JsonResponse({
+        'success': True, 
+        'message': 'Equipo desactivado correctamente'
+    })
+
 
 
 def add_infrastructure_category(request):
@@ -566,29 +580,56 @@ def update_infrastructure_category(request):
 
     return JsonResponse(response)
 
+
 def delete_infrastructure_category(request):
-    response = {"status": "error", "message": "Sin procesar"}
-    context = user_data(request)
-    dt = request.POST
-    id = dt.get("id")
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Método de solicitud inválido'
+        }, status=405)
+    
+    _id = request.POST.get('id')
 
-    if id == None:
-        response["error"] = {"message": "Proporcione un id valido"}
-        response["message"] = "Proporcione un id valido"
-        return JsonResponse(response)
-    try:
-        obj = Infrastructure_Category.objects.get(id = id)
-    except Infrastructure_Category.DoesNotExist:
-        response["error"] = {"message": "El objeto no existe"}
-        response["message"] = "El objeto no existe"
-        return JsonResponse(response)
-    else:
-        obj.delete()
-    response["success"] = True
-    response["status"] = "success"
-    response["message"] = "Eliminado correctamente"
-    return JsonResponse(response)
+    if not _id:
+        return JsonResponse({
+            'success': False,
+            'message': 'No se proporciono el Id de la categoría'
+        }, status=400)
 
+    try: 
+        category = Infrastructure_Category.objects.get(id=_id)
+
+    except Infrastructure_Category.DoesNotExist: 
+        return JsonResponse({
+            'success': False,
+            'message': 'La categoría no existe.'
+        }, status=404)
+
+    #validar que la categoria tiene una infraestructura registrada.
+    has_infraestructure = Infrastructure_Item.objects.filter(
+        category=category,
+        is_active=True
+    ).exists()
+
+    if has_infraestructure:
+        return JsonResponse({
+            'success': False,
+            'error':{
+                'message': ( 
+                    'No se puede eliminar esta categoría porque tiene infraestructura registrada'
+                )
+            }
+        })
+
+
+    # Desactivar la categoría
+    category.is_active = False
+    category.save(update_fields=['is_active'])
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Categoría eliminada correctamente.'
+    })
 
 
 def check_qr_infraestructure(request, itemId):
@@ -743,24 +784,26 @@ def add_item_location(request):
     if request.method == 'POST':
         try:
             name = request.POST.get('name')
-            company_id = request.POST.get('company')
-
-            print(f"Nombre de ubicación: {name}, ID de empresa: {company_id}")
-
-            if not name or not company_id:
+            if not name:
                 return JsonResponse({'success': False, 'message': 'Los campos son requeridos.'}, status=400)
+            #Obtener la empresa del usuario 
+            context = user_data(request) 
+            company_id = context["company"]["id"] 
+
+            company = get_object_or_404(
+                Company,
+                id=company_id,
+            )
 
             # Verificar que no exista una ubicación con el mismo nombre
-            if Items_locations.objects.filter(name__iexact=name).exists():
-                print('Ya existe una ubicación con ese nombre para esta empresa.') 
+            if Items_locations.objects.filter(name__iexact=name, company=company).exists():
                 return JsonResponse({'success': False, 'message': 'Ya existe una ubicación con ese nombre para esta empresa.'}, status=400)
-
-            company = get_object_or_404(Company, id=company_id)
 
             # Crear la nueva ubicación
             new_location = Items_locations.objects.create(
                 name=name,
                 company=company,
+                status=True
             )
 
             # Retornar la nueva ubicación para actualizar el select
@@ -770,9 +813,7 @@ def add_item_location(request):
             }})
 
         except Exception as e:
-            print(f"Error al agregar ubicación: {str(e)}")
             return JsonResponse({'success': False, 'message': 'Error interno del servidor.'}, status=500)
-
     return JsonResponse({'success': False, 'message': 'Método de solicitud no válido.'}, status=405)
 
 
@@ -787,22 +828,36 @@ def get_infrastructure_item_details(request):
             "responsible__id",  
             "responsible__first_name",  
             "responsible__last_name",  
-            "assignment_date"
+            "assignment_date",
+            "photo_infraestructure",
+            "is_deactivated",
+            "is_active"
         )
         for r in registros:
             tiene_responsable = r["responsible__first_name"] and r["responsible__last_name"]
             responsable = f"{r['responsible__first_name']} {r['responsible__last_name']}".strip() if tiene_responsable else ""
 
-            # Botón QR solo si tiene responsable
-            btn_qr = ""
-            if tiene_responsable:
-                btn_qr = f"""
-                    <button type='button' name='qr_code' class='btn btn-icon btn-sm btn-info-light generate-qr' 
-                            data-infrastructure-item='qr_code' data-id='{r['id']}' aria-label='qr_code'>
-                        <i class="fa-solid fa-qrcode"></i>
-                    </button>
-                """
-
+            # FOTOGRAGIA
+            fotografia = None
+            if r["photo_infraestructure"]:
+                tUrl = generate_presigned_url( AWS_BUCKET_NAME, str(r["photo_infraestructure"]))
+                fotografia = f"""
+                <a href="{tUrl}"
+                    target="_blank"
+                    title="Ver fotografía">
+                    <img
+                        src="{tUrl}"
+                        alt="Fotografía de {r['identifier']}"
+                        class="rounded border"
+                        style="
+                            width: 70px;
+                            height: 70px;
+                            object-fit: cover;
+                            cursor: pointer;
+                        "
+                    >
+                </a>
+            """
             data.append({
                 "id": r["id"],
                 "identificador": r["identifier"],
@@ -810,12 +865,13 @@ def get_infrastructure_item_details(request):
                 "fecha_asignacion": r["assignment_date"].strftime('%Y-%m-%d') if r["assignment_date"] else "",
                 "responsable_id": r["responsible__id"] if tiene_responsable else None,
                 "tiene_responsable": bool(tiene_responsable), 
-                "btn_qr": btn_qr
+                "fotografia": fotografia,
+                "is_deactivated": r["is_deactivated"],
+                "is_active": r["is_active"],
+
             })
 
     return JsonResponse({"success": True, "data": data})
-
-
 
 
 def obtner_usuarios(request):
@@ -884,7 +940,7 @@ def get_identifier(request):
             return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
     # Obtener los registros
         identifier = InfrastructureItemDetail.objects.filter(
-            company_id=company_id
+            company_id=company_id, is_active=True
         ).values('id', 'identifier') 
         data = list(identifier)
         print("esta es la lista de identificadores de la empresa:", identifier)
@@ -1013,8 +1069,8 @@ def get_table_item_maintenance(request):
     datos = Infrastructure_maintenance.objects.select_related(
         "identifier__item", "provider"
     ).filter(
-        identifier__item__company_id=company_id
-    ).values(
+        identifier__item__company_id=company_id, is_active = True
+    ).order_by("-id").values(
         "id",
         "identifier__identifier", 
         "identifier__item__name", 
@@ -1022,7 +1078,8 @@ def get_table_item_maintenance(request):
         "date",
         "provider__name",
         "cost",
-        "general_notes"
+        "general_notes", 
+        "status"
     )
 
     data_list = []
@@ -1188,14 +1245,17 @@ def delete_maintenance_infraestructure(request):
 
         try:
             maintenance = Infrastructure_maintenance.objects.get(id=_id)
-        except Services.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Service not found'})
+        except Infrastructure_maintenance.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'El mantenimiento no existe'})
 
-        maintenance.delete()
+        maintenance.is_active = False
+        maintenance.save(update_fields=['is_active'])
 
-        return JsonResponse({'success': True, 'message': 'Servicio eliminado correctamente!'})
+        return JsonResponse({'success': True, 'message': 'Mantenimiento eliminado correctamente!'})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
 
 
 @csrf_exempt 
@@ -1230,42 +1290,71 @@ def update_status_mantenance(request):
 
 def get_infrastructure_info_from_maintenance(request, maintenance_id):
     import ast
+
     try:
-        maintenance = Infrastructure_maintenance.objects.select_related('identifier__item').get(id=maintenance_id)
+        maintenance = Infrastructure_maintenance.objects.select_related(
+            'identifier__item'
+        ).get(id=maintenance_id)
+
         detail = maintenance.identifier
+
+        # Imagen de infraestructura
         image_url = None
-        
+
         if detail.item.image:
-            image_url = generate_presigned_url(AWS_BUCKET_NAME, str(detail.item.image))
-        detail_html = render_to_string("infrastructure/cards/infraestructure_info.html", context = {
-            'detail': detail,
-            'item': detail.item,
-            'id': maintenance.id,
-            'image' : image_url
-        })
-        
+            image_url = generate_presigned_url(
+                AWS_BUCKET_NAME,
+                str(detail.item.image)
+            )
+
+        detail_html = render_to_string(
+            "infrastructure/cards/infraestructure_info.html",
+            context={
+                'detail': detail,
+                'item': detail.item,
+                'id': maintenance.id,
+                'image': image_url
+            }
+        )
+
+        # Acciones de mantenimiento
         action2 = []
+
         for key, value in ast.literal_eval(maintenance.actions).items():
-            action2.append({ "name":key, "status" : value})
-            
-        image_url = None
+            action2.append({
+                "name": key,
+                "status": value
+            })
+
+        # Comprobante
+        comprobante_url = None
+
         if maintenance.comprobante:
-            image_url = generate_presigned_url(AWS_BUCKET_NAME, str(maintenance.comprobante))
-        maintenance_html = render_to_string("infrastructure/cards/maintenance_infraestructure_info.html", context = {
-            'detail': maintenance,
-            'item': detail.item,
-            'actions' : action2,
-            'image': image_url
-        })
-        
+            comprobante_url = generate_presigned_url(
+                AWS_BUCKET_NAME,
+                str(maintenance.comprobante)
+            )
+
+        maintenance_html = render_to_string(
+            "infrastructure/cards/maintenance_infraestructure_info.html",
+            context={
+                'detail': maintenance,
+                'item': detail.item,
+                'actions': action2,
+                'comprobante': comprobante_url
+            }
+        )
+
         return JsonResponse({
             'detail_html': detail_html,
             'maintenance_html': maintenance_html
         })
+
     except Infrastructure_maintenance.DoesNotExist:
-        return JsonResponse({'error': 'Mantenimiento no encontrado'}, status=404)
-
-
+        return JsonResponse(
+            {'error': 'Mantenimiento no encontrado'},
+            status=404
+        )
 
 
 def mostrar_informacion(request, maintenance_id):
@@ -1554,7 +1643,8 @@ def infrastructure_responsiva_pdf_view(request):
         InfrastructureItemDetail.objects
         .filter(
             company_id=context["company"]["id"],
-            responsible_id=responsible_id
+            responsible_id=responsible_id,
+            is_active = True
         )
         .select_related(
             "item",
@@ -1861,4 +1951,503 @@ def delete_infrastructure_responsiva(request):
     response["status"] = "success"
     response["message"] = "Se ha borrado el registro"
     return JsonResponse(response)
+
+
+# Guardar imagen individual de infraestructura
+@login_required
+@csrf_exempt
+def save_photo_infrastructure(request):
+
+    context = user_data(request)
+    company_id = context["company"]["id"]
+
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
+
+    try:
+        detalle_id = request.POST.get("detalle_id")
+        image = request.FILES.get("photo")
+
+        # Validar información
+        if not detalle_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el detalle de infraestructura."
+            })
+
+        detalle = InfrastructureItemDetail.objects.get(
+            id=detalle_id,
+            company_id=company_id
+        )
+
+        if not image:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió ninguna imagen."
+            })
+
+        # Ruta 
+        folder_path = (
+            f"docs/{company_id}/"
+            f"infrastructure/{detalle_id}/"
+            f"image/{detalle_id}/"
+        )
+
+        # Obtener extensión
+        _, extension = os.path.splitext(image.name)
+
+        # Nombre nuevo
+        new_name = (
+            f"infrastructure_image_{detalle_id}"
+            f"{extension}"
+        )
+
+        s3Name = folder_path + new_name
+        # Eliminar imagen anterior 
+        if detalle.photo_infraestructure:
+            delete_s3_object(
+                AWS_BUCKET_NAME,
+                str(detalle.photo_infraestructure)
+            )
+
+        # SUBIR NUEVA IMAGEN
+        upload_to_s3(
+            image,
+            AWS_BUCKET_NAME,
+            s3Name
+        )
+        # Guardar ruta 
+        detalle.photo_infraestructure = s3Name
+
+        detalle.save(
+            update_fields=["photo_infraestructure"]
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "Imagen guardada correctamente.",
+            "photo": s3Name
+        })
+
+    except InfrastructureItemDetail.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "No se encontró el detalle de infraestructura."
+        })
+
+    except Exception as e:
+
+        return JsonResponse({
+            "success": False,
+            "message": f"Error al guardar la imagen: {str(e)}"
+        })
+
+
+@login_required
+def modal_infrastructure_detail(request):
+    detail_id = request.GET.get("id")
+
+    if not detail_id:
+        return JsonResponse({
+            "success": False,
+            "message": "No se recibió el identificador."
+        })
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        detail = InfrastructureItemDetail.objects.get(
+            id=detail_id,
+            company_id=company_id
+        )
+
+        return JsonResponse({
+            "success": True,
+            "data": {
+                "id": detail.id,
+                "identifier": detail.identifier,
+                "name": detail.name,
+            }
+        })
+
+    except InfrastructureItemDetail.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "El detalle no existe."
+        }, status=404)
+
+
+
+# dar de baja / habilitar un equipo
+@login_required
+def disable_infrastructure_detail(request):
+
+    detail_id = request.POST.get("detail_id")
+    print("este es el id a deshabilitar", detail_id)
+    action = request.POST.get("action")
+
+    if not detail_id:
+        return JsonResponse({
+            "success": False,
+            "message": "No se recibió el ID del detalle."
+        })
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        detail = InfrastructureItemDetail.objects.get(id=detail_id, company_id=company_id)
+
+        # DESHABILITAR
+        if action == "disable":
+            reason = request.POST.get("reason")
+            description = request.POST.get(
+                "description",
+                ""
+            ).strip()
+            # Archivos
+            evidence1 = request.FILES.get("evidence1_image")
+            evidence2 = request.FILES.get("evidence2_image")
+
+            if not reason:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe seleccionar un motivo de baja."
+                })
+
+            if not description:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe ingresar una descripción."
+                })
+
+            if not evidence1 and not evidence2:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe adjuntar al menos una imagen como evidencia de la baja."
+                })
+
+            # Cambiar estado
+            detail.is_active = False
+            detail.is_deactivated = True
+            detail.state = "BAJA"
+
+            # Información de la baja
+            detail.deactivation_reason = reason
+            detail.deactivation_description = description
+            detail.deactivated_at = timezone.now() - timedelta(hours=6)
+
+            # Usuario que realizó la baja
+            detail.user_modification = request.user
+
+            # Ruta base
+            item_id = detail.item_id
+
+            # Evidencia 1
+            if evidence1:
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"infrastructure/{item_id}/"
+                    f"evidence1_image/{detail.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    evidence1.name
+                )
+
+                new_name = (
+                    f"evidence1_image"
+                    f"{detail.identifier}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    evidence1,
+                    bucket_name,
+                    s3Name
+                )
+
+                detail.evidence1_image = s3Name
+
+            # Evidencia 2
+            if evidence2:
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"infrastructure/{item_id}/"
+                    f"evidence2_image/{detail.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    evidence2.name
+                )
+
+                new_name = (
+                    f"evidence2_image"
+                    f"{detail.identifier}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    evidence2,
+                    bucket_name,
+                    s3Name
+                )
+
+                detail.evidence2_image = s3Name
+
+            detail.save()
+
+            return JsonResponse({
+                "success": True,
+                "message": (
+                    "El activo "
+                    "ha sido dado de baja correctamente."
+                )
+            })
+
+        # HABILITAR
+        elif action == "enable":
+
+            # Cambiar estado
+            detail.is_active = True
+            detail.is_deactivated = False
+            detail.state = "DISPONIBLE"
+
+            # Registrar usuario de activación
+            detail.user_activation = request.user
+
+            # Registrar fecha y hora de activación
+            detail.modification_date = timezone.now() - timedelta(hours=6)
+
+            # Limpiar información de baja
+            detail.deactivation_reason = None
+            detail.deactivation_description = None
+            detail.deactivated_at = None
+
+            detail.save()
+
+            return JsonResponse({ "success": True, "message": ("El equipo o herramienta " "ha sido habilitado correctamente.")})
+
+        # ACCIÓN NO VÁLIDA
+        else:
+
+            return JsonResponse({"success": False, "message": "Acción no válida."})
+
+    except InfrastructureItemDetail.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "El equipo o herramienta no existe."
+        }, status=404)
+
+    except Exception as e:
+
+        return JsonResponse({
+            "success": False,
+            "message": f"Error interno: {str(e)}"
+        }, status=500)
+
+
+# submodulo de activos eliminados
+@login_required
+def infrastructure_removed(request):
+    context = user_data(request)
+    module_id = 4
+    subModule_id = 41
+    request.session["last_module_id"] = module_id
+
+    sidebar = get_sidebar(context, [1, module_id])
+    access = get_module_user_permissions(context, subModule_id)
+    for module in sidebar["data"]:
+        for submodule in module.get("submodules", []):
+            submodule["title"] = submodule["title"].strip() 
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+    template = "infrastructure/infrastructure_removed.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    return render(request, template, context)
+
+
+# Funcion para obtener los activos dados de baja
+@csrf_exempt
+def get_infrastructure_removed(request):
+
+    response = {
+        "status": "error",
+        "message": "Sin procesar",
+        "data": []
+    }
+
+    context = user_data(request)
+
+    try:
+        company_id = context["company"]["id"]
+
+        bajas = list(
+            InfrastructureItemDetail.objects
+            .select_related(
+                "item",
+                "company",
+                "user_modification",
+            )
+            .filter(
+                company_id=company_id,
+                is_deactivated=True,
+            )
+            .order_by("-id")
+            .values(
+                "id",
+                "identifier",
+                "name",
+                "evidence1_image",
+                "evidence2_image",
+                "deactivation_reason",
+                "deactivation_description",
+                "deactivated_at",
+                "user_modification__id",
+                "user_modification__first_name",
+                "user_modification__last_name",
+                "user_modification__username",
+
+                # Responsable
+                "responsible__id",
+                "responsible__first_name",
+                "responsible__last_name",
+                "responsible__username",
+            )
+        )
+
+        # Obtener último responsable
+        for item in bajas:
+
+            if item["responsible__id"]:
+
+                nombre = (
+                    f"{item['responsible__first_name']} "
+                    f"{item['responsible__last_name']}"
+                ).strip()
+
+                item["last_responsible"] = (
+                    nombre
+                    if nombre
+                    else item["responsible__username"]
+                )
+
+            else:
+
+                item["last_responsible"] = ""
+
+
+        # Catálogo de motivos
+        motivos = dict(
+            InfrastructureItemDetail.DEACTIVATION_REASONS
+        )
+
+        for item in bajas:
+
+            # ESTADO
+            item["state"] = "BAJA"
+
+            # USUARIO QUE REALIZÓ LA BAJA
+            if item["user_modification__id"]:
+
+                nombre = (
+                    f"{item['user_modification__first_name']} "
+                    f"{item['user_modification__last_name']}"
+                ).strip()
+
+                item["user_modification"] = (
+                    nombre
+                    if nombre
+                    else item["user_modification__username"]
+                )
+
+            else:
+                item["user_modification"] = ""
+
+            # EVIDENCIA 1
+            if item["evidence1_image"]:
+
+                try:
+                    item["evidence1_image"] = generate_presigned_url(
+                        AWS_BUCKET_NAME,
+                        str(item["evidence1_image"])
+                    )
+                except Exception:
+                    item["evidence1_image"] = ""
+
+            else:
+                item["evidence1_image"] = ""
+
+            # EVIDENCIA 2
+            if item["evidence2_image"]:
+
+                try:
+                    item["evidence2_image"] = generate_presigned_url(
+                        AWS_BUCKET_NAME,
+                        str(item["evidence2_image"])
+                    )
+                except Exception:
+                    item["evidence2_image"] = ""
+
+            else:
+                item["evidence2_image"] = ""
+
+            # MOTIVO DE BAJA
+            item["deactivation_reason"] = motivos.get(
+                item["deactivation_reason"],
+                item["deactivation_reason"] or ""
+            )
+
+            # DESCRIPCIÓN
+            item["deactivation_description"] = (
+                item["deactivation_description"] or ""
+            )
+
+            # FECHA DE BAJA
+            if item["deactivated_at"]:
+
+                item["deactivated_at_sort"] = (
+                    item["deactivated_at"]
+                    .strftime("%Y-%m-%d %H:%M:%S")
+                )
+
+                item["deactivated_at"] = (
+                    item["deactivated_at"]
+                    .strftime("%d/%m/%Y %H:%M")
+                )
+
+            else:
+
+                item["deactivated_at_sort"] = ""
+                item["deactivated_at"] = ""
+
+            # NOMBRE DEL ACTIVO
+            item["infrastructure__equipment_name"] = (
+                item["name"] or ""
+            )
+
+        response["data"] = bajas
+        response["status"] = "success"
+        response["message"] = (
+            "Activos de infraestructura dados de baja "
+            "cargados correctamente"
+        )
+
+    except Exception as e:
+
+        response["status"] = "error"
+        response["message"] = str(e)
+
+    return JsonResponse(response)
+
+
 
