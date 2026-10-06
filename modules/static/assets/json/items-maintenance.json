@@ -18,6 +18,14 @@
                 {
                     "id": 2,
                     "descripcion": "LIMPIEZA 1"
+                },
+                {
+                    "id": 3,
+                    "descripcion": "PINTURA"
+                },
+                {
+                    "id": 4,
+                    "descripcion": "PINTURA"
                 }
             ]
         },

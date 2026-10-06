@@ -700,7 +700,7 @@ class Vehicle_fuel(models.Model):
         return f"Gasolina"
 
 # Todo ----- [ 3ro ] -----
-    
+# Categorías de infraestructura
 class Infrastructure_Category(models.Model):
     empresa = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     name = models.CharField(blank=True, null=True, max_length=128, verbose_name="Nombre")
@@ -718,11 +718,13 @@ class Infrastructure_Category(models.Model):
     def _str_(self):
         return f"Infraestructura de {self.short_name}"
 
+# Ubicación para los registros 
 class Items_locations(models.Model):
     name = models.CharField(blank=True, null=True, max_length=50, verbose_name="Nombre")
     status = models.BooleanField(default=True, verbose_name="¿Está activa la ubicación?")
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True) 
-  
+
+# Activos
 class Infrastructure_Item(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
     category = models.ForeignKey(Infrastructure_Category, on_delete=models.CASCADE, verbose_name="categoría", related_name='items')
@@ -748,17 +750,16 @@ class Infrastructure_Item(models.Model):
     def _str_(self):
         return f"{self.category.name}: {self.name} ({self.quantity}) para {self.time_quantity} {self.time_unit}"
 
-
+#Desglose individual de los registros
 class InfrastructureItemDetail(models.Model):
     item = models.ForeignKey(Infrastructure_Item, on_delete=models.CASCADE, related_name='details')
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255) 
     identifier = models.CharField(max_length=255, unique=True)  
-    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal", blank=True, null=True)
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal", blank=True, null=True,         related_name="infrastructure_details_responsible")
     assignment_date = models.DateField(blank=True, null=True, verbose_name="Fecha de asignación")
     created_at = models.DateTimeField(auto_now_add=True)
-    qr_info_infrastructure = models.FileField(upload_to='qrcodes/info/', blank=True, null=True)
-
+    photo_infraestructure = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Imagen del registro")     
     class Meta:
         verbose_name = "Detalle de Item de Infraestructura"
         verbose_name_plural = "Detalles de Items de Infraestructura"
@@ -766,6 +767,23 @@ class InfrastructureItemDetail(models.Model):
     def __str__(self):
         return f"{self.name} - {self.identifier}"
 
+    DEACTIVATION_REASONS = [
+        ("VENDIDO", "Vendido"),
+        ("OBSOLETO", "Obsoleto"),
+        ("PERDIDO", "Perdido"),
+        ("BAJA", "Baja"),
+        ("ROBADO", "Robado"),
+    ]
+    deactivation_reason = models.CharField( max_length=20, choices=DEACTIVATION_REASONS, blank=True, null=True, verbose_name="Motivo de baja del activo")
+    deactivation_description = models.TextField( blank=True, null=True, verbose_name="Descripción de la baja del activo")
+    deactivated_at = models.DateTimeField( blank=True, null=True, verbose_name="Fecha de baja del activo")
+    evidence1_image = models.FileField(upload_to='docs/', blank=True, null=True)          
+    evidence2_image = models.FileField(upload_to='docs/', blank=True, null=True)   
+    is_deactivated = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    user_modification = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="Usuario que realizó la modificación", blank=True, null=True, related_name="infrastructure_details_modified")
+    
+#Mantenimiento de infraestructura
 class Infrastructure_maintenance(models.Model):
     identifier = models.ForeignKey(InfrastructureItemDetail, on_delete=models.CASCADE, verbose_name="Item")
     type_maintenance = models.CharField(max_length=32, blank=True, null=True)
@@ -776,8 +794,9 @@ class Infrastructure_maintenance(models.Model):
     actions = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=255, null=False, default="blank")
     comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de pago o de matenimiento")
+    is_active = models.BooleanField(default=True)
 
-
+# Acciones dentri de mantenimiento 
 class MaintenanceAction(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=50, choices=[('preventivo', 'Preventivo'), ('correctivo', 'Correctivo')])

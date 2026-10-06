@@ -33,3 +33,4 @@ modules/migrations/0110_equipments_tools_detail.py
 modules/migrations/0111_alter_equipments_tools_detail_serial_number.py
 modules/migrations/0112_equipment_tools_has_serial_number.py
 modules/migrations/0113_equipments_tools_detail_state.py
+modules/migrations/

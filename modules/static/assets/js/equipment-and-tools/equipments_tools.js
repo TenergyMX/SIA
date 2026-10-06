@@ -64,6 +64,8 @@ function load_table_equi() {
                 defaultContent: "",
             },
         ],
+        order: [[0, "desc"]],
+
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
@@ -1585,7 +1587,7 @@ function cambiarEstadoEquipmentTool(id, action) {
     });
 }
 
-// HABILITAR EQUIPO O HERRAMIENTA
+//DESHABILITAR EQUIPO O HERRAMIENTA
 function cambiarEstadoEquipmentTool(id, action) {
     console.log("Cambiando estado del detalle:", id);
     console.log("Acción:", action);

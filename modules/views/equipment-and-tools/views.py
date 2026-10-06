@@ -55,7 +55,7 @@ def equipments_and_tools(request):
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
 
-#permisos para agregar categorias
+    #permisos para agregar categorias
     context["area"] = context["area"]["name"].lower()
     context["create"] = access["data"]["access"]["create"]
     context["tipo_user"] = context["role"]["name"].lower
@@ -63,7 +63,7 @@ def equipments_and_tools(request):
 
     template = "equipments-and-tools/equipments_and_tools.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
-    
+
 #submodulo de equipos y herramientas
 @login_required
 def equipments_tools(request):
@@ -355,7 +355,7 @@ def get_equipments_tools(request):
             'image',
             'comments',
             'has_serial_number'
-            )
+            ).order_by('-id')
         )
 
         for item in equipments:
@@ -764,7 +764,7 @@ def generate_identificador_equipment_tool(item_id, company_id, cantidad):
     try:
         item = Equipment_Tools.objects.get(id=item_id)
         company = Company.objects.get(id=company_id)
-        base_name = item.equipment_name.replace(' ', '').upper()[:3]
+        base_name = item.id
         company_code = company.name.replace(' ', '').upper()[:3]
         prefix = f"{company_code}-{base_name}-"
 
@@ -790,7 +790,7 @@ def generate_identificador_equipment_tool(item_id, company_id, cantidad):
 
         for i in range(1, int(cantidad) + 1):
             number = last_number + i
-            identifier = f"{prefix}{str(number).zfill(4)}"
+            identifier = f"{prefix}{str(number)}"
 
             detalle = Equipments_Tools_Detail.objects.create(
                 equipment_tool=item,
@@ -2469,14 +2469,6 @@ def equipment_tools_responsiva_pdf_view(request, responsiva_id):
 
         detalle = detalle_responsiva.details_equipment_tool
 
-
-        print("==========================================")
-        print("RESPONSIVA:", responsiva.id)
-        print("DETAIL RESPONSIVA ID:", detalle_responsiva.id)
-        print("DETALLE EQUIPO ID:", detalle.id)
-        print("IDENTIFICADOR:", detalle.identifier)
-        print("STATUS DETAIL RESPONSIVA:", detalle_responsiva.status_equipment_tool)
-        print("STATE EQUIPO:", detalle.state)
 
         detalles.append({
             "id": detalle.id,

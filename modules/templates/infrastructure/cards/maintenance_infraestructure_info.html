@@ -6,22 +6,7 @@
     <!-- ! card -->
     <div class="card custom-card info-card" id="card_maintenance_infaestructure_info">
         <div class="card-body">
-            <div class="row g-1 mb-3">
-                <div class="card-img text-center mb-2" style="min-height: 3rem;">
-                    <picture>
-                        <img id="preview_comprobante" alt="Imagen del comprobante" class="card-img" style="
-                        border: 5px dotted #cccccc;
-                        border-radius: 10px;
-                        cursor: crosshair;
-                        width: auto;
-                        "
-                        {% if image %} 
-                            src = "{{image}}"
-                        {% endif %}
-                        >
-                    </picture>
-                </div>
-            </div>
+            
             <div class="row g-1 mb-3">
                 <div class="col-12">
                     <span class="fw-bolder">Identificador:</span>
@@ -35,16 +20,46 @@
                     <span class="fw-bolder">Fecha de mantenimiento: </span>
                     <span class="col-10 col-md-4" data-key-value="date">{{detail.date}}</span>
                 </div>
-                {% if not image %}
+                
+
                 <div class="col-12 comprobante">
-                    <span class="fw-bolder me-2">Comprobante: </span>
-                    <input type="file" name="comprobante" class="form-control form-control-sm d-inline-block" style="width: auto;" onchange="handleFileChange(this)">
-                    <a href="#" class="btn btn-sm btn-info" download="" style="display: none;">
-                        <i class="fa-solid fa-download me-1"></i>
-                        Comprobante
-                    </a>
+                    <span class="fw-bolder me-2">
+                        Comprobante:
+                    </span>
+
+                    {% if comprobante %}
+
+                        <!-- Ya existe un comprobante -->
+                        <a href="{{ comprobante }}"
+                        class="btn btn-sm btn-info"
+                        target="_blank">
+                            <i class="fa-solid fa-file-lines me-1"></i>
+                            Ver archivo
+                        </a>
+
+                    {% else %}
+
+                        <!-- No existe comprobante -->
+                        <input type="file"
+                            name="comprobante"
+                            class="form-control form-control-sm d-inline-block"
+                            style="width: auto;"
+                            accept="image/*,application/pdf"
+                            onchange="handleFileChange(this)">
+
+                        <a id="btn_ver_comprobante"
+                        href="#"
+                        class="btn btn-sm btn-info"
+                        target="_blank"
+                        style="display: none;">
+                            <i class="fa-solid fa-file-lines me-1"></i>
+                            Ver archivo
+                        </a>
+
+                    {% endif %}
+
                 </div>
-                {%endif%}
+
             </div>
             <ol class="list-group list-group-numbered placeholder-glow mb-3">
                 {% for action in actions %}

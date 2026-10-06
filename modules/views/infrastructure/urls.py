@@ -6,6 +6,7 @@ urlpatterns = [
     path("infrastructure/", views.infrastructure_item_view),
     path("infrastructure/category/", views.infrastructure_category_view),
     path("infrastructure/maintenance/", views.infrastructure_maintenance_view),
+    path("infrastructure/infrastructure_removed/", views.infrastructure_removed),
 
     # Peticiones
     path("get-infrastructure-categorys/", views.get_infrastructure_categorys),
@@ -57,4 +58,15 @@ urlpatterns = [
     path("add_infrastructure_responsiva/", views.add_infrastructure_responsiva),
     path("update_infrastructure_responsiva/", views.update_infrastructure_responsiva),
     path("delete_infrastructure_responsiva/", views.delete_infrastructure_responsiva),
+
+    #Guardar fotografia individual
+    path("save_photo_infrastructure/", views.save_photo_infrastructure), 
+
+    #modal para habilitar un activo
+    path("modal_infrastructure_detail/", views.modal_infrastructure_detail),
+    path("disable_infrastructure_detail/", views.disable_infrastructure_detail),
+
+    # Tabla de activos eliminados 
+    path("get_infrastructure_removed/", views.get_infrastructure_removed),
+
 ]

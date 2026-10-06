@@ -443,7 +443,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         # OBTENER RESPONSIVAS SEGÚN ROL
         if rol in [1, 2, 3] or area == "Almacen":
 
-
             obj_responsivas = Equipment_Tools_Responsiva.objects.filter(
                 company_id=company_id
             )
