@@ -85,29 +85,52 @@ function get_identifier(selectedId = null) {
     $.ajax({
         url: "/get_identifier/",
         type: "GET",
+
         success: function (response) {
-            var select = $("#identifier_id");
-            select.html(null);
-            select.append(
-                "<option value='' disabled selected>Seleccione un identificador</option>"
-            );
+            const select = $("#identifier_id");
+
+            // Limpiar opciones
+            select.empty();
+
+            // Placeholder
+            select.append(new Option("Seleccione un identificador", "", false, false));
+
+            // Agregar identificadores
             $.each(response.data, function (index, value) {
-                var selected = "";
-                select.append(
-                    `<option value="${value.id}" ${selected}>${value.identifier}</option>`
-                );
+                select.append(new Option(value.identifier, value.id, false, false));
             });
 
+            // Actualizar Select2
+            select.trigger("change");
+
+            // Seleccionar valor
             if (selectedId) {
                 select.val(selectedId).trigger("change");
             }
         },
+
         error: function (error) {
             console.error("Error al cargar los identificadores:", error);
+
             alert("Hubo un error al cargar los identificadores.");
         },
     });
 }
+
+// Inicializar Select2 una sola vez
+$(document).ready(function () {
+    $("#identifier_id").select2({
+        theme: "bootstrap-5",
+        placeholder: "Seleccione un identificador",
+        allowClear: true,
+        width: "100%",
+        dropdownParent: $("#identifier_id").parent(),
+    });
+
+    setTimeout(() => {
+        $("span.select2-dropdown.select2-dropdown--below").addClass("index9999");
+    }, 100);
+});
 
 //Función para cargar los nombres de los proveedores han sido registrados
 function get_items_providers(selectedProviderId) {

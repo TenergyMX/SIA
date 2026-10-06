@@ -135,7 +135,6 @@ def add_infrastructure_item(request):
     print("Contexto del usuario:", context)
     print("Datos recibidos del formulario:", dt)
 
-    company_id = context["company"]["id"]
     category_id = dt.get("category_id", None)
     is_active = dt.get("is_active", True)
     location_id = dt.get("item_location", None) 
@@ -220,11 +219,13 @@ def generate_identificador(item_id, company_id, cantidad):
         item = Infrastructure_Item.objects.get(id=item_id)
         company = Company.objects.get(id=company_id)
 
-        base_name = item.name.replace(' ', '').upper()[:3]
+        
         company_code = company.name.replace(' ', '').upper()[:3]
-        prefix = f"{company_code}-{base_name}-"
+        prefix = f"{company_code}-{item_id}-"
 
         # Buscar el último número usado con ese prefijo
+        # TEN-SIL
+        # TEN-SIL
         last_detail = (
             InfrastructureItemDetail.objects
             .filter(identifier__startswith=prefix)
@@ -240,7 +241,7 @@ def generate_identificador(item_id, company_id, cantidad):
 
         for i in range(1, int(cantidad) + 1):
             number = last_number + i
-            identifier = f"{prefix}{str(number).zfill(4)}"
+            identifier = f"{prefix}{str(number)}"
 
             InfrastructureItemDetail.objects.create(
                 item=item,
@@ -393,12 +394,14 @@ def update_infrastructure_item(request):
 
             obj.save()
 
-            new_name = obj.name
+            new_name = obj.id
             new_quantity = obj.quantity
 
             # Manejo de detalles
             current_details = InfrastructureItemDetail.objects.filter(item=obj)
             current_count = current_details.count()
+            company = Company.objects.get(id=company_id)
+
 
             if new_quantity < current_count:
                 # Eliminar excedente
@@ -407,9 +410,8 @@ def update_infrastructure_item(request):
 
             elif new_quantity > current_count:
                 # Agregar los que faltan
-                base_name = new_name.replace(" ", "").upper()[:3]
-                company_code = str(company_id).zfill(3)
-                prefix = f"{company_code}-{base_name}-"
+                company_code = company.name.replace(' ', '').upper()[:3]
+                prefix = f"{company_code}-{new_name}-"
 
                 existing_identifiers = (
                     InfrastructureItemDetail.objects
@@ -428,7 +430,7 @@ def update_infrastructure_item(request):
                 next_number = max(existing_numbers, default=0) + 1
 
                 for i in range(new_quantity - current_count):
-                    identifier = f"{prefix}{str(next_number + i).zfill(4)}"
+                    identifier = f"{prefix}{str(next_number + i)}"
                     InfrastructureItemDetail.objects.create(
                         item=obj,
                         company_id=company_id,

@@ -355,7 +355,7 @@ def get_equipments_tools(request):
             'image',
             'comments',
             'has_serial_number'
-            )
+            ).order_by('-id')
         )
 
         for item in equipments:
@@ -764,7 +764,7 @@ def generate_identificador_equipment_tool(item_id, company_id, cantidad):
     try:
         item = Equipment_Tools.objects.get(id=item_id)
         company = Company.objects.get(id=company_id)
-        base_name = item.equipment_name.replace(' ', '').upper()[:3]
+        base_name = item.id
         company_code = company.name.replace(' ', '').upper()[:3]
         prefix = f"{company_code}-{base_name}-"
 
@@ -790,7 +790,7 @@ def generate_identificador_equipment_tool(item_id, company_id, cantidad):
 
         for i in range(1, int(cantidad) + 1):
             number = last_number + i
-            identifier = f"{prefix}{str(number).zfill(4)}"
+            identifier = f"{prefix}{str(number)}"
 
             detalle = Equipments_Tools_Detail.objects.create(
                 equipment_tool=item,
