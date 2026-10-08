@@ -3823,32 +3823,64 @@ def get_vehicles_maintenance(request):
     return JsonResponse(response)
 
 def update_vehicle_maintenance(request):
+    """
+    Actualiza la información de un registro de mantenimiento vehicular.
+
+    La función:
+    - Valida el vehículo.
+    - Valida el kilometraje dependiendo del rol del usuario.
+    - Obtiene el registro de mantenimiento.
+    - Actualiza las acciones de mantenimiento.
+    - Actualiza fecha, proveedor, tipo, costo, kilometraje, tiempo
+      y notas generales.
+    - Marca el mantenimiento como REAGENDADO cuando cambia la fecha.
+    - Guarda el comprobante en S3 cuando se recibe un archivo.
+    """
+
+    # ============================================================
+    # INFORMACIÓN DE DEPURACIÓN
+    # ============================================================
 
     print("########################################")
     print("ENTRO A update_vehicle_maintenance")
     print("METHOD:", request.method)
     print("POST:", request.POST)
     print("########################################")
-    
+
+    # Respuesta inicial
     response = {"success": False}
+
+    # Datos recibidos mediante POST
     dt = request.POST
 
+    # Obtener datos principales
     vehicle_id = dt.get("vehicle_id")
     maintenance_id = dt.get("id", None)
 
+    # Obtener información del usuario actual
     context = user_data(request)
     tipo_user = context["role"]["name"].lower()
+
+    # ============================================================
+    # VALIDAR ID DEL MANTENIMIENTO
+    # ============================================================
 
     if not maintenance_id:
         response["status"] = "error"
         response["message"] = "No se proporcionó un ID válido"
+
         return JsonResponse(response)
+
+    # ============================================================
+    # OBTENER VEHÍCULO Y VALIDAR KILOMETRAJE
+    # ============================================================
 
     try:
 
         obj_vehicle = Vehicle.objects.get(id=vehicle_id)
 
-        # Validar kilometraje solamente para usuarios
+        # Los usuarios que no son administrador o super usuario
+        # deben validar que el kilometraje no sea menor al actual.
         if tipo_user not in ["administrador", "super usuario"]:
 
             mileage = (
@@ -3880,13 +3912,18 @@ def update_vehicle_maintenance(request):
 
         return JsonResponse(response)
 
-    # obtener mantenimiento 
+    # ============================================================
+    # OBTENER REGISTRO DE MANTENIMIENTO
+    # ============================================================
+
     try:
+
         obj = Vehicle_Maintenance.objects.get(
             id=maintenance_id
         )
 
     except Vehicle_Maintenance.DoesNotExist:
+
         response["status"] = "error"
         response["message"] = (
             f"No existe ningún registro con el ID "
@@ -3895,48 +3932,10 @@ def update_vehicle_maintenance(request):
 
         return JsonResponse(response)
 
-    #acciones
-    # if "actionsformat2" in dt:
+    # ============================================================
+    # ACTUALIZAR ACCIONES
+    # ============================================================
 
-    #     print("====================================")
-    #     print("ACTIONSFORMAT2 RECIBIDO:")
-    #     print(dt["actionsformat2"])
-    #     print("====================================")
-
-    #     try:
-
-    #         actions_data = json.loads(
-    #             dt["actionsformat2"]
-    #         )
-
-    #         print("ACTIONS DATA:")
-    #         print(actions_data)
-
-    #         actions_data = [
-    #             accion
-    #             for accion in actions_data
-    #             if accion
-    #             and accion != "undefined"
-    #             and accion != "null"
-    #         ]
-
-    #         actions = str(actions_data)
-
-    #         print("ACTIONS QUE SE GUARDARÁ:")
-    #         print(actions)
-
-    #     except (json.JSONDecodeError, TypeError):
-
-    #         response["status"] = "error"
-    #         response["message"] = (
-    #             "Las acciones tienen un formato inválido."
-    #         )
-
-    #         return JsonResponse(response)
-
-    # else:
-    #     actions = obj.actions
-    # acciones
     if "actions[]" in dt:
 
         print("====================================")
@@ -3944,8 +3943,10 @@ def update_vehicle_maintenance(request):
         print(dt.getlist("actions[]"))
         print("====================================")
 
+        # Obtener todas las acciones enviadas por el formulario
         actions_data = dt.getlist("actions[]")
 
+        # Limpiar espacios y descartar valores inválidos
         actions_data = [
             accion.strip()
             for accion in actions_data
@@ -3955,29 +3956,88 @@ def update_vehicle_maintenance(request):
             and accion != "null"
         ]
 
-        # Obtener acciones actuales
+        # ========================================================
+        # OBTENER ACCIONES ACTUALES
+        # ========================================================
+
         try:
-            acciones_actuales = json.loads(obj.actions) if obj.actions else {}
+
+            acciones_actuales = (
+                json.loads(obj.actions)
+                if obj.actions
+                else {}
+            )
+
         except (json.JSONDecodeError, TypeError):
+
             acciones_actuales = {}
 
-        # Agregar nuevas acciones sin eliminar las existentes
-        for accion in actions_data:
-            if accion not in acciones_actuales:
-                acciones_actuales[accion] = "PENDIENTE"
+        # ========================================================
+        # CONSTRUIR NUEVO DICCIONARIO DE ACCIONES
+        # ========================================================
+        #
+        # IMPORTANTE:
+        #
+        # Antes se agregaban las acciones nuevas sobre las
+        # existentes. Esto provocaba que acciones que ya no
+        # venían en el formulario permanecieran guardadas.
+        #
+        # Ahora se construye nuevamente el diccionario únicamente
+        # con las acciones recibidas.
+        #
+        # Si una acción ya existía, conserva su estado.
+        # Si es una acción nueva, se guarda como PENDIENTE.
+        #
+        # De esta manera:
+        #
+        # POST:
+        # [
+        #     "CAMBIO FILTRO DE ACEITE",
+        #     "CAMBIO DE BUJIAS"
+        # ]
+        #
+        # Resultado:
+        #
+        # {
+        #     "CAMBIO FILTRO DE ACEITE": "PENDIENTE",
+        #     "CAMBIO DE BUJIAS": "PENDIENTE"
+        # }
+        #
+        # Una acción anterior que ya no venga en el POST se elimina
+        # del registro.
+        # ========================================================
 
+        nuevas_acciones = {}
+
+        for accion in actions_data:
+
+            # Si la acción ya existía, conservar su estado actual.
+            # Si no existe, crearla como PENDIENTE.
+            nuevas_acciones[accion] = acciones_actuales.get(
+                accion,
+                "PENDIENTE"
+            )
+
+        # Convertir nuevamente a JSON para guardar en el modelo
         actions = json.dumps(
-            acciones_actuales,
+            nuevas_acciones,
             ensure_ascii=False
         )
 
+        print("====================================")
         print("ACTIONS QUE SE GUARDARÁ:")
         print(actions)
+        print("====================================")
 
     else:
+
+        # Si no se enviaron acciones, conservar las actuales.
         actions = obj.actions
 
-    # cambio en la fecha
+    # ============================================================
+    # VALIDAR CAMBIO DE FECHA
+    # ============================================================
+
     fecha_modificada = False
 
     if dt.get("date"):
@@ -3990,39 +4050,59 @@ def update_vehicle_maintenance(request):
         if obj.date != nueva_fecha:
             fecha_modificada = True
 
-    # Actualizar datos
+    # ============================================================
+    # ACTUALIZAR DATOS DEL MANTENIMIENTO
+    # ============================================================
+
     try:
+
+        # Actualizar vehículo
         if dt.get("vehicle_id"):
             obj.vehicle_id = dt.get("vehicle_id")
 
+        # Actualizar proveedor
         if dt.get("provider_id"):
             obj.provider_id = dt.get("provider_id")
 
+        # Actualizar fecha
         if dt.get("date"):
             obj.date = dt.get("date")
 
+        # Actualizar tipo de mantenimiento
         if dt.get("type"):
             obj.type = dt.get("type")
 
+        # Actualizar costo
         if dt.get("cost"):
             obj.cost = dt.get("cost")
 
+        # Actualizar kilometraje únicamente para
+        # administrador y super usuario
         if (
             dt.get("mileage")
             and tipo_user in ["administrador", "super usuario"]
         ):
             obj.mileage = dt.get("mileage")
 
+        # Actualizar tiempo
         if dt.get("time"):
             obj.time = dt.get("time")
 
+        # Actualizar notas generales
         if dt.get("general_note"):
             obj.general_notes = dt.get(
                 "general_note"
             )
 
-        # actualizar acciones
+        # ========================================================
+        # GUARDAR ACCIONES
+        # ========================================================
+
         obj.actions = actions
+
+        # ========================================================
+        # SI CAMBIÓ LA FECHA, REAGENDAR MANTENIMIENTO
+        # ========================================================
 
         if fecha_modificada:
 
@@ -4030,8 +4110,15 @@ def update_vehicle_maintenance(request):
             obj.is_update = True
             obj.is_checked = False
 
+        # ========================================================
+        # GUARDAR REGISTRO
+        # ========================================================
 
         obj.save()
+
+        # ========================================================
+        # PROCESAR COMPROBANTE
+        # ========================================================
 
         if (
             "comprobante" in request.FILES
@@ -4040,38 +4127,50 @@ def update_vehicle_maintenance(request):
 
             load_file = request.FILES["comprobante"]
 
+            # Obtener empresa desde la sesión
             company_id = (
                 request.session
                 .get("company")
                 .get("id")
             )
 
+            # Ruta donde se almacenará el documento
             folder_path = (
                 f"docs/{company_id}/"
                 f"vehicle/{vehicle_id}/"
                 f"maintenance/{obj.id}/"
             )
 
+            # Obtener nombre y extensión original
             file_name, extension = os.path.splitext(
                 load_file.name
             )
 
+            # Crear nuevo nombre del comprobante
             new_name = (
                 f"comprobante_{maintenance_id}"
                 f"{extension}"
             )
 
+            # Ruta final en S3
             s3Name = folder_path + new_name
 
+            # Actualizar referencia del archivo
             obj.comprobante = s3Name
 
+            # Subir archivo a S3
             upload_to_s3(
                 load_file,
                 bucket_name,
                 s3Name
             )
 
+            # Guardar nuevamente el registro
             obj.save()
+
+        # ========================================================
+        # RESPUESTA EXITOSA
+        # ========================================================
 
         response["status"] = "success"
         response["message"] = (
@@ -4081,10 +4180,16 @@ def update_vehicle_maintenance(request):
 
     except Exception as e:
 
+        # Capturar cualquier error durante la actualización
         response["status"] = "error"
         response["message"] = str(e)
 
+    # ============================================================
+    # DEVOLVER RESPUESTA
+    # ============================================================
+
     return JsonResponse(response)
+
 
 def delete_vehicle_maintenance(request):
     response = {"success": False, "data": []}
