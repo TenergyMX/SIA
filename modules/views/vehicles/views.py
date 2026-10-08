@@ -4518,81 +4518,81 @@ def delete_vehicle_fuel(request):
 @csrf_exempt
 def add_option(request):
     if request.method == 'POST':
-        try: 
-            # Cargar datos del cuerpo del request
+        try:
             data = json.loads(request.body)
-            
+
             option_name = data.get('option_maintenance_name', '').strip()
-            maintenance_type = data.get('maintenance_type', '').strip()
+            maintenance_type = data.get('maintenance_type', '').strip().lower()
 
             if not option_name or not maintenance_type:
-                return JsonResponse({'status': 'error', 'message': 'Faltan datos necesarios'}, status=400)
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Faltan datos necesarios'
+                }, status=400)
 
-            # Definir la ruta del archivo JSON
-            directorio_actual = os.path.dirname(os.path.abspath(__file__))
-            directorio_json = os.path.join(directorio_actual, '..', '..', 'static', 'assets', 'json', 'vehicles-maintenance.json')
+            if maintenance_type not in ['preventivo', 'correctivo']:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Tipo de mantenimiento no válido'
+                }, status=400)
 
-            # Cargar el JSON desde el archivo
-            with open(directorio_json, 'r') as file:
-                json_data = json.load(file)
-            # Función para agregar un nuevo ítem
-            def agregar_item(json_data, tipo_mantenimiento, nueva_descripcion):
-                for mantenimiento in json_data['data']:
-                    if mantenimiento['tipo'].lower() == tipo_mantenimiento.lower():
-                        max_id = max([item['id'] for item in mantenimiento['items']])
-                        nuevo_id = max_id + 1
-                        nuevo_item = {
-                            "id": nuevo_id,
-                            "descripcion":  nueva_descripcion.upper()
-                        }
-                        mantenimiento['items'].append(nuevo_item)
-                        return json_data
-                return None
+            # Guardar directamente en la base de datos
+            maintenance = MaintenanceAction.objects.create(
+                name=option_name.upper(),
+                type=maintenance_type,
+                company_id=1
+            )
 
-            # Llamar a la función para agregar el ítem
-            data_actualizada = agregar_item(json_data, maintenance_type, option_name)
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Mantenimiento agregado correctamente',
+                'data': {
+                    'id': maintenance.id,
+                    'name': maintenance.name,
+                    'type': maintenance.type,
+                    'company_id': maintenance.company_id
+                }
+            })
 
-            if data_actualizada:
-                # Guardar el JSON actualizado
-                with open(directorio_json, 'w') as file:
-                    json.dump(data_actualizada, file, indent=4)
-
-                # Ejecutar python manage.py collectstatic
-                try:
-                    subprocess.run(['python', 'manage.py', 'collectstatic', '--noinput'], check=True)
-                except subprocess.CalledProcessError as e:
-                    return JsonResponse({'status': 'error', 'message': 'Error al ejecutar collectstatic'}, status=500)
-
-                return JsonResponse({'status': 'success', 'message': 'Mantenimiento agregado correctamente'})
-            else:
-                return JsonResponse({'status': 'error', 'message': 'Tipo de mantenimiento no encontrado'}, status=400)
-            
         except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Error en el formato de JSON'}, status=400)
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': f'Error interno: {str(e)}'}, status=500)
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Error en el formato de JSON'
+            }, status=400)
 
-    return JsonResponse({'status': 'error', 'message': 'Método no permitido'},status=405)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error interno: {str(e)}'
+            }, status=500)
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Método no permitido'
+    }, status=405)
 
 def obtener_opciones(request):
-    directorio_actual = os.path.dirname(os.path.abspath(__file__))
-    directorio_json = os.path.join(directorio_actual, '..', '..', 'static', 'assets', 'json', 'vehicles-maintenance.json')
-
     try:
-        with open(directorio_json, 'r') as file:
-            json_data = json.load(file)
-
         opciones = []
-        for mantenimiento in json_data['data']:
-            for item in mantenimiento['items']:
-                opciones.append({
-                    'id': item['id'],
-                    'descripcion': item['descripcion']
-                })
+
+        mantenimientos = MaintenanceAction.objects.filter(
+            company_id=1
+        ).order_by('id')
+
+        for mantenimiento in mantenimientos:
+            opciones.append({
+                'id': mantenimiento.id,
+                'descripcion': mantenimiento.name,
+                'tipo': mantenimiento.type
+            })
 
         return JsonResponse(opciones, safe=False)
+
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 def delete_vehicle_verificacion(request):
     response = {"success": False, "data": []}

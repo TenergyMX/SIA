@@ -307,74 +307,202 @@ class VehiclesMaintenance {
                     self.tbl_maintenance.ajax.reload();
                     break;
                 case "add-item":
-                    obj_modal.find("form")[0].reset();
-                    obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Registrar Mantenimiento");
-                    obj_modal.find("[type='submit']").hide();
-                    obj_modal.find("[name='add']").show();
+                    self.loadApi(function () {
+                        obj_modal.find("form")[0].reset();
+                        obj_modal.modal("show");
+                        obj_modal.find(".modal-header").html("Registrar Mantenimiento");
+                        obj_modal.find("[type='submit']").hide();
+                        obj_modal.find("[name='add']").show();
 
-                    obj_modal.find("[name='vehicle_id']").val(self.vehicle.data.vehicle_id || null);
-                    obj_modal
-                        .find("[name='vehicle__name']")
-                        .val(self.vehicle.data.vehicle__name || null)
-                        .prop("readonly", true);
-                    obj_modal
-                        .find(".modal-body :input:not([type='hidden'])")
-                        .prop("disabled", false)
-                        .closest(".col-12")
-                        .show();
-                    obj_modal.find("[name='type']").trigger("change");
-                    break;
-                case "update-item":
-                    cargandoMantenimiento = true;
+                        obj_modal.find("[name='vehicle_id']").val(self.vehicle.data.vehicle_id || null);
 
-                    obj_modal.find("form")[0].reset();
-                    obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Actualizar registro");
-                    obj_modal.find("[type='submit']").hide();
-                    obj_modal.find("[name='update']").show();
+                        obj_modal
+                            .find("[name='vehicle__name']")
+                            .val(self.vehicle.data.vehicle__name || null)
+                            .prop("readonly", true);
 
-                    var fila = $(this).closest("tr");
-                    var datos = self.tbl_maintenance.row(fila).data();
+                        obj_modal
+                            .find(".modal-body :input:not([type='hidden'])")
+                            .prop("disabled", false)
+                            .closest(".col-12")
+                            .show();
 
-                    // Guardar el ID del mantenimiento editado
-                    obj_modal.find("[name='id']").val(datos.id);
-
-                    $.each(datos, function (index, value) {
-                        var input = obj_modal.find(`[name='${index}']`);
-
-                        var isFileInput = input.is(":file");
-
-                        if (!isFileInput) {
-                            input.val(value);
-                        }
+                        obj_modal.find("[name='type']").trigger("change");
                     });
-
-                    try {
-                        if (datos["actions"]) {
-                            let jsonString = datos["actions"].replace(/'/g, '"');
-                            let objeto = JSON.parse(jsonString);
-                            let claves = Object.keys(objeto);
-
-                            console.log("ACCIONES DEL MANTENIMIENTO:", claves);
-
-                            obj_modal.find('[name="type"]').trigger("change");
-
-                            obj_modal.find('[name="actions[]"]').val(claves);
-
-                            obj_modal.find('[name="actions[]"]').trigger("change.select2");
-                        } else {
-                            obj_modal.find('[name="type"]').trigger("change");
-                        }
-                    } catch (error) {
-                        console.error(error);
-                    }
-
-                    setTimeout(function () {
-                        cargandoMantenimiento = false;
-                    }, 100);
-
                     break;
+               
+                    case "update-item":
+                        cargandoMantenimiento = true;
+
+                        obj_modal.find("form")[0].reset();
+                        obj_modal.modal("show");
+                        obj_modal.find(".modal-header").html("Actualizar registro");
+                        obj_modal.find("[type='submit']").hide();
+                        obj_modal.find("[name='update']").show();
+
+                        var fila = $(this).closest("tr");
+                        var datos = self.tbl_maintenance.row(fila).data();
+
+                        // Guardar el ID del mantenimiento editado
+                        obj_modal.find("[name='id']").val(datos.id);
+
+                        // Cargar los datos generales del mantenimiento
+                        $.each(datos, function (index, value) {
+                            var input = obj_modal.find(`[name='${index}']`);
+                            var isFileInput = input.is(":file");
+
+                            if (!isFileInput) {
+                                input.val(value);
+                            }
+                        });
+
+                        // Normalizar nombres para poder comparar
+                        function normalizarAccion(nombre) {
+                            return String(nombre || "")
+                                .trim()
+                                .replace(/\s+/g, " ")
+                                .normalize("NFD")
+                                .replace(/[\u0300-\u036f]/g, "")
+                                .toUpperCase();
+                        }
+
+                        // Primero cargar nuevamente todas las opciones
+                        self.loadApi(function () {
+
+                            try {
+
+                                var acciones = datos["actions"];
+                                var claves = [];
+
+                                if (acciones) {
+
+                                    // Si viene como string
+                                    if (typeof acciones === "string") {
+
+                                        try {
+                                            acciones = JSON.parse(acciones);
+                                        } catch (error) {
+
+                                            // Puede venir como representación de Python
+                                            var jsonString = acciones.replace(/'/g, '"');
+
+                                            acciones = JSON.parse(jsonString);
+                                        }
+                                    }
+
+                                    // Obtener las claves del objeto
+                                    if (
+                                        acciones &&
+                                        typeof acciones === "object" &&
+                                        !Array.isArray(acciones)
+                                    ) {
+                                        claves = Object.keys(acciones);
+                                    }
+
+                                    // Si fuera un array
+                                    else if (Array.isArray(acciones)) {
+                                        claves = acciones;
+                                    }
+                                }
+
+                                console.log("====================================");
+                                console.log("ACCIONES DEL MANTENIMIENTO:");
+                                console.log(claves);
+                                console.log("====================================");
+
+                                // Actualizar tipo de mantenimiento
+                                obj_modal.find('[name="type"]').trigger("change");
+
+                                // Select2
+                                var select = obj_modal.find('[name="actions[]"]');
+
+                                // Limpiar selección anterior
+                                select.val(null).trigger("change");
+
+                                var accionesSeleccionadas = [];
+
+                                /*
+                                * Recorrer las opciones que realmente existen
+                                * en el SELECT.
+                                */
+                                select.find("option").each(function () {
+
+                                    var valorOption = $(this).val();
+
+                                    if (!valorOption || valorOption === "Nuevo") {
+                                        return;
+                                    }
+
+                                    var valorNormalizado = normalizarAccion(valorOption);
+
+                                    /*
+                                    * Comparar contra las acciones guardadas
+                                    */
+                                    for (var i = 0; i < claves.length; i++) {
+
+                                        var accionGuardada = claves[i];
+
+                                        if (!accionGuardada) {
+                                            continue;
+                                        }
+
+                                        var accionNormalizada =
+                                            normalizarAccion(accionGuardada);
+
+                                        if (valorNormalizado === accionNormalizada) {
+
+                                            accionesSeleccionadas.push(valorOption);
+
+                                            console.log(
+                                                "COINCIDENCIA:",
+                                                accionGuardada,
+                                                "=>",
+                                                valorOption
+                                            );
+
+                                            break;
+                                        }
+                                    }
+                                });
+
+                                console.log("====================================");
+                                console.log("ACCIONES SELECCIONADAS:");
+                                console.log(accionesSeleccionadas);
+                                console.log("====================================");
+
+                                /*
+                                * Finalmente seleccionar las acciones
+                                * encontradas en Select2.
+                                */
+                                select
+                                    .val(accionesSeleccionadas)
+                                    .trigger("change");
+
+                                console.log(
+                                    "ACCIONES CARGADAS EN SELECT2:",
+                                    accionesSeleccionadas
+                                );
+
+                            } catch (error) {
+
+                                console.error(
+                                    "ERROR AL CARGAR LAS ACCIONES:",
+                                    error
+                                );
+
+                                obj_modal
+                                    .find('[name="actions[]"]')
+                                    .val(null)
+                                    .trigger("change");
+                            }
+
+                            setTimeout(function () {
+                                cargandoMantenimiento = false;
+                            }, 100);
+
+                        });
+
+                        break;
 
                 case "delete-item":
                     var url = "/delete_vehicle_maintenance/";
@@ -902,28 +1030,50 @@ class VehiclesMaintenance {
         });
     }
 
-    loadApi() {
+    loadApi(callback) {
         const self = this;
-        var obj_modal = $("#mdl_crud_computerSystem");
-        var url = SIA.static + "assets/json/vehicles-maintenance.json";
 
         $.ajax({
             type: "GET",
-            url: url,
+            url: "/obtener_opciones/",
             success: function (response) {
-                self.dataMaintenance = {};
-                $.each(response.data, function (index, mantenimiento) {
+                self.dataMaintenance = {
+                    preventivo: [],
+                    correctivo: []
+                };
+
+                $.each(response, function (index, mantenimiento) {
                     var tipo = mantenimiento.tipo;
-                    self.dataMaintenance[tipo] = mantenimiento.items;
+
+                    if (!self.dataMaintenance[tipo]) {
+                        self.dataMaintenance[tipo] = [];
+                    }
+
+                    self.dataMaintenance[tipo].push({
+                        id: mantenimiento.id,
+                        descripcion: mantenimiento.descripcion
+                    });
                 });
+
+                if (typeof callback === "function") {
+                    callback();
+                }
             },
-            error: function (xhr, status, error) {
-                self.dataMaintenance = { preventivo: [], correctivo: [] };
-            },
-            complete: function () {},
+            error: function () {
+                self.dataMaintenance = {
+                    preventivo: [],
+                    correctivo: []
+                };
+
+                if (typeof callback === "function") {
+                    callback();
+                }
+            }
         });
     }
+    
 }
+
 
 function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo, callback = null) {
     var dataToSend = {
