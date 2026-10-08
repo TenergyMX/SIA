@@ -8259,7 +8259,8 @@
 }
 .btn-custom-border:hover {
     border: 0 solid;
-    box-shadow: inset 0 0 1.25rem rgba(var(--warning-rgb), 0.5),
+    box-shadow:
+        inset 0 0 1.25rem rgba(var(--warning-rgb), 0.5),
         0 0 1.25rem rgba(var(--warning-rgb), 0.2);
     outline-color: rgba(var(--warning-rgb), 0);
     outline-offset: 0.938rem;
@@ -9717,7 +9718,9 @@ fieldset:disabled .btn {
 /* Start:: form validations */
 .form-select.is-invalid:not([multiple]):not([size]) {
     padding-right: 1.125rem;
-    background-size: 16px 28px, calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    background-size:
+        16px 28px,
+        calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 
 /* End:: form validations */
@@ -16900,7 +16903,8 @@ hr {
     border-radius: 50%;
     top: 0;
     inset-inline-end: 0;
-    background-image: linear-gradient(102deg, transparent 41%, var(--primary05) 0%),
+    background-image:
+        linear-gradient(102deg, transparent 41%, var(--primary05) 0%),
         linear-gradient(90deg, #f3f3f3 50%, transparent 50%);
     z-index: -1;
 }
@@ -25498,35 +25502,35 @@ a.link-underline-dark {
 }
 
 .audit-checks-scroll {
-  max-height: 400px;
-  overflow-y: auto;     /* scroll vertical cuando haga falta */
-  overflow-x: auto;     /* scroll horizontal cuando haga falta */
-  scrollbar-width: thin;
-  scrollbar-color: #888 #eee;
+    max-height: 400px;
+    overflow-y: auto; /* scroll vertical cuando haga falta */
+    overflow-x: auto; /* scroll horizontal cuando haga falta */
+    scrollbar-width: thin;
+    scrollbar-color: #888 #eee;
 }
 
 .audit-checks-scroll::-webkit-scrollbar {
-  height: 8px;  /* para scroll horizontal */
-  width: 8px;   /* para scroll vertical */
+    height: 8px; /* para scroll horizontal */
+    width: 8px; /* para scroll vertical */
 }
 
 .audit-checks-scroll::-webkit-scrollbar-track {
-  background: #eee;
+    background: #eee;
 }
 
 .audit-checks-scroll::-webkit-scrollbar-thumb {
-  background-color: #888;
-  border-radius: 4px;
-  border: 2px solid #eee;
+    background-color: #888;
+    border-radius: 4px;
+    border: 2px solid #eee;
 }
 
 .audit-checks-scroll:hover::-webkit-scrollbar-thumb {
-  background-color: #555;
+    background-color: #555;
 }
 
 /* Aquí estableces el ancho mínimo para la tabla */
 #audit-checks-table {
-  min-width: 700px; /* por ejemplo, 700px o lo que necesites */
+    min-width: 700px; /* por ejemplo, 700px o lo que necesites */
 }
 
 .index9999{
