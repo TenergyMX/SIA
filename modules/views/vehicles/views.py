@@ -3896,43 +3896,83 @@ def update_vehicle_maintenance(request):
         return JsonResponse(response)
 
     #acciones
-    if "actionsformat2" in dt:
+    # if "actionsformat2" in dt:
+
+    #     print("====================================")
+    #     print("ACTIONSFORMAT2 RECIBIDO:")
+    #     print(dt["actionsformat2"])
+    #     print("====================================")
+
+    #     try:
+
+    #         actions_data = json.loads(
+    #             dt["actionsformat2"]
+    #         )
+
+    #         print("ACTIONS DATA:")
+    #         print(actions_data)
+
+    #         actions_data = [
+    #             accion
+    #             for accion in actions_data
+    #             if accion
+    #             and accion != "undefined"
+    #             and accion != "null"
+    #         ]
+
+    #         actions = str(actions_data)
+
+    #         print("ACTIONS QUE SE GUARDARÁ:")
+    #         print(actions)
+
+    #     except (json.JSONDecodeError, TypeError):
+
+    #         response["status"] = "error"
+    #         response["message"] = (
+    #             "Las acciones tienen un formato inválido."
+    #         )
+
+    #         return JsonResponse(response)
+
+    # else:
+    #     actions = obj.actions
+    # acciones
+    if "actions[]" in dt:
 
         print("====================================")
-        print("ACTIONSFORMAT2 RECIBIDO:")
-        print(dt["actionsformat2"])
+        print("ACTIONS RECIBIDAS:")
+        print(dt.getlist("actions[]"))
         print("====================================")
 
+        actions_data = dt.getlist("actions[]")
+
+        actions_data = [
+            accion.strip()
+            for accion in actions_data
+            if accion
+            and accion.strip()
+            and accion != "undefined"
+            and accion != "null"
+        ]
+
+        # Obtener acciones actuales
         try:
-
-            actions_data = json.loads(
-                dt["actionsformat2"]
-            )
-
-            print("ACTIONS DATA:")
-            print(actions_data)
-
-            actions_data = [
-                accion
-                for accion in actions_data
-                if accion
-                and accion != "undefined"
-                and accion != "null"
-            ]
-
-            actions = str(actions_data)
-
-            print("ACTIONS QUE SE GUARDARÁ:")
-            print(actions)
-
+            acciones_actuales = json.loads(obj.actions) if obj.actions else {}
         except (json.JSONDecodeError, TypeError):
+            acciones_actuales = {}
 
-            response["status"] = "error"
-            response["message"] = (
-                "Las acciones tienen un formato inválido."
-            )
+        # Agregar nuevas acciones sin eliminar las existentes
+        for accion in actions_data:
+            if accion not in acciones_actuales:
+                acciones_actuales[accion] = "PENDIENTE"
 
-            return JsonResponse(response)
+        actions = json.dumps(
+            acciones_actuales,
+            ensure_ascii=False
+        )
+
+        print("ACTIONS QUE SE GUARDARÁ:")
+        print(actions)
 
     else:
         actions = obj.actions
