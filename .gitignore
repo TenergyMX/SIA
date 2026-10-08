@@ -1,4 +1,4 @@
-#/modules/migrations/
+/modules/migrations/
 /modules/__pycache__/
 /modules/views/authentication/__pycache__/
 /modules/views/computer-equipment/__pycache__/
@@ -26,3 +26,4 @@ postgres/siaDB.pgsql
 modules/.DS_Store
 .DS_Store
 modules/static/assets/json/
+**/migrations/
