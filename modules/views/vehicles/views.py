@@ -3687,21 +3687,50 @@ def get_vehicle_maintenance(request):
     subModule_id = 11
     
     lista = Vehicle_Maintenance.objects.filter(
-        vehicle_id = vehicle_id).values(
+        vehicle_id = vehicle_id)
+
+    if context["role"]["id"] in [1, 2]: 
+        lista = lista.filter( 
+            vehicle__company_id=context["company"]["id"] 
+        ) 
+    else: 
+        lista = lista.filter( 
+            vehicle__responsible_id=context["user"]["id"] 
+        )
+
+
+    lista = lista.values(
         "id", "vehicle_id", "vehicle__name",
         "provider_id", "provider__name",
         "date", "type", "cost", 
         "mileage","time", "general_notes", "actions", "comprobante", "status"
     )
 
-    if context["role"] in [2,3]:
-        data = lista.filter(vehicle__company_id = context["company"]["id"])
-    else:
-        data = lista.filter(vehicle__responsible_id = context["user"]["id"])
-
     access = get_module_user_permissions(context, subModule_id)
     access = access["data"]["access"]
+
     for item in lista:
+        item["btn_comprobante"] = ""
+
+        if item["comprobante"]:
+
+            tempDoc = generate_presigned_url( 
+                bucket_name, 
+                str(item["comprobante"]) 
+            )
+
+            item["comprobante"] = tempDoc
+
+            item["btn_comprobante"] = f""" 
+                <a href="{tempDoc}" 
+                    target="_blank" 
+                    class="btn btn-sm btn-primary" 
+                    title="Ver comprobante"> 
+                    <i class="fa-solid fa-file-lines"></i> 
+                    Ver 
+                </a> 
+            """
+            
         check = item["cost"] is not None and item["mileage"] is not None
         item["btn_action"] = """<button class=\"btn btn-primary btn-sm\" data-sia-vehicle-maintenance=\"show-info-details\">
             <i class="fa-sharp fa-solid fa-eye"></i>
@@ -3728,7 +3757,7 @@ def get_vehicles_maintenance(request):
     response = {"success": False, "data": []}
     dt = request.GET
     subModule_id = 11
-    
+
 
     # Crear el queryset base
     base_maintenance_qs = Vehicle_Maintenance.objects.all()
@@ -3740,12 +3769,12 @@ def get_vehicles_maintenance(request):
         base_maintenance_qs = base_maintenance_qs.filter(vehicle__responsible_id=context["user"]["id"])
 
     # Subquery: seleccionar el mantenimiento más reciente por vehículo
-    latest_maintenance = Vehicle_Maintenance.objects.filter(
-        vehicle_id=OuterRef('vehicle_id')
-    ).order_by('-date')
+    #latest_maintenance = Vehicle_Maintenance.objects.filter(
+    #    vehicle_id=OuterRef('vehicle_id')
+    #).order_by('-date')
 
     # Filtrar el queryset base 
-    base_maintenance_qs = base_maintenance_qs.filter(id=Subquery(latest_maintenance.values('id')[:1]))
+    #base_maintenance_qs = base_maintenance_qs.filter(id=Subquery(latest_maintenance.values('id')[:1]))
 
     # Extraer solo los campos que se van a devolver
     lista = base_maintenance_qs.values(
@@ -3765,6 +3794,13 @@ def get_vehicles_maintenance(request):
     access = access["data"]["access"]
     
     for item in lista:
+
+        if item["comprobante"]:
+            item["comprobante"] = generate_presigned_url(
+                bucket_name,
+                str(item["comprobante"])
+            )
+
         check = item["mileage"] is not None
         item["btn_action"] = """<button class=\"btn btn-icon btn-sm btn-primary-light\" data-sia-vehicle-maintenance=\"show-info-details\">
             <i class="fa-sharp fa-solid fa-eye"></i>
@@ -3787,105 +3823,188 @@ def get_vehicles_maintenance(request):
     return JsonResponse(response)
 
 def update_vehicle_maintenance(request):
+
+    print("########################################")
+    print("ENTRO A update_vehicle_maintenance")
+    print("METHOD:", request.method)
+    print("POST:", request.POST)
+    print("########################################")
+    
     response = {"success": False}
     dt = request.POST
+
     vehicle_id = dt.get("vehicle_id")
-    id = dt.get("id", None)
+    maintenance_id = dt.get("id", None)
 
     context = user_data(request)
     tipo_user = context["role"]["name"].lower()
 
-    if not id:
-        response["error"] = {"message": "No se proporcionó un ID válido"}
+    if not maintenance_id:
+        response["status"] = "error"
+        response["message"] = "No se proporcionó un ID válido"
         return JsonResponse(response)
-    
+
     try:
+
         obj_vehicle = Vehicle.objects.get(id=vehicle_id)
 
+        # Validar kilometraje solamente para usuarios
         if tipo_user not in ["administrador", "super usuario"]:
-            mileage = Decimal(dt.get("mileage")) if dt.get("mileage") else None
-            if mileage is not None and obj_vehicle.mileage is not None and obj_vehicle.mileage > mileage:
+
+            mileage = (
+                Decimal(dt.get("mileage"))
+                if dt.get("mileage")
+                else None
+            )
+
+            if (
+                mileage is not None
+                and obj_vehicle.mileage is not None
+                and obj_vehicle.mileage > mileage
+            ):
+
                 response["status"] = "warning"
-                response["message"] = "El kilometraje del vehículo es mayor que el kilometraje proporcionado."
+                response["message"] = (
+                    "El kilometraje del vehículo es mayor "
+                    "que el kilometraje proporcionado."
+                )
+
                 return JsonResponse(response)
-            
+
     except Vehicle.DoesNotExist:
-        response["status"] = "success"
-        response["message"] = f"No se encontró ningún vehículo con el ID {vehicle_id}"
+
+        response["status"] = "error"
+        response["message"] = (
+            f"No se encontró ningún vehículo con el ID {vehicle_id}"
+        )
+
         return JsonResponse(response)
 
+    # obtener mantenimiento 
     try:
-        obj = Vehicle_Maintenance.objects.get(id=id)
+        obj = Vehicle_Maintenance.objects.get(
+            id=maintenance_id
+        )
+
     except Vehicle_Maintenance.DoesNotExist:
         response["status"] = "error"
-        response["message"] = f"No existe ningún registro con el ID '{id}'"
+        response["message"] = (
+            f"No existe ningún registro con el ID "
+            f"'{maintenance_id}'"
+        )
+
         return JsonResponse(response)
 
-    if dt.getlist("actions[]"):
-        array = dt.getlist("actions[]")
-        actions = {accion: "PENDIENTE" for accion in array}
-        actions = str(actions)
-    elif "actionsformat2" in dt:
-        actions = dt["actionsformat2"]
+    #acciones
+    if "actionsformat2" in dt:
+
+        print("====================================")
+        print("ACTIONSFORMAT2 RECIBIDO:")
+        print(dt["actionsformat2"])
+        print("====================================")
+
+        try:
+
+            actions_data = json.loads(
+                dt["actionsformat2"]
+            )
+
+            print("ACTIONS DATA:")
+            print(actions_data)
+
+            actions_data = [
+                accion
+                for accion in actions_data
+                if accion
+                and accion != "undefined"
+                and accion != "null"
+            ]
+
+            actions = str(actions_data)
+
+            print("ACTIONS QUE SE GUARDARÁ:")
+            print(actions)
+
+        except (json.JSONDecodeError, TypeError):
+
+            response["status"] = "error"
+            response["message"] = (
+                "Las acciones tienen un formato inválido."
+            )
+
+            return JsonResponse(response)
+
     else:
-        actions = ""
+        actions = obj.actions
 
+    # cambio en la fecha
+    fecha_modificada = False
+
+    if dt.get("date"):
+
+        nueva_fecha = datetime.strptime(
+            dt.get("date"),
+            "%Y-%m-%d"
+        ).date()
+
+        if obj.date != nueva_fecha:
+            fecha_modificada = True
+
+    # Actualizar datos
     try:
-        # Detectar si la fecha fue modificada
-        fecha_modificada = False
-
-        nueva_fecha = None
-
-        if dt.get("date"):
-            nueva_fecha = datetime.strptime(
-                dt.get("date"),
-                "%Y-%m-%d"
-            ).date()
-
-            # Comparar la fecha que tenía el registro
-            if obj.date != nueva_fecha:
-                fecha_modificada = True
-
-        # -------------------------------------------
-
         if dt.get("vehicle_id"):
             obj.vehicle_id = dt.get("vehicle_id")
+
         if dt.get("provider_id"):
             obj.provider_id = dt.get("provider_id")
+
         if dt.get("date"):
             obj.date = dt.get("date")
+
         if dt.get("type"):
             obj.type = dt.get("type")
+
         if dt.get("cost"):
             obj.cost = dt.get("cost")
-        if dt.get("mileage") and (tipo_user == "administrador" or tipo_user == "super usuario"):
+
+        if (
+            dt.get("mileage")
+            and tipo_user in ["administrador", "super usuario"]
+        ):
             obj.mileage = dt.get("mileage")
+
         if dt.get("time"):
             obj.time = dt.get("time")
+
         if dt.get("general_note"):
-            obj.general_notes = dt.get("general_note", None)
-        obj.status = "FINALIZADO"
-        obj.is_checked = True
+            obj.general_notes = dt.get(
+                "general_note"
+            )
+
+        # actualizar acciones
         obj.actions = actions
 
-        # modificar edstado de acuerdo con la fecha
         if fecha_modificada:
+
             obj.status = "REAGENDADO"
             obj.is_update = True
             obj.is_checked = False
 
-        else:
-            obj.status = "FINALIZADO"
-            obj.is_checked = True
 
-        # guardar
         obj.save()
-        
-        # Guardar el archivo en caso de existir
-        if 'comprobante' in request.FILES and request.FILES['comprobante']:
-            load_file = request.FILES.get('comprobante')
-            company_id = request.session.get('company').get('id')
-            # folder_path = f"docs/{company_id}/vehicle/{vehicle_id}/maintenance/"
+
+        if (
+            "comprobante" in request.FILES
+            and request.FILES["comprobante"]
+        ):
+
+            load_file = request.FILES["comprobante"]
+
+            company_id = (
+                request.session
+                .get("company")
+                .get("id")
+            )
 
             folder_path = (
                 f"docs/{company_id}/"
@@ -3893,20 +4012,38 @@ def update_vehicle_maintenance(request):
                 f"maintenance/{obj.id}/"
             )
 
-            file_name, extension = os.path.splitext(load_file.name)
-            new_name = f"comprobante_{id}{extension}"
+            file_name, extension = os.path.splitext(
+                load_file.name
+            )
+
+            new_name = (
+                f"comprobante_{maintenance_id}"
+                f"{extension}"
+            )
+
             s3Name = folder_path + new_name
-            
-            obj.comprobante = folder_path + new_name
-            upload_to_s3(load_file, bucket_name, s3Name)
+
+            obj.comprobante = s3Name
+
+            upload_to_s3(
+                load_file,
+                bucket_name,
+                s3Name
+            )
+
             obj.save()
 
         response["status"] = "success"
-        response["message"] = "Exito"
-        response["success"] = "success"
+        response["message"] = (
+            "Los datos se actualizaron correctamente."
+        )
+        response["success"] = True
+
     except Exception as e:
+
         response["status"] = "error"
         response["message"] = str(e)
+
     return JsonResponse(response)
 
 def delete_vehicle_maintenance(request):
@@ -6056,7 +6193,7 @@ def verificar_mantenimiento(request):
             # Procesar el cuerpo de la solicitud como JSON
             data = json.loads(request.body)
             # Obtener los valores del JSON
-            selected_options = list(data.get("selectedOption"))  # Ahora es una lista
+            selected_options = list(data.get("selectedOption"))  
             vehicle_id = data.get("vehicle")
             tipo = data.get("tipo")
             id_edit = data.get("id_edit")
@@ -6138,6 +6275,7 @@ def verificar_mantenimiento(request):
             response["message"] = f"Error interno: {str(e)}"
     
     return JsonResponse(response)
+
 
 @csrf_exempt  # Eximir la protección CSRF para este endpoint, si estás usando POST
 def update_status_man(request):

@@ -326,6 +326,8 @@ class VehiclesMaintenance {
                     obj_modal.find("[name='type']").trigger("change");
                     break;
                 case "update-item":
+                    cargandoMantenimiento = true;
+
                     obj_modal.find("form")[0].reset();
                     obj_modal.modal("show");
                     obj_modal.find(".modal-header").html("Actualizar registro");
@@ -335,11 +337,16 @@ class VehiclesMaintenance {
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_maintenance.row(fila).data();
 
+                    // Guardar el ID del mantenimiento editado
+                    obj_modal.find("[name='id']").val(datos.id);
+
                     $.each(datos, function (index, value) {
-                        var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
+                        var input = obj_modal.find(`[name='${index}']`);
+
+                        var isFileInput = input.is(":file");
 
                         if (!isFileInput) {
-                            obj_modal.find(`[name='${index}']`).val(value);
+                            input.val(value);
                         }
                     });
 
@@ -348,17 +355,27 @@ class VehiclesMaintenance {
                             let jsonString = datos["actions"].replace(/'/g, '"');
                             let objeto = JSON.parse(jsonString);
                             let claves = Object.keys(objeto);
+
+                            console.log("ACCIONES DEL MANTENIMIENTO:", claves);
+
                             obj_modal.find('[name="type"]').trigger("change");
 
                             obj_modal.find('[name="actions[]"]').val(claves);
+
+                            obj_modal.find('[name="actions[]"]').trigger("change.select2");
                         } else {
                             obj_modal.find('[name="type"]').trigger("change");
                         }
-                        obj_modal.find('[name="actions[]"]').trigger("change");
                     } catch (error) {
                         console.error(error);
                     }
+
+                    setTimeout(function () {
+                        cargandoMantenimiento = false;
+                    }, 100);
+
                     break;
+
                 case "delete-item":
                     var url = "/delete_vehicle_maintenance/";
                     var fila = $(this).closest("tr");
@@ -436,7 +453,7 @@ class VehiclesMaintenance {
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_maintenance.row(fila).data();
 
-                    // Limpiar el contenido del contenedor antes de cargar nuevos datos
+                    $("#form_maintenance_info").attr("data-maintenance-id", datos["id"]);
 
                     var obj_div = $("#v-maintenance-pane .info-details");
                     $.each(datos, function (index, value) {
@@ -452,29 +469,110 @@ class VehiclesMaintenance {
                     });
 
                     // Lista
-                    var jsonString = datos["actions"].replace(/'/g, '"');
-                    var objeto = JSON.parse(jsonString);
-                    obj_div.find("ol.list-group").html(""); // 15 // "S10" // "preventivo"
+
+                    var objeto = {};
+                    var accionesGuardadas = datos["actions"];
+
+                    console.log("ACTIONS RECIBIDO:", accionesGuardadas);
+
+                    try {
+                        // Si no existen acciones
+                        if (
+                            accionesGuardadas === null ||
+                            accionesGuardadas === undefined ||
+                            accionesGuardadas === "" ||
+                            accionesGuardadas === "{}"
+                        ) {
+                            objeto = {};
+                        } else if (typeof accionesGuardadas === "object") {
+                            objeto = accionesGuardadas;
+                        } else {
+                            // Convertir a string
+                            var jsonString = String(accionesGuardadas).trim();
+
+                            if (jsonString !== "") {
+                                try {
+                                    objeto = JSON.parse(jsonString);
+                                } catch (error1) {
+                                    try {
+                                        jsonString = jsonString.replace(/'/g, '"');
+
+                                        objeto = JSON.parse(jsonString);
+                                    } catch (error2) {
+                                        console.error(
+                                            "No se pudieron interpretar las acciones:",
+                                            accionesGuardadas
+                                        );
+
+                                        objeto = {};
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error procesando las acciones:", error);
+
+                        objeto = {};
+                    }
+
+                    // LIMPIAR LISTA
+
+                    var listaAcciones = obj_div.find("ol.list-group");
+
+                    listaAcciones.html("");
+
+                    // CREAR CADA ACCIÓN
                     $.each(objeto, function (index, value) {
+                        // No mostrar acciones inválidas
+                        if (!index || index === "undefined" || index === "null") {
+                            return;
+                        }
+
                         let li = $("<li>")
                             .addClass("list-group-item list-group-item-action")
-                            .appendTo(obj_div.find("ol.list-group"));
-                        li.append(`${index}`);
+                            .appendTo(listaAcciones);
+
+                        li.append(document.createTextNode(index));
+
+                        // Select con estado de la acción
                         let select = $(`
-                                <select name="${index}" class="form-select form-select-sm d-inline-block float-end action-item" style="width: auto;" disabled>
-                                    <option value="MALO">MALO</option>
-                                    <option value="REGULAR">REGULAR</option>
-                                    <option value="BUENO">BUENO</option>
-                                </select>
-                            `);
-                        select.find(`option[value="${value}"]`).prop("selected", true);
+                            <select
+                                name="${index}"
+                                class="form-select form-select-sm d-inline-block float-end action-item"
+                                style="width: auto;"
+                                disabled
+                            >
+                                <option value="MALO">MALO</option>
+                                <option value="REGULAR">REGULAR</option>
+                                <option value="BUENO">BUENO</option>
+                            </select>
+                        `);
+
+                        // Seleccionar el valor guardado
+                        select.val(value);
+
+                        if (select.val() === null && value) {
+                            select.append(
+                                $("<option>", {
+                                    value: value,
+                                    text: value,
+                                })
+                            );
+
+                            select.val(value);
+                        }
+
                         li.append(select);
                     });
-                    var lista = [];
 
-                    var actionsKeys = Object.keys(objeto);
-                    lista.push(...actionsKeys);
+                    // LISTA PARA verificar_mantenimiento
+                    var lista = Object.keys(objeto).filter(function (accion) {
+                        return accion && accion !== "undefined" && accion !== "null";
+                    });
 
+                    console.log("ACCIONES MOSTRADAS:", lista);
+
+                    // VERIFICAR MANTENIMIENTO ANTERIOR
                     verificar_mantenimiento(
                         lista,
                         datos["vehicle_id"],
@@ -482,27 +580,36 @@ class VehiclesMaintenance {
                         datos["id"],
                         "INTERNO",
                         function (result) {
-                            let opciones = result; // Usamos el resultado directamente
+                            let opciones = result || [];
 
-                            // Recorrer los <li> dentro de #card_maintenance_info y cambiar su color si su texto está en opciones
                             $(
                                 "#card_maintenance_info .list-group-item.list-group-item-action"
                             ).each(function () {
-                                // Obtener SOLO el texto principal del <li>, ignorando el contenido de elementos hijos como <select>
-                                let textoLi = $(this).clone().children().remove().end().text();
+                                let textoLi = $(this)
+                                    .clone()
+                                    .children()
+                                    .remove()
+                                    .end()
+                                    .text()
+                                    .trim();
 
                                 if (opciones.includes(textoLi)) {
                                     $(this).attr(
                                         "style",
-                                        "background-color:rgb(205,101,101) !important; color: #ffffff !important;border: 1px solid #ffffff !important;"
-                                    ); // Resaltar en rojo con !important
-                                    // Insertar el ícono con el tooltip
+                                        "background-color:rgb(205,101,101) !important; " +
+                                            "color:#ffffff !important;" +
+                                            "border:1px solid #ffffff !important;"
+                                    );
+
                                     $(this).append(
-                                        '<span data-bs-toggle="tooltip" data-bs-placement="top" title="Cambio realizado en mantenimiento anterior">' +
-                                            '<i class="fa fa-question-circle" style="cursor: pointer; color: #ffffff; margin-left: 10px;"></i>' +
+                                        '<span data-bs-toggle="tooltip" ' +
+                                            'data-bs-placement="top" ' +
+                                            'title="Cambio realizado en mantenimiento anterior">' +
+                                            '<i class="fa fa-question-circle" ' +
+                                            'style="cursor:pointer; color:#ffffff; margin-left:10px;"></i>' +
                                             "</span>"
                                     );
-                                    // Inicializar los tooltips de Bootstrap
+
                                     $('[data-bs-toggle="tooltip"]').tooltip();
                                 }
                             });
@@ -553,19 +660,28 @@ class VehiclesMaintenance {
             });
         });
 
-        // Detectar si seleccionan "Nuevo" y abrir el modal
+        var cargandoMantenimiento = false;
 
+        // Detectar si seleccionan "Nuevo" y abrir el modal
         obj_modal.on("change", "[name='actions[]']", function () {
+            if (cargandoMantenimiento) {
+                console.log("Carga inicial del mantenimiento. No se verifica.");
+                return;
+            }
+
             var selectedOption = $(this).val();
+
             var vehicle_man = $('#mdl_crud_maintenance select[name="vehicle_id"]').val();
             var tipo = $('#mdl_crud_maintenance select[name="type"]').val();
-            let id_edit = ""; // Inicializa la variable con un valor por defecto
+            let id_edit = "";
 
             if ($('#mdl_crud_maintenance input[name="id"]').val()) {
                 id_edit = $('#mdl_crud_maintenance input[name="id"]').val();
             } else {
-                id_edit = ""; // Si no hay valor en el campo, asegúrate de que sea una cadena vacía
+                id_edit = "";
             }
+
+            console.log("Usuario modificó acciones:", selectedOption);
 
             verificar_mantenimiento(selectedOption, vehicle_man, tipo, id_edit, "MODAL");
 
@@ -695,6 +811,15 @@ class VehiclesMaintenance {
             var url = "/update_vehicle_maintenance/";
             var datos = new FormData(this);
 
+            //seleccion multiple
+            var accionesSeleccionadas = datos.getAll("actions[]");
+
+            console.log("ACCIONES SELECCIONADAS:", accionesSeleccionadas);
+
+            datos.set("actionsformat2", JSON.stringify(accionesSeleccionadas));
+
+            console.log("ACTIONFORMAT2:", datos.get("actionsformat2"));
+
             Swal.fire({
                 title: "Estas seguro?",
                 text: "Solo se podra guardar cambios una sola vez",
@@ -704,6 +829,7 @@ class VehiclesMaintenance {
             }).then((result) => {
                 if (!result.isConfirmed) return;
 
+                //obtener las acciones actuales
                 var actionsformat2 = {};
                 $(".action-item").each(function () {
                     var name = $(this).attr("name");
@@ -711,7 +837,10 @@ class VehiclesMaintenance {
                     actionsformat2[name] = valor;
                 });
 
-                datos.append("actionsformat2", JSON.stringify(actionsformat2));
+                console.log("ACCIONES QUE SE VAN A GUARDAR:", actionsformat2);
+
+                // agregar acciones al formulario
+                datos.set("actionsformat2", JSON.stringify(actionsformat2));
 
                 $.ajax({
                     type: "POST",
@@ -720,20 +849,37 @@ class VehiclesMaintenance {
                     processData: false,
                     contentType: false,
                     success: function (response) {
+                        console.log("RESPUESTA UPDATE:", response);
+
                         var message = response.message || "Ocurrió un error inesperado";
                         if (response.status == "error") {
                             Swal.fire("Error", response.message, "error");
                             return;
-                        } else if (response.status == "warning") {
+                        }
+                        if (response.status == "warning") {
                             Swal.fire("Advertencia", response.message, "warning");
                             return;
-                        } else if (response.status != "success") {
+                        }
+
+                        if (response.status != "success") {
                             Swal.fire("Oops", message, "error");
                             return;
                         }
-                        message = response.message || "Se han guardado los datos con éxito";
+
                         Swal.fire("Exito", message, "success");
+
+                        self.tbl_maintenance.ajax.reload(null, false);
+
+                        $("#form_maintenance_info")[0].reset();
                         $("#comprobante").val("");
+
+                        $(".comprobante a.btn").attr("href", "");
+                        $(".comprobante a.btn").hide();
+
+                        $(".comprobante [type='file']").show();
+                        $(".comprobante [type='file']").removeClass("d-none");
+
+                        $("#form_maintenance_info .form-btn").show();
                     },
                     error: function (xhr, status, error) {
                         let errorMessage = "Ocurrió un error inesperado";
@@ -781,24 +927,22 @@ class VehiclesMaintenance {
 
 function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo, callback = null) {
     var dataToSend = {
-        selectedOption: selectedOption, // selectedOptions es un array
-        vehicle: vehicle, // El ID del vehículo
+        selectedOption: selectedOption,
+        vehicle: vehicle,
         tipo: tipo,
         id_edit: id_edit,
     };
-    // datos.append("actionsformat2", JSON.stringify(actionsformat2));
     $.ajax({
         url: "/verificar_mantenimiento/",
         method: "POST",
         data: JSON.stringify(dataToSend),
-        contentType: "application/json", // Establecemos el tipo de contenido
-        dataType: "json", // Esperamos recibir una respuesta JSON
+        contentType: "application/json",
+        dataType: "json",
         success: function (data) {
             // Declarar 'opciones' fuera del bloque if
             let opciones = [];
 
             if (data.status == "info") {
-                // Separar el mensaje en opciones sin modificar el contenido
                 opciones = data.message.split("*").filter((op) => op !== "");
             }
 
@@ -809,19 +953,16 @@ function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo,
                 ).each(function () {
                     let tituloOpcion = $(this).attr("title");
 
-                    // Si el title está en la lista de opciones devueltas, cambia el color de toda la estructura
                     if (opciones.includes(tituloOpcion)) {
                         $(this).css({
-                            "background-color": "rgb(205,101,101)", // Establece el fondo
+                            "background-color": "rgb(205,101,101)",
                             border: "1px solid rgb(205,101,101)",
                         });
-                        // Establecer un texto de tooltip cuando el cursor pase sobre el elemento
                         $(this).attr("title", "Cambio realizado en mantenimiento pasado");
                     } else {
-                        // Eliminar el color de fondo si no coincide con las opciones
                         $(this).css({
-                            "background-color": "var(--primary-color)", // Establece el fondo
-                            border: "1px solid var(--primary-color)", // Ajuste para el borde
+                            "background-color": "var(--primary-color)",
+                            border: "1px solid var(--primary-color)",
                         });
                     }
                 });
@@ -842,8 +983,8 @@ function verificar_mantenimiento(selectedOption, vehicle, tipo, id_edit, modulo,
 }
 
 function add_option() {
-    var optionName = $("#option_maintenance_name").val(); // Obtiene el valor del input
-    var maintenanceType = $('select[name="type"]').val(); // Obtiene el tipo de mantenimiento
+    var optionName = $("#option_maintenance_name").val();
+    var maintenanceType = $('select[name="type"]').val();
 
     $.ajax({
         url: "/add_option/",
