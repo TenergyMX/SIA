@@ -13,41 +13,57 @@
     <section>
 
         <div class="row g-3">
-            <div class="col-sm-4 col-lg-3">
-                <div class="card mb-0 cursor-pointer filter-card" data-status="todos" style="cursor:pointer;">
+            
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card mb-0 cursor-pointer filter-card h-100"
+                    data-status="todos">
+
                     <div class="card-body">
-                        <div class="d-flex align-items-top">
-                            <div class="me-3">
+                        <div class="d-flex align-items-center gap-3">
+
+                            <!-- Icono -->
+                            <div class="filter-card-icon flex-shrink-0">
                                 <span class="avatar avatar-lg bg-primary">
                                     <i class="fa-solid fa-folder-open fa-xl"></i>
                                 </span>
                             </div>
-                            <div class="">
-                                <p class="mb-1 text-muted">TODOS</p>
-                                <h5 id="counter-todos" class="fw-semibold mb-0">0</h5>
+
+                            <!-- Texto y contador -->
+                            <div class="filter-card-content flex-grow-1">
+                                <p class="filter-card-title mb-1 text-muted">
+                                    REGISTRADOS
+                                </p>
+                                <h5 id="counter-todos"
+                                    class="fw-semibold mb-0">
+                                    0
+                                </h5>
                             </div>
+
                         </div>
                     </div>
+
                 </div>
             </div>
-            <div class="col-sm-4 col-lg-3">
-                <div class="card mb-0 cursor-pointer filter-card" data-status="activos" style="cursor:pointer;">
+
+            <div class="col-sm-6 col-lg-4">
+                <div class="card mb-0 cursor-pointer filter-card h-100" data-status="activos">
                     <div class="card-body">
-                        <div class="d-flex align-items-top">
-                            <div class="me-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="filter-card-icon flex-shrink-0">
                                 <span class="avatar avatar-lg bg-primary">
                                     <i class="fa-sharp fa-solid fa-circle-dollar fa-xl"></i>
                                 </span>
                             </div>
-                            <div class="">
-                                <p class="mb-1 text-muted">ACTIVOS</p>
+
+                            <div class="filter-card-content flex-grow-1">
+                                <p class="filter-card-title mb-1 text-muted"> ACTIVOS</p>
                                 <h5 id="counter-activo" class="fw-semibold mb-0">0</h5>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-4 col-lg-3">
+            <div class="col-sm-4 col-lg-4">
                 <div class="card mb-0 cursor-pointer filter-card" data-status="inactivos" style="cursor:pointer;">
                     <div class="card-body">
                         <div class="d-flex align-items-top">

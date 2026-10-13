@@ -14,51 +14,51 @@
     </div>
 </div>
 <div class="row g-3">
-    <div class="col-sm-4 col-lg-3">
-        <div class="card mb-0 cursor-pointer filter-card" data-status="todas" style="cursor:pointer;">
+    <div class="col-12 col-sm-4 col-lg-3">
+        <div class="card mb-0 cursor-pointer filter-card h-100" data-status="todas">
             <div class="card-body">
-                <div class="d-flex align-items-top drive-1">
-                    <div class="me-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="filter-card-icon flex-shrink-0">
                         <span class="avatar avatar-lg bg-primary">
                             <i class="fa-solid fa-folder-open fa-xl"></i>
                         </span>
                     </div>
-                    <div class="">
-                        <p class="mb-1 text-muted">TODAS</p>
+                    <div class="filter-card-content flex-grow-1">
+                        <p class="filter-card-title mb-1 text-muted">TODAS</p>
                         <h5 id="counter-todas" class="fw-semibold mb-0">0</h5>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-sm-4 col-lg-3">
-        <div class="card mb-0 cursor-pointer filter-card" data-status="evaluadas" style="cursor:pointer;">
+    <div class="col-12 col-sm-4 col-lg-3">
+        <div class="card mb-0 cursor-pointer filter-card h-100" data-status="evaluadas">
             <div class="card-body">
-                <div class="d-flex align-items-top drive-2">
-                    <div class="me-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="filter-card-icon flex-shrink-0">
                         <span class="avatar avatar-lg bg-primary">
                             <i class="fa-sharp fa-solid fa-circle-dollar fa-xl"></i>
                         </span>
                     </div>
-                    <div class="">
-                        <p class="mb-1 text-muted">EVALUADAS</p>
+                    <div class="filter-card-content flex-grow-1">
+                        <p class="filter-card-title mb-1 text-muted">EVALUADAS</p>
                         <h5 id="counter-evaluadas" class="fw-semibold mb-0">0</h5>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-sm-4 col-lg-3">
-        <div class="card mb-0 cursor-pointer filter-card" data-status="vencidas" style="cursor:pointer;">
+    <div class="col-12 col-sm-4 col-lg-3">
+        <div class="card mb-0 cursor-pointer filter-card h-100" data-status="vencidas">
             <div class="card-body">
-                <div class="d-flex align-items-top drive-3">
+                <div class="d-flex align-items-center gap-3">
                     <div class="me-3">
                         <span class="avatar avatar-lg bg-primary">
                             <i class="fa-solid fa-triangle-exclamation fa-xl"></i>
                         </span>
                     </div>
-                    <div class="">
-                        <p class="mb-1 text-muted">VENCIDAS</p>
+                    <div class="filter-card-content flex-grow-1">
+                        <p class="filter-card-title mb-1 text-muted">VENCIDAS</p>
                         <h5 id="counter-vencidas" class="fw-semibold mb-0">0</h5>
                     </div>
                 </div>
@@ -66,17 +66,17 @@
         </div>
     </div>
 
-    <div class="col-sm-4 col-lg-3">
-        <div class="card mb-0 cursor-pointer filter-card" data-status="proximas" style="cursor:pointer;">
+    <div class="col-12 col-sm-4 col-lg-3">
+        <div class="card mb-0 cursor-pointer filter-card h-100" data-status="proximas">
             <div class="card-body">
-                <div class="d-flex align-items-top drive-4">
+                <div class="d-flex align-items-center gap-3">
                     <div class="me-3">
                         <span class="avatar avatar-lg bg-primary">
                             <i class="fa-solid fa-calendar-circle-exclamation fa-xl"></i>
                         </span>
                     </div>
-                    <div class="">
-                        <p class="mb-1 text-muted">PROXIMAS A EVALUAR</p>
+                    <div class="filter-card-content flex-grow-1">
+                        <p class="filter-card-title mb-1 text-muted">PROXIMAS A EVALUAR</p>
                         <h5 id="counter-proximas" class="fw-semibold mb-0">0</h5>
                     </div>
                 </div>
@@ -142,7 +142,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered w-100" id="table_audit">
+                        <table class="table table-bordered w-100 text-center" id="table_audit">
                             <thead></thead>
                             <tbody></tbody>
                         </table>

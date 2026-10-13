@@ -19375,7 +19375,7 @@ table.dataTable thead th,
 table.dataTable thead td,
 table.dataTable tfoot th,
 table.dataTable tfoot td {
-    text-align: start !important;
+    text-align: justify !important;
 }
 
 table.table-bordered.dataTable th:first-child,
@@ -19763,7 +19763,7 @@ code[class*="language-"] {
 
 [dir="rtl"] pre[class*="language-"] > code {
     border-left: 0;
-    text-align: right;
+    text-align: center;
 }
 
 /* End:: prism js */
@@ -25531,4 +25531,59 @@ a.link-underline-dark {
 /* Aquí estableces el ancho mínimo para la tabla */
 #audit-checks-table {
     min-width: 700px; /* por ejemplo, 700px o lo que necesites */
+}
+
+/* Tarjetas de filtros */
+.filter-card {
+    height: 100%;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.filter-card .card-body {
+    min-width: 0;
+    padding: 1rem;
+}
+
+/* El icono conserva su espacio */
+.filter-card-icon {
+    flex-shrink: 0;
+}
+
+.filter-card-icon .avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* El texto ocupa el espacio disponible */
+.filter-card-content {
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+.filter-card-title {
+    font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    margin-bottom: 0.4rem;
+}
+
+#table_refrendo th,
+#table_refrendo td {
+    text-align: center !important;
+    vertical-align: middle;
+}
+
+#table_audit th,
+#table_audit td {
+    text-align: center !important;
+    vertical-align: middle;
+}
+
+#table_driver_vehicles th,
+#table_driver_vehicles td {
+    text-align: center !important;
+    vertical-align: middle;
 }

@@ -3698,7 +3698,6 @@ def get_vehicle_maintenance(request):
             vehicle__responsible_id=context["user"]["id"] 
         )
 
-
     lista = lista.values(
         "id", "vehicle_id", "vehicle__name",
         "provider_id", "provider__name",
@@ -3856,6 +3855,7 @@ def update_vehicle_maintenance(request):
     # Obtener datos principales
     vehicle_id = dt.get("vehicle_id")
     maintenance_id = dt.get("id", None)
+    print("este es el id del mantenimiento:", maintenance_id)
 
     # Obtener información del usuario actual
     context = user_data(request)
@@ -3878,6 +3878,8 @@ def update_vehicle_maintenance(request):
     try:
 
         obj_vehicle = Vehicle.objects.get(id=vehicle_id)
+
+        print("este es el contenido de obj_vehicle", obj_vehicle)
 
         # Los usuarios que no son administrador o super usuario
         # deben validar que el kilometraje no sea menor al actual.
