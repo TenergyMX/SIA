@@ -616,59 +616,137 @@ function verificarFechaEntrega() {
 }
 
 // Configuración del canvas
-let canvas = document.getElementById("canvas-signature");
-let ctx = canvas.getContext("2d");
+// let canvas = document.getElementById("canvas-signature");
+// let ctx = canvas.getContext("2d");
+// let drawing = false;
+// let lastX = 0;
+// let lastY = 0;
+// let undoStack = [];
+
+// // Configura el contexto
+// ctx.strokeStyle = "black";
+// ctx.lineWidth = 2;
+// ctx.lineCap = "round";
+
+// // Eventos para dibujar en el canvas
+// canvas.addEventListener("mousedown", function (e) {
+//     drawing = true;
+//     lastX = e.offsetX;
+//     lastY = e.offsetY;
+// });
+
+// canvas.addEventListener("mousemove", function (e) {
+//     if (drawing) {
+//         ctx.beginPath();
+//         ctx.moveTo(lastX, lastY);
+//         ctx.lineTo(e.offsetX, e.offsetY);
+//         ctx.stroke();
+//         lastX = e.offsetX;
+//         lastY = e.offsetY;
+//     }
+// });
+
+// canvas.addEventListener("mouseup", function () {
+//     drawing = false;
+//     ctx.beginPath();
+//     undoStack.push(canvas.toDataURL());
+// });
+
+// // Limpiar el canvas
+// document.getElementById("canvas-signature-btn-clear").addEventListener("click", function () {
+//     ctx.clearRect(0, 0, canvas.width, canvas.height);
+//     undoStack = [];
+// });
+
+// document.getElementById("canvas-signature-btn-undo").addEventListener("click", function () {
+//     if (undoStack.length > 0) {
+//         const imgData = undoStack.pop();
+//         const img = new Image();
+//         img.src = imgData;
+//         img.onload = function () {
+//             ctx.clearRect(0, 0, canvas.width, canvas.height);
+//             ctx.drawImage(img, 0, 0);
+//         };
+//     }
+// });
+
+
+
+const canvas = document.getElementById("canvas-signature");
+const ctx = canvas.getContext("2d");
 let drawing = false;
 let lastX = 0;
 let lastY = 0;
 let undoStack = [];
 
-// Configura el contexto
 ctx.strokeStyle = "black";
 ctx.lineWidth = 2;
 ctx.lineCap = "round";
+ctx.lineJoin = "round";
 
-// Eventos para dibujar en el canvas
-canvas.addEventListener("mousedown", function (e) {
+canvas.style.touchAction = "none";
+
+function getCanvasPosition(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (e.clientX - rect.left) * canvas.width / rect.width,
+        y: (e.clientY - rect.top) * canvas.height / rect.height
+    };
+}
+
+canvas.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
     drawing = true;
-    lastX = e.offsetX;
-    lastY = e.offsetY;
+    canvas.setPointerCapture(e.pointerId);
+    const pos = getCanvasPosition(e);
+    lastX = pos.x;
+    lastY = pos.y;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
 });
 
-canvas.addEventListener("mousemove", function (e) {
-    if (drawing) {
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.stroke();
-        lastX = e.offsetX;
-        lastY = e.offsetY;
-    }
+canvas.addEventListener("pointermove", function (e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const pos = getCanvasPosition(e);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastX = pos.x;
+    lastY = pos.y;
 });
 
-canvas.addEventListener("mouseup", function () {
+function stopDrawing() {
+    if (!drawing) return;
     drawing = false;
     ctx.beginPath();
-    undoStack.push(canvas.toDataURL());
-});
+    undoStack.push(canvas.toDataURL("image/png"));
+}
 
-// Limpiar el canvas
+canvas.addEventListener("pointerup", stopDrawing);
+canvas.addEventListener("pointercancel", stopDrawing);
+canvas.addEventListener("lostpointercapture", stopDrawing);
+
 document.getElementById("canvas-signature-btn-clear").addEventListener("click", function () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     undoStack = [];
 });
 
 document.getElementById("canvas-signature-btn-undo").addEventListener("click", function () {
-    if (undoStack.length > 0) {
-        const imgData = undoStack.pop();
-        const img = new Image();
-        img.src = imgData;
-        img.onload = function () {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-        };
+    if (undoStack.length === 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
     }
+    const imgData = undoStack.pop();
+    const img = new Image();
+    img.onload = function () {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+    };
+    img.src = imgData;
 });
+
 
 // Enviar el formulario
 document.getElementById("form_responsiva").addEventListener("submit", function (event) {
