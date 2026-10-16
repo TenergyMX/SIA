@@ -19,10 +19,22 @@
                         <label for="">Nombre</label>
                         <input type="text" name="name" class="form-control" placeholder="Nombre">
                     </div>
+
+                    <div class="col-md-4">
+                        <label for="type">Tipo de activo</label>
+                        <input type="text" id="type" name="type" class="form-control" placeholder="Tipo de equipo" maxlength="255" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="equipment_brand">Marca</label>
+                        <input type="text" id="equipment_brand" name="equipment_brand" class="form-control" placeholder="Marca" maxlength="255" required>
+                    </div>
+
                     <div class="col-md-4">
                         <label for="">Descripción</label>
                         <input type="text" name="description" class="form-control" placeholder="Descripción">
                     </div>
+
                     <div class="col-md-4">
                         <label for="">Cantidad</label>
                         <input type="number" name="quantity" class="form-control" placeholder="Cantidad" step="0.01">
@@ -31,14 +43,31 @@
                         <label for="cost">Costo</label>
                         <input type="text" id="cost" name="cost" class="form-control" placeholder="Costo" maxlength="255" required>
                     </div>
+
+                    <div class="col-md-4">
+                        <label for="item_area">Area</label>
+                        <select name="item_area" id="item_area" class="form-select" required>
+                            <option value="" disabled selected>Seleccione una de las áreas</option>
+                        </select>
+                    </div>
+
                     <div class="col-md-4">
                         <label for="">Fecha de adquisición</label>
                         <input type="date" name="start_date" class="form-control" placeholder="Fecha de inicio">
                     </div>
+
+                    <div class="col-md-4">
+                        <label for="responsible_item">Responsable </label>
+                        <select name="responsible_item" id="responsible_item" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un responsable </option>
+                        </select>
+                    </div>
+
                     <div class="col-md-4">
                         <label for="formFileFicha" class="form-label">Ficha técnica</label>
                         <input class="form-control" type="file" id="formFileFicha" name="technical_sheet">
                     </div>   
+                    
                     <div class="col-md-4">
                         <label for="formFileFactura" class="form-label">Factura</label>
                         <input class="form-control" type="file" id="formFileFactura" name="invoice">
@@ -53,6 +82,12 @@
                         <label for="formFileImage" class="form-label">Imagen</label>
                         <input class="form-control" type="file" id="formFileImage" name="image">
                     </div>
+
+                    <div class="col-md-4">
+                        <label for="">Comentarios</label>
+                        <textarea name="comments" class="form-control" rows="1" placeholder="Comentarios"></textarea>
+                    </div>
+
                     
                 </div>
             </div>

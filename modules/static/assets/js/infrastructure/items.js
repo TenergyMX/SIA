@@ -21,7 +21,7 @@ class InfrastructureItem {
                 data: {
                     isList: true,
                     category_id: 1,
-                    category__name: "Se tenia que decir y se dijo",
+                    category__name: "",
                 },
             },
             table: {
@@ -31,54 +31,169 @@ class InfrastructureItem {
                     dataSrc: "data",
                     data: {},
                 },
+
                 columns: [
-                    { title: "Id", data: "id", className: "toggleable" },
-                    { title: "Categoría", data: "category__name", className: "toggleable" },
-                    { title: "Nombre", data: "name", className: "toggleable" },
-                    { title: "Cantidad", data: "quantity", className: "toggleable" },
-                    { title: "Costo", data: "cost", className: "toggleable" },
-                    { title: "Descripción", data: "description", className: "toggleable" },
                     {
-                        title: "Fecha de inicio",
-                        data: "start_date",
+                        title: "ID",
+                        data: "id",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Categoría",
+                        data: "category__name",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Nombre",
+                        data: "name",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Tipo de activo",
+                        data: "item_type",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Marca",
+                        data: "item_brand",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Cantidad",
+                        data: "quantity",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Costo",
+                        data: "cost",
+                        className: "toggleable",
                         render: function (data, type, row) {
+                            if (data === null || data === "") return "$0.00";
+
+                            if (type === "display") {
+                                return (
+                                    "$" +
+                                    Number(data).toLocaleString("es-MX", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                    })
+                                );
+                            }
+
+                            return data;
+                        },
+                    },
+                    {
+                        title: "Descripción",
+                        data: "description",
+                        defaultContent: "",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Área",
+                        data: "item_area__name",
+                        defaultContent: "Sin área",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Responsable",
+                        data: "responsible_name",
+                        defaultContent: "Sin responsable",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Ubicación",
+                        data: "location__name",
+                        defaultContent: "Sin ubicación",
+                        className: "toggleable",
+                    },
+                    {
+                        title: "Fecha de adquisición",
+                        data: "start_date",
+                        defaultContent: "",
+                        render: function (data, type, row) {
+                            if (!data) return "Sin fecha";
+
                             if (type === "display" || type === "filter") {
                                 return moment(data).locale("es").format("D [de] MMMM [de] YYYY");
                             }
+
                             return data;
                         },
                         className: "toggleable",
                         visible: false,
                     },
                     {
-                        title: "Ficha tecnica",
-                        data: function (d) {
-                            if (d["technical_sheet"]) {
-                                return `<a href="${d["technical_sheet"]}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                    Ver Ficha
-                                </a>`;
-                            } else {
-                                return "Sin ficha técnica";
-                            }
-                        },
-                        orderable: false,
+                        title: "Comentarios",
+                        data: "comments",
+                        defaultContent: "",
                         className: "toggleable",
                     },
                     {
-                        title: "Factura",
-                        data: function (d) {
-                            if (d["invoice"]) {
-                                return `<a href="${d["invoice"]}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                    Ver factura
-                                </a>`;
-                            } else {
-                                return "Sin factura";
-                            }
-                        },
+                        title: "Ficha técnica",
+                        data: "technical_sheet",
                         orderable: false,
                         className: "toggleable",
+                        render: function (data, type, row) {
+                            if (!data) return "Sin ficha técnica";
+
+                            return `<a href="${data}"
+                                class="btn btn-sm btn-outline-primary"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                    Ver ficha
+                                </a>`;
+                        },
                     },
-                    { title: "Acciones", data: "btn_action", orderable: false },
+                    {
+                        title: "Factura",
+                        data: "invoice",
+                        orderable: false,
+                        className: "toggleable",
+                        render: function (data, type, row) {
+                            if (!data) return "Sin factura";
+
+                            return `<a href="${data}"
+                                class="btn btn-sm btn-outline-primary"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                    Ver factura
+                                </a>`;
+                        },
+                    },
+                    {
+                        title: "Fotografía",
+                        data: "image",
+                        orderable: false,
+                        searchable: false,
+                        className: "toggleable",
+                        render: function (data, type, row) {
+                            if (!data) return "Sin fotografía";
+
+                            return `<a href="${data}"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                    <img src="${data}"
+                                        alt="Fotografía del activo"
+                                        style="width:60px;height:50px;
+                                                object-fit:cover;border-radius:5px;">
+                                </a>`;
+                        },
+                    },
+                    {
+                        title: "Desglose",
+                        data: "btn_identifiers",
+                        orderable: false,
+                        searchable: false,
+                        className: "toggleable",
+                        defaultContent: "",
+                    },
+                    {
+                        title: "Acciones",
+                        data: "btn_action",
+                        orderable: false,
+                        searchable: false,
+                    },
                 ],
             },
         };
@@ -184,6 +299,9 @@ class InfrastructureItem {
                     obj_modal.find(".modal-header").html("Registrar items de infraestructura");
 
                     get_items_locations(null);
+                    get_item_areas(null);
+                    get_responsible_users_item(null);
+
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
                     break;
@@ -195,7 +313,9 @@ class InfrastructureItem {
                     obj_modal.modal("show");
                     obj_modal.find(".modal-header").html("Actualizar item de infraestructura");
 
-                    get_items_locations(datos["location_id"]); //
+                    get_items_locations(datos["location_id"]);
+                    get_item_areas(datos["item_area_id"]);
+                    get_responsible_users_item(datos["item_responsible_id"]);
 
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='update']").show();
@@ -206,6 +326,9 @@ class InfrastructureItem {
                             obj_modal.find(`[name="${index}"]`).val(value || null);
                         }
                     });
+
+                    obj_modal.find('[name="type"]').val(datos["item_type"] ?? "");
+                    obj_modal.find('[name="equipment_brand"]').val(datos["item_brand"] ?? "");
 
                     obj_modal
                         .find("[name='is_active']")
@@ -1004,3 +1127,47 @@ document.getElementById("evidence2").addEventListener("change", function (event)
         preview.style.display = "none";
     }
 });
+
+//Función para cargar las areas
+// Función para cargar las areas en el select
+function get_item_areas(selectedAreaId) {
+    $.ajax({
+        url: "/get_item_areas/",
+        type: "GET",
+        success: function (response) {
+            var select = $("#item_area");
+            select.html(null);
+            select.append(
+                "<option value='' disabled selected>Seleccione una de las areas existentes</option>"
+            );
+            $.each(response.data, function (index, value) {
+                var selected = value.id == selectedAreaId ? "selected" : "";
+                select.append(`<option value="${value.id}" ${selected}>${value.name}</option>`);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("Error al cargar las areas existentes:", error);
+            alert("Hubo un error al cargar las areas existentes.");
+        },
+    });
+}
+
+//Función para cargar los nombres de los usuarios
+function get_responsible_users_item(selectedUserId) {
+    $.ajax({
+        url: "/get_responsible_users_item/",
+        type: "GET",
+        success: function (response) {
+            var select = $("#responsible_item");
+            select.html("<option value='' disabled selected>Seleccione responsable</option>");
+            $.each(response.data, function (index, user) {
+                var selected = user.id == selectedUserId ? "selected" : "";
+                select.append(`<option value="${user.id}" ${selected}>${user.username}</option>`);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("Error al cargar los usuarios:", error);
+            alert("Hubo un error al cargar los usuarios.");
+        },
+    });
+}
