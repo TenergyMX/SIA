@@ -48,7 +48,9 @@ urlpatterns = [
     #función para validar las fechas en el estado del equipo: 
     path("validar_fecha/", views.validar_fecha),
     #funcion para aprovar las responsivas
-    path("approve_responsiva/", views.approve_responsiva),
+    path('available_equipment_tools/', views.available_equipment_tools, name='available_equipment_tools'),
+    path('approve_responsiva/', views.approve_responsiva, name='approve_responsiva'),
+
     # cancelar solicitud de responsiva
     path("cancel_responsiva/", views.cancel_responsiva),
 

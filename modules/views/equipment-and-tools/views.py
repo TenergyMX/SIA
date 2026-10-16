@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 from os.path import join, dirname
 from pathlib import Path
 from dateutil.parser import parse
+from django.views.decorators.http import require_GET
 
 from modules.templates.pdf.weasy import WeasyPDF    
 
@@ -362,35 +363,26 @@ def get_equipments_tools(request):
             # cantidad
             item["amount"] = item["available_amount"]
 
+            # Botón para visualizar la fotografía del equipo
             item["btn_equipment_image"] = ""
 
             if item["image"]:
-
                 tempImage = generate_presigned_url(
                     AWS_BUCKET_NAME,
                     str(item["image"])
                 )
 
                 item["btn_equipment_image"] = f"""
-                    <a href="{tempImage}"
-                       target="_blank"
-                       title="Ver fotografía">
-                        <img
-                            src="{tempImage}"
-                            alt="Fotografía de {item['equipment_name']}"
-                            class="rounded border"
-                            style="
-                                width: 70px;
-                                height: 70px;
-                                object-fit: cover;
-                                cursor: pointer;
-                            "
-                        >
-                    </a>
+                    <img
+                        src="{tempImage}"
+                        alt="Fotografía de {item['equipment_name']}"
+                        class="rounded border"
+                        style="width:70px;height:70px;object-fit:cover;cursor:pointer;"
+                        onclick="verFotoEquipo(this)"
+                        title="Ver fotografía"
+                    >
                 """
-
             else:
-
                 item["btn_equipment_image"] = """
                     <span class="text-muted">
                         <i class="fa-solid fa-image-slash"></i>
@@ -1393,6 +1385,7 @@ def get_responsible_user(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
+
 # Tabla de datos para responsivas
 def get_responsiva(request):
     response = {"status": "error", "message": "Sin procesar"}
@@ -1404,153 +1397,221 @@ def get_responsiva(request):
     access = access["data"]["access"]
     area = context["area"]["name"].lower()
     tipo_user = context["role"]["name"].lower()
-    company_id = context["company"]["id"] 
-
-    company_name = context["company"]["name"].lower()
-    editar = access["update"]
-    create = access["create"]
+    company_id = context["company"]["id"]
     user_name = context["user"]["username"].lower()
-    print("este es el usuario que ha iniciado sesion:", user_name)
 
     try:
         if tipo_user in ["administrador", "almacen", "super usuario"]:
-
-            filtros = {
-                "company_id": company_id,
-            }
+            filtros = {"company_id": company_id}
             if responsiva_id:
                 filtros["id"] = responsiva_id
 
-            responsiva = list(Equipment_Tools_Responsiva.objects.select_related(
-                'equipment_name', 'responsible_equipment', 'status_modified_by'
-            ).filter(
-                **filtros
-            ).order_by('-fecha_registro').values(
-                'id', 
-                'equipment_name__equipment_name',  
-                'responsible_equipment__username',  
-                'amount',
-                'status_equipment',
-                'fecha_inicio',
-                'fecha_entrega',
-                'times_requested_responsiva',
-                'date_receipt',
-                'comments',
-                'status_modified',
-                'fecha_registro',
-                'status_modified_by__username',
+            responsiva = list(
+                Equipment_Tools_Responsiva.objects.select_related(
+                    "equipment_name", "responsible_equipment", "status_modified_by"
+                ).filter(
+                    **filtros
+                ).order_by("-id").values(
+                    "id",
+                    "equipment_name_id",
+                    "equipment_name__equipment_name",
+                    "responsible_equipment__username",
+                    "amount",
+                    "status_equipment",
+                    "fecha_inicio",
+                    "fecha_entrega",
+                    "times_requested_responsiva",
+                    "date_receipt",
+                    "comments",
+                    "status_modified",
+                    "fecha_registro",
+                    "status_modified_by__username",
+                )
             )
-        )
         else:
-            filtros = {
-                "responsible_equipment__username__iexact": user_name,
-            }
+            filtros = {"responsible_equipment__username__iexact": user_name}
             if responsiva_id:
                 filtros["id"] = responsiva_id
 
-            responsiva = list(Equipment_Tools_Responsiva.objects.select_related(
-                'equipment_name', 'responsible_equipment', 'status_modified_by'
-            ).filter(**filtros).order_by('-fecha_registro').values(
-                'id',
-                'equipment_name__equipment_name',
-                'responsible_equipment__username',
-                'amount',
-                'status_equipment',
-                'fecha_inicio',
-                'fecha_entrega',
-                'times_requested_responsiva',
-                'date_receipt',
-                'comments',
-                'status_modified',
-                'fecha_registro',
-                'status_modified_by__username',
+            responsiva = list(
+                Equipment_Tools_Responsiva.objects.select_related(
+                    "equipment_name", "responsible_equipment", "status_modified_by"
+                ).filter(
+                    **filtros
+                ).order_by("-id").values(
+                    "id",
+                    "equipment_name_id",
+                    "equipment_name__equipment_name",
+                    "responsible_equipment__username",
+                    "amount",
+                    "status_equipment",
+                    "fecha_inicio",
+                    "fecha_entrega",
+                    "times_requested_responsiva",
+                    "date_receipt",
+                    "comments",
+                    "status_modified",
+                    "fecha_registro",
+                    "status_modified_by__username",
+                )
             )
+        # Obtener los identificadores individuales prestados
+        responsiva_ids = [item["id"] for item in responsiva]
+        identificadores_por_responsiva = {}
+
+        detalles = Detail_Responsiva.objects.filter(
+            responsiva_id__in=responsiva_ids
+        ).values_list(
+            "responsiva_id",
+            "details_equipment_tool__identifier"
         )
-        print(f"Registros encontrados: {responsiva}")
+
+        for id_responsiva, identificador in detalles:
+            if identificador:
+                identificadores_por_responsiva.setdefault(
+                    id_responsiva, []
+                ).append(identificador)
+
+        for item in responsiva:
+            item["identificadores"] = list(dict.fromkeys(
+                identificadores_por_responsiva.get(item["id"], [])
+            ))
+        # Obtener la fotografía del equipo o herramienta asociado
+        for item in responsiva:
+            item["photo_url"] = ""
+
+        equipo_ids = list({
+            item["equipment_name_id"]
+            for item in responsiva
+            if item["equipment_name_id"]
+        })
+
+        if equipo_ids:
+            equipos = Equipment_Tools.objects.filter(
+                id__in=equipo_ids
+            ).only("id", "image")
+
+            fotografias = {}
+
+            for equipo in equipos:
+                if equipo.image:
+                    try:
+                        fotografias[equipo.id] = generate_presigned_url(
+                            AWS_BUCKET_NAME,
+                            str(equipo.image)
+                        )
+                    except Exception as e:
+                        print(
+                            f"Error al generar la URL de la fotografía "
+                            f"del equipo {equipo.id}: {e}"
+                        )
+
+            for item in responsiva:
+                item["photo_url"] = fotografias.get(
+                    item["equipment_name_id"], ""
+                )
 
         for item in responsiva:
             item["btn_action"] = ""
             item["boton_action"] = ""
 
             is_user_applicant = (
-                item['responsible_equipment__username'] and
-                item['responsible_equipment__username'].lower() == user_name
+                item["responsible_equipment__username"]
+                and item["responsible_equipment__username"].lower() == user_name
             )
 
             can_edit_date = (
-                access["update"] and
-                (
-                    area.lower() == "almacen" or
-                    tipo_user.lower() in ["administrador", "super usuario"] or
-                    is_user_applicant
+                access["update"]
+                and (
+                    area == "almacen"
+                    or tipo_user in ["administrador", "super usuario"]
+                    or is_user_applicant
                 )
             )
 
-            if access["update"] and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
-                if item['status_equipment'] == 'Solicitado':
+            if access["update"] and (
+                area == "almacen"
+                or tipo_user in ["administrador", "super usuario"]
+            ):
+                if item["status_equipment"] == "Solicitado":
                     item["btn_action"] += (
                         "<button type='button' class='btn btn-icon btn-sm btn-primary-light approve-btn' "
-                        "onclick='approve_button(this)' aria-label='info'>"
+                        "onclick='approve_button(this)' aria-label='Aprobar'>"
                         "<i class='fa-solid fa-circle-check'></i>"
                         "</button> "
                     )
                     item["btn_action"] += (
                         "<button type='button' class='btn btn-icon btn-sm btn-danger-light cancel-btn' "
-                        "onclick='cancel_button(this)' aria-label='info'>"
+                        "onclick='cancel_button(this)' aria-label='Cancelar'>"
                         "<i class='fa-sharp fa-solid fa-circle-xmark'></i>"
                         "</button> "
                     )
-                elif item['status_equipment'] == 'Aceptado' or item['status_equipment'] == 'Atrasado':
+                elif item["status_equipment"] in ["Aceptado", "Atrasado"]:
                     item["btn_action"] += (
                         "<button type='button' class='btn btn-icon btn-sm btn-info-light chek-btn' "
-                        "onclick='chek_responsiva_button(this)' aria-label='status'>"
+                        "onclick='chek_responsiva_button(this)' aria-label='Consultar estado'>"
                         "<i class='fa-solid fa-clipboard-list-check'></i>"
                         "</button> "
                     )
 
-            # Incluir el botón de editar en la columna de date_receipt
-            if can_edit_date:
-                if item['status_equipment'] in ['Aceptado', 'Atrasado']:
-                    edit_button = (
-                        "<button type='button' class='btn btn-icon btn-sm btn-primary-light edit-btn' "
-                        "onclick='edit_date(this)' aria-label='Editar feccha de recepción'>"
-                        "<i class='fa-solid fa-pen'></i>"
-                        "</button> "
-                    )
-                    item['date_receipt'] = (str(item['date_receipt']) if item['date_receipt'] else '') + edit_button
-                else:
-                    # Mostrar solo la fecha como texto si el estado no es Aceptado o Atrasado
-                    item['date_receipt'] = str(item['date_receipt']) if item['date_receipt'] else ''
+            # Botón para editar la fecha de recepción
+            if can_edit_date and item["status_equipment"] in ["Aceptado", "Atrasado"]:
+                edit_button = (
+                    "<button type='button' class='btn btn-icon btn-sm btn-primary-light edit-btn' "
+                    "onclick='edit_date(this)' aria-label='Editar fecha de recepción'>"
+                    "<i class='fa-solid fa-pen'></i>"
+                    "</button> "
+                )
+                item["date_receipt"] = (
+                    str(item["date_receipt"]) if item["date_receipt"] else ""
+                ) + edit_button
             else:
-                # Mostrar solo la fecha como texto si no tiene permisos
-                item['date_receipt'] = str(item['date_receipt']) if item['date_receipt'] else ''
-
-
+                item["date_receipt"] = (
+                    str(item["date_receipt"]) if item["date_receipt"] else ""
+                )
 
             # Mapeo de estado a clase
-            if item['status_equipment'] == 'Regresado':
-                item['status_equipment'] = '<span class="badge bg-outline-success">Regresado</span>'
-            elif item['status_equipment'] == 'Atrasado':
-                item['status_equipment'] = '<span class="badge bg-outline-warning">Atrasado</span>'
-            elif item['status_equipment'] == 'Solicitado':
-                item['status_equipment'] = '<span class="badge bg-outline-info">Solicitado</span>'
-            elif item['status_equipment'] == 'Aceptado':
-                item['status_equipment'] = '<span class="badge bg-outline-success">Aceptado</span>'
-            elif item['status_equipment'] == 'Cancelado':
-                item['status_equipment'] = '<span class="badge bg-outline-danger">Cancelado</span>'
-            elif item['status_equipment'] == 'No devuelto':
-                item['status_equipment'] = '<span class="badge bg-outline-danger">No devuelto</span>'
-            elif item['status_equipment'] in ['Incompleto', 'Dañado']:
-                item['status_equipment'] = '<span class="badge bg-outline-warning">{}</span>'.format(item['status_equipment'])
+            if item["status_equipment"] == "Regresado":
+                item["status_equipment"] = (
+                    '<span class="badge bg-outline-success">Regresado</span>'
+                )
+            elif item["status_equipment"] == "Atrasado":
+                item["status_equipment"] = (
+                    '<span class="badge bg-outline-warning">Atrasado</span>'
+                )
+            elif item["status_equipment"] == "Solicitado":
+                item["status_equipment"] = (
+                    '<span class="badge bg-outline-info">Solicitado</span>'
+                )
+            elif item["status_equipment"] == "Aceptado":
+                item["status_equipment"] = (
+                    '<span class="badge bg-outline-success">Aceptado</span>'
+                )
+            elif item["status_equipment"] == "Cancelado":
+                item["status_equipment"] = (
+                    '<span class="badge bg-outline-danger">Cancelado</span>'
+                )
+            elif item["status_equipment"] == "No devuelto":
+                item["status_equipment"] = (
+                    '<span class="badge bg-outline-danger">No devuelto</span>'
+                )
+            elif item["status_equipment"] in ["Incompleto", "Dañado"]:
+                item["status_equipment"] = (
+                    '<span class="badge bg-outline-warning">{}</span>'.format(
+                        item["status_equipment"]
+                    )
+                )
             else:
-                item['status_equipment'] = ''  
+                item["status_equipment"] = ""
 
         response["data"] = responsiva
         response["status"] = "success"
         response["message"] = "Datos cargados exitosamente"
+
     except Exception as e:
         response["status"] = "error"
         response["message"] = str(e)
+        print(f"Error en get_responsiva: {e}")
 
     return JsonResponse(response)
 
@@ -1943,150 +2004,284 @@ def status_responsiva(request):
         'message': 'Método no permitido.' }, 
     status=405)
 
-
 # Función para aprobar la responsiva del equipo
 @login_required
 @csrf_exempt
 def approve_responsiva(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
 
-        if request.method != 'POST': return JsonResponse({ 'success': False, 'message': 'Método no permitido.' }, status=405)
-        try:
-            responsiva_id = request.POST.get('id')
-            if not responsiva_id: return JsonResponse({ 'success': False, 'message': 'No se recibió el ID de la responsiva.' }, status=400)
+    try:
+        responsiva_id = request.POST.get("id")
+        identificadores_json = request.POST.get("identificadores")
 
-            # obtener responsiva
-            responsiva = Equipment_Tools_Responsiva.objects.select_related('equipment_name', 'responsible_equipment').get(id=responsiva_id)
-
-            # Validar que no se puede aprobar si ya fue cancelada
-            if responsiva.status_equipment == 'Cancelado':
-                return JsonResponse({'success': False, 'message': 'La responsiva fue cancelada, no se puede aprobar.'}, status=400)
-
-            # Validar que solo se puede aprobar una vez la responsiva
-            if responsiva.status_modified:
-                return JsonResponse({'success': False, 'message': 'La responsiva ya fue aprobada, no puede ser aprobada de nuevo.'}, status=400)
-
-            # Validar que no se puede aprobar si ya fue aceptada
-            if responsiva.status_equipment == 'Aceptado':
-                return JsonResponse({'success': False, 'message': 'La responsiva ya ha sido aceptada, no puede ser aprobada de nuevo.'}, status=400)
-
-            # datos de la solicitud
-            equipment_tool = responsiva.equipment_name 
-            responsable = responsiva.responsible_equipment 
-            cantidad_solicitada = int(responsiva.amount)
-
-            # transaccion
-            with transaction.atomic():
-            # BUSCAR EQUIPOS DISPONIBLES
-
-                detalles_disponibles = list(
-                    Equipments_Tools_Detail.objects
-                    .select_for_update()
-                    .filter(
-                        equipment_tool=equipment_tool,
-                        company_id=responsiva.company_id,
-                        is_active=True,
-                        is_deactivated=False,
-                        state="DISPONIBLE",
-                    )
-                    .order_by('id')[:cantidad_solicitada]
-                )
-
-                cantidad_disponible = len(detalles_disponibles)
-
-                # VALIDAR CANTIDAD
-                if cantidad_disponible < cantidad_solicitada:
-                    return JsonResponse({
-                        'success': False,
-                        'message': (
-                            f'No hay suficientes equipos disponibles. '
-                            f'Solicitados: {cantidad_solicitada}. '
-                            f'Disponibles: {cantidad_disponible}.'
-                        )
-                    }, status=400)
-
-                # ASIGNAR EQUIPOS
-                fecha_asignacion = timezone.now().date()
-
-                for detalle in detalles_disponibles:
-
-                    detalle.responsible = responsable
-                    detalle.assignment_date = fecha_asignacion
-                    detalle.state = "ASIGNADO"
-                    detalle.responsiva = responsiva
-
-                    detalle.save(
-                        update_fields=[
-                            'responsible',
-                            'assignment_date',
-                            'state',
-                            'responsiva'
-                        ]
-                    )
-
-
-                    with transaction.atomic():
-                        Detail_Responsiva.objects.create(
-                            responsiva=responsiva,
-                            details_equipment_tool=detalle,
-                            status_equipment_tool="ASIGNADO"
-                           
-                        )
-
-                # Actualizar responsiva
-                responsiva.status_equipment = 'Aceptado'
-                responsiva.status_modified = True 
-                responsiva.save(update_fields=[
-                    'status_equipment',
-                    'status_modified'
-                ])
-
-                # actualizar la cantidad disponible del equipo principal
-                cantidad_disponible_restante = (
-                    Equipments_Tools_Detail.objects.filter(
-                        equipment_tool=equipment_tool,
-                        company_id=responsiva.company_id,
-                        is_active=True,
-                        state="DISPONIBLE"
-                    )
-                    .count()
-                )
-
-                equipment_tool.amount = cantidad_disponible_restante
-                equipment_tool.save(update_fields=['amount'])
-
-                return JsonResponse({ 
-                    'success': True, 
-                    'message': ( 
-                        f'La responsiva fue aceptada correctamente. ' 
-                        f'Se asignaron {cantidad_solicitada} ' 
-                        f'equipos al usuario.' 
-                        ), 
-                    'assigned': cantidad_solicitada, 
-                    'available': cantidad_disponible_restante 
-                })
-
-        except Equipment_Tools_Responsiva.DoesNotExist: 
-            return JsonResponse({ 
-                'success': False, 
-                'message': 'La responsiva no existe.' 
-            }, status=404)
-
-        except ValueError: 
-            return JsonResponse({ 
-                'success': False, 
-                'message': 'La cantidad solicitada no es válida.' 
+        if not responsiva_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el ID de la responsiva."
             }, status=400)
 
-        except Exception as e: 
-            logger.error( 
-                'Error en approve_responsiva: %s', 
-                str(e) 
-            ) 
-            return JsonResponse({ 
-                'success': False, 
-                'message': 'Error interno del servidor.' 
-            }, status=500)
-        
+        if not identificadores_json:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibieron los identificadores seleccionados."
+            }, status=400)
+
+        # Convertir los identificadores recibidos desde JavaScript
+        try:
+            identificadores = json.loads(identificadores_json)
+        except (json.JSONDecodeError, TypeError):
+            return JsonResponse({
+                "success": False,
+                "message": "Los identificadores recibidos no tienen un formato válido."
+            }, status=400)
+
+        if (
+            not isinstance(identificadores, list)
+            or not identificadores
+            or not all(isinstance(item, str) and item.strip() for item in identificadores)
+        ):
+            return JsonResponse({
+                "success": False,
+                "message": "La lista de identificadores está vacía o es inválida."
+            }, status=400)
+
+        # Evitar identificadores duplicados
+        if len(identificadores) != len(set(identificadores)):
+            return JsonResponse({
+                "success": False,
+                "message": "La selección contiene identificadores duplicados."
+            }, status=400)
+
+        with transaction.atomic():
+            # Obtener y bloquear la responsiva
+            responsiva = (
+                Equipment_Tools_Responsiva.objects
+                .select_for_update()
+                .select_related(
+                    "equipment_name",
+                    "responsible_equipment"
+                )
+                .get(id=responsiva_id)
+            )
+
+            # Validar estado de la responsiva
+            if responsiva.status_equipment == "Cancelado":
+                return JsonResponse({
+                    "success": False,
+                    "message": "La responsiva fue cancelada, no se puede aprobar."
+                }, status=400)
+
+            if responsiva.status_modified:
+                return JsonResponse({
+                    "success": False,
+                    "message": "La responsiva ya fue aprobada, no puede ser aprobada de nuevo."
+                }, status=400)
+
+            if responsiva.status_equipment == "Aceptado":
+                return JsonResponse({
+                    "success": False,
+                    "message": "La responsiva ya ha sido aceptada, no puede ser aprobada de nuevo."
+                }, status=400)
+
+            # Datos de la solicitud
+            equipment_tool = responsiva.equipment_name
+            responsable = responsiva.responsible_equipment
+            cantidad_solicitada = int(responsiva.amount or 0)
+
+            # Validar que la cantidad sea correcta
+            if cantidad_solicitada < 1:
+                return JsonResponse({
+                    "success": False,
+                    "message": "La cantidad solicitada no es válida."
+                }, status=400)
+
+            if len(identificadores) != cantidad_solicitada:
+                return JsonResponse({
+                    "success": False,
+                    "message": (
+                        f"Debes seleccionar exactamente {cantidad_solicitada} equipos. "
+                        f"Recibidos: {len(identificadores)}."
+                    )
+                }, status=400)
+
+            # Buscar y bloquear exclusivamente los equipos seleccionados
+            detalles_disponibles = list(
+                Equipments_Tools_Detail.objects
+                .select_for_update()
+                .filter(
+                    equipment_tool=equipment_tool,
+                    company_id=responsiva.company_id,
+                    identifier__in=identificadores,
+                    is_active=True,
+                    is_deactivated=False,
+                    state="DISPONIBLE",
+                    responsible__isnull=True,
+                    responsiva__isnull=True
+                )
+                .order_by("id")
+            )
+
+            # Comprobar que todos los identificadores pertenecen
+            # al equipo solicitado y siguen disponibles
+            if len(detalles_disponibles) != len(identificadores):
+                return JsonResponse({
+                    "success": False,
+                    "message": (
+                        "Uno o más equipos seleccionados ya no están disponibles, "
+                        "no pertenecen al equipo solicitado o no pueden asignarse. "
+                        "Actualiza la lista e intenta nuevamente."
+                    )
+                }, status=400)
+
+            # Asignar únicamente los equipos seleccionados
+            fecha_asignacion = timezone.now().date()
+
+            for detalle in detalles_disponibles:
+                detalle.responsible = responsable
+                detalle.assignment_date = fecha_asignacion
+                detalle.state = "ASIGNADO"
+                detalle.responsiva = responsiva
+
+                detalle.save(update_fields=[
+                    "responsible",
+                    "assignment_date",
+                    "state",
+                    "responsiva"
+                ])
+
+                Detail_Responsiva.objects.create(
+                    responsiva=responsiva,
+                    details_equipment_tool=detalle,
+                    status_equipment_tool="ASIGNADO"
+                )
+
+            # Actualizar la responsiva
+            responsiva.status_equipment = "Aceptado"
+            responsiva.status_modified = True
+            responsiva.save(update_fields=[
+                "status_equipment",
+                "status_modified"
+            ])
+
+            # Actualizar la cantidad disponible del equipo principal
+            cantidad_disponible_restante = (
+                Equipments_Tools_Detail.objects.filter(
+                    equipment_tool=equipment_tool,
+                    company_id=responsiva.company_id,
+                    is_active=True,
+                    is_deactivated=False,
+                    state="DISPONIBLE"
+                ).count()
+            )
+
+            equipment_tool.amount = cantidad_disponible_restante
+            equipment_tool.save(update_fields=["amount"])
+
+        return JsonResponse({
+            "success": True,
+            "message": (
+                "La responsiva fue aceptada correctamente. "
+                f"Se asignaron {len(detalles_disponibles)} equipos al usuario."
+            ),
+            "assigned": len(detalles_disponibles),
+            "available": cantidad_disponible_restante
+        })
+
+    except Equipment_Tools_Responsiva.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "message": "La responsiva no existe."
+        }, status=404)
+
+    except (ValueError, TypeError):
+        return JsonResponse({
+            "success": False,
+            "message": "La cantidad o los datos recibidos no son válidos."
+        }, status=400)
+
+    except Exception as e:
+        logger.exception("Error en approve_responsiva: %s", str(e))
+        return JsonResponse({
+            "success": False,
+            "message": "Error interno del servidor."
+        }, status=500)
+
+@require_GET
+def available_equipment_tools(request):
+    print("\n========== AVAILABLE EQUIPMENT TOOLS ==========")
+
+    responsiva_id = request.GET.get("id")
+    print(f"[RECIBE] GET: {request.GET}")
+    print(f"[RECIBE] ID de responsiva: {responsiva_id}")
+
+    if not responsiva_id:
+        return JsonResponse({
+            "success": False,
+            "message": "No se recibió el ID de la responsiva."
+        }, status=400)
+
+    try:
+        responsiva = Equipment_Tools_Responsiva.objects.select_related(
+            "equipment_name"
+        ).get(pk=responsiva_id)
+
+    except (Equipment_Tools_Responsiva.DoesNotExist, ValueError, TypeError):
+        print(f"[ERROR] No existe la responsiva: {responsiva_id}")
+        return JsonResponse({
+            "success": False,
+            "message": "La responsiva no existe."
+        }, status=404)
+
+    equipo_id = responsiva.equipment_name_id
+    cantidad_solicitada = int(responsiva.amount or 0)
+
+    print(f"[BUSCA] ID de equipo relacionado: {equipo_id}")
+    print(f"[BUSCA] Nombre del equipo: {responsiva.equipment_name.equipment_name}")
+    print(f"[BUSCA] Cantidad solicitada: {cantidad_solicitada}")
+
+    filtros = {
+        "equipment_tool_id": equipo_id,
+        "state": "DISPONIBLE",
+        "is_active": True,
+        "is_deactivated": False,
+        "responsible__isnull": True,
+        "responsiva__isnull": True,
+    }
+
+    print(f"[BUSCA] Filtros: {filtros}")
+
+    detalles = Equipments_Tools_Detail.objects.filter(**filtros).distinct()
+
+    print(f"[BUSCA] SQL: {detalles.query}")
+    print(f"[ENCUENTRA] Total disponibles: {detalles.count()}")
+
+    equipos = list(
+        detalles.values(
+            "id",
+            "identifier",
+            "name",
+            "serial_number"
+        ).order_by("name", "identifier")
+    )
+
+    print(f"[ENCUENTRA] Detalles: {equipos}")
+
+    respuesta = {
+        "success": True,
+        "responsiva_id": responsiva.id,
+        "equipo_id": equipo_id,
+        "cantidad_solicitada": cantidad_solicitada,
+        "equipos": equipos,
+    }
+
+    print(f"[RETORNA] JSON: {respuesta}")
+    print("================================================\n")
+
+    return JsonResponse(respuesta)
 
 # Función para cancelar la responsiva del usuario
 @login_required
@@ -2634,27 +2829,25 @@ def get_equipment_tools_details(request):
                     else ""
                 )
 
-                # FOTOGRAGIA
+                # FOTOGRAFÍA
                 fotografia = False
+
                 if r["photo"]:
-                    tUrl = generate_presigned_url( AWS_BUCKET_NAME, str(r["photo"]))
+                    tUrl = generate_presigned_url(
+                        AWS_BUCKET_NAME,
+                        str(r["photo"])
+                    )
+
                     fotografia = f"""
-                    <a href="{tUrl}"
-                       target="_blank"
-                       title="Ver fotografía">
                         <img
                             src="{tUrl}"
                             alt="Fotografía de {r['identifier']}"
                             class="rounded border"
-                            style="
-                                width: 70px;
-                                height: 70px;
-                                object-fit: cover;
-                                cursor: pointer;
-                            "
+                            style="width:70px;height:70px;object-fit:cover;cursor:pointer;"
+                            onclick="verFotoEquipo(this)"
+                            title="Ver fotografía"
                         >
-                    </a>
-                """
+                    """
                 # AGREGAR REGISTRO
                 data.append({
 

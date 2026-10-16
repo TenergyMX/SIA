@@ -124,7 +124,48 @@ admin.site.register(VehicleAuditCorrection)
 admin.site.register(PlanHeader)
 admin.site.register(Infraestructure_Responsiva)
 admin.site.register(Vehicles_Responsivas_pdf)
-admin.site.register(Equipments_Tools_Detail)
+@admin.register(Equipments_Tools_Detail)
+class EquipmentsToolsDetailAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "equipo_id",
+        "name",
+        "identifier",
+        "serial_number",
+        "state",
+        "is_active",
+        "responsible",
+        "responsiva",
+    )
+
+    list_filter = (
+        "state",
+        "is_active",
+        "is_deactivated",
+        "equipment_tool",
+        "company",
+    )
+
+    search_fields = (
+        "identifier",
+        "name",
+        "serial_number",
+        "equipment_tool__id",
+    )
+
+    list_select_related = (
+        "equipment_tool",
+        "company",
+        "responsible",
+        "responsiva",
+    )
+
+    ordering = ("equipment_tool_id", "identifier")
+    list_per_page = 50
+
+    @admin.display(description="ID equipo", ordering="equipment_tool__id")
+    def equipo_id(self, obj):
+        return obj.equipment_tool_id
 from django.contrib import admin
 from .models import Vehicle_Maintenance
 

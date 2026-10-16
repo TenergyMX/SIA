@@ -56,7 +56,7 @@ $(document).ready(function () {
     });
 });
 
-//tabla de responsivas
+// Tabla de responsivas
 function get_responsiva() {
     $("#table_responsiva").DataTable({
         destroy: true,
@@ -65,13 +65,11 @@ function get_responsiva() {
             url: "/get_responsiva/",
             type: "GET",
             dataSrc: "data",
-
             data: function (d) {
                 const params = new URLSearchParams(window.location.search);
                 const responsivaId = params.get("responsiva_id");
                 d.responsiva_id = responsivaId;
             },
-
             error: function (xhr, error, thrown) {
                 console.log("Error en la solicitud AJAX:", thrown);
                 alert("No se pudo cargar la información de las responsivas.");
@@ -87,6 +85,65 @@ function get_responsiva() {
                 title: "Nombre del equipo",
                 data: "equipment_name__equipment_name",
                 className: "text-center toggleable",
+            },
+            {
+                title: "Identificadores prestados",
+                data: "identificadores",
+                className: "text-center",
+                orderable: false,
+                searchable: true,
+                render: function (data, type, row) {
+                    if (!Array.isArray(data) || data.length === 0) {
+                        return '<span class="text-muted">Sin identificadores</span>';
+                    }
+
+                    if (type !== "display") {
+                        return data.join(", ");
+                    }
+
+                    return `
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-primary"
+                            title="Visualizar identificadores prestados"
+                            aria-label="Visualizar identificadores prestados"
+                            onclick="verIdentificadoresPrestados(this)"
+                            style="
+                                width: 36px;
+                                height: 36px;
+                                padding: 0;
+                                border-radius: 8px;
+                                background-color: #174A7E;
+                                border-color: #174A7E;
+                                color: #FFFFFF;
+                            "
+                        >
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    `;
+                }
+            },
+            {
+                title: "Fotografía",
+                data: "photo_url",
+                className: "text-center",
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    if (!data) {
+                        return '<span class="text-muted">Sin fotografía</span>';
+                    }
+                    const url = String(data).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+                    return `
+                        <img
+                            src="${url}"
+                            alt="Fotografía del equipo"
+                            title="Clic para ampliar"
+                            onclick="verFotoEquipo(this)"
+                            style="width:55px;height:55px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;cursor:pointer;"
+                        >
+                    `;
+                },
             },
             {
                 title: "Responsable del equipo",
@@ -124,7 +181,6 @@ function get_responsiva() {
                     if (!data) {
                         return "";
                     }
-
                     return data.split("T")[0];
                 },
             },
@@ -149,13 +205,12 @@ function get_responsiva() {
                 render: function (data, type, row) {
                     if (row.status_equipment.includes("Cancelado")) {
                         return "";
-                    } else {
-                        return (
-                            '<button class="btn btn-primary-light btn-sm" onclick="generatePdf(' +
-                            row.id +
-                            ')"><i class="fa-solid fa-file-pdf"></i> Generar PDF</button>'
-                        );
                     }
+                    return (
+                        '<button class="btn btn-primary-light btn-sm" onclick="generatePdf(' +
+                        row.id +
+                        ')"><i class="fa-solid fa-file-pdf"></i> Generar PDF</button>'
+                    );
                 },
                 orderable: false,
             },
@@ -170,12 +225,114 @@ function get_responsiva() {
                 orderable: false,
             },
         ],
-        order: [[7, "desc"]],
-
+        order: [[0, "desc"]],
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
         pageLength: 10,
+    });
+}
+
+function verIdentificadoresPrestados(boton) {
+    const tabla = $("#table_responsiva").DataTable();
+    const datos = tabla.row($(boton).closest("tr")).data();
+
+    const identificadores = [
+        ...new Set(
+            (datos?.identificadores || [])
+                .filter(Boolean)
+                .map(id => String(id))
+        )
+    ];
+
+    if (!identificadores.length) {
+        Swal.fire({
+            icon: "info",
+            title: "Sin identificadores",
+            text: "No hay identificadores registrados.",
+            confirmButtonColor: "#198754"
+        });
+        return;
+    }
+
+    const contenido = identificadores.map(function (id, index) {
+        const seguro = $("<div>").text(id).html();
+
+        return `
+            <div style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 12px;
+                margin-bottom: 8px;
+                background: #F0F8F3;
+                border: 1px solid #D5E8DC;
+                border-radius: 6px;
+                text-align: left;
+            ">
+                <span style="
+                    color: #198754;
+                    font-size: 13px;
+                    font-weight: 700;
+                    min-width: 24px;
+                ">${index + 1}.</span>
+
+                <span style="
+                    color: #212529;
+                    font-size: 14px;
+                    font-weight: 600;
+                    overflow-wrap: anywhere;
+                ">${seguro}</span>
+            </div>
+        `;
+    }).join("");
+
+    Swal.fire({
+        title: "Identificadores prestados",
+        html: `
+            <div style="margin-bottom: 12px; color: #6C757D; font-size: 13px;">
+                Responsiva #${datos.id} · ${identificadores.length} equipo(s)
+            </div>
+
+            <div style="
+                max-height: 300px;
+                overflow-y: auto;
+                overflow-x: hidden;
+                padding: 2px 5px 2px 2px;
+                text-align: left;
+            ">
+                ${contenido}
+            </div>
+        `,
+        width: 420,
+        confirmButtonText: "Cerrar",
+        confirmButtonColor: "#198754",
+        showCloseButton: true,
+        focusConfirm: false
+    });
+}
+
+// Mostrar fotografía ampliada de la responsiva
+function verFotoEquipo(elemento) {
+    const imagen = elemento.src;
+
+    Swal.fire({
+        title: "Fotografía del equipo",
+        imageUrl: imagen,
+        imageAlt: "Fotografía del equipo asignado",
+        imageWidth: 400,
+        imageHeight: 400,
+        imageCss: {
+            objectFit: "contain",
+            maxWidth: "100%",
+            maxHeight: "65vh"
+        },
+        showCloseButton: true,
+        showConfirmButton: true,
+        confirmButtonText: "Cerrar",
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        width: 750
     });
 }
 
@@ -228,38 +385,348 @@ function approve_button(button) {
                     Swal.showLoading();
                 },
             });
+            alert("Se abrirá un modal para seleccionar los equipos y herramientas que se entregarán. Por favor, selecciona los identificadores correspondientes.");
+            seleccionarEquiposResponsiva(data);
 
-            $.ajax({
-                url: "/approve_responsiva/",
-                type: "POST",
-                data: {
-                    id: data.id,
-                },
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader(
-                        "X-CSRFToken",
-                        $('input[name="csrfmiddlewaretoken"]').val()
-                    );
-                },
-                success: function (response) {
-                    if (response.success) {
-                        Swal.fire({
-                            title: "¡Responsiva Aceptada!",
-                            text: "La responsiva fue aceptada correctamente.",
-                            icon: "success",
-                            timer: 1500,
-                        }).then(() => {
-                            $("#table_responsiva").DataTable().ajax.reload();
+
+            // $.ajax({
+            //     url: "/approve_responsiva/",
+            //     type: "POST",
+            //     data: {
+            //         id: data.id,
+            //     },
+            //     beforeSend: function (xhr) {
+            //         xhr.setRequestHeader(
+            //             "X-CSRFToken",
+            //             $('input[name="csrfmiddlewaretoken"]').val()
+            //         );
+            //     },
+            //     success: function (response) {
+            //         if (response.success) {
+            //             Swal.fire({
+            //                 title: "¡Responsiva Aceptada!",
+            //                 text: "La responsiva fue aceptada correctamente.",
+            //                 icon: "success",
+            //                 timer: 1500,
+            //             }).then(() => {
+            //                 $("#table_responsiva").DataTable().ajax.reload();
+            //             });
+            //         } else {
+            //             Swal.fire("Error", response.message, "error");
+            //         }
+            //     },
+            //     error: function (xhr, status, error) {
+            //         console.error("Error al aceptar la responsiva:", error);
+            //         Swal.fire("Error", "Hubo un error al aceptar la responsiva", "error");
+            //     },
+            // });
+        }
+    });
+
+}
+
+function seleccionarEquiposResponsiva(data) {
+    $.ajax({
+        url: "/available_equipment_tools/",
+        type: "GET",
+        data: { id: data.id },
+        success: function (response) {
+            if (!response.success) {
+                Swal.fire("Error", response.message, "error");
+                return;
+            }
+
+            const cantidadSolicitada = Number(response.cantidad_solicitada);
+            const equipos = response.equipos || [];
+
+            if (!Number.isInteger(cantidadSolicitada) || cantidadSolicitada < 1) {
+                Swal.fire("Error", "La cantidad solicitada no es válida.", "error");
+                return;
+            }
+
+            if (equipos.length < cantidadSolicitada) {
+                Swal.fire({
+                    title: "Equipos insuficientes",
+                    text: `Se solicitaron ${cantidadSolicitada} equipos, pero solo hay ${equipos.length} disponibles.`,
+                    icon: "warning"
+                });
+                return;
+            }
+
+            const escapeHTML = (value) => String(value ?? "").replace(
+                /[&<>"']/g,
+                (char) => ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;"
+                })[char]
+            );
+
+            const equiposHTML = equipos.map((equipo) => {
+                const nombre = String(equipo.name ?? "");
+                const identificador = String(equipo.identifier ?? "");
+                const serie = String(equipo.serial_number ?? "");
+                const textoBusqueda = `${nombre} ${identificador} ${serie}`;
+
+                return `
+                    <label
+                        class="equipo-item"
+                        data-search="${escapeHTML(textoBusqueda)}"
+                        style="
+                            display:flex;
+                            align-items:center;
+                            gap:10px;
+                            padding:10px;
+                            border-bottom:1px solid #dee2e6;
+                            text-align:left;
+                            cursor:pointer;
+                        "
+                    >
+                        <input
+                            type="checkbox"
+                            class="equipo-disponible"
+                            value="${escapeHTML(identificador)}"
+                            style="width:18px;height:18px;flex-shrink:0;"
+                        >
+                        <span>
+                            <strong>${escapeHTML(nombre)}</strong><br>
+                            <small>
+                                Identificador: ${escapeHTML(identificador)}
+                                ${serie ? ` | Serie: ${escapeHTML(serie)}` : ""}
+                            </small>
+                        </span>
+                    </label>
+                `;
+            }).join("");
+
+            Swal.fire({
+                title: "Seleccionar equipos y herramientas",
+                html: `
+                    <p>Busca y selecciona los equipos que se entregarán.</p>
+
+                    <div style="text-align:left;margin-bottom:12px;">
+                        <label
+                            for="buscar-equipos"
+                            style="font-weight:600;display:block;margin-bottom:5px;"
+                        >
+                            Buscar por nombre, identificador o serie
+                        </label>
+                        <input
+                            type="search"
+                            id="buscar-equipos"
+                            class="swal2-input"
+                            placeholder="Escribe para buscar..."
+                            autocomplete="off"
+                            style="width:100%;margin:0;box-sizing:border-box;"
+                        >
+                    </div>
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        gap:8px;
+                        margin-bottom:10px;
+                        text-align:left;
+                    ">
+                        <small>
+                            Solicitados: <strong>${cantidadSolicitada}</strong>
+                        </small>
+                        <small>
+                            Seleccionados:
+                            <strong id="contador-equipos">0</strong>
+                            / ${cantidadSolicitada}
+                        </small>
+                    </div>
+
+                    <div id="lista-equipos" style="
+                        height:300px;
+                        max-height:40vh;
+                        overflow-y:auto;
+                        overflow-x:hidden;
+                        border:1px solid #dee2e6;
+                        border-radius:6px;
+                    ">
+                        ${equiposHTML}
+                    </div>
+
+                    <p
+                        id="sin-resultados"
+                        style="display:none;margin-top:12px;"
+                    >
+                        No se encontraron equipos con esa búsqueda.
+                    </p>
+
+                    <small
+                        id="error-seleccion"
+                        style="color:#dc3545;display:block;margin-top:8px;"
+                    ></small>
+                `,
+                width: 700,
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Continuar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#6c757d",
+                focusConfirm: false,
+
+                // Evitar cierre accidental del selector.
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                allowEnterKey: false,
+
+                didOpen: () => {
+                    const buscador = document.getElementById("buscar-equipos");
+                    const items = document.querySelectorAll(".equipo-item");
+                    const checkboxes = document.querySelectorAll(".equipo-disponible");
+                    const contador = document.getElementById("contador-equipos");
+                    const error = document.getElementById("error-seleccion");
+                    const sinResultados = document.getElementById("sin-resultados");
+
+                    const normalizar = (texto) => texto
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "");
+
+                    const actualizarContador = () => {
+                        const total = document.querySelectorAll(
+                            ".equipo-disponible:checked"
+                        ).length;
+
+                        contador.textContent = total;
+                    };
+
+                    buscador.addEventListener("input", function () {
+                        const busqueda = normalizar(this.value.trim());
+                        let visibles = 0;
+
+                        items.forEach((item) => {
+                            const texto = normalizar(item.dataset.search || "");
+                            const coincide = texto.includes(busqueda);
+
+                            item.style.display = coincide ? "flex" : "none";
+
+                            if (coincide) visibles++;
                         });
-                    } else {
-                        Swal.fire("Error", response.message, "error");
+
+                        sinResultados.style.display = visibles ? "none" : "block";
+                    });
+
+                    checkboxes.forEach((checkbox) => {
+                        checkbox.addEventListener("change", function () {
+                            const totalSeleccionados = document.querySelectorAll(
+                                ".equipo-disponible:checked"
+                            ).length;
+
+                            if (totalSeleccionados > cantidadSolicitada) {
+                                this.checked = false;
+                                error.textContent =
+                                    `Solo puedes seleccionar ${cantidadSolicitada} equipos.`;
+                            } else {
+                                error.textContent = "";
+                            }
+
+                            actualizarContador();
+                        });
+                    });
+
+                    buscador.focus();
+                },
+
+                preConfirm: () => {
+                    const seleccionados = [
+                        ...document.querySelectorAll(".equipo-disponible:checked")
+                    ].map((checkbox) => checkbox.value);
+
+                    if (seleccionados.length !== cantidadSolicitada) {
+                        Swal.showValidationMessage(
+                            `Debes seleccionar exactamente ${cantidadSolicitada} equipos.`
+                        );
+                        return false;
                     }
-                },
-                error: function (xhr, status, error) {
-                    console.error("Error al aceptar la responsiva:", error);
-                    Swal.fire("Error", "Hubo un error al aceptar la responsiva", "error");
-                },
+
+                    return seleccionados;
+                }
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                const identificadores = result.value;
+
+                Swal.fire({
+                    title: "¿Estás seguro que deseas aceptar la responsiva?",
+                    text: `Se asignarán ${identificadores.length} equipos o herramientas. ¡Esta acción no se puede deshacer!`,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Sí, aceptar responsiva",
+                    cancelButtonText: "Cancelar",
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then((confirmacion) => {
+                    if (!confirmacion.isConfirmed) return;
+
+                    Swal.fire({
+                        title: "Aprobando responsiva...",
+                        text: "La plataforma está procesando la información. Por favor, espera.",
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    $.ajax({
+                        url: "/approve_responsiva/",
+                        type: "POST",
+                        data: {
+                            id: data.id,
+                            identificadores: JSON.stringify(identificadores)
+                        },
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader(
+                                "X-CSRFToken",
+                                $('input[name="csrfmiddlewaretoken"]').val()
+                            );
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: "¡Responsiva aceptada!",
+                                    text: response.message ||
+                                        "La responsiva fue aceptada correctamente.",
+                                    icon: "success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    $("#table_responsiva").DataTable().ajax.reload();
+                                });
+                            } else {
+                                Swal.fire("Error", response.message, "error");
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error(
+                                "Error al aceptar la responsiva:",
+                                xhr.responseText
+                            );
+
+                            const mensaje = xhr.responseJSON?.message ||
+                                "Hubo un error al aceptar la responsiva.";
+
+                            Swal.fire("Error", mensaje, "error");
+                        }
+                    });
+                });
             });
+        },
+        error: function (xhr) {
+            const mensaje = xhr.responseJSON?.message ||
+                "No fue posible consultar los equipos disponibles.";
+
+            Swal.fire("Error", mensaje, "error");
         }
     });
 }
@@ -437,52 +904,125 @@ $("#status_equipment").change(function () {
 });
 
 // Variables para la firma del almacén
-let canvasAlmacen = document.getElementById("canvas-signature-almacen");
-let ctxAlmacen = canvasAlmacen.getContext("2d");
-let drawingAlmacen = false;
-let lastXAlmacen = 0;
-let lastYAlmacen = 0;
+const canvasAlmacen = document.getElementById("canvas-signature-almacen");
+const ctxAlmacen = canvasAlmacen.getContext("2d");
+const btnLimpiarAlmacen = document.getElementById("canvas-signature-btn-clear-almacen");
+const btnDeshacerAlmacen = document.getElementById("canvas-signature-btn-undo-almacen");
 
-// Configura el contexto para la firma del almacén
+let drawingAlmacen = false;
+let trazosAlmacen = [];
+let trazoActualAlmacen = [];
+
+// Configuración del contexto
 ctxAlmacen.strokeStyle = "black";
 ctxAlmacen.lineWidth = 2;
 ctxAlmacen.lineCap = "round";
+ctxAlmacen.lineJoin = "round";
 
-// Eventos para dibujar en el canvas de almacén
-canvasAlmacen.addEventListener("mousedown", function (e) {
+// Evitar desplazamientos de la página mientras se firma
+canvasAlmacen.style.touchAction = "none";
+
+// Obtener las coordenadas considerando el tamaño visual del canvas
+function obtenerCoordenadasAlmacen(e) {
+    const rect = canvasAlmacen.getBoundingClientRect();
+
+    return {
+        x: (e.clientX - rect.left) * (canvasAlmacen.width / rect.width),
+        y: (e.clientY - rect.top) * (canvasAlmacen.height / rect.height)
+    };
+}
+
+// Comenzar un trazo
+canvasAlmacen.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+
     drawingAlmacen = true;
-    lastXAlmacen = e.offsetX;
-    lastYAlmacen = e.offsetY;
-});
+    canvasAlmacen.setPointerCapture(e.pointerId);
 
-canvasAlmacen.addEventListener("mousemove", function (e) {
-    if (drawingAlmacen) {
-        ctxAlmacen.beginPath();
-        ctxAlmacen.moveTo(lastXAlmacen, lastYAlmacen);
-        ctxAlmacen.lineTo(e.offsetX, e.offsetY);
-        ctxAlmacen.stroke();
-        lastXAlmacen = e.offsetX;
-        lastYAlmacen = e.offsetY;
-    }
-});
+    const punto = obtenerCoordenadasAlmacen(e);
+    trazoActualAlmacen = [punto];
 
-canvasAlmacen.addEventListener("mouseup", function () {
-    drawingAlmacen = false;
     ctxAlmacen.beginPath();
+    ctxAlmacen.moveTo(punto.x, punto.y);
+    ctxAlmacen.lineTo(punto.x + 0.1, punto.y + 0.1);
+    ctxAlmacen.stroke();
 });
 
-// Limpiar el canvas de la firma del almacén
-document
-    .getElementById("canvas-signature-btn-clear-almacen")
-    .addEventListener("click", function () {
-        ctxAlmacen.clearRect(0, 0, canvasAlmacen.width, canvasAlmacen.height);
-        undoStack = [];
-    });
+// Dibujar mientras se mueve el dedo o mouse
+canvasAlmacen.addEventListener("pointermove", function (e) {
+    if (!drawingAlmacen) return;
 
-// Deshacer en el canvas de la firma del almacén
-document
-    .getElementById("canvas-signature-btn-undo-almacen")
-    .addEventListener("click", function () {});
+    e.preventDefault();
+
+    const punto = obtenerCoordenadasAlmacen(e);
+    trazoActualAlmacen.push(punto);
+
+    const anterior = trazoActualAlmacen[trazoActualAlmacen.length - 2];
+
+    ctxAlmacen.beginPath();
+    ctxAlmacen.moveTo(anterior.x, anterior.y);
+    ctxAlmacen.lineTo(punto.x, punto.y);
+    ctxAlmacen.stroke();
+});
+
+// Finalizar el trazo
+function finalizarTrazoAlmacen(e) {
+    if (!drawingAlmacen) return;
+
+    drawingAlmacen = false;
+
+    if (trazoActualAlmacen.length) {
+        trazosAlmacen.push([...trazoActualAlmacen]);
+    }
+
+    trazoActualAlmacen = [];
+    ctxAlmacen.beginPath();
+}
+
+canvasAlmacen.addEventListener("pointerup", finalizarTrazoAlmacen);
+canvasAlmacen.addEventListener("pointercancel", finalizarTrazoAlmacen);
+canvasAlmacen.addEventListener("lostpointercapture", finalizarTrazoAlmacen);
+
+// Redibujar todos los trazos guardados
+function redibujarFirmaAlmacen() {
+    ctxAlmacen.clearRect(0, 0, canvasAlmacen.width, canvasAlmacen.height);
+
+    trazosAlmacen.forEach((trazo) => {
+        if (!trazo.length) return;
+
+        ctxAlmacen.beginPath();
+        ctxAlmacen.moveTo(trazo[0].x, trazo[0].y);
+
+        trazo.slice(1).forEach((punto) => {
+            ctxAlmacen.lineTo(punto.x, punto.y);
+        });
+
+        if (trazo.length === 1) {
+            ctxAlmacen.lineTo(trazo[0].x + 0.1, trazo[0].y + 0.1);
+        }
+
+        ctxAlmacen.stroke();
+    });
+}
+
+// Limpiar la firma
+btnLimpiarAlmacen.addEventListener("click", function (e) {
+    e.preventDefault();
+
+    trazosAlmacen = [];
+    trazoActualAlmacen = [];
+    drawingAlmacen = false;
+
+    ctxAlmacen.clearRect(0, 0, canvasAlmacen.width, canvasAlmacen.height);
+});
+
+// Deshacer el último trazo
+btnDeshacerAlmacen.addEventListener("click", function (e) {
+    e.preventDefault();
+
+    trazosAlmacen.pop();
+    redibujarFirmaAlmacen();
+});
 
 function status_responsiva() {
     var form = $("#form_status_responsiva")[0];
