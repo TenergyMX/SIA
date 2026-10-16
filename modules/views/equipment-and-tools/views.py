@@ -314,173 +314,135 @@ def get_doc(request):
     print(f'get_doc_path: {file_path}')
     s3DocPatch = generate_presigned_url(AWS_BUCKET_NAME, file_path)
     return HttpResponseRedirect(s3DocPatch)
+    
 
 
 def get_equipments_tools(request):
     response = {"status": "error", "message": "Sin procesar"}
     context = user_data(request)
     subModule_id = 30
-
     try:
         access = get_module_user_permissions(context, subModule_id)["data"]["access"]
         area = context["area"]["name"]
         tipo_user = context["role"]["name"]
         company_id = context["company"]["id"]
+        is_warehouse_admin = area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]
 
-        editar = access["update"]
-        eliminar = access["delete"]
-        agregar = access["create"]
-        leer = access["read"]
-
-        equipments = list(Equipment_Tools.objects.select_related(
-            'equipment_category', 'equipment_area', 'equipment_responsible', 'equipment_location'
-        ).filter(company_id=company_id, is_active=True).annotate(available_amount=Count('details', filter=Q( details__company_id=company_id, details__is_active=True, details__is_deactivated=False, details__state='DISPONIBLE'))).values(
-            'id',
-            'equipment_category__id',
-            'equipment_category__name',
-            'equipment_name',
-            'equipment_type',
-            'equipment_brand',
-            'equipment_description',
-            'cost',
-            # 'amount',
-            'available_amount',
-            'equipment_area__id',
-            'equipment_area__name',
-            'equipment_responsible__id',
-            'equipment_responsible__username',
-            'equipment_location__id',
-            'equipment_location__location_name',
-            'equipment_technical_sheet',
-            'document_factura_equipment',
-            'image',
-            'comments',
-            'has_serial_number'
-            ).order_by('-id')
+        equipments = list(
+            Equipment_Tools.objects.select_related(
+                "equipment_category", "equipment_area", "equipment_responsible", "equipment_location"
+            ).filter(company_id=company_id, is_active=True).annotate(
+                available_amount=Count(
+                    "details",
+                    filter=Q(
+                        details__company_id=company_id,
+                        details__is_active=True,
+                        details__is_deactivated=False,
+                        details__state="DISPONIBLE"
+                    )
+                )
+            ).values(
+                "id", "equipment_category__id", "equipment_category__name",
+                "equipment_name", "equipment_type", "equipment_brand",
+                "equipment_description", "cost", "available_amount",
+                "equipment_area__id", "equipment_area__name",
+                "equipment_responsible__id", "equipment_responsible__username",
+                "equipment_location__id", "equipment_location__location_name",
+                "equipment_technical_sheet", "document_factura_equipment",
+                "image", "comments", "has_serial_number"
+            ).order_by("-id")
         )
 
         for item in equipments:
-            # cantidad
+            equipment_id = item["id"]
             item["amount"] = item["available_amount"]
-
-            # Botón para visualizar la fotografía del equipo
+            item["image_url"] = ""
             item["btn_equipment_image"] = ""
-
-            if item["image"]:
-                tempImage = generate_presigned_url(
-                    AWS_BUCKET_NAME,
-                    str(item["image"])
-                )
-
-                item["btn_equipment_image"] = f"""
-                    <img
-                        src="{tempImage}"
-                        alt="Fotografía de {item['equipment_name']}"
-                        class="rounded border"
-                        style="width:70px;height:70px;object-fit:cover;cursor:pointer;"
-                        onclick="verFotoEquipo(this)"
-                        title="Ver fotografía"
-                    >
-                """
-            else:
-                item["btn_equipment_image"] = """
-                    <span class="text-muted">
-                        <i class="fa-solid fa-image-slash"></i>
-                        Sin imagen
-                    </span>
-                """
-
-
-
-            # Botón Ver Ficha Técnica
             item["btn_equipment_technical_sheet"] = ""
-
-            if item["equipment_technical_sheet"]:
-
-                tempDoc = generate_presigned_url(
-                    AWS_BUCKET_NAME,
-                    str(item["equipment_technical_sheet"])
-                )
-
-                item["btn_equipment_technical_sheet"] = f"""
-                    <a href="{tempDoc}"
-                    target="_blank"
-                    class="btn btn-sm btn-primary">
-                        <i class="fa-solid fa-file-lines"></i>
-                        Ver
-                    </a>
-                """
-
-            # Botón Ver Factura
             item["btn_document_factura_equipment"] = ""
-
-            if item["document_factura_equipment"]:
-
-                tempDoc = generate_presigned_url(
-                    AWS_BUCKET_NAME,
-                    str(item["document_factura_equipment"])
-                )
-
-                item["btn_document_factura_equipment"] = f"""
-                    <a href="{tempDoc}"
-                    target="_blank"
-                    class="btn btn-sm btn-info">
-                        <i class="fa-solid fa-eye"></i>
-                        Ver
-                    </a>
-                """
-
-            # Botón Desglose de equipo
             item["btn_equipment_breakdown"] = ""
+            item["btn_action"] = ""
 
-            if access["read"] is True and (
-                area.lower() == "almacen"
-                or tipo_user.lower() in ["administrador", "super usuario"]
-            ):
-                item["btn_equipment_breakdown"] = (
-                    f"<button type='button' "
-                    f"name='identifiers' "
-                    f"class='btn btn-icon btn-sm btn-success-light' "
-                    f"data-equipments-tools='view-identifiers' "
-                    f"data-id='{item['id']}' "
-                    f"aria-label='Desglose de equipo' "
-                    f"title='Desglose de equipo'>"
-                    f"<i class='fa-solid fa-list'></i>"
-                    f"</button>"
+            # Fotografía
+            if item["image"]:
+                tempImage = generate_presigned_url(AWS_BUCKET_NAME, str(item["image"]))
+                item["image_url"] = tempImage
+                item["btn_equipment_image"] = (
+                    f'<img src="{tempImage}" alt="Fotografía de {item["equipment_name"]}" '
+                    'class="rounded border" style="width:70px;height:70px;object-fit:cover;cursor:pointer;" '
+                    f'onclick="verFotoEquipo(this)" data-id="{equipment_id}" title="Ver fotografía">'
+                )
+            else:
+                item["btn_equipment_image"] = '<span class="text-muted">Sin imagen</span>'
+
+            # Ficha técnica
+            if item["equipment_technical_sheet"]:
+                tempDoc = generate_presigned_url(AWS_BUCKET_NAME, str(item["equipment_technical_sheet"]))
+                item["btn_equipment_technical_sheet"] = (
+                    f"<a href='{tempDoc}' target='_blank' rel='noopener noreferrer' "
+                    "class='btn btn-icon btn-sm btn-primary-light' "
+                    f"data-id='{equipment_id}' title='Ficha técnica' aria-label='Ficha técnica'>"
+                    "<i class='fa-solid fa-file-lines'></i></a>"
                 )
 
-            # Botones de acciones
-            item["btn_action"] = ""
-            if access["update"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+            # Factura
+            if item["document_factura_equipment"]:
+                tempDoc = generate_presigned_url(AWS_BUCKET_NAME, str(item["document_factura_equipment"]))
+                item["btn_document_factura_equipment"] = (
+                    f"<a href='{tempDoc}' target='_blank' rel='noopener noreferrer' "
+                    "class='btn btn-icon btn-sm btn-info-light' "
+                    f"data-id='{equipment_id}' title='Factura' aria-label='Factura'>"
+                    "<i class='fa-solid fa-file-invoice'></i></a>"
+                )
+
+            # Desglose: se genera una sola vez
+            if access["read"] is True and is_warehouse_admin:
+                item["btn_equipment_breakdown"] = (
+                    "<button type='button' "
+                    "class='btn btn-icon btn-sm btn-success-light' "
+                    "data-equipments-tools='view-identifiers' "
+                    f"data-id='{equipment_id}' title='Desglose de equipo' aria-label='Desglose de equipo'>"
+                    "<i class='fa-solid fa-list'></i></button>"
+                )
+
+            # Acciones: cada botón se agrega una sola vez
+            if item["btn_equipment_technical_sheet"]:
+                item["btn_action"] += item["btn_equipment_technical_sheet"] + " "
+            if item["btn_document_factura_equipment"]:
+                item["btn_action"] += item["btn_document_factura_equipment"] + " "
+            if item["btn_equipment_breakdown"]:
+                item["btn_action"] += item["btn_equipment_breakdown"] + " "
+
+            if access["update"] is True and is_warehouse_admin:
                 item["btn_action"] += (
                     "<button type='button' class='btn btn-icon btn-sm btn-primary-light edit-btn' "
-                    "onclick='edit_button(this)' aria-label='info'>"
-                    "<i class='fa-solid fa-pen'></i>"
-                    "</button> "
+                    "onclick='edit_button(this)' "
+                    f"data-id='{equipment_id}' title='Editar equipo' aria-label='Editar equipo'>"
+                    "<i class='fa-solid fa-pen'></i></button> "
                 )
-            if access["delete"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+
+            if access["delete"] is True and is_warehouse_admin:
                 item["btn_action"] += (
                     "<button type='button' class='btn btn-icon btn-sm btn-danger-light delete-btn' "
-                    "onclick='delete_equipment_tool(this)' aria-label='delete'>"
-                    "<i class='fa-solid fa-trash'></i>"
-                    "</button> "
+                    "onclick='delete_equipment_tool(this)' "
+                    f"data-id='{equipment_id}' title='Eliminar equipo' aria-label='Eliminar equipo'>"
+                    "<i class='fa-solid fa-trash'></i></button> "
                 )
-            
-            # Botón Agregar Responsiva (visible para todos)
+
             if access["create"] is True:
                 item["btn_action"] += (
                     "<button type='button' class='btn btn-icon btn-sm btn-info-light add-responsiva-btn' "
-                    "onclick='modal_responsiva(this)' aria-label='responsiva'>"
-                    "<i class='fa-solid fa-file-circle-plus'></i>"
-                    "</button>"
+                    "onclick='modal_responsiva(this)' "
+                    f"data-id='{equipment_id}' title='Generar responsiva' aria-label='Generar responsiva'>"
+                    "<i class='fa-solid fa-file-circle-plus'></i></button> "
                 )
 
-            if access["read"] is True and (area.lower() == "almacen" or tipo_user.lower() in ["administrador", "super usuario"]):
+            if access["read"] is True and is_warehouse_admin:
                 item["btn_action"] += (
                     "<button type='button' class='btn btn-icon btn-sm btn-info-light history-btn' "
-                    "onclick='modal_history(this)' aria-label='history'>"
-                    "<i class='fa-solid fa-rectangle-history'></i>"
-                    "</button>"
+                    "onclick='modal_history(this)' "
+                    f"data-id='{equipment_id}' title='Historial' aria-label='Historial'>"
+                    "<i class='fa-solid fa-rectangle-history'></i></button>"
                 )
 
         response["data"] = equipments
@@ -491,6 +453,7 @@ def get_equipments_tools(request):
         response["message"] = str(e)
 
     return JsonResponse(response)
+
 
 
 # Vista para obtener las categorías de equipos
@@ -2767,6 +2730,7 @@ def equipment_tools_responsiva_pdf_view(request, responsiva_id):
     ).render()
 
 
+
 # tabla de informacion de un equipo o herramienta
 def get_equipment_tools_details(request):
     equipment_tool_id = request.GET.get("id")
@@ -3512,3 +3476,252 @@ def get_responsiva_details(request):
             "message": "Error interno del servidor.",
             "data": []
         }, status=500)
+
+# funcion que cuando doy clic en el boton editar viene y consulto la información.
+
+@require_GET
+def get_equipment_tool(request):
+    equipment_id = request.GET.get("id")
+    if not equipment_id:
+        return JsonResponse({"success": False, "message": "No se recibió el ID del equipo."}, status=400)
+
+    equipment = get_object_or_404(Equipment_Tools, pk=equipment_id)
+    image_url = generate_presigned_url(AWS_BUCKET_NAME, str(equipment.image)) if equipment.image else ""
+
+    data = {
+        "id": equipment.pk,
+        "equipment_name": equipment.equipment_name or "",
+        "equipment_type": equipment.equipment_type or "",
+        "equipment_brand": equipment.equipment_brand or "",
+        "equipment_description": equipment.equipment_description or "",
+        "cost": str(equipment.cost if equipment.cost is not None else ""),
+        "amount": equipment.amount if equipment.amount is not None else "",
+        "comments": equipment.comments or "",
+        "has_serial_number": equipment.has_serial_number,
+        "category_id": equipment.equipment_category_id,
+        "area_id": equipment.equipment_area_id,
+        "responsible_id": equipment.equipment_responsible_id,
+        "location_id": equipment.equipment_location_id,
+        "image_url": image_url,
+    }
+    return JsonResponse({"success": True, "data": data})
+
+
+def get_equipment_tool_responsiva(request):
+    response = {"status": "error", "message": "Sin procesar"}
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        equipment_id = request.GET.get("id")
+
+        if not equipment_id:
+            return JsonResponse({
+                "status": "error",
+                "message": "No se recibió el ID del equipo."
+            }, status=400)
+
+        equipment = Equipment_Tools.objects.filter(
+            id=equipment_id,
+            company_id=company_id,
+            is_active=True
+        ).annotate(
+            available_amount=Count(
+                "details",
+                filter=Q(
+                    details__company_id=company_id,
+                    details__is_active=True,
+                    details__is_deactivated=False,
+                    details__state="DISPONIBLE"
+                )
+            )
+        ).values(
+            "id", "equipment_name", "available_amount"
+        ).first()
+
+        if not equipment:
+            return JsonResponse({
+                "status": "error",
+                "message": "El equipo no existe o no está disponible."
+            }, status=404)
+
+        response["data"] = {
+            "id": equipment["id"],
+            "equipment_name": equipment["equipment_name"] or "",
+            "amount": equipment["available_amount"]
+        }
+        response["status"] = "success"
+        response["message"] = "Equipo consultado correctamente"
+
+    except Exception as e:
+        response["message"] = str(e)
+
+    return JsonResponse(response)
+
+# funciones para descargar xlsx
+@require_GET
+def get_equipment_tools_categories(request):
+    categorias = Equipement_category.objects.filter(is_active=True).order_by("name").values("id", "name")
+    return JsonResponse({"success": True, "data": list(categorias)})
+
+
+from datetime import datetime, time
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_GET
+from django.db.models import Q
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+from openpyxl.utils import get_column_letter
+
+
+def excel_safe_value(value):
+    if isinstance(value, (datetime, time)) and value.tzinfo is not None:
+        return value.replace(tzinfo=None)
+    return value
+
+
+def configurar_hoja_excel(sheet, encabezados, anchos):
+    sheet.sheet_view.showGridLines = False
+    sheet.freeze_panes = "A2"
+    sheet.append(encabezados)
+    for celda in sheet[1]:
+        celda.font = Font(bold=True, color="FFFFFF")
+        celda.fill = PatternFill("solid", fgColor="17365D")
+        celda.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    sheet.row_dimensions[1].height = 32
+    for columna, ancho in enumerate(anchos, 1):
+        sheet.column_dimensions[get_column_letter(columna)].width = ancho
+
+
+@require_GET
+def download_equipments_tools_xlsx(request):
+    tipo = request.GET.get("type", "all")
+    estado = request.GET.get("status", "all")
+    category_ids = request.GET.getlist("category_ids")
+
+    if tipo not in ("all", "category") or estado not in ("all", "active", "inactive"):
+        return JsonResponse({"success": False, "message": "Los filtros seleccionados no son válidos."}, status=400)
+    if tipo == "category" and (not category_ids or not all(value.isdigit() for value in category_ids)):
+        return JsonResponse({"success": False, "message": "Selecciona categorías válidas."}, status=400)
+
+    equipos = Equipment_Tools.objects.select_related(
+        "company", "equipment_category", "equipment_area",
+        "equipment_responsible", "equipment_location"
+    ).order_by("equipment_category__name", "equipment_name", "id")
+
+    if tipo == "category":
+        equipos = equipos.filter(equipment_category_id__in=category_ids)
+    if estado == "active":
+        equipos = equipos.filter(is_active=True)
+    elif estado == "inactive":
+        equipos = equipos.filter(is_active=False)
+
+    workbook = Workbook()
+    resumen = workbook.active
+    resumen.title = "Resumen del catálogo"
+    detalle_sheet = workbook.create_sheet("Inventario detallado")
+
+    encabezados_resumen = [
+        "ID catálogo", "Empresa", "Categoría", "Equipo / herramienta",
+        "Tipo", "Marca", "Descripción", "Área", "Responsable general",
+        "Ubicación general", "Cantidad registrada", "Costo unitario",
+        "Estado del catálogo", "Maneja número de serie", "Comentarios"
+    ]
+    anchos_resumen = [13, 22, 25, 32, 20, 20, 40, 22, 28, 25, 18, 16, 20, 22, 35]
+    configurar_hoja_excel(resumen, encabezados_resumen, anchos_resumen)
+
+    encabezados_detalle = [
+        "ID catálogo", "Empresa", "Categoría", "Equipo / herramienta",
+        "Tipo", "Marca", "Descripción del equipo", "Área",
+        "Responsable general", "Ubicación general", "Cantidad registrada",
+        "Costo unitario", "Estado del catálogo", "ID detalle",
+        "Identificador", "Nombre del identificador", "Número de serie",
+        "Estado del registro", "Estado operativo", "Responsable asignado",
+        "Ubicación individual", "Fecha de asignación", "Fecha de activación",
+        "Usuario de activación", "Usuario de modificación", "Motivo de baja",
+        "Descripción de baja", "Fecha de baja"
+    ]
+    anchos_detalle = [
+        13, 22, 25, 32, 20, 20, 35, 22, 28, 25, 18, 16, 20,
+        13, 25, 28, 25, 20, 20, 28, 25, 20, 22, 28, 28, 20, 35, 22
+    ]
+    configurar_hoja_excel(detalle_sheet, encabezados_detalle, anchos_detalle)
+
+    for equipo in equipos.iterator():
+        responsable_general = equipo.equipment_responsible.get_full_name() if equipo.equipment_responsible else ""
+        categoria = equipo.equipment_category.name if equipo.equipment_category else ""
+        empresa = str(equipo.company or "")
+        area = str(equipo.equipment_area or "")
+        ubicacion_general = equipo.equipment_location.location_name if equipo.equipment_location else ""
+        costo = float(equipo.cost) if equipo.cost is not None else 0
+
+        datos_generales = [
+            equipo.pk, empresa, categoria, equipo.equipment_name or "",
+            equipo.equipment_type or "", equipo.equipment_brand or "",
+            equipo.equipment_description or "", area, responsable_general,
+            ubicacion_general, equipo.amount if equipo.amount is not None else 0,
+            costo, "Habilitado" if equipo.is_active else "Deshabilitado"
+        ]
+
+        fila_resumen = datos_generales + [
+            "Sí" if equipo.has_serial_number else "No",
+            equipo.comments or ""
+        ]
+        resumen.append([excel_safe_value(v) for v in fila_resumen])
+
+        detalles = Equipments_Tools_Detail.objects.filter(
+            equipment_tool_id=equipo.pk
+        ).select_related(
+            "responsible", "equipment_location", "user_activation", "user_modification"
+        ).order_by("identifier", "id")
+
+        if estado == "active":
+            detalles = detalles.filter(is_active=True, is_deactivated=False)
+        elif estado == "inactive":
+            detalles = detalles.filter(Q(is_active=False) | Q(is_deactivated=True))
+
+        if not detalles.exists():
+            fila_detalle = datos_generales + [
+                None, "", "", "", "", "", "", "", None, None, "", "", "", "", None
+            ]
+            detalle_sheet.append([excel_safe_value(v) for v in fila_detalle])
+            continue
+
+        for detalle in detalles.iterator():
+            responsable = detalle.responsible.get_full_name() if detalle.responsible else ""
+            usuario_activacion = detalle.user_activation.get_full_name() if detalle.user_activation else ""
+            usuario_modificacion = detalle.user_modification.get_full_name() if detalle.user_modification else ""
+            ubicacion_individual = detalle.equipment_location.location_name if detalle.equipment_location else ""
+
+            fila_detalle = datos_generales + [
+                detalle.pk, detalle.identifier or "", detalle.name or "",
+                detalle.serial_number or "",
+                "Habilitado" if detalle.is_active and not detalle.is_deactivated else "Deshabilitado",
+                detalle.get_state_display() if detalle.state else "",
+                responsable, ubicacion_individual, detalle.assignment_date,
+                detalle.modification_date, usuario_activacion, usuario_modificacion,
+                detalle.deactivation_reason or "",
+                detalle.deactivation_description or "",
+                detalle.deactivated_at
+            ]
+            detalle_sheet.append([excel_safe_value(v) for v in fila_detalle])
+
+    borde = Border(bottom=Side(style="thin", color="D9E2F3"))
+    for sheet in (resumen, detalle_sheet):
+        for fila_celdas in sheet.iter_rows(min_row=2):
+            for celda in fila_celdas:
+                celda.alignment = Alignment(vertical="top", wrap_text=True)
+                celda.border = borde
+
+    for fila_celdas in detalle_sheet.iter_rows(min_row=2):
+        for columna in (22, 23, 28):
+            celda = fila_celdas[columna - 1]
+            if celda.value:
+                celda.number_format = "dd/mm/yyyy" if columna == 22 else "dd/mm/yyyy hh:mm"
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="reporte_equipos_herramientas.xlsx"'
+    workbook.save(response)
+    return response

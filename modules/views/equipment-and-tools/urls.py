@@ -74,4 +74,10 @@ urlpatterns = [
 
     # obtener los registros para una responsiva incompleta
     path("get_responsiva_details/", views.get_responsiva_details),
+    
+    path("get_equipment_tool/", views.get_equipment_tool, name="get_equipment_tool"),
+    path("get_equipment_tool_responsiva/", views.get_equipment_tool_responsiva, name="get_equipment_tool_responsiva"),
+    path("get_equipment_tools_categories/", views.get_equipment_tools_categories, name="get_equipment_tools_categories"),
+    path("download_equipments_tools_xlsx/", views.download_equipments_tools_xlsx, name="download_equipments_tools_xlsx"),
+
 ]

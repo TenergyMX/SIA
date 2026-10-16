@@ -1,56 +1,324 @@
 {% extends 'ynex/base.html' %}
+{% load static %}
+
 {% block content %}
+<style>
+#catalog_equipments_tools {
+    --catalog-card-bg: var(--custom-white, #fff);
+    --catalog-image-bg: #f4f6f9;
+    --catalog-border: #e2e6ec;
+    --catalog-text: var(--default-text-color, #212529);
+    --catalog-muted: #6c757d;
+}
+#catalog_equipments_tools .catalog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+#catalog_equipments_tools .catalog-search { width: min(100%, 360px); }
+#catalog_equipments_tools .cards-equipments-tools {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+    align-items: stretch;
+    gap: 16px;
+}
+#catalog_equipments_tools .equipment-tool-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    height: 390px;
+    overflow: hidden;
+    color: var(--catalog-text);
+    background: var(--catalog-card-bg);
+    border: 1px solid var(--catalog-border);
+    border-radius: 12px;
+    transition: box-shadow .2s, transform .2s;
+}
+#catalog_equipments_tools .equipment-tool-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 16px rgba(0,0,0,.1);
+}
+#catalog_equipments_tools .equipment-tool-image-container {
+    display: flex;
+    flex: 0 0 165px;
+    align-items: center;
+    justify-content: center;
+    height: 165px;
+    padding: 10px;
+    background: var(--catalog-image-bg);
+    border-bottom: 1px solid var(--catalog-border);
+}
+#catalog_equipments_tools .equipment-tool-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+}
+#catalog_equipments_tools .equipment-tool-no-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--catalog-muted);
+}
+#catalog_equipments_tools .equipment-tool-no-image i { font-size: 2rem; }
+#catalog_equipments_tools .equipment-tool-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 12px;
+}
+#catalog_equipments_tools .equipment-tool-info-scroll {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 5px 8px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #9CCBFA #F1F7FD;
+    overscroll-behavior: contain;
+}
+#catalog_equipments_tools .equipment-tool-info-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+#catalog_equipments_tools .equipment-tool-info-scroll::-webkit-scrollbar-track {
+    background: #F1F7FD;
+    border-radius: 10px;
+}
+#catalog_equipments_tools .equipment-tool-info-scroll::-webkit-scrollbar-thumb {
+    background: #9CCBFA;
+    border-radius: 10px;
+}
+#catalog_equipments_tools .equipment-tool-info-scroll::-webkit-scrollbar-thumb:hover {
+    background: #6AAFF0;
+}
+#catalog_equipments_tools .equipment-tool-name {
+    margin: 0;
+    color: var(--catalog-text);
+    font-size: .95rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+#catalog_equipments_tools .equipment-tool-description {
+    margin: 0;
+    color: var(--catalog-muted);
+    font-size: .82rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+#catalog_equipments_tools .equipment-tool-details {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: .82rem;
+    overflow-wrap: anywhere;
+}
+#catalog_equipments_tools .equipment-tool-details strong {
+    color: var(--catalog-text);
+}
+#catalog_equipments_tools .equipment-tool-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 9px;
+    border-top: 1px solid var(--catalog-border);
+}
+#catalog_equipments_tools .equipment-tool-actions .btn { flex: 0 0 auto; }
+#catalog_equipments_tools .equipment-tool-actions .btn i { pointer-events: none; }
+#catalog_equipments_tools .catalog-search .form-control {
+    color: var(--catalog-text);
+    background-color: var(--catalog-card-bg);
+    border-color: var(--catalog-border);
+}
+#catalog_equipments_tools .catalog-search .form-control::placeholder {
+    color: var(--catalog-muted);
+    opacity: .85;
+}
+#catalog_equipments_tools .catalog-header p,
+#catalog_equipments_tools #empty_equipments_tools {
+    color: var(--catalog-muted) !important;
+}
+
+/* Disponibilidad */
+#catalog_equipments_tools .equipment-tool-availability {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 6px 10px;
+    border-radius: 50rem;
+    background-color: #E8F3FF;
+    color: #1769AA;
+    font-size: .75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Modo oscuro Ynex */
+html[data-theme-mode="dark"] #catalog_equipments_tools,
+html[data-theme="dark"] #catalog_equipments_tools,
+body[data-theme-mode="dark"] #catalog_equipments_tools,
+[data-bs-theme="dark"] #catalog_equipments_tools {
+    --catalog-card-bg: #202938;
+    --catalog-image-bg: #18212e;
+    --catalog-border: #374354;
+    --catalog-text: #edf2f7;
+    --catalog-muted: #aab6c5;
+}
+html[data-theme-mode="dark"] #catalog_equipments_tools .equipment-tool-card,
+html[data-theme="dark"] #catalog_equipments_tools .equipment-tool-card,
+body[data-theme-mode="dark"] #catalog_equipments_tools .equipment-tool-card,
+[data-bs-theme="dark"] #catalog_equipments_tools .equipment-tool-card {
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+html[data-theme-mode="dark"] #catalog_equipments_tools .equipment-tool-card:hover,
+html[data-theme="dark"] #catalog_equipments_tools .equipment-tool-card:hover,
+body[data-theme-mode="dark"] #catalog_equipments_tools .equipment-tool-card:hover,
+[data-bs-theme="dark"] #catalog_equipments_tools .equipment-tool-card:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,.28);
+}
+html[data-theme-mode="dark"] #catalog_equipments_tools .catalog-search .form-control:focus,
+html[data-theme="dark"] #catalog_equipments_tools .catalog-search .form-control:focus,
+body[data-theme-mode="dark"] #catalog_equipments_tools .catalog-search .form-control:focus,
+[data-bs-theme="dark"] #catalog_equipments_tools .catalog-search .form-control:focus {
+    border-color: #5799f7;
+    box-shadow: 0 0 0 .2rem rgba(87,153,247,.15);
+}
+html[data-theme-mode="dark"] #catalog_equipments_tools .equipment-tool-availability,
+html[data-theme="dark"] #catalog_equipments_tools .equipment-tool-availability,
+body[data-theme-mode="dark"] #catalog_equipments_tools .equipment-tool-availability,
+[data-bs-theme="dark"] #catalog_equipments_tools .equipment-tool-availability {
+    background-color: #203C59;
+    color: #B9DCFF;
+}
+
+/* Pantallas grandes */
+@media (min-width: 1600px) {
+    #catalog_equipments_tools .cards-equipments-tools {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+}
+
+/* Laptop y escritorio estándar */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    #catalog_equipments_tools .cards-equipments-tools {
+        grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+        gap: 12px;
+    }
+}
+
+/* Tablet */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    #catalog_equipments_tools .cards-equipments-tools {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+    #catalog_equipments_tools .equipment-tool-card { height: 380px; }
+}
+
+/* Celular */
+@media (max-width: 575.98px) {
+    #catalog_equipments_tools .cards-equipments-tools {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+    #catalog_equipments_tools .equipment-tool-card { height: 355px; }
+    #catalog_equipments_tools .equipment-tool-image-container {
+        flex-basis: 125px;
+        height: 125px;
+        padding: 8px;
+    }
+    #catalog_equipments_tools .equipment-tool-content {
+        gap: 5px;
+        padding: 9px;
+    }
+    #catalog_equipments_tools .equipment-tool-info-scroll {
+        padding-right: 4px;
+    }
+    #catalog_equipments_tools .equipment-tool-name { font-size: .85rem; }
+    #catalog_equipments_tools .equipment-tool-description { font-size: .78rem; }
+    #catalog_equipments_tools .equipment-tool-details { font-size: .76rem; }
+    #catalog_equipments_tools .equipment-tool-availability {
+        padding: 5px 7px;
+        font-size: .68rem;
+    }
+    #catalog_equipments_tools .equipment-tool-actions {
+        gap: 4px;
+        padding-top: 6px;
+    }
+    #catalog_equipments_tools .equipment-tool-actions .btn { padding: 5px 7px; }
+    #catalog_equipments_tools .catalog-search { width: 100%; }
+
+
+}
+</style>
+
 <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-    <h1 class="page-title fw-semibold fs-18 mb-0">
-        Equipos y herramientas 
-    </h1>
-    <div class="ms-md-1 ms-0">
-        <nav>
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item">Equipos y herramientas</li>
-                <li class="breadcrumb-item active" aria-current="page">
-                    Info
-                </li>
-            </ol>
-        </nav>
-    </div>
+    <h1 class="page-title fw-semibold fs-18 mb-0">Equipos y herramientas</h1>
+    <nav>
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">Equipos y herramientas</li>
+            <li class="breadcrumb-item active" aria-current="page">Catálogo</li>
+        </ol>
+    </nav>
 </div>
 
 <section class="w-100">
     <div class="card custom-card">
-        <div class="card-header justify-content-between">
-            <div class="card-title">
-                Equipos y herramientas
-            </div>
-            <div class="">
-            {% if area == "almacen" or tipo_user == "administrador" or tipo_user == "super usuario" %}
-                {% if create %}
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" onclick="add_equipment()" 
-                        title="Agregar equipo">
-                        <i class="fa-solid fa-plus"></i>
-                    Agregar 
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="card-title">Equipos y herramientas</div>
+            <div class="d-flex flex-wrap gap-2">
+                {% if area == "almacen" or tipo_user == "administrador" or tipo_user == "super usuario" %}
+                    {% if create %}
+                        <button type="button" class="btn btn-sm btn-primary" onclick="add_equipment()" title="Agregar equipo">
+                            <i class="fa-solid fa-plus"></i> Agregar
+                        </button>
+                    {% endif %}
+                   
+                {% endif %}
+                <button type="button" class="btn btn-sm btn-success" id="btn_download_equipments_tools" title="Descargar catálogo en Excel">
+                    <i class="fa-solid fa-file-excel"></i> Descargar XLSX
                 </button>
-            {% endif %}
-        {% endif %}
-                <button type="button" class="btn btn-sm btn-info-light" data-equipment-tools="refresh-table" title="Refrescar tabla" data-refresh-table="table_refrendo">
-                    <i class="fa-solid fa-arrows-rotate"></i>
-                    Recargar datos
+                <button type="button" class="btn btn-sm btn-info-light" data-equipment-tools="refresh-table" title="Refrescar catálogo" data-refresh-table="table_refrendo">
+                    <i class="fa-solid fa-arrows-rotate"></i> Recargar datos
                 </button>
             </div>
         </div>
         <div class="card-body">
-            <!-- tabla -->
-            <div class="table-responsive">
-                <table class="table table-bordered w-100" id="table_equipments_tools">
-                </table>
+            <div id="catalog_equipments_tools">
+                <div class="catalog-header">
+                    <div>
+                        <h5 class="mb-1">Catálogo de equipos</h5>
+                        <p class="text-muted mb-0">Consulta las características y existencias de cada equipo.</p>
+                    </div>
+                    <div class="catalog-search">
+                        <input type="search" id="search_equipments_tools" class="form-control" placeholder="Buscar por nombre, marca o categoría..." autocomplete="off">
+                    </div>
+                </div>
+                <div id="cards_equipments_tools" class="cards-equipments-tools"></div>
+                <div id="empty_equipments_tools" class="text-center text-muted py-5 d-none">No se encontraron equipos.</div>
+                <div id="pagination_equipments_tools" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4"></div>
             </div>
-            <!-- end tabla -->
+            <table id="table_equipments_tools" class="d-none"></table>
         </div>
     </div>
 </section>
 {% endblock %}
-
-{% load static %}
 
 {% block modals %}
 {% include "equipments-and-tools/modals/mdl-crud-equipments-tools.html" %}
@@ -61,13 +329,10 @@
 {% include "equipments-and-tools/modals/mdl_crud_numero_serie.html" %}
 {% include "equipments-and-tools/modals/mdl_crud_location_equipment_tool.html" %}
 {% include "equipments-and-tools/modals/mdl_crud_disable.html" %}
-
 {% endblock %}
 
 {% block scripts %}
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="{% static 'assets/js/canvasDrawing.js' %}"></script>
 <script src="{% static 'assets/js/users/users.js' %}"></script>
@@ -75,5 +340,4 @@
 <script src="{% static 'assets/js/users/providers.js' %}"></script>
 <script src="{% static 'assets/js/equipment-and-tools/equipments_tools.js' %}"></script>
 <script src="{% static 'assets/js/equipment-and-tools/responsiva.js' %}"></script>
-
 {% endblock %}

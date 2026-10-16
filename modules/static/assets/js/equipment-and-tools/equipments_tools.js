@@ -1,76 +1,226 @@
+
+let equipmentsToolsData = [];
+let filteredEquipmentsTools = [];
+let currentEquipmentToolsPage = 1;
+const EQUIPMENT_TOOLS_PAGE_SIZE = 50;
+
 $(document).ready(function () {
     load_table_equi();
+
+    $(document).on("input", "#search_equipments_tools", function () {
+        const search = this.value.trim().toLowerCase();
+
+        filteredEquipmentsTools = equipmentsToolsData.filter(function (item) {
+            return [
+                item.equipment_name,
+                item.equipment_category__name,
+                item.equipment_brand,
+                item.equipment_type,
+                item.equipment_description,
+                item.equipment_area__name,
+                item.equipment_location__location_name
+            ].some(function (value) {
+                return String(value || "").toLowerCase().includes(search);
+            });
+        });
+
+        currentEquipmentToolsPage = 1;
+        render_equipments_tools();
+    });
+
+    $(document).on("click", "[data-equipment-tools='refresh-table']", function () {
+        load_table_equi();
+    });
+
+    $(document).on("click", "[data-equipment-tools-page]", function () {
+        const page = Number($(this).attr("data-equipment-tools-page"));
+        if (!Number.isInteger(page) || page < 1) return;
+
+        const totalPages = Math.ceil(filteredEquipmentsTools.length / EQUIPMENT_TOOLS_PAGE_SIZE);
+        if (page > totalPages || page === currentEquipmentToolsPage) return;
+
+        currentEquipmentToolsPage = page;
+        render_equipments_tools();
+
+        document.getElementById("cards_equipments_tools").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    });
 });
 
 function load_table_equi() {
-    $("#table_equipments_tools").DataTable({
-        destroy: true,
-        processing: true,
-        ajax: {
-            url: "/get_equipments_tools/",
-            type: "GET",
-            dataSrc: "data",
+    const refreshButton = $("[data-equipment-tools='refresh-table']");
+    refreshButton.prop("disabled", true);
 
-            error: function (xhr, error, thrown) {
-                console.error("Error en la carga de datos: ", error);
-                alert("No se pudo cargar la información de los equipos.");
-            },
+    $.ajax({
+        url: "/get_equipments_tools/",
+        type: "GET",
+        dataType: "json",
+        success: function (response) {
+            if (response.status !== "success") {
+                equipmentsToolsData = [];
+                filteredEquipmentsTools = [];
+                currentEquipmentToolsPage = 1;
+                render_equipments_tools();
+                $("#empty_equipments_tools").text(
+                    response.message || "No se pudo cargar la información."
+                );
+                return;
+            }
+
+            equipmentsToolsData = Array.isArray(response.data) ? response.data : [];
+            filteredEquipmentsTools = equipmentsToolsData;
+            currentEquipmentToolsPage = 1;
+            render_equipments_tools();
         },
-        columns: [
-            { title: "Id", data: "id" },
-            { title: "Categoría", data: "equipment_category__name" },
-            { title: "Nombre", data: "equipment_name" },
-            { title: "Tipo", data: "equipment_type" },
-            { title: "Marca", data: "equipment_brand" },
-            { title: "Descripción", data: "equipment_description" },
-            { title: "Costo", data: "cost" },
-            { title: "Cantidad", data: "amount" },
-            { title: "Área", data: "equipment_area__name" },
-            { title: "Responsable", data: "equipment_responsible__username" },
-            { title: "Ubicación", data: "equipment_location__location_name" },
-            { title: "Comentarios", data: "comments" },
-
-            {
-                title: "Fotografía",
-                data: "btn_equipment_image",
-                orderable: false,
-                searchable: false,
-                className: "text-center",
-            },
-            {
-                title: "Ficha técnica",
-                data: "btn_equipment_technical_sheet",
-                orderable: false,
-                className: "text-center",
-            },
-            {
-                title: "Factura",
-                data: "btn_document_factura_equipment",
-                orderable: false,
-                className: "text-center",
-            },
-            {
-                title: "Desglose de equipo",
-                data: "btn_equipment_breakdown",
-                orderable: false,
-                searchable: false,
-                className: "text-center",
-            },
-
-            {
-                title: "Acciones",
-                data: "btn_action",
-                orderable: false,
-                defaultContent: "",
-            },
-        ],
-        order: [[0, "desc"]],
-
-        language: {
-            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+        error: function (xhr, error, thrown) {
+            console.error("Error en la carga de datos:", error, thrown);
+            $("#cards_equipments_tools").empty();
+            $("#pagination_equipments_tools").empty();
+            $("#empty_equipments_tools")
+                .removeClass("d-none")
+                .text("No se pudo cargar la información de los equipos.");
         },
-        pageLength: 10,
+        complete: function () {
+            refreshButton.prop("disabled", false);
+        }
     });
+}
+
+function render_equipments_tools() {
+    const container = $("#cards_equipments_tools");
+    const empty = $("#empty_equipments_tools");
+    const pagination = $("#pagination_equipments_tools");
+    const total = filteredEquipmentsTools.length;
+    const totalPages = Math.ceil(total / EQUIPMENT_TOOLS_PAGE_SIZE);
+
+    container.empty();
+    pagination.empty();
+
+    if (!total) {
+        empty.removeClass("d-none").text("No se encontraron equipos.");
+        return;
+    }
+
+    empty.addClass("d-none");
+
+    if (currentEquipmentToolsPage > totalPages) {
+        currentEquipmentToolsPage = totalPages;
+    }
+
+    const start = (currentEquipmentToolsPage - 1) * EQUIPMENT_TOOLS_PAGE_SIZE;
+    const end = Math.min(start + EQUIPMENT_TOOLS_PAGE_SIZE, total);
+    const pageItems = filteredEquipmentsTools.slice(start, end);
+
+    const cards = pageItems.map(function (item) {
+        const name = item.equipment_name || "Equipo sin nombre";
+        const category = item.equipment_category__name || "Sin categoría";
+        const brand = item.equipment_brand || "Sin marca";
+        const type = item.equipment_type || "Sin tipo";
+        const description = item.equipment_description || "Sin descripción disponible.";
+        const amount = item.available_amount ?? item.amount ?? 0;
+        const imageUrl = item.image_url || "";
+        const actions = item.btn_action || "";
+
+        const image = imageUrl
+            ? `<img src="${escapeEquipmentAttribute(imageUrl)}" alt="${escapeEquipmentHtml(name)}" class="equipment-tool-image" loading="lazy" onclick="verFotoEquipo(this)" title="Ver fotografía">`
+            : `<div class="equipment-tool-no-image"><i class="fa-solid fa-image"></i><span>Sin fotografía</span></div>`;
+
+        return `
+            <article class="equipment-tool-card">
+                <div class="equipment-tool-image-container">${image}</div>
+                <div class="equipment-tool-content">
+                    <div class="equipment-tool-info-scroll">
+                        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-2">
+                            <span class="equipment-tool-availability">${escapeEquipmentHtml(category)}</span>
+                            <span class="equipment-tool-availability">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                                Disponibles: ${escapeEquipmentHtml(amount)}
+                            </span>
+                        </div>
+                        <h6 class="equipment-tool-name mb-2">${escapeEquipmentHtml(name)}</h6>
+                        <div class="equipment-tool-details mb-2">
+                            <div><strong>Marca:</strong> ${escapeEquipmentHtml(brand)}</div>
+                            <div><strong>Tipo:</strong> ${escapeEquipmentHtml(type)}</div>
+                            <div><strong>Existencia:</strong> ${escapeEquipmentHtml(amount)}</div>
+                        </div>
+                        <p class="equipment-tool-description">${escapeEquipmentHtml(description)}</p>
+                    </div>
+                    <div class="equipment-tool-actions">${actions}</div>
+                </div>
+            </article>
+        `;
+    });
+
+    container.html(cards.join(""));
+    render_equipment_tools_pagination(total, start, end, totalPages);
+}
+
+function render_equipment_tools_pagination(total, start, end, totalPages) {
+    const pagination = $("#pagination_equipments_tools");
+
+    if (totalPages <= 1) {
+        pagination.empty();
+        return;
+    }
+
+    let buttons = `
+        <button type="button" class="btn btn-sm btn-light border"
+            data-equipment-tools-page="${currentEquipmentToolsPage - 1}"
+            ${currentEquipmentToolsPage === 1 ? "disabled" : ""}>
+            Anterior
+        </button>
+    `;
+
+    let firstPage = Math.max(1, currentEquipmentToolsPage - 2);
+    let lastPage = Math.min(totalPages, currentEquipmentToolsPage + 2);
+
+    if (firstPage > 1) {
+        buttons += `<button type="button" class="btn btn-sm btn-light border" data-equipment-tools-page="1">1</button>`;
+        if (firstPage > 2) buttons += `<span class="px-1 align-self-center">...</span>`;
+    }
+
+    for (let page = firstPage; page <= lastPage; page++) {
+        buttons += `
+            <button type="button"
+                class="btn btn-sm ${page === currentEquipmentToolsPage ? "btn-primary" : "btn-light border"}"
+                data-equipment-tools-page="${page}"
+                ${page === currentEquipmentToolsPage ? 'aria-current="page"' : ""}>
+                ${page}
+            </button>
+        `;
+    }
+
+    if (lastPage < totalPages) {
+        if (lastPage < totalPages - 1) buttons += `<span class="px-1 align-self-center">...</span>`;
+        buttons += `<button type="button" class="btn btn-sm btn-light border" data-equipment-tools-page="${totalPages}">${totalPages}</button>`;
+    }
+
+    buttons += `
+        <button type="button" class="btn btn-sm btn-light border"
+            data-equipment-tools-page="${currentEquipmentToolsPage + 1}"
+            ${currentEquipmentToolsPage === totalPages ? "disabled" : ""}>
+            Siguiente
+        </button>
+    `;
+
+    pagination.html(`
+        <small class="text-muted">
+            Mostrando ${start + 1} a ${end} de ${total} equipos
+        </small>
+        <div class="d-flex align-items-center flex-wrap gap-1">${buttons}</div>
+    `);
+}
+
+function escapeEquipmentHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, function (char) {
+        return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[char];
+    });
+}
+
+function escapeEquipmentAttribute(value) {
+    return escapeEquipmentHtml(value);
 }
 
 // Función para cargar las categorías en el select
@@ -308,41 +458,66 @@ function add_equipment_tool() {
 }
 
 function edit_button(boton) {
-    var row = $(boton).closest("tr");
-    var data = $("#table_equipments_tools").DataTable().row(row).data();
+    const equipmentId = $(boton).attr("data-id");
+    if (!equipmentId) {
+        console.error("No se encontró el ID del equipo.");
+        return;
+    }
 
-    console.log("esto contiene el data", data);
-    // Mostrar el modal de edición
-    $("#mdl-crud-equipments-tools").modal("show");
-    $("#mdl-crud-equipments-tools .modal-title").text("Editar equipo");
+    $.ajax({
+        url: "/get_equipment_tool/",
+        type: "GET",
+        data: { id: equipmentId },
+        dataType: "json",
+        success: function (response) {
+            if (!response.success) {
+                Swal.fire("Error", response.message || "No se pudo obtener la información del equipo.", "error");
+                return;
+            }
 
-    // Rellenar el formulario con los datos del equipo
-    $("#equipment_tool_id").val(data.id);
-    $('#form_add_equipments_tools [name="equipment_name"]').val(data.equipment_name);
-    $('#form_add_equipments_tools [name="equipment_type"]').val(data.equipment_type);
-    $('#form_add_equipments_tools [name="equipment_brand"]').val(data.equipment_brand);
-    $('#form_add_equipments_tools [name="equipment_description"]').val(data.equipment_description);
-    $('#form_add_equipments_tools [name="cost"]').val(data.cost);
-    $('#form_add_equipments_tools [name="amount"]').val(data.amount);
-    $('#form_add_equipments_tools [name="equipment_area"]').val(data.equipment_area);
-    $('#form_add_equipments_tools [name="equipment_responsible"]').val(data.equipment_responsible);
-    $('#form_add_equipments_tools [name="comments"]').val(data.comments);
-    $('#form_add_equipments_tools [name="has_serial_number"]').prop(
-        "checked",
-        data.has_serial_number
-    );
-    // Cargar categorías y seleccionar la categoría actual
-    get_equipment_categories(data.equipment_category__id);
+            const data = response.data;
+            const form = $("#form_add_equipments_tools");
 
-    // Cargar categorías y seleccionar la categoría actual
-    get_equipment_areas(data.equipment_area__id);
+            // Preparar el modal
+            form[0].reset();
+            $("#equipment_tool_id").val(data.id);
+            $("#mdl-crud-equipments-tools .modal-title").text("Editar equipo");
 
-    get_responsible_users(data.equipment_responsible__id);
+            // Rellenar los campos conservando sus identificadores
+            
+            $("#equipment_name").val(data.equipment_name);
+            $("#equipment_type").val(data.equipment_type);
+            $("#equipment_brand").val(data.equipment_brand);
+            $("#equipment_description").val(data.equipment_description);
+            $("#cost").val(data.cost);
+            $("#amount").val(data.amount);
+            $("#comments").val(data.comments);
+            $("#has_serial_number").prop("checked", data.has_serial_number);
 
-    get_locations(data.equipment_location__id);
-    // Cambiar la acción del formulario a la de edición
-    $("#form_add_equipments_tools").attr("onsubmit", "edit_equipments_tools(); return false");
+            get_equipment_categories(data.category_id);
+            get_equipment_areas(data.area_id);
+            get_responsible_users(data.responsible_id);
+            get_locations(data.location_id);
+
+            // Mostrar la imagen actual si existe
+            if (data.image_url) {
+                $("#image_preview").attr("src", data.image_url).show();
+            } else {
+                $("#image_preview").attr("src", "").hide();
+            }
+
+            // Los archivos existentes se conservan si no se selecciona uno nuevo
+            form.attr("onsubmit", "edit_equipments_tools(); return false");
+
+            $("#mdl-crud-equipments-tools").modal("show");
+        },
+        error: function (xhr) {
+            console.error("Error al consultar el equipo:", xhr.responseText);
+            Swal.fire("Error", "No fue posible cargar la información del equipo.", "error");
+        }
+    });
 }
+
 
 //funcion para editar los equipos o herramientas
 function edit_equipments_tools() {
@@ -388,10 +563,14 @@ function edit_equipments_tools() {
     });
 }
 
-// Función para eliminar/desactivar los datos
 function delete_equipment_tool(boton) {
-    var row = $(boton).closest("tr");
-    var data = $("#table_equipments_tools").DataTable().row(row).data();
+    var equipmentId = $(boton).attr("data-id");
+
+    if (!equipmentId) {
+        console.error("No se encontró el ID del equipo en el botón.");
+        Swal.fire("Error", "No se pudo identificar el equipo que deseas eliminar.", "error");
+        return;
+    }
 
     Swal.fire({
         title: "¿Estás seguro?",
@@ -401,24 +580,16 @@ function delete_equipment_tool(boton) {
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
         confirmButtonText: "Sí, elimínalo!",
-        cancelButtonText: "Cancelar",
+        cancelButtonText: "Cancelar"
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
                 url: "/delete_equipment_tool/",
                 type: "POST",
-
-                data: {
-                    id: data.id,
-                },
-
+                data: { id: equipmentId },
                 beforeSend: function (xhr) {
-                    xhr.setRequestHeader(
-                        "X-CSRFToken",
-                        $('input[name="csrfmiddlewaretoken"]').val()
-                    );
+                    xhr.setRequestHeader("X-CSRFToken", $('input[name="csrfmiddlewaretoken"]').val());
                 },
-
                 success: function (response) {
                     if (response.success) {
                         Swal.fire({
@@ -426,38 +597,30 @@ function delete_equipment_tool(boton) {
                             text: response.message,
                             icon: "success",
                             timer: 1500,
-                            showConfirmButton: false,
+                            showConfirmButton: false
                         }).then(() => {
-                            $("#table_equipments_tools").DataTable().ajax.reload(null, false);
+                            // Recargar las tarjetas usando la función que carga tus equipos
+                            $("#search_equipments_tools").trigger("input");
                         });
                     } else {
                         Swal.fire({
                             title: "No se puede eliminar",
                             text: response.message,
                             icon: "warning",
-                            confirmButtonText: "Aceptar",
+                            confirmButtonText: "Aceptar"
                         });
                     }
                 },
-
-                error: function (xhr, status, error) {
+                error: function (xhr) {
                     console.error("Error al eliminar el equipo:", xhr.responseJSON);
-
-                    let mensaje = "Hubo un error al eliminar el equipo.";
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        mensaje = xhr.responseJSON.message;
-                    }
-                    Swal.fire({
-                        title: "No se puede eliminar",
-                        text: mensaje,
-                        icon: "warning",
-                        confirmButtonText: "Aceptar",
-                    });
-                },
+                    var mensaje = xhr.responseJSON?.message || "Hubo un error al eliminar el equipo.";
+                    Swal.fire("No se puede eliminar", mensaje, "warning");
+                }
             });
         }
     });
 }
+
 
 // Función para limpiar completamente el formulario de equipos y herramientas
 function clear_equipment_tool_form() {
@@ -512,28 +675,78 @@ function get_responsible_user(selectedUserId) {
 }
 
 // Función para mostrar el modal de responsiva
+// function modal_responsiva(button) {
+//     var obj_modal = $("#mdl-crud-responsiva");
+//     obj_modal.modal("show");
+
+//     var row = $(button).closest("tr");
+//     var data = $("#table_equipments_tools").DataTable().row(row).data();
+//     $('#form_responsiva [name="equipment_name"]').val(data.equipment_name);
+
+//     // Cargar los responsables
+//     get_responsible_user();
+
+//     // Mostrar u ocultar el campo de fecha de inicio
+//     var tipo_user = "{{ tipo_user }}";
+
+//     //  calcular la diferencia de fechas
+//     $("#fecha_inicio, #fecha_entrega").on("change", function () {
+//         calcularDiferencia();
+//         verificarFechaEntrega();
+//     });
+
+//     // Deshabilitar fechas pasadas si no hay fecha de inicio
+//     verificarFechaEntrega();
+// }
+
 function modal_responsiva(button) {
     var obj_modal = $("#mdl-crud-responsiva");
-    obj_modal.modal("show");
+    var form = $("#form_responsiva");
+    var equipmentId = $(button).attr("data-id");
 
-    var row = $(button).closest("tr");
-    var data = $("#table_equipments_tools").DataTable().row(row).data();
-    $('#form_responsiva [name="equipment_name"]').val(data.equipment_name);
+    form[0].reset();
+    $("#equipment_id").val("");
+    $("#amount").val("");
+    $("#fecha_inicio, #fecha_entrega").val("");
+    $(".is-invalid, .is-valid").removeClass("is-invalid is-valid");
+    form.find(".invalid-feedback").text("");
 
-    // Cargar los responsables
-    get_responsible_user();
+    if (!equipmentId) {
+        Swal.fire("Error", "No se encontró el ID del equipo.", "error");
+        return;
+    }
 
-    // Mostrar u ocultar el campo de fecha de inicio
-    var tipo_user = "{{ tipo_user }}";
+    $.ajax({
+        url: "/get_equipment_tool_responsiva/",
+        type: "GET",
+        data: { id: equipmentId },
+        dataType: "json",
+        success: function(response) {
+            if (response.status !== "success") {
+                Swal.fire("Error", response.message || "No se pudo consultar el equipo.", "error");
+                return;
+            }
 
-    //  calcular la diferencia de fechas
-    $("#fecha_inicio, #fecha_entrega").on("change", function () {
-        calcularDiferencia();
-        verificarFechaEntrega();
+            var data = response.data;
+            $("#equipment_id").val(data.id);
+            $('#form_responsiva [name="equipment_name"]').val(data.equipment_name);
+            $("#amount").val(data.amount);
+
+            get_responsible_user();
+            obj_modal.modal("show");
+
+            $("#fecha_inicio, #fecha_entrega").off("change.responsiva").on("change.responsiva", function() {
+                calcularDiferencia();
+                verificarFechaEntrega();
+            });
+
+            verificarFechaEntrega();
+        },
+        error: function(xhr) {
+            var message = xhr.responseJSON?.message || "No fue posible consultar la información del equipo.";
+            Swal.fire("Error", message, "error");
+        }
     });
-
-    // Deshabilitar fechas pasadas si no hay fecha de inicio
-    verificarFechaEntrega();
 }
 
 // Función para calcular la diferencia de días entre la fecha de inicio y la fecha de entrega
@@ -842,23 +1055,21 @@ function add_responsiva(formData) {
         },
     });
 }
-
 // Función para mostrar el modal de historial
 function modal_history(button) {
-    var row = $(button).closest("tr");
-    var data = $("#table_equipments_tools").DataTable().row(row).data();
-    var equipmentId = data.id;
+    var equipmentId = $(button).attr("data-id");
 
-    // Mostrar el modal de historial
+    if (!equipmentId) {
+        console.error("No se encontró el ID del equipo en el botón de historial.");
+        return;
+    }
+
     $("#mdl-crud-history").modal("show");
 
-    // Obtener el historial del equipo
     $.ajax({
         url: "/get-equipment-history/",
         type: "POST",
-        data: {
-            equipment_id: equipmentId,
-        },
+        data: { equipment_id: equipmentId },
         beforeSend: function (xhr) {
             xhr.setRequestHeader("X-CSRFToken", $('input[name="csrfmiddlewaretoken"]').val());
         },
@@ -867,58 +1078,34 @@ function modal_history(button) {
                 var tbody = $("#mdl-crud-history .table-history tbody");
                 tbody.empty();
 
-                response.data.forEach((item) => {
-                    //fecha
-                    var dateReceipt = item.date_receipt;
-                    if (!dateReceipt) {
-                        dateReceipt = "Sin fecha de actualización";
-                    }
+                response.data.forEach(function (item) {
+                    var dateReceipt = item.date_receipt || "Sin fecha de actualización";
+                    var status = item.status_equipment === "Aceptado" ? "En uso" : item.status_equipment;
 
-                    //estado
-                    var status = item.status_equipment;
-                    if (status === "Aceptado") {
-                        status = "En uso";
-                    }
+                    var pdfButton = '<button class="btn btn-primary-light btn-sm btn-generate-responsiva-pdf" data-responsiva-id="' + item.id + '">' +
+                        '<i class="fa-solid fa-file-pdf"></i> Generar PDF</button>';
 
-                    //pdf
-                    var pdfButton =
-                        '<button class="btn btn-primary-light btn-sm btn-generate-responsiva-pdf" ' +
-                        'data-responsiva-id="' +
-                        item.id +
-                        '">' +
-                        '<i class="fa-solid fa-file-pdf"></i> Generar PDF' +
-                        "</button>";
-
-                    var row = `<tr>
+                    tbody.append(`<tr>
                         <td>${item.id}</td>
-                        <td>${item.equipment_name__equipment_name}</td>
-                        <td>${item.responsible_equipment__username}</td>
+                        <td>${item.equipment_name__equipment_name || ""}</td>
+                        <td>${item.responsible_equipment__username || ""}</td>
                         <td>${dateReceipt}</td>
-                        <td>${status}</td>
+                        <td>${status || ""}</td>
                         <td>${pdfButton}</td>
-                    </tr>`;
-                    tbody.append(row);
+                    </tr>`);
                 });
 
                 if (response.data.length === 0) {
-                    tbody.append(`<tr><td colspan="6">No hay historial disponible</td></tr>`);
+                    tbody.append('<tr><td colspan="6">No hay historial disponible</td></tr>');
                 }
             } else {
-                Swal.fire({
-                    title: "Error",
-                    text: response.message,
-                    icon: "error",
-                });
+                Swal.fire({ title: "Error", text: response.message, icon: "error" });
             }
         },
         error: function (xhr, status, error) {
             console.error("Error al obtener el historial:", error);
-            Swal.fire({
-                title: "Error",
-                text: "Hubo un problema al obtener el historial.",
-                icon: "error",
-            });
-        },
+            Swal.fire({ title: "Error", text: "Hubo un problema al obtener el historial.", icon: "error" });
+        }
     });
 }
 //generar pdf
@@ -964,15 +1151,14 @@ $(document).on("click", "button[data-equipments-tools='view-identifiers']", func
 });
 
 // CARGAR / RECARGAR DESGLOSE DE EQUIPO O HERRAMIENTA
+
 function verDesgloseEquipmentTool(itemId) {
     window.currentEquipmentToolId = itemId;
 
     $.ajax({
         url: "/get_equipment_tools_details/",
         method: "GET",
-        data: {
-            id: itemId,
-        },
+        data: { id: itemId },
         success: function (response) {
             if (!response.success) {
                 alert("No se pudieron obtener los detalles.");
@@ -982,246 +1168,87 @@ function verDesgloseEquipmentTool(itemId) {
             const container = $("#equipment-tools-detail-container");
             const hasSerialNumber = response.has_serial_number === true;
 
+            if ($.fn.DataTable.isDataTable("#equipment_tool-detail-table")) {
+                $("#equipment_tool-detail-table").DataTable().destroy();
+            }
             container.empty();
 
             const table = $(`
-                <table
-                    class="table table-bordered table-hover w-100"
-                    id="equipment_tool-detail-table">
-
+                <table class="table table-bordered table-hover w-100" id="equipment_tool-detail-table">
                     <thead>
-
                         <tr>
-                            <th>Id</th>
-                            <th>Identificador</th>
-                            <th>Estado</th>
-                            <th>Responsable</th>
-                            <th>Fotografía</th>
-                            <th>Fecha de asignación</th>
+                            <th>Id</th><th>Identificador</th><th>Estado</th><th>Responsable</th><th>Fotografía</th><th>Fecha de asignación</th>
                             ${hasSerialNumber ? "<th>Número de serie</th>" : ""}
-                            <th>Ubicación</th>
-                            <th>Acciones</th>
+                            <th>Ubicación</th><th>Acciones</th>
                         </tr>
-
                     </thead>
-
                     <tbody></tbody>
-
                 </table>
             `);
 
             container.append(table);
-
             const tbody = table.find("tbody");
 
             response.data.forEach(function (item) {
                 const responsableHTML = item.tiene_responsable
-                    ? `
-                            <span>
-                                ${item.responsable}
-                            </span>
+                    ? `<span>${item.responsable}</span> <button type="button" class="btn btn-sm btn-warning ms-2 assign-responsible" data-id="${item.id}" data-responsable-id="${item.responsable_id}" title="Editar responsable"><i class="fas fa-user-edit"></i></button>`
+                    : `<button type="button" class="btn btn-sm btn-primary assign-responsible" data-id="${item.id}" title="Asignar responsable"><i class="fas fa-user-plus"></i></button>`;
 
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-warning ms-2 assign-responsible"
-                                data-id="${item.id}"
-                                data-responsable-id="${item.responsable_id}"
-                                title="Editar responsable">
-
-                                <i class="fas fa-user-edit"></i>
-
-                            </button>
-                        `
-                    : `
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-primary assign-responsible"
-                                data-id="${item.id}"
-                                title="Asignar responsable">
-
-                                <i class="fas fa-user-plus"></i>
-
-                            </button>
-                        `;
-
-                const fechaHTML = item.fecha_asignacion
-                    ? item.fecha_asignacion
-                    : `
-                            <span class="text-muted">
-                                Sin fecha de asignación
-                            </span>
-                        `;
-
+                const fechaHTML = item.fecha_asignacion || `<span class="text-muted">Sin fecha de asignación</span>`;
                 const fotografiaHTML = item.fotografia
-                    ? `
-                        <div class="d-flex align-items-center gap-2">
-                            ${item.fotografia}
-
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-outline-primary add-photo"
-                                data-id="${item.id}"
-                                title="Editar fotografía">
-
-                                <i class="fas fa-camera"></i>
-                            </button>
-                        </div>
-                    `
-                    : `
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-primary add-photo"
-                            data-id="${item.id}"
-                            title="Agregar fotografía">
-
-                            <i class="fa-solid fa-upload"></i>
-                        </button>
-                    `;
+                    ? `<div class="d-flex align-items-center gap-2">${item.fotografia}<button type="button" class="btn btn-sm btn-outline-primary add-photo" data-id="${item.id}" title="Editar fotografía"><i class="fas fa-camera"></i></button></div>`
+                    : `<button type="button" class="btn btn-sm btn-outline-primary add-photo" data-id="${item.id}" title="Agregar fotografía"><i class="fa-solid fa-upload"></i></button>`;
 
                 let serialHTML = "";
-
                 if (hasSerialNumber) {
                     if (item.serial_number && item.serial_number.trim() !== "") {
-                        serialHTML = `
-                            <span>
-                                ${item.serial_number}
-                            </span>
-                        
-                        `;
-
-                        if (item.is_active) {
-                            serialHTML += `
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-outline-primary edit-serial-number"
-                                    data-id="${item.id}"
-                                    data-serial-number="${item.serial_number}"
-                                    title="Editar número de serie">
-
-                                    <i class="fas fa-edit"></i>
-
-                                </button>
-                            `;
-                        }
+                        serialHTML = item.serial_number;
+                        if (item.is_active) serialHTML += ` <button type="button" class="btn btn-sm btn-outline-primary edit-serial-number" data-id="${item.id}" data-serial-number="${item.serial_number}" title="Editar número de serie"><i class="fas fa-edit"></i></button>`;
                     } else {
-                        if (item.is_active) {
-                            serialHTML = `
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-outline-primary add-serial-number"
-                                    data-id="${item.id}"
-                                    data-serial-number=""
-                                    title="Agregar número de serie">
-
-                                    <i class="fas fa-edit"></i>
-
-                                </button>
-                            `;
-                        } else {
-                            // Deshabilitado y sin número de serie
-                            serialHTML = `
-                                <span class="text-muted">
-                                    Sin número de serie
-                                </span>
-                            `;
-                        }
+                        serialHTML = item.is_active
+                            ? `<button type="button" class="btn btn-sm btn-outline-primary add-serial-number" data-id="${item.id}" data-serial-number="" title="Agregar número de serie"><i class="fas fa-edit"></i></button>`
+                            : `<span class="text-muted">Sin número de serie</span>`;
                     }
                 }
 
-                const serialTD = hasSerialNumber ? `<td>${serialHTML}</td>` : "";
+                const locationHTML = item.equipment_location && item.equipment_location !== "Sin ubicación"
+                    ? item.equipment_location
+                    : `<span class="text-muted">Sin ubicación</span>`;
 
-                const locationHTML =
-                    item.equipment_location && item.equipment_location !== "Sin ubicación"
-                        ? item.equipment_location
-                        : `
-                            <span class="text-muted">
-                                Sin ubicación
-                            </span>
-                        `;
+                const actionHTML = item.is_active
+                    ? `<button type="button" class="btn btn-icon btn-sm btn-danger-light toggle-equipment-detail" data-id="${item.id}" data-action="disable" title="Deshabilitar"><i class="fa-solid fa-ban"></i></button>`
+                    : `<button type="button" class="btn btn-icon btn-sm btn-success-light toggle-equipment-detail" data-id="${item.id}" data-action="enable" title="Habilitar"><i class="fa-solid fa-check"></i></button>`;
 
-                let actionHTML = "";
+                const fila = [
+                    `<td>${item.id ?? ""}</td>`,
+                    `<td>${item.identificador ?? ""}</td>`,
+                    `<td>${item.state ?? ""}</td>`,
+                    `<td>${responsableHTML}</td>`,
+                    `<td>${fotografiaHTML}</td>`,
+                    `<td>${fechaHTML}</td>`
+                ];
 
-                if (item.is_active) {
-                    // ACTIVO → DESHABILITAR
-                    actionHTML = `
-                        <button
-                            type="button"
-                            class="btn btn-icon btn-sm btn-danger-light toggle-equipment-detail"
-                            data-id="${item.id}"
-                            data-action="disable"
-                            title="Deshabilitar">
-
-                            <i class="fa-solid fa-ban"></i>
-
-                        </button>
-                    `;
-                } else {
-                    // DESHABILITADO → HABILITAR
-                    actionHTML = `
-                        <button
-                            type="button"
-                            class="btn btn-icon btn-sm btn-success-light toggle-equipment-detail"
-                            data-id="${item.id}"
-                            data-action="enable"
-                            title="Habilitar">
-
-                            <i class="fa-solid fa-check"></i>
-                        </button>
-                    `;
-                }
-
-                tbody.append(`
-
-                    <tr>
-
-                        <td>
-                            ${item.id}
-                        </td>
-                        <td>
-                            ${item.identificador}
-                        </td>
-                        <td>
-                            ${item.state}
-                        </td>
-                        <td>
-                            ${responsableHTML}
-                        </td>
-                        <td>
-                            ${fotografiaHTML}
-                        </td>
-                        <td>
-                            ${fechaHTML}
-                        </td>
-                        ${serialTD}
-                        <td>
-                            ${locationHTML}
-                        </td>
-                        <td class="text-center">
-                            ${actionHTML}
-                        </td>
-                    </tr>
-                `);
+                if (hasSerialNumber) fila.push(`<td>${serialHTML}</td>`);
+                fila.push(`<td>${locationHTML}</td>`, `<td class="text-center">${actionHTML}</td>`);
+                tbody.append(`<tr>${fila.join("")}</tr>`);
             });
 
             table.DataTable({
                 destroy: true,
-                responsive: true,
-                autoWidth: false,
                 pageLength: 10,
-
                 language: {
-                    url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-                },
+                    url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                }
             });
 
             $("#info_equipment_tool").modal("show");
         },
-
-        error: function (xhr, status, error) {
+        error: function () {
             alert("Ocurrió un error al obtener los detalles.");
-        },
+        }
     });
 }
+
 
 // Agregar / editar número de serie
 $(document).on("click", ".add-serial-number, .edit-serial-number, .add-photo", function () {
@@ -1724,3 +1751,156 @@ document.getElementById("image").addEventListener("change", function (event) {
         preview.style.display = "none";
     }
 });
+
+$(document).on("click", "#btn_download_equipments_tools", function () {
+    $.ajax({
+        url: "/get_equipment_tools_categories/",
+        type: "GET",
+        dataType: "json",
+        beforeSend: function () {
+            Swal.fire({
+                title: "Cargando categorías",
+                text: "Preparando las opciones de descarga...",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: function () {
+                    Swal.showLoading();
+                }
+            });
+        },
+        success: function (response) {
+            if (!response.success) {
+                Swal.fire("Error", "No fue posible obtener las categorías.", "error");
+                return;
+            }
+            const categorias = response.data || [];
+            const checks = categorias.map(c => `<label class="d-flex align-items-center gap-2 text-start border rounded p-2 mb-2"><input type="checkbox" class="form-check-input m-0 download-category-check" value="${c.id}"><span>${$("<div>").text(c.name || "Sin nombre").html()}</span></label>`).join("");
+            Swal.fire({
+                title: "Descargar catálogo XLSX",
+                width: 500,
+                html: `<div class="text-start mb-3">Selecciona qué equipos y herramientas deseas exportar.</div>
+                    <label class="form-label fw-semibold text-start d-block">Contenido del catálogo</label>
+                    <select id="download_type" class="form-select mb-3">
+                        <option value="all">Descargar todo el catálogo</option>
+                        <option value="category">Seleccionar categorías</option>
+                    </select>
+                    <label class="form-label fw-semibold text-start d-block">Estado de los equipos</label>
+                    <select id="download_status" class="form-select mb-3">
+                        <option value="all">Todos (habilitados y deshabilitados)</option>
+                        <option value="active">Solo habilitados</option>
+                        <option value="inactive">Solo deshabilitados</option>
+                    </select>
+                    <div id="download_categories_container" class="text-start" style="display:none;">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                            <span class="fw-semibold">Categorías</span>
+                            <button type="button" id="select_all_download_categories" class="btn btn-sm btn-outline-primary">Seleccionar todas</button>
+                        </div>
+                        <div style="max-height:250px;overflow-y:auto;overflow-x:hidden;padding-right:5px;">${checks || '<p class="text-muted">No hay categorías disponibles.</p>'}</div>
+                    </div>`,
+                showCancelButton: true,
+                confirmButtonText: "Descargar XLSX",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#198754",
+                didOpen: function () {
+                    const type = document.getElementById("download_type");
+                    const container = document.getElementById("download_categories_container");
+                    const selectAllButton = document.getElementById("select_all_download_categories");
+                    type.addEventListener("change", function () {
+                        container.style.display = this.value === "category" ? "block" : "none";
+                    });
+                    selectAllButton.addEventListener("click", function () {
+                        const categoryChecks = [...document.querySelectorAll(".download-category-check")];
+                        const selectAll = categoryChecks.some(check => !check.checked);
+                        categoryChecks.forEach(check => check.checked = selectAll);
+                        this.textContent = selectAll ? "Deseleccionar todas" : "Seleccionar todas";
+                    });
+                },
+                preConfirm: function () {
+                    const type = document.getElementById("download_type").value;
+                    const status = document.getElementById("download_status").value;
+                    const categoryIds = [...document.querySelectorAll(".download-category-check:checked")].map(check => check.value);
+                    if (type === "category" && !categoryIds.length) {
+                        Swal.showValidationMessage("Selecciona al menos una categoría.");
+                        return false;
+                    }
+                    return { type: type, status: status, category_ids: categoryIds };
+                }
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                Swal.fire({
+                    title: "Generando reporte",
+                    text: "Preparando los equipos y sus identificadores...",
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: function () {
+                        Swal.showLoading();
+                    }
+                });
+                $.ajax({
+                    url: "/download_equipments_tools_xlsx/",
+                    type: "GET",
+                    data: result.value,
+                    traditional: true,
+                    xhrFields: { responseType: "blob" },
+                    success: function (data, textStatus, xhr) {
+                        const contentType = xhr.getResponseHeader("Content-Type") || "";
+                        if (contentType.includes("application/json")) {
+                            const reader = new FileReader();
+                            reader.onload = function () {
+                                try {
+                                    const error = JSON.parse(reader.result);
+                                    Swal.fire("Error", error.message || "No fue posible generar el reporte.", "error");
+                                } catch (e) {
+                                    Swal.fire("Error", "La respuesta del servidor no es válida.", "error");
+                                }
+                            };
+                            reader.readAsText(data);
+                            return;
+                        }
+                        const blob = new Blob([data], {
+                            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        });
+                        const downloadUrl = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = downloadUrl;
+                        link.download = "reporte_equipos_herramientas.xlsx";
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+                        Swal.fire({
+                            icon: "success",
+                            title: "Reporte generado",
+                            text: "La descarga del archivo XLSX ha comenzado.",
+                            confirmButtonColor: "#198754",
+                            timer: 2200,
+                            timerProgressBar: true
+                        });
+                    },
+                    error: function (xhr) {
+                        if (xhr.response instanceof Blob) {
+                            const reader = new FileReader();
+                            reader.onload = function () {
+                                try {
+                                    const error = JSON.parse(reader.result);
+                                    Swal.fire("Error", error.message || "No fue posible generar el reporte.", "error");
+                                } catch (e) {
+                                    Swal.fire("Error", "No fue posible generar el archivo XLSX.", "error");
+                                }
+                            };
+                            reader.readAsText(xhr.response);
+                        } else {
+                            Swal.fire("Error", "No fue posible generar el archivo XLSX. Intenta nuevamente.", "error");
+                        }
+                    }
+                });
+            });
+        },
+        error: function () {
+            Swal.fire("Error", "No fue posible cargar las categorías. Intenta nuevamente.", "error");
+        }
+    });
+});
+
