@@ -69,4 +69,9 @@ urlpatterns = [
     # Tabla de activos eliminados 
     path("get_infrastructure_removed/", views.get_infrastructure_removed),
 
+    #areas
+    path("get_item_areas/", views.get_item_areas),
+    path("get_responsible_users_item/", views.get_responsible_users_item),
+
+
 ]

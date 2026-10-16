@@ -742,6 +742,12 @@ class Infrastructure_Item(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
 
+    item_type = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="tipo de activo")
+    item_brand = models.CharField(blank=True, null=True, max_length=50, default='Regular', verbose_name="Marca de activo")
+    item_area = models.ForeignKey(Area, on_delete=models.CASCADE, verbose_name="Area del activo" ,blank=True, null=True)
+    item_responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable del activo" ,blank=True, null=True)
+    comments = models.TextField(blank=True, null=True, verbose_name="Comentarios de activo")
+
     class Meta:
         verbose_name = "Item de Infraestructura"
         verbose_name_plural = "Items de Infraestructura"

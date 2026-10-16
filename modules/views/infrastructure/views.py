@@ -136,35 +136,64 @@ def add_infrastructure_item(request):
     print("Datos recibidos del formulario:", dt)
 
     category_id = dt.get("category_id", None)
-    is_active = dt.get("is_active", True)
     location_id = dt.get("item_location", None) 
-    cantidad = dt.get("quantity",1)
+    area_id = dt.get("item_area") or None
+    responsible_id = dt.get("responsible_item")or None
+
     name = dt.get("name", "").strip()
-    print("esta es la ubicación de la empresa:", location_id)
+    item_type = dt.get("type", "").strip()
+    item_brand = dt.get("equipment_brand", "").strip()
+    comments = dt.get("comments", "").strip()
+
+    description = dt.get("description", "").strip()
+    quantity = dt.get("quantity") or 1
+    cost = dt.get("cost") or 0
+    start_date = dt.get("start_date") or None
+
+   # Validar categoría
     if not category_id:
         response["status"] = "warning"
-        response["message"] = "Ingrese una categoria valida"
-        print("Advertencia: No se proporcionó category_id")
+        response["message"] = "Seleccione una categoría válida"
         return JsonResponse(response)
 
-    if Infrastructure_Item.objects.filter(name__iexact=name, company_id=company_id).exists():
+    if not name:
         response["status"] = "warning"
-        response["message"] = "Ya existe un registro con ese nombre en la empresa"
+        response["message"] = "Ingrese el nombre del activo"
         return JsonResponse(response)
-    
-    try:
-        obj = Infrastructure_Item(
-            company_id = company_id,
-            category_id = category_id,
-            name = dt.get("name"),
-            quantity = dt.get("quantity"),
-            cost = dt.get("cost"),
-            description = dt.get("description"),
-            is_active = is_active,
-            start_date = dt.get("start_date"),
-            location_id = location_id, 
 
+    # Validar que no exista otro activo con el mismo nombre
+    if Infrastructure_Item.objects.filter(
+        name__iexact=name,
+        company_id=company_id
+    ).exists():
+        response["status"] = "warning"
+        response["message"] = (
+            "Ya existe un registro con ese nombre en la empresa"
         )
+        return JsonResponse(response)
+
+    try:
+        category = Infrastructure_Category.objects.get(
+            id=category_id
+        )
+
+        obj = Infrastructure_Item(
+            company_id=company_id,
+            category=category,
+            name=name,
+            description=description,
+            quantity=quantity,
+            cost=cost,
+            start_date=start_date,
+            location_id=location_id,
+            is_active=True,
+            item_type=item_type or "Regular",
+            item_brand=item_brand or "Regular",
+            item_area_id=area_id,
+            item_responsible_id=responsible_id,
+            comments=comments
+        )
+
         obj.save()
         _id = obj.id
 
@@ -201,7 +230,7 @@ def add_infrastructure_item(request):
 
         obj.save()
 
-        generate_identificador(_id,company_id, cantidad)
+        generate_identificador(_id,company_id, quantity)
 
         response["id"] = obj.id
         response["status"] = "success"
@@ -214,7 +243,7 @@ def add_infrastructure_item(request):
     return JsonResponse(response)
 
 
-def generate_identificador(item_id, company_id, cantidad):
+def generate_identificador(item_id, company_id, quantity):
     try:
         item = Infrastructure_Item.objects.get(id=item_id)
         company = Company.objects.get(id=company_id)
@@ -239,7 +268,7 @@ def generate_identificador(item_id, company_id, cantidad):
         else:
             last_number = 0
 
-        for i in range(1, int(cantidad) + 1):
+        for i in range(1, int(quantity) + 1):
             number = last_number + i
             identifier = f"{prefix}{str(number)}"
 
@@ -272,14 +301,38 @@ def get_infrastructure_items(request):
 
     datos = Infrastructure_Item.objects.filter(company_id = company_id, is_active = True ).values(
         "id",
-        "company_id", "company__name",
-        "category_id", "category__name",
-        "name", "description", "quantity","cost",
-        "is_active", "start_date","technical_sheet",
-        "invoice", "image",
-        "location_id", "location__name",
-    )
+        "company_id", 
+        "company__name",
+        "category_id", 
+        "category__name",
 
+        "name", 
+        "item_type",
+        "item_brand",
+        "description", 
+        "quantity",
+        "cost",
+        "start_date",
+
+        "item_area_id",
+        "item_area__name",
+        "item_responsible_id",
+        "item_responsible__username",
+        "item_responsible__first_name",
+        "item_responsible__last_name",
+
+        "location_id", 
+        "location__name",
+        "comments",
+
+        "technical_sheet",
+        "invoice", 
+        "image",
+
+        "is_active", 
+        "created_at",
+        "updated_at",
+    )
 
     if isList:
         datos = datos.filter(is_active = True).values("id", "category_id", "category__name", "name")
@@ -289,6 +342,23 @@ def get_infrastructure_items(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in datos:
+            item["row_id"] = item["id"] 
+
+            nombre_responsable = " ".join(
+                filter(
+                    None,
+                    [
+                        item.pop("item_responsible__first_name"),
+                        item.pop("item_responsible__last_name"),
+                    ]
+                )
+            )
+
+            username = item.pop("item_responsible__username")
+
+            item["responsible_name"] = (
+                nombre_responsable or username or ""
+            )
 
             if item["technical_sheet"]:
                 item["technical_sheet"] = generate_presigned_url(bucket_name, item["technical_sheet"])  
@@ -296,11 +366,27 @@ def get_infrastructure_items(request):
                 item["technical_sheet"] = None
             if item["invoice"]:
                 item["invoice"] = generate_presigned_url(bucket_name, item["invoice"])
-            
-            item["btn_action"] = ""            
 
-            item["row_id"] = item["id"] 
-            
+            if item["image"]:
+                item["image"] = generate_presigned_url(
+                    bucket_name,
+                    item["image"]
+                )
+            else:
+                item["image"] = None
+
+            # Desglose
+            item["btn_identifiers"] = (
+                f"<button type='button' "
+                f"class='btn btn-icon btn-sm btn-success-light' "
+                f"data-infrastructure-item='view-identifiers' "
+                f"data-id='{item['id']}' "
+                f"aria-label='Ver desglose'>"
+                f"<i class='fa-solid fa-list'></i>"
+                f"</button>"
+            )
+
+            item["btn_action"] = ""            
             if access["update"]:
                 item["btn_action"] += "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light' data-infrastructure-item='update-item' aria-label='info'>" \
                     "<i class=\"fa-solid fa-pen\"></i>" \
@@ -309,17 +395,6 @@ def get_infrastructure_items(request):
                 item["btn_action"] += "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light' data-infrastructure-item='delete-item' aria-label='delete'>" \
                     "<i class='fa-solid fa-trash'></i>" \
                 "</button>\n"
-            
-            
-            item["btn_action"] += f"<button type='button' name='identifiers' class='btn btn-icon btn-sm btn-success-light' data-infrastructure-item='view-identifiers' data-id='{item['id']}' aria-label='identifiers'>" \
-                    "<i class=\"fa-solid fa-list\"></i>"\
-                "</button>\n"
-            
-            if item["image"]:
-                img_url = generate_presigned_url(bucket_name, item["image"])
-                item["btn_action"] += f"<a href='{img_url}' target='_blank' class='btn btn-icon btn-sm btn-info-light' aria-label='view-image'>" \
-                    "<i class='fa-solid fa-image'></i>" \
-                    "</a>\n"
 
     response["data"] = list(datos)
     response["status"] = "success"
@@ -349,10 +424,24 @@ def update_infrastructure_item(request):
             # Actualizar campos
             obj.category_id = category_id
             obj.name = dt.get("name")
-            obj.quantity = int(dt.get("quantity"))
+            obj.quantity = int(dt.get("quantity") or 0)
             obj.description = dt.get("description")
+
             obj.is_active = is_active
-            obj.start_date = dt.get("start_date")
+
+            obj.start_date = dt.get("start_date") or None
+            obj.cost = dt.get("cost") or 0
+
+            obj.item_type = dt.get("type") or "Regular"
+            obj.item_brand = dt.get("equipment_brand") or "Regular"
+
+            obj.item_area_id = dt.get("item_area") or None
+            obj.item_responsible_id = dt.get("responsible_item") or None
+
+            obj.location_id = dt.get("item_location") or None
+            obj.comments = dt.get("comments") or None
+
+
             obj.time_quantity = dt.get("time_quantity")
             obj.time_unit = dt.get("time_unit")
 
@@ -402,7 +491,6 @@ def update_infrastructure_item(request):
             current_count = current_details.count()
             company = Company.objects.get(id=company_id)
 
-
             if new_quantity < current_count:
                 # Eliminar excedente
                 to_delete = current_details.order_by('-id')[:current_count - new_quantity]
@@ -450,6 +538,7 @@ def update_infrastructure_item(request):
         response["message"] = str(e)
 
     return JsonResponse(response)
+
 
 def delete_infrastructure_item(request):
     response = {"status": "error", "message": "Sin procesar"}
@@ -2452,4 +2541,36 @@ def get_infrastructure_removed(request):
     return JsonResponse(response)
 
 
+# Funcion para obtener los nombres de las areas
+@login_required
+@csrf_exempt
+def get_item_areas(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+        
+        areas = Area.objects.filter(company_id=company_id).distinct().values('id', 'name')  
+        data = list(areas)
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
+# Funcion para obtener los nombres de los usuarios 
+@login_required
+@csrf_exempt
+def get_responsible_users_item(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        if not company_id:
+            return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
+        
+        users = User.objects.filter(
+            id__in=User_Access.objects.filter(company_id=company_id).values('user_id')
+        ).distinct().values('id', 'username')  
+        data = list(users)
+        return JsonResponse({'data': data}, safe=False)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
