@@ -847,6 +847,8 @@ class Services(models.Model):
         ('year', 'Año(s)')
     ], verbose_name="Unidad de Tiempo")
     price_service = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad de servicios')
+    #responsible = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Responsable")
+    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
 
 #tabla pagos de servicios submodulo num.34
 class Payments_Services(models.Model):
@@ -865,7 +867,7 @@ class Payments_Services(models.Model):
     email_payment = models.BooleanField(default=False)
     email_payment_unpaid = models.BooleanField(default=False)
 
-#tablas para el modulo de equipos y herramientas--modulo 6 
+#tablas para el modulo de equipos y herramientas--modulo 6  
 #tabla categorias
 class Equipement_category(models.Model):
     empresa = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
@@ -1055,6 +1057,7 @@ class StripeProducts(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"products {self.name}"
+
 #agregar a admin.py para poder visualizarlos en el administrador 
 
 

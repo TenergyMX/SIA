@@ -51,6 +51,7 @@ AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
 ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 def get_module_user_permissions(_datos, _subModule_id):
+        
     response = {"success": True, "data": {"info":{}, "access": {}}}
     response["data"]["access"] = {"create": False, "read": False, "update": False, "delete": False}
 
@@ -58,7 +59,7 @@ def get_module_user_permissions(_datos, _subModule_id):
         response["data"]["access"] = {key: True for key in response["data"]["access"]}
     else:
         obj = SubModule_Permission.objects.filter(user__user__id = _datos["user"]["id"], subModule_id = _subModule_id)
-        
+
         if obj.count() > 0:
             obj = obj.values(
                 "id", "subModule__module_id", "subModule_id",
@@ -254,8 +255,6 @@ def upload_to_s3(file_name, bucket_name, object_name=None):
         print("Credentials not available.")
         return False
 
-    
-
 
 # def generate_presigned_url(bucket_name, object_name, expiration=3600):
 #     s3 = boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
@@ -437,19 +436,13 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
     # ============================================================
 
     if id_module == 6:
-
         area = uridecode(area.lower())
-
         # OBTENER RESPONSIVAS SEGÚN ROL
         if rol in [1, 2, 3] or area == "Almacen":
-
             obj_responsivas = Equipment_Tools_Responsiva.objects.filter(
                 company_id=company_id
             )
-
         elif rol == 4:
-
-
             obj_responsivas = Equipment_Tools_Responsiva.objects.filter(
                 responsible_equipment=user_id
             )
@@ -821,77 +814,173 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
             
     # SERVICIOS (Módulo 5)
     elif id_module == 5:
-        print("Notificaciones de servicios")
-        if 33 in access and access[33]["read"]:  
-            obj_pagos_servicios = Payments_Services.objects.filter(name_service_payment__company_id=company_id)
-            
-            if rol not in roles_usuario:
-                obj_pagos_servicios = obj_pagos_servicios.filter(name_service_payment__responsible_id=user_id)
 
+        print("Notificaciones de servicios")
+
+        if 33 in access and access[33]["read"]:
+
+            # Obtener los pagos de servicios de la empresa
+            obj_pagos_servicios = Payments_Services.objects.filter(
+                name_service_payment__company_id=company_id,
+                name_service_payment__is_active=True
+            ).select_related("name_service_payment")
+
+            # Obtener los usuarios del área de Compras
             qsUserServicios = User_Access.objects.filter(
-                company__id=company_id, 
+                company__id=company_id,
                 area__company__id=company_id,
-                area__name__icontains='Compras'
+                area__name__icontains="Compras"
+            ).select_related("user")
+
+            # Obtener correos sin duplicados
+            recipient_emails_servicios = list(set(
+                item.user.email
+                for item in qsUserServicios
+                if item.user.email
+            ))
+
+            # Obtener el nombre de la empresa una sola vez
+            nombre_empresa = Company.objects.get(
+                id=company_id
+            ).name
+
+            # ==========================================
+            # NOTIFICACIONES: PAGO PRÓXIMO
+            # ==========================================
+            pagos_proximos = obj_pagos_servicios.filter(
+                status_payment="upcoming"
             )
-            print("esto contiene los usuarios del area de compras para servicios:", qsUserServicios)
-            recipient_emails_servicios = list(set(item.user.email for item in qsUserServicios if item.user.email))
-            print("estos son los correos obtenidos para los pagos de servicios:", recipient_emails_servicios)
-            
-            
-            # Notificaciones para servicios con pago "proximo"
-            for pago in obj_pagos_servicios.filter(status_payment='upcoming'):
+
+            for pago in pagos_proximos:
+
+                servicio = pago.name_service_payment
+
                 response["data"].append({
                     "alert": "warning",
-                    "icon": "<i class=\"fa-solid fa-comment-dollar fs-18\"></i>",
-                    "title": f"Pago próximo de servicio",
-                    "text": f"El servicio '{pago.name_service_payment.name_service}' tiene un pago próximo.",
-                    "link": f"/get_payment_history_notifications/{pago.name_service_payment.id}/"
+                    "icon": (
+                        "<i class='fa-solid "
+                        "fa-comment-dollar fs-18'></i>"
+                    ),
+                    "title": "Pago próximo de servicio",
+                    "text": (
+                        f"El servicio '{servicio.name_service}' "
+                        f"tiene un pago próximo."
+                    ),
+                    "link": (
+                        f"/services/"
+                        f"?service_id={servicio.id}&payment_id={pago.id}"
+                    )
                 })
 
-                if not pago.email_payment:
+                # Enviar correo solo si todavía no se ha enviado
+                if (
+                    not pago.email_payment
+                    and recipient_emails_servicios
+                ):
+
                     message_data = {
-                        "title": f"Recordatorio de Pago próximo: {pago.name_service_payment.name_service}",
-                        "body": f"El servicio <strong>{pago.name_service_payment.name_service}</strong> tiene un pago próximo programado para el <strong>{pago.next_date_payment}</strong>. Por favor, realiza el pago correspondiente."
+                        "title": (
+                            f"Recordatorio de pago próximo: "
+                            f"{servicio.name_service}"
+                        ),
+                        "body": (
+                            f"El servicio "
+                            f"<strong>{servicio.name_service}</strong> "
+                            f"tiene un pago próximo programado para el "
+                            f"<strong>{pago.next_date_payment}</strong>. "
+                            f"Por favor, realiza el pago correspondiente."
+                        )
                     }
 
                     context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": "Correo de notificación",
+                        "company": nombre_empresa,
+                        "subject": "Recordatorio de pago próximo de servicio",
                         "modulo": 5,
                         "submodulo": "Servicio",
-                        "item": pago.name_service_payment.id,
+                        "item": servicio.id,
                         "title": message_data["title"],
-                        "body": message_data["body"]
+                        "body": message_data["body"],
+                        "to": recipient_emails_servicios,
                     }
-                    print("Contexto del correo enviado (servicio próximo):", context_email)
 
-            # Notificaciones para servicios con pago "no pagado"
-            for pago in obj_pagos_servicios.filter(status_payment='unpaid'):
+                    send_notification(context_email)
+
+                    # Marcar como enviado después del envío
+                    pago.email_payment = True
+                    pago.save(update_fields=["email_payment"])
+
+            # ==========================================
+            # NOTIFICACIONES: PAGO NO REALIZADO
+            # ==========================================
+            pagos_no_pagados = obj_pagos_servicios.filter(
+                status_payment="unpaid"
+            )
+
+            for pago in pagos_no_pagados:
+
+                servicio = pago.name_service_payment
+
                 response["data"].append({
                     "alert": "danger",
-                    "icon": "<i class=\"fa-sharp-duotone fa-solid fa-money-check-dollar fs-18\"></i>",
-                    "title": f"Pago no realizado de servicio",
-                    "text": f"El servicio '{pago.name_service_payment.name_service}' está en estado 'No Pagado'.",
-                    "link": f"/get_payment_history_notifications/{pago.name_service_payment.id}/"
+                    "icon": (
+                        "<i class='fa-solid "
+                        "fa-money-check-dollar fs-18'></i>"
+                    ),
+                    "title": "Pago no realizado de servicio",
+                    "text": (
+                        f"El servicio '{servicio.name_service}' "
+                        f"está en estado 'No Pagado'."
+                    ),
+                    "link": (
+                        f"/services/"
+                        f"?service_id={servicio.id}&payment_id={pago.id}"
+                    )
                 })
 
-                if not pago.email_payment_unpaid:
+                # Enviar correo solo si todavía no se ha enviado
+                if (
+                    not pago.email_payment_unpaid
+                    and recipient_emails_servicios
+                ):
                     message_data = {
-                        "title": f"Recordatorio de Servicio No Pagado: {pago.name_service_payment.name_service}",
-                        "body": f"El servicio <strong>{pago.name_service_payment.name_service}</strong> tiene un pago no realizado programado para el <strong>{pago.next_date_payment}</strong>. Por favor, realiza el pago correspondiente."
+                        "title": (
+                            f"Servicio no pagado: "
+                            f"{servicio.name_service}"
+                        ),
+                        "body": (
+                            f"El servicio "
+                            f"<strong>{servicio.name_service}</strong> "
+                            f"tiene un pago no realizado programado para "
+                            f"el <strong>{pago.next_date_payment}</strong>. "
+                            f"Por favor, realiza el pago correspondiente."
+                        )
                     }
 
                     context_email = {
-                        "company": Company.objects.get(id=company_id).name,
-                        "subject": "Correo de notificación",
+                        "company": nombre_empresa,
+                        "subject": "Alerta: pago de servicio no realizado",
                         "modulo": 5,
                         "submodulo": "Servicio",
-                        "item": pago.name_service_payment.id,
+                        "item": servicio.id,
                         "title": message_data["title"],
-                        "body": message_data["body"]
+                        "body": message_data["body"],
+                        "to": recipient_emails_servicios,
                     }
+
+                    send_notification(context_email)
+
+                    # Marcar como enviado después del envío
+                    pago.email_payment_unpaid = True
+                    pago.save(
+                        update_fields=["email_payment_unpaid"]
+                    )
+
+        # ==========================================
+        # RESPUESTA FINAL
+        # ==========================================
         response["recordsTotal"] = len(response["data"])
         response["success"] = True
+
         return response
 
 
