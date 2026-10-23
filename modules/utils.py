@@ -809,8 +809,6 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         response["success"] = True
 
         return response
-
-
             
     # SERVICIOS (Módulo 5)
     elif id_module == 5:
@@ -1010,8 +1008,14 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
             inicio_periodo = date(current_year, 1, 1)
             fin_periodo = date(current_year, 3, 31)
 
-
             for item in obj_refrendo:
+
+                if Vehicle.objects.filter(
+                    id = item["vehiculo__id"],
+                    it_has_no_refrendo = True
+                ).exists():
+                    continue
+
                 ultima_fecha = item["ultima_fecha"]
                 print("vehiculo", item["vehiculo__name"])
                 print("fechas", ultima_fecha)
@@ -1092,6 +1096,11 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
             )
 
             for vehicle in obj_vehicles:
+
+                # No notificar si el refrendo no aplica
+                if vehicle["it_has_no_refrendo"]:
+                    continue
+                # No notificar si ya tiene refrendo registrado
                 if vehicle["id"] in vehiculos_con_refrendo:
                     continue
                 
@@ -1104,6 +1113,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                 })
 
                 vehicle_instance = Vehicle.objects.get(id=vehicle["id"])
+
                 if not vehicle_instance.email_sin_refrendo:
                     message_data = {
                         "title": f"Refrendo no registrado para el vehículo: {vehicle['name']}",
@@ -1133,6 +1143,10 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                     vehicle_instance = Vehicle.objects.get(
                         id=item["id"]
                     )
+
+                    # Si la verificación no aplica, omitir todas sus notificaciones
+                    if vehicle_instance.it_has_no_verificacion:
+                        continue
 
                     link_vehiculo = (
                         f"{domain}/vehicles/info/{item['id']}/"
@@ -1452,7 +1466,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         # SEGUROS
         if 9 in access and access[9]["read"]:
             
-            obj_seguros = Vehicle_Insurance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
+            obj_seguros = Vehicle_Insurance.objects.filter(vehicle__company_id=company_id, vehicle__is_active=True, vehicle__it_has_no_seguro=False)
             print("esto contiene seguros1:", obj_seguros)
             if rol not in roles_usuario:
                 obj_seguros = obj_seguros.filter(vehicle__responsible_id=user_id)
@@ -1518,7 +1532,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
             print("=== CON SEGURO ===")
             print(vehicles_with_seguro)
 
-            vehicles_without_seguro = obj_vehicles.exclude(id__in=vehicles_with_seguro).values('id', 'name')
+            vehicles_without_seguro = obj_vehicles.filter(it_has_no_seguro=False).exclude(id__in=vehicles_with_seguro).values('id', 'name')
             print("=== SIN SEGURO ===")
             print(list(vehicles_without_seguro))
 
@@ -1526,7 +1540,7 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
                 response["data"].append({
                     "alert": "danger",
                     "icon": "<i class=\"fa-solid fa-car-side fs-18\"></i>",
-                    "title": "Vehículo sin seguro 3",
+                    "title": "Vehículo sin seguro",
                     "text": f"Vehículo: {vehicle['name']}",
                     "link": f"/vehicles/info/{vehicle['id']}/"
                 })
@@ -1559,7 +1573,8 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
             obj_auditorias = Vehicle_Audit.objects.filter(
                 vehicle__company_id=company_id,
                 vehicle__is_active=True,
-                audit_date=fecha_actual
+                audit_date=fecha_actual,
+                vehicle__it_has_no_auditoria=False
             )
             
             obj_auditorias.filter(is_visible=False).update(is_visible=True)
@@ -1593,9 +1608,9 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         if 11 in access and access[11]["read"]:
             hoy = timezone.now().date()
 
-            obj_mantenimiento = Vehicle_Maintenance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True)
+            obj_mantenimiento = Vehicle_Maintenance.objects.filter(vehicle__company_id=company_id,  vehicle__is_active=True, vehicle__it_has_no_mantenimiento=False)
 
-            if rol not in roles_usuario:                obj_mantenimiento = obj_mantenimiento.filter(vehicle__responsible_id=user_id)
+            if rol not in roles_usuario: obj_mantenimiento = obj_mantenimiento.filter(vehicle__responsible_id=user_id)
 
 
             for mantenimiento in obj_mantenimiento:

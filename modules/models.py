@@ -39,6 +39,11 @@ class Vehicle(models.Model):
     qr_fuel = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
     fuel_type_vehicle = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
     car_tires = models.CharField(max_length=60, blank=True, null=True)      
+    it_has_no_refrendo = models.BooleanField(default=False, verbose_name="No aplica refrendo")
+    it_has_no_verificacion = models.BooleanField(default=False, verbose_name="No aplica verificacion")
+    it_has_no_seguro = models.BooleanField(default=False, verbose_name="No aplica seguro")
+    it_has_no_auditoria = models.BooleanField(default=False, verbose_name="No aplica auditoria")
+    it_has_no_mantenimiento = models.BooleanField(default=False, verbose_name="No aplica mantenimiento")
 
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,
