@@ -106,7 +106,7 @@ class SubModule_Permission(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha de Actualización")
 
     def __str__(self):
-        return f"Permisos de {self.user} en el submódulo: {self.subModule}"
+        return f"Permisos de {self.user} en el submódulo: {self.subModule} {self.subModule.pk}"
 
 class Notification_System(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True)
@@ -119,3 +119,5 @@ class Notification_System(models.Model):
     status = models.CharField(max_length=255, null=True, blank=True, default="create")
     def __str__(self):
         return f"Notificaciónes de {self.usuario} para {self.mods}"
+
+    

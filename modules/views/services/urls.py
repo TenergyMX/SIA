@@ -47,7 +47,7 @@ urlpatterns = [
     path('get_services_by_date_range/', views.get_services_by_date_range),
 
 
-    path('get_payment_history_notifications/<int:service_id>/', views.get_payment_history_notifications),
+    #path('get_payment_history_notifications/<int:service_id>/', views.get_payment_history_notifications),
 
 
     #Gráfica de historial de pagos 

@@ -534,8 +534,14 @@ def add_vehicle_info(request):
             fuel_type_vehicle = dt.get("fuel_type_vehicle"),
             # apply_tenencia = dt.get("apply_tenencia") == "on",  
             car_tires = dt.get("car_tires"),
-   
+
+            it_has_no_refrendo = dt.get("it_has_no_refrendo") == "1",
+            it_has_no_verificacion = dt.get("it_has_no_verificacion") == "1",
+            it_has_no_seguro = dt.get("it_has_no_seguro") == "1",
+            it_has_no_auditoria = dt.get("it_has_no_auditoria") == "1",
+            it_has_no_mantenimiento = dt.get("it_has_no_mantenimiento") == "1",
         )
+
         obj.save()
         id = obj.id
         # image_url = None
@@ -622,6 +628,7 @@ def add_vehicle_info(request):
 
     return JsonResponse(response)
 
+
 def get_vehicle_info(request):
     response = {"success": False, "data": []}
     dt = request.GET
@@ -645,7 +652,12 @@ def get_vehicle_info(request):
         "insurance_company", "mileage", "model", "name", "plate",
         "responsible_id", "responsible__first_name", "responsible__last_name",
         "serial_number", "state", "validity",
-        "vehicle_type", "year", "image_path", "car_tires"
+        "vehicle_type", "year", "image_path", "car_tires", 
+        "it_has_no_refrendo",
+        "it_has_no_verificacion",
+        "it_has_no_seguro",
+        "it_has_no_auditoria",
+        "it_has_no_mantenimiento",
     )[0]
     tempImgPath = None
     if data["image_path"]:
@@ -680,8 +692,15 @@ def alertas(vehicle_id, detailed=False):
             return {"alert": False, "missing_tables": ["vehículo no encontrado"]}
         return False
 
-    # apply_tenencia = vehiculo.apply_tenencia
+    secciones_no_aplican = {
+        "refrendo": vehiculo.it_has_no_refrendo,
+        "verificacion": vehiculo.it_has_no_verificacion,
+        "insurance": vehiculo.it_has_no_seguro,
+        "audit": vehiculo.it_has_no_auditoria,
+        "maintenance": vehiculo.it_has_no_mantenimiento,
+    }
 
+    # apply_tenencia = vehiculo.apply_tenencia
     tables = [
         # ("tenencia", Vehicle_Tenencia, "vehiculo_id"),
         ("refrendo", Vehicle_Refrendo, "vehiculo_id"),
@@ -693,15 +712,16 @@ def alertas(vehicle_id, detailed=False):
     ]
     
     missing_tables = []
-    
     for table_name, table, field_name in tables:
+        # Si la sección no aplica, no comprobarla ni generar alertas.
+        if secciones_no_aplican.get(table_name, False):
+            continue
         try:
             filter_kwargs = {field_name: vehicle_id}
 
             #  Evita verificar tenencia si no aplica
             # if table_name == "tenencia" and not apply_tenencia:
             #     continue
-
 
             if not table.objects.filter(**filter_kwargs).exists():
                 if table_name != "maintenance":
@@ -752,6 +772,7 @@ def alertas(vehicle_id, detailed=False):
                 print(f"Error checking refrendo table: {e}")
 
         if table_name == "verificacion":
+
             try:
                 ultima_verificacion = table.objects.filter(**filter_kwargs).order_by('-fecha_pago').first()  
                 
@@ -827,6 +848,12 @@ def get_vehicles_info(request):
             "fuel_type_vehicle",
             "policy_number",
             "car_tires",
+            "it_has_no_refrendo",
+            "it_has_no_verificacion",
+            "it_has_no_seguro",
+            "it_has_no_auditoria",
+            "it_has_no_mantenimiento",
+
             # "document_factura_vehicle"
         )
         data = data.filter(company_id=context["company"]["id"])
@@ -990,7 +1017,6 @@ def update_vehicle_info(request):
     
     try:
         # document_factura_vehicle = request.FILES.get("document_factura_vehicle")
-
         obj.is_active = dt.get("is_active", obj.is_active)
         obj.name = dt.get("name", obj.name)
         obj.state = dt.get("state")
@@ -1006,6 +1032,24 @@ def update_vehicle_info(request):
         obj.fuel_type_vehicle = dt.get("fuel_type_vehicle", obj.fuel_type_vehicle)
         obj.car_tires = dt.get("car_tires", obj.car_tires)
         # obj.apply_tenencia = "apply_tenencia" in dt
+        
+        # Opciones "No aplica"
+        # Marcado = True; desmarcado = False
+        obj.it_has_no_refrendo = (
+            dt.get("it_has_no_refrendo") == "1"
+        )
+        obj.it_has_no_verificacion = (
+            dt.get("it_has_no_verificacion") == "1"
+        )
+        obj.it_has_no_seguro = (
+            dt.get("it_has_no_seguro") == "1"
+        )
+        obj.it_has_no_auditoria = (
+            dt.get("it_has_no_auditoria") == "1"
+        )
+        obj.it_has_no_mantenimiento = (
+            dt.get("it_has_no_mantenimiento") == "1"
+        )
 
 
         obj.save()

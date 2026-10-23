@@ -145,6 +145,8 @@ class Vehicles {
                     },
                     beforeSend: function () {},
                     success: function (response) {
+                        $(".card-vehicle-info .alert-icon").empty();
+
                         if (response.alert && response.alert.missing_tables) {
                             const missingTables = response.alert.missing_tables;
                             missingTables.forEach(function (table) {
@@ -339,6 +341,16 @@ class Vehicles {
         const self = this;
         var obj_offcanvas = $("#oc_crud_vechicles_info");
 
+        const modalElement = document.getElementById("oc_crud_vechicles_info");
+        const abrirModalVehiculo = function () {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+        };
+        const cerrarModalVehiculo = function () {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.hide();
+        };
+
         $(document).on("click", "[data-vehicle-info]", function (e) {
             e.preventDefault();
 
@@ -349,15 +361,18 @@ class Vehicles {
                 case "refresh-table":
                     self.tbl_info.ajax.reload();
                     break;
+
                 case "add-item":
                     obj_offcanvas.find("form")[0].reset();
-                    obj_offcanvas.offcanvas("show");
+                    abrirModalVehiculo();
+
                     obj_offcanvas.find("[type='submit']").hide();
                     obj_offcanvas.find("[name='add']").show();
                     break;
+
                 case "update-item":
                     obj_offcanvas.find("form")[0].reset();
-                    obj_offcanvas.offcanvas("show");
+                    abrirModalVehiculo();
                     obj_offcanvas.find(".modal-header").html("Actualizar registro");
                     obj_offcanvas.find("[type='submit']").hide();
                     obj_offcanvas.find("[name='update']").show();
@@ -368,6 +383,15 @@ class Vehicles {
 
                     var fila = $(this).closest("tr");
                     var datos = self.tbl_info.row(fila).data();
+
+                    console.log("Valores recibidos para los checks:", {
+                        it_has_no_refrendo: datos["it_has_no_refrendo"],
+                        it_has_no_verificacion: datos["it_has_no_verificacion"],
+                        it_has_no_seguro: datos["it_has_no_seguro"],
+                        it_has_no_auditoria: datos["it_has_no_auditoria"],
+                        it_has_no_mantenimiento: datos["it_has_no_mantenimiento"],
+                    });
+
                     console.log(
                         "este es el tipo de combustible asignado para este vehiculo: ",
                         datos["fuel_type_vehicle"]
@@ -377,31 +401,42 @@ class Vehicles {
 
                     $.each(datos, function (index, value) {
                         const elemento = obj_offcanvas.find(`[name='${index}']`);
-                        if (!elemento.is(":file")) {
-                            if (typeof value === "object" && value !== null) {
-                                if (value.id) {
-                                    value = value.id;
-                                } else {
-                                    value = "";
-                                }
-                            }
 
-                            if (elemento.is("select")) {
-                                console.log(`Asignando al select ${index}:`, value);
+                        if (elemento.is(":file")) {
+                            return;
+                        }
 
-                                elemento.val(value);
+                        if (typeof value === "object" && value !== null) {
+                            if (value.id) {
+                                value = value.id;
                             } else {
-                                elemento.val(value);
+                                value = "";
                             }
+                        }
+
+                        if (elemento.is(":checkbox")) {
+                            // Marcar si el valor es true, 1 o "1"
+                            const marcado =
+                                value === true || value === 1 || value === "1" || value === "true";
+
+                            elemento.prop("checked", marcado);
+
+                            console.log(
+                                `Checkbox ${index}:`,
+                                "Valor recibido:",
+                                value,
+                                "Marcado:",
+                                marcado
+                            );
+                        } else if (elemento.is("select")) {
+                            elemento.val(value).trigger("change");
+
+                            console.log(`Asignando al select ${index}:`, value);
+                        } else {
+                            elemento.val(value);
                         }
                     });
 
-                    // obj_offcanvas
-                    //     .find("[name='apply_tenencia']")
-                    //     .prop(
-                    //         "checked",
-                    //         ["true", "on", true, 1, "1"].includes(datos["apply_tenencia"])
-                    //     );
                     self.input.pond.removeFiles();
                     if (datos["image_url"]) {
                         self.input.pond
@@ -416,6 +451,7 @@ class Vehicles {
                     obj_offcanvas.find("[name='update']").show();
 
                     break;
+
                 case "delete-item":
                     var url = "/delete_vehicle_info/";
                     var fila = $(this).closest("tr");
@@ -525,9 +561,9 @@ class Vehicles {
                         return;
                     }
                     message = response.message || "Se han guardado los datos con éxito";
-                    Swal.fire("Éxito", message, "success");
+                    cerrarModalVehiculo();
                     self.tbl_info.ajax.reload();
-                    obj_offcanvas.offcanvas("hide");
+                    Swal.fire("Éxito", message, "success");
                 },
                 error: function (xhr, status, error) {
                     Swal.fire(

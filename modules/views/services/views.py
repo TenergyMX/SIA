@@ -23,6 +23,7 @@ import json, os
 import calendar
 from django.db.models import Sum, F
 from django.db.models.functions import ExtractMonth, ExtractYear
+from decimal import Decimal, InvalidOperation
 
 # Llamar módulos y submódulos 
 #submodulo de categorias de servicios 
@@ -34,6 +35,9 @@ def category_services(request):
     request.session["last_module_id"] = module_id
 
     access = get_module_user_permissions(context, subModule_id)
+    print("IASJSJIASIJ")
+    print(access)
+    print("IASJSJIASIJ")
     sidebar = get_sidebar(context, [1, module_id])
     
     context["access"] = access["data"]["access"]
@@ -126,11 +130,15 @@ def services(request):
     
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
+
+    # Identificadores enviados desde la notificación
+    context["service_id"] = request.GET.get("service_id", "")
+    context["payment_id"] = request.GET.get("payment_id", "")
     
     #permisos para agregar servicios
     context["area"] = context["area"]["name"].lower()
     context["create"] = access["data"]["access"]["create"]
-    context["tipo_user"] = context["role"]["name"].lower
+    context["tipo_user"] = context["role"]["name"].lower()
 
     template = "services/services.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template , context) 
@@ -163,7 +171,7 @@ def payments_history(request):
 
     access = get_module_user_permissions(context, subModule_id)
     sidebar = get_sidebar(context, [1, module_id])
-    
+
     context["access"] = access["data"]["access"]
     context["sidebar"] = sidebar["data"]
     
@@ -185,10 +193,10 @@ def get_table_category_service(request):
         
         if isList:
             datos = list(Services_Category.objects.filter(
-                    empresa=company_id 
+                    empresa=company_id, is_active_category=True
                 ).distinct().values("id", "name_category", "short_name_category"))
         else:
-            access = get_module_user_permissions(context, subModule_id)  # contiene el crud
+            access = get_module_user_permissions(context, subModule_id)  
             access = access["data"]["access"]
             area = context["area"]["name"]
             editar = access["update"]
@@ -196,7 +204,7 @@ def get_table_category_service(request):
             tipo_user = context["role"]["name"]
 
             datos = list(Services_Category.objects.filter(
-                    empresa=company_id
+                    empresa=company_id, is_active_category=True
                 ).distinct().values())
             for item in datos:
                 item["btn_action"] = ""
@@ -326,23 +334,49 @@ def edit_category_services(request):
 @login_required
 @csrf_exempt
 def delete_category_services(request):
-    if request.method == 'POST':
-        form = request.POST
-        _id = form.get('id')
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Método de solicitud inválido.'
+        }, status=405)
+    
+    _id = request.POST.get('id')
 
-        if not _id:
-            return JsonResponse({'success': False, 'message': 'No ID provided'})
+    if not _id:
+        return JsonResponse({
+            'success': False,
+            'message': 'No se proporcionó el ID de la categoría.'
+        }, status=400)
+        
+    try:
+        category = Services_Category.objects.get(id=_id)
 
-        try:
-            category = Services_Category.objects.get(id=_id)
-        except Services_Category.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Category not found'})
+        if not category.is_active_category:
+            return JsonResponse({
+                'success': False,
+                'message': 'La categoría ya se encuentra desactivada.'
+            }, status=400)
 
-        category.delete()
+        category.is_active_category = False
+        category.save(update_fields=['is_active_category'])
 
-        return JsonResponse({'success': True, 'message': 'Categoría eliminada correctamente!'})
+        return JsonResponse({
+            'success': True,
+            'message': 'Categoría desactivada correctamente.'
+        })
+        
+    except Services_Category.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Categoría no encontrada.'
+        }, status=404)
 
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al desactivar la categoría: {str(e)}'
+        }, status=500)
+
 
 
 #funcíon para la tabla de servicios
@@ -361,7 +395,7 @@ def get_table_services (request):
     try:
         company_id = context["company"]["id"] 
         datos = list(Services.objects.filter(
-            company_id=company_id
+            company_id=company_id, is_active=True
         ).select_related(
             'category_service', 'provider_service'
         ).values(
@@ -502,7 +536,7 @@ def create_payment(service):
         print("esta es mi fecha actual de hoy:", today)
         next_payment_date = service.start_date_service  
 
-        # llamr a la función para calcular la fecha del primer pago
+        # llamar a la función para calcular la fecha del primer pago
         next_payment_date = calculate_payment_date(
             service.start_date_service, 
             service.time_quantity_service, 
@@ -521,20 +555,32 @@ def create_payment(service):
         print(f"Error al crear el pago del servicio {service.name_service}: {str(e)}")
         return None 
 
-
 # Función para actualizar el estado de los pagos
 def update_payment_status():
     try:
         today = timezone.now().date()
 
+        #today = date(2027, 10, 23)  # Fecha simulada
+
+        print("Fecha utilizada por la función:", today)
+
         # Obtener los pagos con estado pendiente y cuya fecha de pago es mayor o igual a la fecha actual
         payments = Payments_Services.objects.filter(status_payment='pending', next_date_payment__gte=today)
-
+        print("esto contiene payments", payments)
+        
         for payment in payments:
             days = (payment.next_date_payment - today).days
             service = payment.name_service_payment
             quantity = service.time_quantity_service
             unit = service.time_unit_service
+
+            print("================================")
+            print("ID del pago:", payment.id)
+            print("Fecha actual:", today)
+            print("Fecha de pago:", payment.next_date_payment)
+            print("Días restantes:", days)
+            print("Servicio:", service)
+
 
             # Día: Actualizar pagos que estan en dias 
             if unit == 'day' and days <= 1:
@@ -650,55 +696,94 @@ def edit_services(request):
     context = user_data(request)
     company_id = context["company"]["id"]
     try:
-        if request.method == 'POST':
-            _id = request.POST.get('id')
-            category_service_id = request.POST.get('category_service')
-            name_service = request.POST.get('name_service').strip()
-            description_service = request.POST.get('description_service').strip()
-            provider_service = request.POST.get('provider_service')
-            start_date_service = request.POST.get('start_date_service')
-            time_quantity_service = request.POST.get('time_quantity_service')
-            time_unit_service = request.POST.get('time_unit_service')
-            price_service = request.POST.get('price_service')
+        if request.method != 'POST':
+            return JsonResponse({
+                "success": False,
+                "message": "Método de solicitud inválido."
+            }, status=405)
+        
+        _id = request.POST.get('id')
+        category_service_id = request.POST.get('category_service')
+        name_service = request.POST.get('name_service').strip()
+        description_service = request.POST.get('description_service').strip()
+        provider_service = request.POST.get('provider_service')
+        start_date_service = request.POST.get('start_date_service')
+        time_quantity_service = request.POST.get('time_quantity_service')
+        time_unit_service = request.POST.get('time_unit_service')
+        price_service = request.POST.get('price_service')
 
-            # Validaciones
-            if not all([_id, category_service_id, name_service, description_service, provider_service,
-                        start_date_service, time_quantity_service, time_unit_service, price_service]):
-                return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
+        # Validaciones
+        if not all([_id, category_service_id, name_service, description_service, provider_service,
+                    start_date_service, time_quantity_service, time_unit_service, price_service]):
+            return JsonResponse({'success': False, 'message': 'Todos los campos son obligatorios.'})
 
-            services = Services.objects.get(id=_id)
+        #services = Services.objects.get(id=_id)
+        # Buscar el servicio de la empresa
+        services = Services.objects.get(
+            id=_id,
+            company_id=company_id
+        )
+        # Convertir `time_quantity_service` a entero
+        time_quantity_service = int(time_quantity_service)
+        new_price = Decimal(price_service)
 
-            # Convertir `time_quantity_service` a entero
-            time_quantity_service = int(time_quantity_service)
+        if time_quantity_service <= 0 or new_price < 0:
+            return JsonResponse({
+                "success": False,
+                "message": "La cantidad debe ser mayor que cero y el precio no puede ser negativo."
+            }, status=400)
 
-            
-            # Verificar duplicados (sin importar mayúsculas o minúsculas)
-            if Services.objects.filter(name_service__iexact=name_service, company_id=company_id).exclude(id=_id).exists():
-                return JsonResponse({'success': False, 'message': 'El nombre del servicio ya existe para esta empresa, ingresa uno diferente.'})
+        # Verificar duplicados 
+        if Services.objects.filter(name_service__iexact=name_service, company_id=company_id).exclude(id=_id).exists():
+            return JsonResponse({'success': False, 'message': 'El nombre del servicio ya existe para esta empresa, ingresa uno diferente.'})
 
-           # Guardar el precio antiguo para compararlo
-            old_price = services.price_service
-
-
-            # actualizar los campos del servicio
-            company_id = company_id
-            services.category_service_id = category_service_id
-            services.name_service = name_service
-            services.description_service = description_service
-            services.provider_service_id = provider_service
-            services.start_date_service = start_date_service
-            services.time_quantity_service = time_quantity_service
-            services.time_unit_service = time_unit_service
-            services.price_service = price_service
-
-            services.save()
-
-            # Crear un nuevo registro de pago con el nuevo precio
-            create_new_payment_for_service(services, price_service)
+        # Guardar valores anteriores
+        old_price = Decimal(str(services.price_service))
+        old_start_date = services.start_date_service
+        old_quantity = services.time_quantity_service
+        old_unit = services.time_unit_service
 
 
+        # Detectar cambios de precio y programación
+        price_changed = old_price != new_price
 
-            return JsonResponse({'success': True, 'message': 'Servicio editado correctamente!'})
+        schedule_changed = (
+            str(old_start_date) != str(start_date_service)
+            or old_quantity != time_quantity_service
+            or old_unit != time_unit_service
+        )
+
+
+        # actualizar los campos del servicio
+        #company_id = company_id
+        services.category_service_id = category_service_id
+        services.name_service = name_service
+        services.description_service = description_service
+        services.provider_service_id = provider_service
+        services.start_date_service = start_date_service
+        services.time_quantity_service = time_quantity_service
+        services.time_unit_service = time_unit_service
+        services.price_service = price_service
+
+        services.save()
+
+        # Generar el pago
+        if schedule_changed:
+            create_new_payment_for_service(
+                services,
+                new_price
+            )
+
+        # Actualizar pagos no pagados, sin crear registros nuevos.
+        elif price_changed:
+            Payments_Services.objects.filter(
+                name_service_payment=services,
+                status_payment__in=["pending", "upcoming", "unpaid"]
+            ).update(
+                total_payment=new_price
+            )
+
+        return JsonResponse({'success': True, 'message': 'Servicio editado correctamente!'})
 
     except Services.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Servicio no encontrado'}, status=404)
@@ -709,32 +794,59 @@ def edit_services(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error interno del servidor: {str(e)}'}, status=500)
 
-    return JsonResponse({'success': False, 'message': 'Método de solicitud inválido'})
-
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "message": f"Error interno del servidor: {str(e)}"
+        }, status=500)
 
 #funcion para eliminar servicios
 @login_required
 @csrf_exempt
 def delete_services(request):
-    if request.method == 'POST':
-        form = request.POST
-        _id = form.get('id')
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Método de solicitud inválido.'
+        }, status=405)
+    
+    _id = request.POST.get('id')
 
-        if not _id:
-            return JsonResponse({'success': False, 'message': 'No ID provided'})
+    if not _id:
+        return JsonResponse({
+            'success': False,
+            'message': 'No se proporcionó el ID del servicio.'
+        }, status=400)
 
-        try:
-            services = Services.objects.get(id=_id)
-        except Services.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Service not found'})
+    try:
+        services = Services.objects.get(id=_id)
+        if not services.is_active:
+            return JsonResponse({
+                'success': False,
+                'message': 'El servicio ya se encuentra desactivado.'
+            }, status=400)
 
-        services.delete()
+        services.is_active = False
+        services.save(update_fields=['is_active'])
 
-        return JsonResponse({'success': True, 'message': 'Servicio eliminado correctamente!'})
+        return JsonResponse({
+            'success': True,
+            'message': 'Servicio desactivado correctamente.'
+        })
 
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
+    except Services.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'No se encontró el servicio.'
+        }, status=404)
 
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al desactivar el servicio: {str(e)}'
+        }, status=500)
+    
 # Función para subir el documento de pago y actualizar el estado 
 @login_required
 @csrf_exempt
@@ -785,27 +897,50 @@ def upload_payment_proof(request, payment_id):
 @login_required
 def get_payment_history(request, service_id):
     try:
-        payments = Payments_Services.objects.filter(name_service_payment_id=service_id).order_by('-next_date_payment').values(
-            'id',
-            'name_service_payment__name_service',
-            'total_payment',
-            'next_date_payment',
-            'status_payment',
-            'proof_payment'
+        payments = Payments_Services.objects.filter(
+            name_service_payment_id=service_id
+        )
+
+        # Si viene desde una notificación,
+        # consultar solamente el pago indicado.
+        payment_id = request.GET.get("payment_id")
+
+        if payment_id:
+            payments = payments.filter(id=payment_id)
+
+        payments = payments.order_by(
+            "-next_date_payment"
+        ).values(
+            "id",
+            "name_service_payment__name_service",
+            "total_payment",
+            "next_date_payment",
+            "status_payment",
+            "proof_payment"
         )
 
         payments_list = list(payments)
 
         for payment in payments_list:
-            if payment.get('proof_payment'):
-                payment['proof_payment'] = generate_presigned_url(AWS_BUCKET_NAME, str(payment['proof_payment']))
+            if payment.get("proof_payment"):
+                payment["proof_payment"] = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(payment["proof_payment"])
+                )
             else:
-                payment['proof_payment'] = None
+                payment["proof_payment"] = None
 
         return JsonResponse(payments_list, safe=False)
-    
+
     except Exception as e:
-        return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'}, status=500)
+        return JsonResponse(
+            {
+                "success": False,
+                "message": f"Error inesperado: {str(e)}"
+            },
+            status=500
+        )
+
 
 
 # funcion para obtener el comprobante
@@ -988,7 +1123,7 @@ def get_services_by_provider(request, provider_id):
         service_data = []
         for service in services:
             total_payment = Payments_Services.objects.filter(
-                name_service_payment=service,
+                name_service_payment=service,    
                 status_payment='paid'
             ).aggregate(total=Sum('total_payment'))['total'] or 0
             service_data.append({
@@ -1000,7 +1135,6 @@ def get_services_by_provider(request, provider_id):
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
 
 
 # Función para obtener los egresos por rango de fecha
@@ -1043,45 +1177,43 @@ def get_services_by_date_range(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
-# Vista para mostrar el historial de pagos desde una notificación
-@login_required
-def get_payment_history_notifications(request, service_id):
-    context = user_data(request)
-    module_id = 5
-    subModule_id = 33
-    request.session["last_module_id"] = module_id
+# # Vista para mostrar el historial de pagos desde una notificación
+# @login_required
+# def get_payment_history_notifications(request, service_id):
+#     context = user_data(request)
+#     module_id = 5
+#     subModule_id = 33
+#     request.session["last_module_id"] = module_id
 
-    access = get_module_user_permissions(context, subModule_id)
-    sidebar = get_sidebar(context, [1, module_id])
+#     access = get_module_user_permissions(context, subModule_id)
+#     sidebar = get_sidebar(context, [1, module_id])
 
-    print("esto contiene mi sidebar de servicios:", sidebar)
+#     print("esto contiene mi sidebar de servicios:", sidebar)
     
-    context["access"] = access["data"]["access"]
-    context["sidebar"] = sidebar["data"]
+#     context["access"] = access["data"]["access"]
+#     context["sidebar"] = sidebar["data"]
 
+#     try:
+#         # Obtener los pagos asociados al servicio
+#         payments = Payments_Services.objects.filter(name_service_payment_id=service_id).order_by('-next_date_payment').values(
+#             'id',
+#             'name_service_payment__name_service',
+#             'proof_payment',
+#             'total_payment',
+#             'next_date_payment',
+#             'status_payment'
+#         )
 
+#         for payment in payments:
+#             if payment['proof_payment']:
+#                 # Documento
+#                 payment['proof_payment_url'] = settings.MEDIA_URL + payment['proof_payment']
+#             else:
+#                 payment['proof_payment_url'] = None
+#         return render(request, 'services/payment_details.html', {'payments': payments, 'sidebar': sidebar["data"]})
 
-    try:
-        # Obtener los pagos asociados al servicio
-        payments = Payments_Services.objects.filter(name_service_payment_id=service_id).order_by('-next_date_payment').values(
-            'id',
-            'name_service_payment__name_service',
-            'proof_payment',
-            'total_payment',
-            'next_date_payment',
-            'status_payment'
-        )
-
-        for payment in payments:
-            if payment['proof_payment']:
-                # Documento
-                payment['proof_payment_url'] = settings.MEDIA_URL + payment['proof_payment']
-            else:
-                payment['proof_payment_url'] = None
-        return render(request, 'services/payment_details.html', {'payments': payments, 'sidebar': sidebar["data"]})
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': f'Error al cargar los pagos: {str(e)}'}, status=500)
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'message': f'Error al cargar los pagos: {str(e)}'}, status=500)
 
 
 # Vista para obtener las categorías de servicios para la grafica del historial de pagos 

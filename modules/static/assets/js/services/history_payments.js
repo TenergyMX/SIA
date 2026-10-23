@@ -1,25 +1,49 @@
 $(document).ready(function () {});
 
-// Función para mostrar la tabla del historial de pagos de servicios
-function show_history_payments(serviceIdOrButton) {
+// Función para mostrar el historial de pagos de servicios
+function show_history_payments(serviceIdOrButton, paymentId = null) {
     var serviceId;
 
+    // Si se recibió el botón
     if (typeof serviceIdOrButton === "object" && serviceIdOrButton.nodeType === 1) {
         var row = $(serviceIdOrButton).closest("tr");
         var data = $("#table_services").DataTable().row(row).data();
+
         if (!data || !data.id) {
-            console.error("No se pudo obtener datos o el ID del servicio no está disponible.");
+            console.error("No se pudo obtener el ID del servicio.");
             return;
         }
+
         serviceId = data.id;
     } else {
         serviceId = serviceIdOrButton;
     }
 
+    var ajaxData = {};
+
+    // Solo filtrar por pago cuando se abrió desde una notificación
+    if (paymentId) {
+        ajaxData.payment_id = paymentId;
+    }
+
+    Swal.fire({
+        title: "Cargando historial de pagos",
+        text: "Por favor, espera mientras se consulta la información.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
     $.ajax({
         url: "/get_payment_history/" + serviceId + "/",
         method: "GET",
+        data: ajaxData,
+
         success: function (response) {
+            Swal.close();
             var tbody = $("#table-history-payments tbody");
             tbody.empty();
 
@@ -29,6 +53,7 @@ function show_history_payments(serviceIdOrButton) {
                 response.forEach(function (payment) {
                     var statusText = "";
                     var badgeClass = "";
+
                     switch (payment.status_payment) {
                         case "pending":
                             statusText = "Pendiente";
@@ -51,41 +76,47 @@ function show_history_payments(serviceIdOrButton) {
                             badgeClass = "bg-outline-secondary";
                             break;
                     }
+
                     statusText = `<span class="badge ${badgeClass}">${statusText}</span>`;
 
-                    // Botón para ver comprobante si existe
                     var proofButton = payment.proof_payment
-                        ? `<a href="${payment.proof_payment}" target="_blank" class="btn btn-info btn-sm">
+                        ? `<a href="${payment.proof_payment}" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-sm">
                                 <i class="fa-solid fa-eye"></i> Ver
-                            </a>`
+                           </a>`
                         : '<span class="text-muted">Sin comprobante</span>';
 
-                    tbody.append(
-                        `<tr>
+                    tbody.append(`
+                        <tr>
                             <td>${payment.id}</td>
-                            <td>${
-                                payment.name_service_payment__name_service || "Nombre no disponible"
-                            }</td>
+                            <td>${payment.name_service_payment__name_service || "Nombre no disponible"}</td>
                             <td>${proofButton}</td>
                             <td>${payment.total_payment}</td>
                             <td>${payment.next_date_payment}</td>
                             <td>${statusText}</td>
                             <td>
-                                <button class="btn btn-warning btn-sm" onclick="editPayment(${
-                                    payment.id
-                                }, ${serviceId})">  <!-- Pasamos serviceId aquí -->
-                                <i class="fa-solid fa-pen-to-square"></i> Editar
+                                <button
+                                    type="button"
+                                    class="btn btn-warning btn-sm"
+                                    onclick="editPayment(${payment.id}, ${serviceId})">
+                                    <i class="fa-solid fa-pen-to-square"></i> Editar
                                 </button>
                             </td>
-                        </tr>`
-                    );
+                        </tr>
+                    `);
                 });
             } else {
                 tbody.html('<tr><td colspan="7">No hay historial de pagos.</td></tr>');
             }
         },
-        error: function () {
-            console.error("Error al obtener el historial de pagos.");
+
+        error: function (xhr) {
+            console.error("Error al obtener el historial de pagos:", xhr.responseText);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "No fue posible cargar el historial de pagos. Inténtalo nuevamente.",
+                confirmButtonText: "Aceptar",
+            });
         },
     });
 
@@ -149,7 +180,6 @@ function editPayment(paymentId, serviceId) {
                 icon: "success",
                 timer: 1500,
             }).then(() => {
-                // Recargar la tabla usando el serviceId que recibimos como parámetro
                 show_history_payments(serviceId);
             });
         }
@@ -212,7 +242,6 @@ function editPayment(paymentId, serviceId) {
                 icon: "success",
                 timer: 1500,
             }).then(() => {
-                // Refrescar la tabla después de editar
                 show_history_payments(serviceId);
             });
         }

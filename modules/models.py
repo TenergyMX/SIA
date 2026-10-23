@@ -39,6 +39,11 @@ class Vehicle(models.Model):
     qr_fuel = models.FileField(upload_to='qrcodes/access/', blank=True, null=True)
     fuel_type_vehicle = models.TextField(blank=True, null=True, verbose_name="Tipo de Combustible")
     car_tires = models.CharField(max_length=60, blank=True, null=True)      
+    it_has_no_refrendo = models.BooleanField(default=False, verbose_name="No aplica refrendo")
+    it_has_no_verificacion = models.BooleanField(default=False, verbose_name="No aplica verificacion")
+    it_has_no_seguro = models.BooleanField(default=False, verbose_name="No aplica seguro")
+    it_has_no_auditoria = models.BooleanField(default=False, verbose_name="No aplica auditoria")
+    it_has_no_mantenimiento = models.BooleanField(default=False, verbose_name="No aplica mantenimiento")
 
     responsible = models.ForeignKey(
         User, on_delete=models.CASCADE,
@@ -853,6 +858,8 @@ class Services(models.Model):
         ('year', 'Año(s)')
     ], verbose_name="Unidad de Tiempo")
     price_service = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True, verbose_name='Cantidad de servicios')
+    #responsible = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Responsable")
+    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
 
 #tabla pagos de servicios submodulo num.34
 class Payments_Services(models.Model):
@@ -871,7 +878,7 @@ class Payments_Services(models.Model):
     email_payment = models.BooleanField(default=False)
     email_payment_unpaid = models.BooleanField(default=False)
 
-#tablas para el modulo de equipos y herramientas--modulo 6 
+#tablas para el modulo de equipos y herramientas--modulo 6  
 #tabla categorias
 class Equipement_category(models.Model):
     empresa = models.ForeignKey(Company, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Empresa")
@@ -1061,6 +1068,7 @@ class StripeProducts(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"products {self.name}"
+
 #agregar a admin.py para poder visualizarlos en el administrador 
 
 
