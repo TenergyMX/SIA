@@ -88,7 +88,7 @@
 </section>
 
 
-<section>
+<section class="d-none">
     <div class="row g-4" id="computer_cards">
     </div>
 </section>
@@ -100,6 +100,9 @@
 {% block modals %}
 {% include "computer-equipment/modals/mdl_crud_computerSystem.html" %}
 {% include "computer-equipment/modals/mdl_crud_maintenance.html" %}
+{% include "computer-equipment/modals/mdl-crud-disable-computer.html" %}
+{% include "computer-equipment/modals/mdl-crud-double-computer.html" %}
+
 {% endblock %}
 
 {% block scripts %}

@@ -409,7 +409,7 @@ def add_computer_system(request):
             disk_type = dt.get("disk_type"),
             architecture = dt.get("architecture"),
             disk_capacity = dt.get("disk_capacity"),
-            intervaL_maintenance = int(dt.get("maintenance_frequency"))
+            interval_maintenance = int(dt.get("maintenance_frequency"))
         )
         obj.save()
 
@@ -427,6 +427,35 @@ def add_computer_system(request):
         qs_mantenimiento.save()
         print("Se registro el primer mantenimiento programado")
         #!ENDBLOCK
+
+        # IMAGEN DEL EQUIPO / HERRAMIENTA
+        if "image" in request.FILES and request.FILES["image"]:
+
+            image = request.FILES.get("image")
+
+            folder_path = (
+                f"docs/{company_id}/"
+                f"computer-equipment/{obj.id}/"
+                f"image/{obj.id}/"
+            )
+
+            file_name, extension = os.path.splitext(image.name)
+
+            new_name = (
+                f"equipment_image_{obj.name}"
+                f"{extension}"
+            )
+
+            s3Name = folder_path + new_name
+
+            upload_to_s3(
+                image,
+                bucket_name,
+                s3Name
+            )
+
+            obj.image = s3Name
+            obj.save(update_fields=["image"])
 
         if document_factura:
             s3Path = f'docs/{company_id}/computer-equipment/facturas/{obj.id}/'
@@ -511,7 +540,7 @@ def get_computers_equipment(request, inter = False):
     responsible_id = dt.get("responsible_id")
 
     datos = ComputerSystem.objects \
-    .filter(company_id = context["company"]["id"]) \
+    .filter(is_active=True, company_id = context["company"]["id"]) \
     .values(
         "id", "is_active",
         "company_id", "company__name",
@@ -528,7 +557,7 @@ def get_computers_equipment(request, inter = False):
         "current_responsible__first_name", "current_responsible__last_name",
         "previous_responsible_id", "previous_responsible__username",
         "previous_responsible__first_name", "previous_responsible__last_name",
-        "equipment_status", "last_maintenance_date","comments", "identifier", "adquisition_date",
+        "equipment_status", "last_maintenance_date","comments", "identifier", "adquisition_date", "image",
     )
 
     if context["role"]["id"] not in [1,2,3]:
@@ -544,8 +573,18 @@ def get_computers_equipment(request, inter = False):
         access = access["data"]["access"]
         for item in datos:
 
-            print("item de informacion de computadoras:", item["document_factura"])
-            
+            # Fotografía
+            if item["image"]:
+                tempUrl = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(item["image"])
+                )
+
+                item["image_url"] = tempUrl
+            else:
+                item["image_url"] = None
+
+
             # BOTÓN VER FACTURA
             item["btn_view_factura"] = ""
 
@@ -566,24 +605,42 @@ def get_computers_equipment(request, inter = False):
                     </a>
                 """
 
-            item["btn_action"] = f"<a href='/computers-equipment/info/{item['id']}/' class='btn btn-icon btn-sm btn-primary-light' data-computer-system='show-info' aria-label='info'>" \
+            item["btn_action"] = f"<a href='/computers-equipment/info/{item['id']}/' class='btn btn-icon btn-sm btn-primary-light' data-computer-system='show-info' aria-label='info'  title='Ver Información'>" \
                 "<i class=\"fa-solid fa-eye\"></i>" \
             "</a>\n"
             if access["update"]:
-                item["btn_action"] += "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light' data-computer-system='update-item' aria-label='info'>" \
+                item["btn_action"] += "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light' data-computer-system='update-item' aria-label='info' title='Editar'>" \
                     "<i class=\"fa-solid fa-pen\"></i>" \
                 "</button>\n"
             if access["delete"]:
-                item["btn_action"] += "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light' data-computer-system='dalete-item' aria-label='delete'>" \
-                    "<i class='fa-solid fa-trash'></i>" \
+                item["btn_action"] += "<button type='button' name='deactivate' class='btn btn-icon btn-sm btn-danger-light' data-computer-system='deactivate-item' aria-label='delete' title='Deshabilitar'>" \
+                    "<i class='fa-solid fa-ban'></i>" \
                 "</button>"
 
+
+            # BOTÓN DUPLICAR: SOLO PARA SUPERUSUARIOS
+            item["btn_duplicate"] = ""
+
+            if request.user.is_superuser:
+                item["btn_duplicate"] = (
+                    f"<button type='button' "
+                    f"class='btn btn-icon btn-sm btn-success-light' "
+                    f"data-computer-system='duplicate-item' "
+                    f"data-id='{item['id']}' "
+                    f"title='Duplicar equipo' "
+                    f"aria-label='Duplicar equipo'>"
+                    f"<i class='fa-regular fa-copy'></i>"
+                    f"</button>"
+                )
+
+    response["is_superuser"] = request.user.is_superuser
     response["recordsTotal"] = datos.count()
     response["data"] = list(datos)
 
     if inter:
         return response
     return JsonResponse(response)
+
 
 def update_computer_system(request):
     context = user_data(request)
@@ -634,10 +691,13 @@ def update_computer_system(request):
         obj.current_responsible_id = current_responsible_id
         obj.equipment_status = dt.get("equipment_status")
         obj.comments = dt.get("comments")
-        obj.intervaL_maintenance = int(dt.get("maintenance_frequency"))
+        obj.interval_maintenance = int(dt.get("maintenance_frequency"))
 
         # DOCUMENTO FACTURA
         document_factura = request.FILES.get("document_factura")
+
+        image = request.FILES.get('image')
+
 
         if document_factura:
 
@@ -672,6 +732,39 @@ def update_computer_system(request):
             # guardar ruta
             obj.document_factura = s3_path
 
+        #imagen
+        if image:
+    
+            # eliminar documento anterior
+            if obj.image:
+                delete_s3_object(
+                    AWS_BUCKET_NAME,
+                    str(obj.image.name)
+                )
+
+            # obtener extensión
+            file_name, extension = os.path.splitext(
+                image.name
+            )
+
+            # nuevo nombre
+            new_name = f"image{obj.id}{extension}"
+
+            # ruta S3
+            s3_path = (
+                f"docs/{company_id}/computer-equipment/"
+                f"image/{obj.id}/{new_name}"
+            )
+
+            # subir a S3
+            upload_to_s3(
+                image,
+                AWS_BUCKET_NAME,
+                s3_path
+            )
+            # guardar ruta
+            obj.image = s3_path
+
         obj.save()
 
         response["success"] = True
@@ -685,23 +778,23 @@ def update_computer_system(request):
         response["error"] = {"message": str(e)}
     return JsonResponse(response)
 
-def delete_computer_system(request):
-    response = {"success": False, "data": []}
-    dt = request.POST
-    id = dt.get("id", None)
+# def delete_computer_system(request):
+#     response = {"success": False, "data": []}
+#     dt = request.POST
+#     id = dt.get("id", None)
 
-    if id == None:
-        response["error"] = {"message": "Proporcione un id valido"}
-        return JsonResponse(response)
-    try:
-        obj = ComputerSystem.objects.get(id = id)
-    except ComputerSystem.DoesNotExist:
-        response["error"] = {"message": "El objeto no existe"}
-        return JsonResponse(response)
-    else:
-        obj.delete()
-    response["success"] = True
-    return JsonResponse(response)
+#     if id == None:
+#         response["error"] = {"message": "Proporcione un id valido"}
+#         return JsonResponse(response)
+#     try:
+#         obj = ComputerSystem.objects.get(id = id)
+#     except ComputerSystem.DoesNotExist:
+#         response["error"] = {"message": "El objeto no existe"}
+#         return JsonResponse(response)
+#     else:
+#         obj.delete()
+#     response["success"] = True
+#     return JsonResponse(response)
 
 
 def get_computers(request):
@@ -2436,4 +2529,187 @@ def custom_url_fetcher(url):
         }
 
     return default_url_fetcher(url)
+
+
+
+# dar de baja un equipo
+@login_required
+def disable_computer_system(request):
+
+    detail_id = request.POST.get("detail_id")
+    action = request.POST.get("action")
+
+    if not detail_id:
+        return JsonResponse({
+            "success": False,
+            "message": "No se recibió el ID del detalle."
+        })
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        detail = ComputerSystem.objects.get(id=detail_id, company_id=company_id)
+
+        # DESHABILITAR
+        if action == "disable":
+            reason = request.POST.get("reason")
+            description = request.POST.get(
+                "description",
+                ""
+            ).strip()
+            # Archivos
+            evidence1 = request.FILES.get("evidence1_image")
+            evidence2 = request.FILES.get("evidence2_image")
+
+            if not reason:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe seleccionar un motivo de baja."
+                })
+
+            if not description:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe ingresar una descripción."
+                })
+
+            if not evidence1 and not evidence2:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe adjuntar al menos una imagen como evidencia de la baja."
+                })
+
+            # Cambiar estado
+            detail.is_active = False
+            detail.is_deactivated = True
+            detail.state = "BAJA"
+
+            # Información de la baja
+            detail.deactivation_reason = reason
+            detail.deactivation_description = description
+            detail.deactivated_at = timezone.now() - timedelta(hours=6)
+
+            # Usuario que realizó la baja
+            detail.user_deactivation = request.user
+
+            # Ruta base
+            equipment_id = detail.id
+            # Evidencia 1
+            if evidence1:
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"computers-equipment/{equipment_id}/"
+                    f"evidence1_image/{detail.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    evidence1.name
+                )
+
+                new_name = (
+                    f"evidence1_image"
+                    f"{detail.identifier}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    evidence1,
+                    bucket_name,
+                    s3Name
+                )
+
+                detail.evidence1_image = s3Name
+
+            # Evidencia 2
+            if evidence2:
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"computers-equipment/{equipment_id}/"
+                    f"evidence2_image/{detail.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    evidence2.name
+                )
+
+                new_name = (
+                    f"evidence2_image"
+                    f"{detail.identifier}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    evidence2,
+                    bucket_name,
+                    s3Name
+                )
+
+                detail.evidence2_image = s3Name
+
+            detail.save()
+
+            return JsonResponse({
+                "success": True,
+                "message": (
+                    "El equipo o herramienta "
+                    "ha sido dado de baja correctamente."
+                )
+            })
+
+        # ACCIÓN NO VÁLIDA
+        else:
+
+            return JsonResponse({"success": False, "message": "Acción no válida."})
+
+    except ComputerSystem.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "El equipo o herramienta no existe."
+        }, status=404)
+
+    except Exception as e:
+
+        return JsonResponse({
+            "success": False,
+            "message": f"Error interno: {str(e)}"
+        }, status=500)
+
+
+
+def get_companys(request):
+    try:
+        isList = request.GET.get("isList", "") == "true"
+
+        if isList:
+            lista = Company.objects.values("id", "name", "address")
+        else:
+            lista = Company.objects.values("id", "name", "address")
+
+        datos = []
+        for item in lista:
+            datos.append({
+                "id": item["id"],
+                "name": item["name"],
+                "address": item["address"],
+                "btn_action": (
+                    "<button type='button' name='update' class='btn btn-icon btn-sm btn-primary-light edit-btn' onclick='edit_companys(this)' aria-label='edit'>"
+                    "<i class='fa-solid fa-pen'></i>"
+                    "</button>\n"
+                    "<button type='button' name='delete' class='btn btn-icon btn-sm btn-danger-light delete-btn' onclick='delete_company(this)' aria-label='delete'>"
+                    "<i class='fa-solid fa-trash'></i>"
+                    "</button>"
+                ) if not isList else ""
+            })
+
+        return JsonResponse({"data": datos})
+    except Exception as e:
+        return JsonResponse({"data": [], "error": str(e)})
+
 # END

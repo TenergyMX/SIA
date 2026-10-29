@@ -328,7 +328,6 @@ class Carnet_Vehicle(models.Model):
     date_carnet = models.DateField()
     document_carnet = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de carnet")
 
-
 # tabla de responsivas para vehículos:
 class Vehicles_Responsivas_pdf(models.Model):
     vehiculo = models.ForeignKey(Vehicle, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Vehículo")
@@ -382,8 +381,27 @@ class ComputerSystem(models.Model):
     identifier = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name="Identificador")
     adquisition_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Adquisición")
     document_factura = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
-    intervaL_maintenance = models.IntegerField(blank=True, null=True, verbose_name="Frecuencia de mantenimiento")
+    interval_maintenance = models.IntegerField(blank=True, null=True, verbose_name="Frecuencia de mantenimiento")
+    image = models.FileField(upload_to='docs/', blank=True, null=True)     
+
+    user_deactivation = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="Usuario que realizó la modificación", blank=True, null=True, related_name="computers_modifications")
+    is_deactivated = models.BooleanField(default=False)
+
+    DEACTIVATION_REASONS = [
+        ("VENDIDO", "Vendido"),
+        ("OBSOLETO", "Obsoleto"),
+        ("PERDIDO", "Perdido"),
+        ("BAJA", "Baja"),
+        ("ROBADO", "Robado"),
+    ]
     
+    deactivation_reason = models.CharField( max_length=20, choices=DEACTIVATION_REASONS, blank=True, null=True, verbose_name="Motivo de baja")
+    deactivation_description = models.TextField( blank=True, null=True, verbose_name="Descripción de la baja")
+    deactivated_at = models.DateTimeField( blank=True, null=True, verbose_name="Fecha de baja")
+    evidence1_image = models.FileField(upload_to='docs/', blank=True, null=True)          
+    evidence2_image = models.FileField(upload_to='docs/', blank=True, null=True)  
+    
+
     class Meta:
         verbose_name = "Equipo de Computo"
         verbose_name_plural = "Equipos de Computo"

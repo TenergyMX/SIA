@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RemoveField(
             model_name='computersystem',
-            name='intervaL_maintenance',
+            name='interval_maintenance',
         ),
     ]

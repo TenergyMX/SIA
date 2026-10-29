@@ -189,7 +189,7 @@ class Company {
 
     // Función para recargar la tabla
     reloadTable() {
-        this.table.ajax.reload(null, false); // Mantener la página actual
+        this.table.ajax.reload(null, false);
     }
 }
 

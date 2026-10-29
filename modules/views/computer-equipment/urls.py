@@ -20,7 +20,9 @@ urlpatterns = [
     path("get-computer-equipment/", views.get_computer_equipment),
     path("get-computers-equipment/", views.get_computers_equipment),#
     path("update-computer-system/", views.update_computer_system),
-    path("delete-computer-system/", views.delete_computer_system),
+    # path("delete-computer-system/", views.delete_computer_system),
+    path("disable_computer_system/", views.disable_computer_system),
+
 
     path("add_computer_peripheral/", views.add_computer_peripherals),
     path("get_computer_peripherals/", views.get_computer_peripherals),
@@ -31,6 +33,7 @@ urlpatterns = [
     path("get_softwares/", views.get_softwares),
     path("update_software/", views.update_software),
     path("delete_computer_software/", views.delete_computer_equipment_softwares),
+
 
     path("add_software_installation/", views.add_software_installation),
     path("get_software_installations/", views.get_software_installations),
@@ -69,5 +72,8 @@ urlpatterns = [
 
     # lista de computadoras
     path("get-computers/", views.get_computers),
+
+    path("get_companys/", views.get_companys),
+
 
 ]
