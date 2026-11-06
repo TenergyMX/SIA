@@ -523,29 +523,79 @@ class ComputerEquipment {
                     form.reset();
                     obj_modal.find("input[type='file']").val("");
                     obj_modal.find("#image_preview").attr("src", "").hide();
-                    bootstrap.Modal.getOrCreateInstance(obj_modal[0]).show();
-                    obj_modal.find(".modal-header").html("Actualizar Equipo de cómputo");
-                    obj_modal.find("[type='submit']").hide();
-                    obj_modal.find("[name='update']").show();
 
                     const fila = $(this).closest("tr");
                     const datos = self.tbl_computerEquipment.row(fila).data();
 
+                    if (!datos) {
+                        Swal.fire("Error", "No se encontró la información del equipo.", "error");
+                        break;
+                    }
+
+                    obj_modal.find(".modal-header").html("Actualizar Equipo de cómputo");
+                    obj_modal.find("[type='submit']").hide();
+                    obj_modal.find("[name='update']").show();
+
                     $.each(datos, function (index, value) {
                         const campo = obj_modal.find(`[name='${index}']`);
 
-                        if (campo.length && !campo.is(":file")) {
-                            campo.val(value ?? "");
+                        if (
+                            campo.length &&
+                            !campo.is(":file") &&
+                            index !== "area_id" &&
+                            index !== "current_responsible_id"
+                        ) {
+                            campo.val(value ?? "").trigger("change");
                         }
                     });
 
+                    // Seleccionar área
+                    const selectArea = obj_modal.find("[name='area_id']");
+
+                    if (datos.area_id) {
+                        if (selectArea.find(`option[value="${datos.area_id}"]`).length === 0) {
+                            selectArea.append(
+                                new Option(datos.area__name || "Área asignada", datos.area_id)
+                            );
+                        }
+
+                        selectArea.val(String(datos.area_id)).trigger("change");
+                    }
+
+                    // Seleccionar responsable actual
+                    const selectResponsable = obj_modal.find("[name='current_responsible_id']");
+
+                    if (datos.current_responsible_id) {
+                        const nombreResponsable =
+                            `${datos.current_responsible__first_name || ""} ${datos.current_responsible__last_name || ""}`.trim();
+
+                        if (
+                            selectResponsable.find(
+                                `option[value="${datos.current_responsible_id}"]`
+                            ).length === 0
+                        ) {
+                            selectResponsable.append(
+                                new Option(nombreResponsable, datos.current_responsible_id)
+                            );
+                        }
+
+                        selectResponsable
+                            .val(String(datos.current_responsible_id))
+                            .trigger("change");
+                    }
+
+                    // Estado del equipo
                     obj_modal
                         .find("[name='is_active']")
-                        .val(datos["is_active"] == true ? "1" : "0");
+                        .val(datos.is_active ? "1" : "0")
+                        .trigger("change");
 
-                    if (datos["image_url"]) {
-                        obj_modal.find("#image_preview").attr("src", datos["image_url"]).show();
+                    // Imagen
+                    if (datos.image_url) {
+                        obj_modal.find("#image_preview").attr("src", datos.image_url).show();
                     }
+
+                    bootstrap.Modal.getOrCreateInstance(obj_modal[0]).show();
 
                     break;
                 }
@@ -561,23 +611,25 @@ class ComputerEquipment {
                     }
 
                     const modalElement = document.getElementById("mdl-crud-disable-computer");
-
                     const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
 
                     const form = document.getElementById("formdisableComputer");
+                    const modalDisable = $("#mdl-crud-disable-computer");
 
                     form.reset();
 
-                    $("#image_preview1, #image_preview2").attr("src", "").hide();
+                    modalDisable
+                        .find("#image_preview1_computer, #image_preview2_computer")
+                        .attr("src", "")
+                        .hide();
 
-                    $("#disable_detail_id").val(datos.id);
-                    $("#disable_identifier").val(datos.identifier || "");
+                    modalDisable.find("#disable_computer_detail_id").val(datos.id);
+                    modalDisable.find("#disable_computer_identifier").val(datos.identifier || "");
 
                     modal.show();
 
                     break;
                 }
-
                 case "duplicate-item": {
                     const fila = $(this).closest("tr");
                     const datos = self.tbl_computerEquipment.row(fila).data();
@@ -615,8 +667,18 @@ class ComputerEquipment {
                     form.reset();
 
                     const inputId = form.querySelector("[name='detail_id']");
+                    // Reiniciar las listas dependientes
+                    $("#double_area_id")
+                        .empty()
+                        .append('<option value="">Primero seleccione una empresa</option>')
+                        .prop("disabled", true);
 
-                    loadCompanys();
+                    $("#double_current_responsible_id")
+                        .empty()
+                        .append('<option value="">Primero seleccione una empresa</option>')
+                        .prop("disabled", true);
+
+                    loadCompanys(datos.company_id);
 
                     if (inputId) {
                         inputId.value = datos.id;
@@ -734,7 +796,9 @@ function disable_computer_system(form, tabla) {
     const formData = new FormData(form);
 
     // Obtener el ID directamente del campo del modal.
-    const detailId = $("#disable_detail_id").val();
+    const modalDisable = $("#mdl-crud-disable-computer");
+
+    const detailId = modalDisable.find("#disable_computer_detail_id").val();
 
     console.log("ID del detalle antes de enviar:", detailId);
     console.log("Datos del formulario:", [...formData.entries()]);
@@ -748,7 +812,6 @@ function disable_computer_system(form, tabla) {
         return;
     }
 
-    // Garantizar que Django reciba estos campos.
     formData.set("detail_id", detailId);
     formData.set("action", "disable");
 
@@ -786,15 +849,23 @@ function disable_computer_system(form, tabla) {
 
                 form.reset();
 
-                $("#disable_detail_id, #disable_identifier").val("");
-                $("#disable_reason, #disable_description").val("");
-                $("#evidence1, #evidence2").val("");
+                modalDisable
+                    .find("#disable_computer_detail_id, #disable_computer_identifier")
+                    .val("");
 
-                $("#image_preview1, #image_preview2").attr("src", "").hide();
+                modalDisable
+                    .find("#disable_computer_reason, #disable_computer_description")
+                    .val("");
+
+                modalDisable.find("#evidence1_computer, #evidence2_computer").val("");
+
+                modalDisable
+                    .find("#image_preview1_computer, #image_preview2_computer")
+                    .attr("src", "")
+                    .hide();
 
                 bootstrap.Modal.getOrCreateInstance(modalElement).hide();
 
-                // Notificar al módulo para actualizar la tabla.
                 tabla.ajax.reload(null, false);
 
                 Swal.fire({
@@ -888,19 +959,34 @@ document.getElementById("evidence2").addEventListener("change", function (event)
 });
 
 // Cargar las empresas en el select
-function loadCompanys() {
+function loadCompanys(companyId = null) {
     $.ajax({
         url: "/get_companys/",
         type: "GET",
         dataType: "json",
         success: (response) => {
+            const select = $("#equipment_company");
+
+            //if (response.data) {
+            //let select = $('select[name="equipment_company"]');
+
+            select.empty();
+
+            select.append('<option value="">Seleccione una empresa</option>');
+
             if (response.data) {
-                let select = $('select[name="equipment_company"]');
-                select.empty();
-                select.append('<option value="">Seleccione una empresa</option>');
                 response.data.forEach((company) => {
-                    select.append(`<option value="${company.id}">${company.name}</option>`);
+                    select.append(
+                        $("<option>", {
+                            value: company.id,
+                            text: company.name,
+                        })
+                    );
                 });
+            }
+
+            if (companyId) {
+                select.val(String(companyId)).trigger("change");
             }
         },
         error: (error) => {
@@ -908,3 +994,211 @@ function loadCompanys() {
         },
     });
 }
+
+$(document)
+    .off("submit", "#formdoubleComputer")
+    .on("submit", "#formdoubleComputer", function (e) {
+        e.preventDefault();
+
+        const form = this;
+        const formData = new FormData(form);
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        Swal.fire({
+            title: "Duplicando equipo",
+            text: "Por favor, espera.",
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading(),
+        });
+
+        $.ajax({
+            url: "/duplicate_computer_system/",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+
+            success: function (response) {
+                Swal.close();
+                if (!response.success) {
+                    Swal.fire(
+                        "Error",
+                        response.message || "No se pudo duplicar el equipo.",
+                        "error"
+                    );
+                    return;
+                }
+
+                const modalElement = document.getElementById("mdl-crud-double-computer");
+
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.hide();
+                }
+
+                form.reset();
+
+                if (
+                    self.tbl_computerEquipment &&
+                    $.fn.DataTable.isDataTable(self.tbl_computerEquipment.table().node())
+                ) {
+                    self.tbl_computerEquipment.ajax.reload(null, false);
+                } else {
+                    console.warn(
+                        "La tabla tbl_computerEquipment no está disponible para actualizarse."
+                    );
+                }
+
+                Swal.fire("Éxito", response.message, "success");
+            },
+
+            error: function (xhr) {
+                console.error("Error al duplicar:", xhr.responseText);
+
+                const mensaje =
+                    xhr.responseJSON?.message || "Ocurrió un error al duplicar el equipo.";
+
+                Swal.fire("Error", mensaje, "error");
+            },
+        });
+    });
+
+// Cargar las áreas correspondientes a la empresa seleccionada
+function loadCompanyAreas(companyId) {
+    const selectArea = $("#double_area_id");
+
+    selectArea.empty().append('<option value="">Cargando áreas...</option>').prop("disabled", true);
+
+    $.ajax({
+        url: "/get_company_areas/",
+        type: "GET",
+        data: { company_id: companyId },
+        dataType: "json",
+
+        success: function (response) {
+            selectArea.empty();
+
+            const areas = response.data || [];
+
+            selectArea.append('<option value="">Seleccione un área</option>');
+
+            areas.forEach(function (area) {
+                selectArea.append(
+                    $("<option>", {
+                        value: area.id,
+                        text: area.name,
+                    })
+                );
+            });
+
+            selectArea.prop("disabled", false);
+        },
+
+        error: function (xhr) {
+            console.error("Error al cargar áreas:", xhr.responseText);
+
+            selectArea
+                .empty()
+                .append('<option value="">Error al cargar las áreas</option>')
+                .prop("disabled", true);
+
+            Swal.fire("Error", "No fue posible cargar las áreas de la empresa.", "error");
+        },
+    });
+}
+
+// Cargar responsables de la empresa seleccionada
+function loadCompanyResponsibles(companyId) {
+    const selectResponsible = $("#double_current_responsible_id");
+
+    selectResponsible
+        .empty()
+        .append('<option value="">Cargando usuarios...</option>')
+        .prop("disabled", true);
+
+    $.ajax({
+        url: "/get_company_responsibles/",
+        type: "GET",
+        data: {
+            company_id: companyId,
+            isList: true,
+        },
+        dataType: "json",
+
+        success: function (response) {
+            selectResponsible.empty();
+
+            if (!response.success) {
+                selectResponsible.append('<option value="">No se encontraron usuarios</option>');
+                return;
+            }
+
+            const users = response.data || [];
+
+            selectResponsible.append('<option value="">Seleccione un responsable</option>');
+
+            users.forEach(function (user) {
+                const nombre = [user.user__first_name, user.user__last_name]
+                    .filter(Boolean)
+                    .join(" ");
+
+                selectResponsible.append(
+                    $("<option>", {
+                        value: user.user_id,
+                        text: nombre || user.user__username,
+                    })
+                );
+            });
+
+            selectResponsible.prop("disabled", false);
+
+            console.log("Select de responsables:", selectResponsible.length);
+            console.log("Opciones agregadas:", selectResponsible.find("option").length);
+            console.log("HTML del select:", selectResponsible.html());
+            console.log("Selector habilitado:", !selectResponsible.prop("disabled"));
+
+            console.log("Responsables cargados:", users);
+        },
+
+        error: function (xhr) {
+            console.error("Error al cargar usuarios:", xhr.responseText);
+
+            selectResponsible
+                .empty()
+                .append('<option value="">Error al cargar los usuarios</option>')
+                .prop("disabled", true);
+
+            Swal.fire("Error", "No fue posible cargar los responsables de la empresa.", "error");
+        },
+    });
+}
+
+// Al seleccionar una empresa, cargar sus áreas y responsables
+$(document)
+    .off("change", "#equipment_company")
+    .on("change", "#equipment_company", function () {
+        const companyId = $(this).val();
+
+        if (!companyId) {
+            $("#double_area_id")
+                .empty()
+                .append('<option value="">Seleccione una empresa primero</option>')
+                .prop("disabled", true);
+
+            $("#double_current_responsible_id")
+                .empty()
+                .append('<option value="">Seleccione una empresa primero</option>')
+                .prop("disabled", true);
+
+            return;
+        }
+
+        loadCompanyAreas(companyId);
+
+        loadCompanyResponsibles(companyId);
+    });

@@ -1,0 +1,119 @@
+<div
+    class="modal fade effect-scale"
+    id="mdl-crud-double-peripheral"
+    tabindex="-1"
+    aria-labelledby="modalDouble"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <form id="formdoublePeripheral" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    id="double_detail_id"
+                    name="detail_id">
+
+                <div class="modal-header">
+
+                    <h1 class="modal-title fs-5" id="modalDouble">
+                        Duplicar periférico
+                    </h1>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="row g-3">
+
+                        <!-- Empresa -->
+                        <div class="col-md-6">
+                            <label for="equipment_company" class="form-label">
+                                Empresa
+                            </label>
+
+                            <select
+                                name="equipment_company"
+                                id="equipment_company"
+                                class="form-select"
+                                required>
+
+                                <option value="" disabled selected>
+                                    Seleccione una empresa
+                                </option>
+
+                            </select>
+                        </div>
+
+                        <!-- Factura -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="double_document_factura">
+                                Factura del equipo 
+                            </label>
+
+                            <input
+                                type="file"
+                                id="double_document_factura"
+                                name="document_factura"
+                                class="form-control">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="double_current_responsible_id">Responsable actual</label>
+                            <select name="current_responsible_id" id="double_peripheral_responsible_id" class="form-select" >
+                                <option value="">Primero seleccione una empresa</option>
+                            </select>
+                        </div>
+
+                        <!-- Comentarios -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="double_comments">
+                                Comentarios
+                            </label>
+
+                            <textarea
+                                id="double_comments"
+                                name="double_comments"
+                                class="form-control"
+                                rows="1"
+                                placeholder="Comentarios"></textarea>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-regular fa-copy me-1"></i>
+                        Duplicar periférico
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                        Cerrar
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

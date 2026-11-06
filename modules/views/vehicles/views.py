@@ -3802,7 +3802,6 @@ def get_vehicles_maintenance(request):
     dt = request.GET
     subModule_id = 11
 
-
     # Crear el queryset base
     base_maintenance_qs = Vehicle_Maintenance.objects.all()
 

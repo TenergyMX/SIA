@@ -27,7 +27,7 @@ urlpatterns = [
     path("add_computer_peripheral/", views.add_computer_peripherals),
     path("get_computer_peripherals/", views.get_computer_peripherals),
     path("update_computer_peripheral/", views.update_computer_peripheral),
-    path("delete_computer_peripheral/", views.delete_computer_peripheral),
+    #path("delete_computer_peripheral/", views.delete_computer_peripheral),
 
     path("add_software/", views.add_software),
     path("get_softwares/", views.get_softwares),
@@ -72,8 +72,20 @@ urlpatterns = [
 
     # lista de computadoras
     path("get-computers/", views.get_computers),
-
+    # lista de empresas 
     path("get_companys/", views.get_companys),
+    # Duplicar equipos de computo
+    path("duplicate_computer_system/", views.duplicate_computer_system),
+    # Cargar areas 
+    path("get_company_areas/", views.get_company_areas),
+    # Cargar responsables
+    path("get_company_responsibles/", views.get_company_responsibles),
+    # Desactivar periféricos 
+    path("disable_computer_peripheral/", views.disable_computer_peripheral),
+   # Duplicar periférico
+    path("duplicate_computer_peripheral/", views.duplicate_computer_peripheral),
 
-
+    #Submodulo de equipos y herramientas eliminados
+    path("computers_peripheral_removed/", views.computers_peripheral_removed),
+    path("get_computer_peripheral_removed/", views.get_computer_peripheral_removed),
 ]

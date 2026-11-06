@@ -83,6 +83,30 @@
                         <label for="">Comentarios</label>
                         <textarea name="comments" class="form-control" rows="1" placeholder="Descripción"></textarea>
                     </div>
+
+                    <!--Imagen del equipo -->
+                    <div class="col-md-4">
+                        <label
+                            for="image_peripheral"
+                            class="form-label">
+                            Fotografía
+                        </label>
+                        <input type="file" id="image_peripheral" name="image_peripheral" class="form-control" accept="image/*">
+
+                        <!-- Previsualización -->
+                        <div class="text-center mt-3">
+                            <picture>
+                                <img id="image_preview" alt="Previsualización imagen" class="img-fluid rounded"
+                                    style="
+                                        max-height: 200px;
+                                        max-width: 100%;
+                                        display: none;
+                                    ">
+                            </picture>
+                        </div>
+                    </div>
+
+                   
                 </div>
             </div>
             <div class="modal-footer">

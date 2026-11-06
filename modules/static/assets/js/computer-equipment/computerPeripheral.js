@@ -76,7 +76,57 @@ class ComputerPeripheral {
                         orderable: false,
                         className: "text-center",
                     },
+
+                    {
+                        title: "Imagen",
+                        data: "image_peripheral",
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+                        render: function (data, type, row) {
+                            if (type !== "display") {
+                                return data || "";
+                            }
+
+                            if (!data) {
+                                return `
+                                    <div class="equipment-no-image">
+                                        <i class="fa-solid fa-image"></i>
+                                        <span>Sin fotografía</span>
+                                    </div>
+                                `;
+                            }
+
+                            const img = document.createElement("img");
+
+                            img.src = data;
+                            img.alt = `Fotografía de ${row.name || "Equipo"}`;
+                            img.className = "rounded border";
+                            img.style.cssText =
+                                "width:70px;height:70px;object-fit:cover;cursor:pointer;";
+                            img.loading = "lazy";
+                            img.title = "Ver fotografía";
+
+                            img.addEventListener("click", function () {
+                                verFotoEquipo(this);
+                            });
+
+                            return img.outerHTML;
+                        },
+                    },
+
                     { title: "Acciones", data: "btn_action", orderable: false },
+
+                    {
+                        data: "btn_duplicate",
+                        name: "duplicate",
+                        title: "Duplicar",
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+                        defaultContent: "",
+                        visible: false,
+                    },
                 ],
             },
         };
@@ -105,7 +155,7 @@ class ComputerPeripheral {
                         card.find("picture img").attr("src", response["data"]["image_path"]);
 
                         self.data.id = response["data"]["id"] || null;
-                        self.data.key = "Goku eta vaina e seria";
+                        self.data.key = "";
                     },
                     error: function (xhr, status, error) {
                         console.log("error");
@@ -162,6 +212,13 @@ class ComputerPeripheral {
                 ],
             });
 
+            self.tbl_computerPeripheral.on("xhr.dt", function (e, settings, json) {
+                if (!json) return;
+
+                const esSuperusuario = json.is_superuser === true;
+
+                self.tbl_computerPeripheral.column("duplicate:name").visible(esSuperusuario);
+            });
             delete self.table;
         }
 
@@ -181,15 +238,27 @@ class ComputerPeripheral {
                     self.tbl_computerPeripheral.ajax.reload();
                     break;
                 case "add-item":
-                    obj_modal.find("form")[0].reset();
-                    obj_modal.modal("show");
+                    const form = obj_modal.find("form")[0];
+                    form.reset();
+                    obj_modal.find("input[type='file']").val("");
+                    obj_modal.find("#image_preview").attr("src", "").hide();
+                    bootstrap.Modal.getOrCreateInstance(obj_modal[0]).show();
+
                     obj_modal.find(".modal-header").html("Registrar Periferico");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
+
                     break;
-                case "update-item":
-                    obj_modal.find("form")[0].reset();
-                    obj_modal.modal("show");
+
+                case "update-item": {
+                    const form = obj_modal.find("form")[0];
+
+                    form.reset();
+
+                    $("#image_peripheral").val("");
+                    $("#image_preview").attr("src", "");
+                    $("#image_preview").hide();
+
                     obj_modal.find(".modal-header").html("Actualizar registro");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='update']").show();
@@ -198,31 +267,123 @@ class ComputerPeripheral {
                     var datos = self.tbl_computerPeripheral.row(fila).data();
 
                     $.each(datos, function (index, value) {
-                        var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
+                        var input = obj_modal.find(`[name='${index}']`);
+                        var isFileInput = input.is(":file");
 
                         if (!isFileInput) {
-                            obj_modal.find(`[name='${index}']`).val(value || "-----");
+                            input.val(value ?? "");
                         }
                     });
-                    break;
-                case "delete-item":
-                    var url = "/delete_computer_peripheral/";
-                    var fila = $(this).closest("tr");
-                    var datos = self.tbl_computerPeripheral.row(fila).data();
-                    var data = new FormData();
 
-                    data.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
-                    data.append("id", datos["id"]);
+                    if (datos.image_peripheral) {
+                        $("#image_preview").attr("src", datos.image_peripheral);
 
-                    deleteItem(url, data)
-                        .then((message) => {
-                            Swal.fire("Exito", message, "success");
-                            self.tbl_computerPeripheral.ajax.reload();
-                        })
-                        .catch((error) => {
-                            Swal.fire("Error", error, "error");
-                        });
+                        $("#image_preview").show();
+                    }
+
+                    obj_modal.modal("show");
+
                     break;
+                }
+
+                // Dar de baja un periferico
+                case "deactivate-item": {
+                    const fila = $(this).closest("tr");
+                    const datos = self.tbl_computerPeripheral.row(fila).data();
+
+                    if (!datos) {
+                        Swal.fire(
+                            "Error",
+                            "No se encontró la información del periférico.",
+                            "error"
+                        );
+                        break;
+                    }
+
+                    const modalElement = document.getElementById("mdl-crud-disable-peripheral");
+
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+                    const form = document.getElementById("formdisablePeripheral");
+
+                    form.reset();
+
+                    $("#image_preview1_peripheral, #image_preview2_peripheral")
+                        .attr("src", "")
+                        .hide();
+
+                    $("#disable_detail_id").val(datos.id);
+                    $("#disable_identifier").val(datos.identifier || "");
+
+                    modal.show();
+
+                    break;
+                }
+
+                case "duplicate-item": {
+                    const fila = $(this).closest("tr");
+                    const datos = self.tbl_computerPeripheral.row(fila).data();
+
+                    console.log("Datos del periférico:", datos);
+
+                    if (!datos) {
+                        Swal.fire(
+                            "Error",
+                            "No se encontró la información del periférico.",
+                            "error"
+                        );
+                        break;
+                    }
+
+                    const modalElement = document.getElementById("mdl-crud-double-peripheral");
+
+                    const form = document.getElementById("formdoublePeripheral");
+
+                    if (!modalElement) {
+                        console.error("No se encontró el modal de duplicación.");
+
+                        Swal.fire(
+                            "Error",
+                            "No se encontró el modal para duplicar el equipo.",
+                            "error"
+                        );
+                        break;
+                    }
+                    if (!form) {
+                        console.error(
+                            "No se encontró #formdoublePeripheral. Verifica dónde está incluido el HTML del modal."
+                        );
+
+                        Swal.fire("Error", "No se encontró el formulario de duplicación.", "error");
+                        break;
+                    }
+
+                    form.reset();
+
+                    const inputId = form.querySelector("[name='detail_id']");
+                    // Reiniciar las listas dependientes
+                    $("#double_area_id")
+                        .empty()
+                        .append('<option value="">Primero seleccione una empresa</option>')
+                        .prop("disabled", true);
+
+                    $("#double_current_responsible_id")
+                        .empty()
+                        .append('<option value="">Primero seleccione una empresa</option>')
+                        .prop("disabled", true);
+
+                    loadCompanys();
+
+                    if (inputId) {
+                        inputId.value = datos.id;
+                    }
+
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.show();
+
+                    break;
+                }
+
                 default:
                     console.log("Opción dezconocida: " + option);
             }
@@ -265,5 +426,346 @@ class ComputerPeripheral {
                 },
             });
         });
+
+        // Enviar formulario de baja de Equipos de cómputo.
+        $(document)
+            .off("submit.computerPeripheral", "#formdisablePeripheral")
+            .on("submit.computerPeripheral", "#formdisablePeripheral", function (e) {
+                e.preventDefault();
+
+                disable_computer_peripheral(this, self.tbl_computerPeripheral);
+            });
     }
 }
+
+// PREVISUALIZACIÓN IMAGEN
+document.getElementById("image_peripheral").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// DAR DE BAJA UN PERIFÉRICO
+function disable_computer_peripheral(form, tabla) {
+    const formData = new FormData(form);
+
+    // Obtener el ID directamente del campo del modal.
+    const detailId = $("#disable_detail_id").val();
+
+    console.log("ID del detalle antes de enviar:", detailId);
+    console.log("Datos del formulario:", [...formData.entries()]);
+
+    if (!detailId) {
+        Swal.fire({
+            title: "Error",
+            text: "No se encontró el ID del periférico que deseas dar de baja.",
+            icon: "error",
+        });
+        return;
+    }
+
+    formData.set("detail_id", detailId);
+    formData.set("action", "disable");
+
+    Swal.fire({
+        title: "Procesando baja",
+        text: "Por favor, espera mientras se procesa la solicitud.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: function () {
+            Swal.showLoading();
+        },
+    });
+
+    $.ajax({
+        url: "/disable_computer_peripheral/",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+
+        beforeSend: function (xhr) {
+            const csrfToken = $(form).find("[name='csrfmiddlewaretoken']").val();
+
+            if (csrfToken) {
+                xhr.setRequestHeader("X-CSRFToken", csrfToken);
+            }
+        },
+
+        success: function (response) {
+            if (response.success === true) {
+                const message = response.message || "El periférico se dio de baja correctamente.";
+
+                const modalElement = document.getElementById("mdl-crud-disable-peripheral");
+
+                form.reset();
+
+                $("#disable_detail_id, #disable_identifier").val("");
+                $("#disable_reason, #disable_description").val("");
+                $("#evidence1_peripheral, #evidence2_peripheral").val("");
+
+                $("#image_preview1_peripheral, #image_preview2_peripheral").attr("src", "").hide();
+
+                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+
+                // Notificar al módulo para actualizar la tabla.
+                tabla.ajax.reload(null, false);
+
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: message,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message || "No se pudo dar de baja el periférico.",
+                    icon: "error",
+                });
+            }
+        },
+
+        error: function (xhr) {
+            const message =
+                xhr.responseJSON?.message ||
+                "Hubo un error al dar de baja el equipo. Intenta nuevamente.";
+
+            Swal.fire({
+                title: "¡Error!",
+                text: message,
+                icon: "error",
+            });
+        },
+    });
+}
+
+// PREVISUALIZACIÓN EVIDENCIA 1
+document.getElementById("evidence1_peripheral").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview1_peripheral");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// PREVISUALIZACIÓN EVIDENCIA 2
+document.getElementById("evidence2_peripheral").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview2_peripheral");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// Cargar las empresas en el select
+function loadCompanys() {
+    $.ajax({
+        url: "/get_companys/",
+        type: "GET",
+        dataType: "json",
+        success: (response) => {
+            if (response.data) {
+                let select = $('select[name="equipment_company"]');
+                select.empty();
+                select.append('<option value="">Seleccione una empresa</option>');
+                response.data.forEach((company) => {
+                    select.append(`<option value="${company.id}">${company.name}</option>`);
+                });
+            }
+        },
+        error: (error) => {
+            console.error("Error cargando empresas:", error);
+        },
+    });
+}
+
+//Duplicar periférico
+$(document)
+    .off("submit", "#formdoublePeripheral")
+    .on("submit", "#formdoublePeripheral", function (e) {
+        e.preventDefault();
+
+        const form = this;
+        const formData = new FormData(form);
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        Swal.fire({
+            title: "Duplicando Periférico",
+            text: "Por favor, espera.",
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading(),
+        });
+
+        $.ajax({
+            url: "/duplicate_computer_peripheral/",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+
+            success: function (response) {
+                Swal.close();
+                if (!response.success) {
+                    Swal.fire(
+                        "Error",
+                        response.message || "No se pudo duplicar el equipo.",
+                        "error"
+                    );
+                    return;
+                }
+
+                const modalElement = document.getElementById("mdl-crud-double-peripheral");
+
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.hide();
+                }
+
+                form.reset();
+
+                if (
+                    self.tbl_computerPeripheral &&
+                    $.fn.DataTable.isDataTable(self.tbl_computerPeripheral.table().node())
+                ) {
+                    self.tbl_computerPeripheral.ajax.reload(null, false);
+                } else {
+                    console.warn(
+                        "La tabla tbl_computerPeripheral no está disponible para actualizarse."
+                    );
+                }
+
+                Swal.fire("Éxito", response.message, "success");
+            },
+
+            error: function (xhr) {
+                console.error("Error al duplicar:", xhr.responseText);
+
+                const mensaje =
+                    xhr.responseJSON?.message || "Ocurrió un error al duplicar el equipo.";
+
+                Swal.fire("Error", mensaje, "error");
+            },
+        });
+    });
+
+// Cargar responsables de la empresa seleccionada
+function loadCompanyResponsiblesPeripheral(companyId) {
+    const selectResponsible = $("#double_peripheral_responsible_id");
+
+    selectResponsible
+        .empty()
+        .append('<option value="">Cargando usuarios...</option>')
+        .prop("disabled", true);
+
+    $.ajax({
+        url: "/get_company_responsibles/",
+        type: "GET",
+        data: {
+            company_id: companyId,
+            isList: true,
+        },
+        dataType: "json",
+
+        success: function (response) {
+            selectResponsible.empty();
+
+            if (!response.success) {
+                selectResponsible.append('<option value="">No se encontraron usuarios</option>');
+                return;
+            }
+
+            const users = response.data || [];
+
+            selectResponsible.append('<option value="">Seleccione un responsable</option>');
+
+            users.forEach(function (user) {
+                const nombre = [user.user__first_name, user.user__last_name]
+                    .filter(Boolean)
+                    .join(" ");
+
+                selectResponsible.append(
+                    $("<option>", {
+                        value: user.user_id,
+                        text: nombre || user.user__username,
+                    })
+                );
+            });
+
+            selectResponsible.prop("disabled", false);
+
+            console.log("Responsables cargados:", users);
+        },
+
+        error: function (xhr) {
+            console.error("Error al cargar usuarios:", xhr.responseText);
+
+            selectResponsible
+                .empty()
+                .append('<option value="">Error al cargar los usuarios</option>')
+                .prop("disabled", true);
+
+            Swal.fire("Error", "No fue posible cargar los responsables de la empresa.", "error");
+        },
+    });
+}
+
+// Al seleccionar una empresa, cargar usuarios
+$(document)
+    .off("change", "#equipment_company")
+    .on("change", "#equipment_company", function () {
+        const companyId = $(this).val();
+
+        if (!companyId) {
+            $("#double_current_responsible_id")
+                .empty()
+                .append("<option value  Seleccione una empresa primero</option>")
+                .prop("disabled", true);
+
+            return;
+        }
+
+        loadCompanyResponsiblesPeripheral(companyId);
+    });

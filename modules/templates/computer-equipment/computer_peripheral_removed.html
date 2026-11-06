@@ -1,0 +1,60 @@
+{% extends 'ynex/base.html' %}
+{% block content %}
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <h1 class="page-title fw-semibold fs-18 mb-0">
+        Equipos de cómputo
+    </h1>
+    <div class="ms-md-1 ms-0">
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">Equipo de Cómputo</li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Eliminados
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="w-100">
+    <div class="card custom-card">
+        <div class="card-header justify-content-between">
+            <div class="card-title">
+                Equipos de cómputo y periféricos eliminados
+            </div>
+            <div class="">
+                <button type="button" class="btn btn-sm btn-info-light" data-computer-system="refresh-table"
+                    title="Refrescar tabla" data-refresh-table="table_">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- tabla -->
+            <div class="table-responsive">
+                <table class="table table-bordered w-100" id="computers_peripheral_removed">
+                    <thead></thead>
+                    <tbody></tbody>
+                    <tfoot></tfoot>
+                </table>
+            </div>
+            <!-- end tabla -->
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% load static %}
+
+{% block modals %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/js/users/users.js' %}"></script>
+<script src="{% static 'assets/js/users/areas.js' %}"></script>
+<script src="{% static 'assets/js/users/providers.js' %}"></script>
+<script src="{% static 'assets/js/computer-equipment/computer_peripheral_removed.js' %}"></script>
+
+{% endblock %}

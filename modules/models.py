@@ -476,7 +476,27 @@ class ComputerPeripheral(models.Model):
     comments = models.TextField(blank=True, null=True, verbose_name="Comentarios")
     identifier = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name="Identificador")
     factura_document = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="documento de factura")
+    image_peripheral = models.FileField(upload_to='docs/', blank=True, null=True)     
 
+
+    user_deactivation = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="Usuario que realizó la modificación", blank=True, null=True, related_name="peripherals_modifications")
+    is_deactivated = models.BooleanField(default=False)
+
+    DEACTIVATION_REASONS = [
+        ("VENDIDO", "Vendido"),
+        ("OBSOLETO", "Obsoleto"),
+        ("PERDIDO", "Perdido"),
+        ("BAJA", "Baja"),
+        ("ROBADO", "Robado"),
+    ]
+    
+    deactivation_reason = models.CharField( max_length=20, choices=DEACTIVATION_REASONS, blank=True, null=True, verbose_name="Motivo de baja")
+    deactivation_description = models.TextField( blank=True, null=True, verbose_name="Descripción de la baja")
+    deactivated_at = models.DateTimeField( blank=True, null=True, verbose_name="Fecha de baja")
+    evidence1_image = models.FileField(upload_to='docs/', blank=True, null=True)          
+    evidence2_image = models.FileField(upload_to='docs/', blank=True, null=True)  
+
+    
     class Meta:
         verbose_name = "Periférico de Equipo de Computo"
         verbose_name_plural = "Periféricos de Equipos de Computo"

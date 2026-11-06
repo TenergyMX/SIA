@@ -13,6 +13,7 @@ class Migration(migrations.Migration):
         ('modules', '0091_delete_computerequipment_maintenance'),
     ]
 
+
     operations = [
         migrations.CreateModel(
             name='ComputerEquipment_Maintenance',

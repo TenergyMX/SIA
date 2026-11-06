@@ -45,6 +45,11 @@ from django.templatetags.static import static
 
 from modules.templates.pdf.weasy import WeasyPDF
 
+import logging   
+logger = logging.getLogger(__name__)
+
+
+
 boto3.client('s3', region_name='us-east-2', config=Config(signature_version='s3v4'))
 
 dotenv_path = join(dirname(__file__), 'awsCred.env')
@@ -428,7 +433,7 @@ def add_computer_system(request):
         print("Se registro el primer mantenimiento programado")
         #!ENDBLOCK
 
-        # IMAGEN DEL EQUIPO / HERRAMIENTA
+        # IMAGEN DEL EQUIPO
         if "image" in request.FILES and request.FILES["image"]:
 
             image = request.FILES.get("image")
@@ -827,7 +832,7 @@ def get_computer_peripherals(request):
     isList = dt.get("isList", False)
     responsible_id = dt.get("responsible_id")
 
-    datos = ComputerPeripheral.objects.filter(company_id = context["company"]["id"]).values(
+    datos = ComputerPeripheral.objects.filter(company_id = context["company"]["id"], is_deactivated=False).values(
         "id", "company_id",
         "name",
         "peripheral_type", "brand" , "model" ,
@@ -836,7 +841,7 @@ def get_computer_peripherals(request):
         "acquisition_date",
         "location",
         "responsible_id", "responsible__first_name", "responsible__last_name",
-        "peripheral_status", "comments","identifier", "factura_document",
+        "peripheral_status", "comments","identifier", "factura_document","image_peripheral",
     )
 
     if context["role"]["id"] not in [1,2,3]:
@@ -851,6 +856,18 @@ def get_computer_peripherals(request):
         access = get_module_user_permissions(context, subModule_id)
         access = access["data"]["access"]
         for item in datos:
+
+            # Fotografía
+            if item["image_peripheral"]:
+                tempUrl = generate_presigned_url(
+                    AWS_BUCKET_NAME,
+                    str(item["image_peripheral"])
+                )
+
+                item["image_peripheral"] = tempUrl
+            else:
+                item["image_peripheral"] = None
+
             item["btn_view_factura"] = ""
             if item["factura_document"]:
 
@@ -870,14 +887,31 @@ def get_computer_peripherals(request):
                 """
 
             item["btn_action"] = ""
+
             if access["update"]:
-                item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-primary-light\" data-computer-peripheral=\"update-item\">" \
-                    "<i class=\"fa-solid fa-pen\"></i>" \
-                "</button>\n"
+                item["btn_action"] += ("<button type='button' " "class='btn btn-icon btn-sm btn-primary-light' " "data-computer-peripheral='update-item' " "aria-label='Editar periférico' " "title='Editar'>" "<i class='fa-solid fa-pen'></i>" "</button>\n")
+          
             if access["delete"]:
-                item["btn_action"] += "<button class=\"btn btn-icon btn-sm btn-danger-light\" data-computer-peripheral=\"delete-item\">" \
-                    "<i class=\"fa-solid fa-trash\"></i>"
+                item["btn_action"] += "<button type='button' name='deactivate' class='btn btn-icon btn-sm btn-danger-light' data-computer-peripheral='deactivate-item' aria-label='delete' title='Deshabilitar'>" \
+                    "<i class='fa-solid fa-ban'></i>" \
                 "</button>"
+
+            # BOTÓN DUPLICAR: SOLO PARA SUPERUSUARIOS
+            item["btn_duplicate"] = ""
+
+            if request.user.is_superuser:
+                item["btn_duplicate"] = (
+                    f"<button type='button' "
+                    f"class='btn btn-icon btn-sm btn-success-light' "
+                    f"data-computer-peripheral='duplicate-item' "
+                    f"data-id='{item['id']}' "
+                    f"title='Duplicar periférico' "
+                    f"aria-label='Duplicar periférico'>"
+                    f"<i class='fa-regular fa-copy'></i>"
+                    f"</button>"
+                )
+
+    response["is_superuser"] = request.user.is_superuser
     response["recordsTotal"] = datos.count()
     response["data"] = list(datos)
     response["success"] = True
@@ -892,8 +926,9 @@ def add_computer_peripherals(request):
 
     try:
         # Documento factura
-
         factura_document = files.get("factura_document")
+
+
 
         obj = ComputerPeripheral(
             company_id = company_id,
@@ -910,6 +945,35 @@ def add_computer_peripherals(request):
             comments = dt.get("comments")
         )
         obj.save()
+
+        if "image_peripheral" in request.FILES and request.FILES["image_peripheral"]:
+
+            image_peripheral = request.FILES.get("image_peripheral")
+
+            folder_path = (
+                f"docs/{company_id}/"
+                f"computer-equipment/{obj.id}/"
+                f"image_periheral/{obj.id}/"
+            )
+
+            file_name, extension = os.path.splitext(image_peripheral.name)
+
+            new_name = (
+                f"equipment_image_{obj.name}"
+                f"{extension}"
+            )
+
+            s3Name = folder_path + new_name
+
+            upload_to_s3(
+                image_peripheral,
+                bucket_name,
+                s3Name
+            )
+
+            obj.image_peripheral = s3Name
+            obj.save(update_fields=["image_peripheral"])
+
 
 
         if factura_document:
@@ -957,6 +1021,7 @@ def update_computer_peripheral(request):
 
         # DOCUMENTO FACTURA
         factura_document = request.FILES.get("factura_document")
+        image_peripheral = request.FILES.get('image_peripheral')
 
         if factura_document:
 
@@ -991,6 +1056,40 @@ def update_computer_peripheral(request):
             # guardar ruta
             obj.factura_document = s3_path
 
+        #imagen
+
+        if image_peripheral:
+    
+            # eliminar documento anterior
+            if obj.image_peripheral:
+                delete_s3_object(
+                    AWS_BUCKET_NAME,
+                    str(obj.image_peripheral.name)
+                )
+
+            # obtener extensión
+            file_name, extension = os.path.splitext(
+                image_peripheral.name
+            )
+
+            # nuevo nombre
+            new_name = f"image{obj.id}{extension}"
+
+            # ruta S3
+            s3_path = (
+                f"docs/{company_id}/computer-equipment/"
+                f"image/{obj.id}/{new_name}"
+            )
+
+            # subir a S3
+            upload_to_s3(
+                image_peripheral,
+                AWS_BUCKET_NAME,
+                s3_path
+            )
+            # guardar ruta
+            obj.image_peripheral = s3_path
+
         obj.save()
 
         response["success"] = True
@@ -1002,23 +1101,23 @@ def update_computer_peripheral(request):
         response["error"] = {"message": str(e)}
     return JsonResponse(response)
 
-def delete_computer_peripheral(request):
-    response = {"success": False, "data": []}
-    dt = request.POST
-    id = dt.get("id", None)
+# def delete_computer_peripheral(request):
+#     response = {"success": False, "data": []}
+#     dt = request.POST
+#     id = dt.get("id", None)
 
-    if id == None:
-        response["error"] = {"message": "Proporcione un id valido"}
-        return JsonResponse(response)
-    try:
-        obj = ComputerPeripheral.objects.get(id = id)
-    except ComputerPeripheral.DoesNotExist:
-        response["error"] = {"message": "El objeto no existe"}
-        return JsonResponse(response)
-    else:
-        obj.delete()
-    response["success"] = True
-    return JsonResponse(response)
+#     if id == None:
+#         response["error"] = {"message": "Proporcione un id valido"}
+#         return JsonResponse(response)
+#     try:
+#         obj = ComputerPeripheral.objects.get(id = id)
+#     except ComputerPeripheral.DoesNotExist:
+#         response["error"] = {"message": "El objeto no existe"}
+#         return JsonResponse(response)
+#     else:
+#         obj.delete()
+#     response["success"] = True
+#     return JsonResponse(response)
 
 # TODO ----- [ SOFTWARE ] -----
 
@@ -1334,7 +1433,7 @@ def get_computer_equipment_audits(request):
     subModule_id = 17
 
     datos = ComputerEquipment_Audit.objects.values(
-        "id",
+        "id", 
         "computerSystem_id", "computerSystem__name", "computerSystem__serial_number",
         "audit_date",
         "pantalla_check", "pantalla_notas",
@@ -1511,14 +1610,18 @@ def add_computer_equipment_maintenance(request):
 
 def get_computer_equipment_maintenances(request):
     context = user_data(request)
+    print("esto contiene context dentro de mantenimiento:", context)
     response = {"success": False, "data": []}
     dt = request.GET
     computerSystem_id = dt.get("computerSystem_id")
     subModule_id = 17
+    company_id = context["company"]["id"]
+
 
     print("esto contiene computersystemid:", computerSystem_id)
+    print("esto contiene compania id para mantenimientos", company_id)
 
-    datos = ComputerEquipment_Maintenance.objects.values(
+    datos = ComputerEquipment_Maintenance.objects.filter(computerSystem__company_id=company_id).values(
         "id",
         "computerSystem_id", 
         "computerSystem__name", 
@@ -1803,8 +1906,13 @@ def get_computer_equipment_responsiva(request):
     dt = request.GET
     isList = dt.get("isList", False)
     subModule_id = 19
+    company_id = context["company"]["id"]
 
-    datos = ComputerEquipment_Responsiva.objects.values(
+    users_company = User_Access.objects.filter(
+        company_id=company_id
+    ).values_list("user_id", flat=True)
+
+    datos = ComputerEquipment_Responsiva.objects.filter(responsible_id__in=users_company).values(
         "id",
         "responsible_id", "responsible__first_name", "responsible__last_name",
         "area_id", "area__name",
@@ -1987,12 +2095,42 @@ def get_users_with_assigned_computer_equipment(request):
     context = user_data(request)
     response = { "success": False, "data": [] }
 
-    unique_user_ids = ComputerSystem.objects \
-                .values_list('current_responsible', flat=True)\
-                .distinct() \
-                .exclude(current_responsible = None)
+    company_id = context["company"]["id"]
+
+
+    # Usuarios con computadoras activas
+    computer_user_ids = ComputerSystem.objects.filter(
+        is_active=True,
+        company_id=company_id,
+        current_responsible_id__isnull=False
+    ).values_list(
+        "current_responsible_id",
+        flat=True
+    )
+
+    # Usuarios con periféricos activos
+    peripheral_user_ids = ComputerPeripheral.objects.filter(
+        is_deactivated=False,
+        company_id=company_id,
+        responsible_id__isnull=False
+    ).values_list(
+        "responsible_id",
+        flat=True
+    )
+
+    # Usuarios pertenecientes a la empresa
+    users_company = User_Access.objects.filter(
+        company_id=company_id
+    ).values_list(
+        "user_id",
+        flat=True
+    )
+
+    # Mostrar usuarios que tengan computadora O periféricos activos
+    unique_user_ids = set(computer_user_ids) | set(peripheral_user_ids)
+
     
-    usuarios = User.objects.filter(id__in=unique_user_ids).values("id", "username", "first_name", "last_name",)
+    usuarios = User.objects.filter(id__in=unique_user_ids).filter(id__in=users_company).values("id", "username", "first_name", "last_name",)
     response["success"] = True
     response["data"] = list(usuarios)
     return JsonResponse(response)
@@ -2711,5 +2849,928 @@ def get_companys(request):
         return JsonResponse({"data": datos})
     except Exception as e:
         return JsonResponse({"data": [], "error": str(e)})
+
+
+@login_required
+def duplicate_computer_system(request):
+    response = {
+        "success": False,
+        "message": "No fue posible duplicar el equipo."
+    }
+
+    if not request.user.is_superuser:
+        return JsonResponse({
+            "success": False,
+            "message": "No tienes permisos para duplicar equipos."
+        }, status=403)
+
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
+
+    try:
+        dt = request.POST
+        files = request.FILES
+
+        # Datos recibidos del formulario.
+        detail_id = dt.get("detail_id")
+        company_id = dt.get("equipment_company")
+        area_id = dt.get("area_id")
+        responsible_id = dt.get("current_responsible_id")
+        comments = dt.get("double_comments", "").strip()
+        document_factura = files.get("document_factura")
+
+        if not detail_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el equipo que deseas duplicar."
+            })
+
+        if not company_id:
+            return JsonResponse({
+                "success": False,
+                "message": "Debes seleccionar una empresa."
+            })
+
+        # Obtener el equipo original.
+        original = ComputerSystem.objects.get(
+            id=detail_id,
+            is_active=True
+        )
+
+        # Validar la empresa seleccionada.
+        company = Company.objects.get(id=company_id)
+
+        # Validar que el área pertenezca a la empresa seleccionada.
+        if not area_id:
+            return JsonResponse({"success": False, "message": "Debes seleccionar un área."})
+
+        area = Area.objects.filter(
+            id=area_id,
+            company_id=company.id,
+            is_active=True
+        ).first()
+
+        if not area:
+            return JsonResponse({
+                "success": False, "message": "El área seleccionada no pertenece a la empresa."})
+
+        if not responsible_id:
+            return JsonResponse({
+                "success": False,
+                "message": "Debes seleccionar un responsable."
+            })
+
+        responsible_access = User_Access.objects.filter(
+            company_id=company.id,
+            user_id=responsible_id,
+            user__is_active=True
+        ).select_related("user").first()
+
+        if not responsible_access:
+            return JsonResponse({
+                "success": False,
+                "message": "El responsable seleccionado no pertenece a la empresa."
+            })
+
+        responsible = responsible_access.user
+
+        # Usar la frecuencia de mantenimiento del equipo original.         
+        frecuencia = original.interval_maintenance
+
+        try:
+            frecuencia = int(frecuencia)
+        except (TypeError, ValueError):
+            return JsonResponse({
+                "success": False,
+                "error": {
+                    "message": "El equipo original no tiene una frecuencia de mantenimiento válida."
+                }
+            }, status=400)
+
+        if not frecuencia or frecuencia <= 0:
+            return JsonResponse({
+                "success": False,
+                "message": (
+                    "El equipo original no tiene una frecuencia de "
+                    "mantenimiento válida. Verifica su configuración."
+                )
+            })
+
+        # Crear un registro nuevo con los datos del original.
+        obj = ComputerSystem(
+            is_active=True,
+            company=company,
+            serial_number=original.serial_number,
+            name=original.name,
+            equipment_type=original.equipment_type,
+            so=original.so,
+            brand=original.brand,
+            model=original.model,
+            processor=original.processor,
+            num_cores=original.num_cores,
+            processor_speed=original.processor_speed,
+            architecture=original.architecture,
+            disk_type=original.disk_type,
+            disk_capacity=original.disk_capacity,
+            ram=original.ram,
+            ram_type=original.ram_type,
+            ram_speed=original.ram_speed,
+            graphics_card=original.graphics_card,
+            color=original.color,
+            battery=original.battery,
+            warranty=original.warranty,
+            location=original.location,
+            equipment_status=original.equipment_status,
+            last_maintenance_date=original.last_maintenance_date,
+            adquisition_date=original.adquisition_date,
+            interval_maintenance=frecuencia,
+            image=None,
+            comments=comments,
+
+            area=area,
+            previous_responsible=original.current_responsible,
+            current_responsible=responsible,
+
+            # Valores no utilizados
+            identifier=None,
+            document_factura=None,
+            qr_info_computer=None,            
+
+            # Reiniciar los datos de baja.
+            is_deactivated=False,
+            user_deactivation=None,
+            deactivation_reason=None,
+            deactivation_description=None,
+            deactivated_at=None,
+            evidence1_image=None,
+            evidence2_image=None,
+        )
+
+        # Guardar el equipo para obtener su ID e identificador nuevo.
+        obj.save()
+
+        # Registrar el primer mantenimiento programado.
+        qs_mantenimiento = ComputerEquipment_Maintenance()
+        qs_mantenimiento.computerSystem_id = obj.pk
+        qs_mantenimiento.performed_by = "usuario"
+        qs_mantenimiento.user = request.user
+        qs_mantenimiento.type = "Preventivo"
+        qs_mantenimiento.cost = "0.00"
+        qs_mantenimiento.actions = (
+            "{'Limpieza de Archivos Temporales y Basura': 'PENDIENTE', "
+            "'Limpieza Física del Hardware': 'PENDIENTE'}"
+        )
+        qs_mantenimiento.is_checked = False
+
+        qs_date = (
+            datetime.now()
+            + relativedelta(months=frecuencia)
+        )
+
+        qs_mantenimiento.date = qs_date
+        qs_mantenimiento.save()
+
+        # Copiar la imagen del equipo original a una nueva ruta en S3.
+        if original.image:
+
+            # Obtener la extensión de la imagen original.
+            _, extension = os.path.splitext(str(original.image))
+
+            # Crear ruta para la empresa y el nuevo equipo.
+            s3Path = (
+                f"docs/{company.id}/"
+                f"computer-equipment/image/{obj.id}/"
+            )
+
+            # Generar un nombre nuevo para la imagen.
+            new_name = f"equipo_{obj.id}{extension}"
+
+            s3Name = s3Path + new_name
+
+            s3_client = boto3.client("s3")
+
+            s3_client.copy_object(
+                Bucket=bucket_name,
+                CopySource={
+                    "Bucket": bucket_name,
+                    "Key": str(original.image)
+                },
+                Key=s3Name
+            )
+
+            obj.image = s3Name
+
+            obj.save(update_fields=["image"])
+
+        # Guardar la factura del nuevo equipo en S3.
+        if document_factura:
+            s3Path = (
+                f"docs/{company.id}/"
+                f"computer-equipment/facturas/{obj.id}/"
+            )
+
+            _, extension = os.path.splitext(document_factura.name)
+
+            new_name = f"factura_equipo{obj.id}{extension}"
+            s3Name = s3Path + new_name
+
+            upload_to_s3(
+                document_factura,
+                bucket_name,
+                s3Name
+            )
+
+            obj.document_factura = s3Name
+            obj.save(update_fields=["document_factura"])
+
+        response["success"] = True
+        response["message"] = "El equipo se duplicó correctamente."
+        response["id"] = obj.id
+        response["identifier"] = obj.identifier
+
+    except ComputerSystem.DoesNotExist:
+        response["message"] = (
+            "El equipo original no existe o está inactivo."
+        )
+
+    except Company.DoesNotExist:
+        response["message"] = (
+            "La empresa seleccionada no existe."
+        )
+
+
+    except Exception as e:
+        logger.exception("Error al duplicar equipo")
+        response["success"] = False
+        response["error"] = {
+            "message": str(e)
+        }
+
+    return JsonResponse(response)
+
+
+#Funcion para mostrar las areas de una empresa seleccionada
+def get_company_areas(request):
+    response = {"success": False}
+    context = user_data(request)
+    dt = request.GET
+
+    isList = dt.get("isList", False)
+    company_id = dt.get("company_id") or context["company"]["id"]
+
+    subModule_id = 2
+
+    try:
+        lista = Area.objects.filter(
+            company_id=company_id
+        ).values()
+
+        if isList:
+            lista = lista.values("id", "name").exclude(is_active=False)
+
+        else:
+            access = get_module_user_permissions(context, subModule_id)
+            access = access["data"]["access"]
+
+        response["data"] = list(lista)
+        response["success"] = True
+
+    except Exception as e:
+        response["error"] = {"message": str(e)}
+
+    return JsonResponse(response)
+
+
+
+# Obtener usuarios de la empresa seleccionada
+def get_company_responsibles(request):
+    context = user_data(request)
+
+    response = {"success": False}
+    dt = request.GET
+
+    module_id = 1
+    subModule_id = 2
+
+    isList = dt.get("isList", False)
+
+    user_role_id = context["role"]["id"]
+
+    # Empresa seleccionada en el formulario.
+    # Si no se envía, utilizar la empresa del usuario actual.
+    company_id = dt.get("company_id") or context["company"]["id"]
+
+    try:
+        lista = User_Access.objects.values(
+            "id",
+            "user_id",
+            "user__username",
+            "user__first_name",
+            "user__last_name",
+            "user__email",
+            "user__is_active",
+            "role__id",
+            "role__name",
+            "company_id",
+            "company__name",
+            "area_id",
+            "area__code",
+            "area__name",
+        ).order_by("user__first_name")
+
+        # Filtrar por la empresa seleccionada
+        lista = lista.filter(company_id=company_id)
+
+        # Solo usuarios activos
+        lista = lista.filter(user__is_active=True)
+
+        if isList:
+            lista = lista.values(
+                "id",
+                "user_id",
+                "user__username",
+                "user__first_name",
+                "user__last_name"
+            )
+        else:
+            access = get_module_user_permissions(context, subModule_id)
+            access = access["data"]["access"]
+
+        response["data"] = list(lista)
+        response["success"] = True
+
+    except Exception as e:
+        response["error"] = {"message": str(e)}
+
+    return JsonResponse(response)
+
+
+# dar de baja un periférifo
+@login_required
+def disable_computer_peripheral(request):
+
+    detail_id = request.POST.get("detail_id")
+    action = request.POST.get("action")
+
+    if not detail_id:
+        return JsonResponse({
+            "success": False,
+            "message": "No se recibió el ID del detalle."
+        })
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+        detail = ComputerPeripheral.objects.get(id=detail_id, company_id=company_id)
+
+        # DESHABILITAR
+        if action == "disable":
+            reason = request.POST.get("reason")
+            description = request.POST.get(
+                "description",
+                ""
+            ).strip()
+            # Archivos
+            evidence1 = request.FILES.get("evidence1_peripheral")
+            evidence2 = request.FILES.get("evidence2_peripheral")
+
+            if not reason:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe seleccionar un motivo de baja."
+                })
+
+            if not description:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe ingresar una descripción."
+                })
+
+            if not evidence1 and not evidence2:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Debe adjuntar al menos una imagen como evidencia de la baja."
+                })
+
+            # Cambiar estado
+            detail.is_active = False
+            detail.is_deactivated = True
+            detail.state = "BAJA"
+
+            # Información de la baja
+            detail.deactivation_reason = reason
+            detail.deactivation_description = description
+            detail.deactivated_at = timezone.now() - timedelta(hours=6)
+
+            # Usuario que realizó la baja
+            detail.user_deactivation = request.user
+
+            # Ruta base
+            equipment_id = detail.id
+            # Evidencia 1
+            if evidence1:
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"peripheral-equipment/{equipment_id}/"
+                    f"evidence1_image/{detail.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    evidence1.name
+                )
+
+                new_name = (
+                    f"evidence1_image"
+                    f"{detail.identifier}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    evidence1,
+                    bucket_name,
+                    s3Name
+                )
+
+                detail.evidence1_image = s3Name
+
+            # Evidencia 2
+            if evidence2:
+
+                folder_path = (
+                    f"docs/{company_id}/"
+                    f"peripheral-equipment/{equipment_id}/"
+                    f"evidence2_image/{detail.id}/"
+                )
+
+                file_name, extension = os.path.splitext(
+                    evidence2.name
+                )
+
+                new_name = (
+                    f"evidence2_image"
+                    f"{detail.identifier}"
+                    f"{extension}"
+                )
+
+                s3Name = folder_path + new_name
+
+                upload_to_s3(
+                    evidence2,
+                    bucket_name,
+                    s3Name
+                )
+
+                detail.evidence2_image = s3Name
+
+            detail.save()
+
+            return JsonResponse({
+                "success": True,
+                "message": (
+                    "El equipo o herramienta "
+                    "ha sido dado de baja correctamente."
+                )
+            })
+
+        # ACCIÓN NO VÁLIDA
+        else:
+
+            return JsonResponse({"success": False, "message": "Acción no válida."})
+
+    except ComputerSystem.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "El periférico no existe."
+        }, status=404)
+
+    except Exception as e:
+
+        return JsonResponse({
+            "success": False,
+            "message": f"Error interno: {str(e)}"
+        }, status=500)
+
+
+
+@login_required
+def duplicate_computer_peripheral(request):
+    response = {
+        "success": False,
+        "message": "No fue posible duplicar el periférico."
+    }
+
+    if not request.user.is_superuser:
+        return JsonResponse({
+            "success": False,
+            "message": "No tienes permisos para duplicar periféricos."
+        }, status=403)
+
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
+
+    try:
+        dt = request.POST
+        files = request.FILES
+
+        detail_id = dt.get("detail_id")
+        company_id = dt.get("equipment_company")
+        responsible_id = dt.get("current_responsible_id")
+        comments = dt.get("double_comments", "").strip()
+
+        document_factura = files.get("document_factura")
+
+        if not detail_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el periférico que deseas duplicar."
+            })
+
+        if not company_id:
+            return JsonResponse({
+                "success": False,
+                "message": "Debes seleccionar una empresa."
+            })
+
+        # Obtener el periférico original.
+        original = ComputerPeripheral.objects.get(
+            id=detail_id,
+            is_deactivated=False
+        )
+
+        # Validar la empresa.
+        company = Company.objects.get(id=company_id)
+
+        if not responsible_id:
+            return JsonResponse({
+                "success": False,
+                "message": "Debes seleccionar un responsable."
+            })
+
+        responsible_access = User_Access.objects.filter(
+            company_id=company.id,
+            user_id=responsible_id,
+            user__is_active=True
+        ).select_related("user").first()
+
+        if not responsible_access:
+            return JsonResponse({
+                "success": False,
+                "message": "El responsable seleccionado no pertenece a la empresa."
+            })
+
+        responsible = responsible_access.user
+
+        # Crear el nuevo periférico.
+        obj = ComputerPeripheral(
+            company=company,
+            name=original.name,
+            peripheral_type=original.peripheral_type,
+            brand=original.brand,
+            model=original.model,
+            serial_number=original.serial_number,
+            description=original.description,
+            acquisition_date=original.acquisition_date,
+            location=original.location,
+            responsible=responsible,
+            peripheral_status=original.peripheral_status,
+            comments=comments,    
+            image_peripheral=None,
+        
+
+            # Generar identificador nuevo automáticamente.
+            identifier=None,
+
+            # Reiniciar datos de baja.
+            is_deactivated=False,
+            user_deactivation=None,
+            deactivation_reason=None,
+            deactivation_description=None,
+            deactivated_at=None,
+            evidence1_image=None,
+            evidence2_image=None,
+        )
+
+        obj.save()
+
+                
+        # Copiar la fotografía original a una nueva ruta en S3.
+        if original.image_peripheral:
+
+            # Obtener la extensión de la imagen original.
+            _, extension = os.path.splitext(
+                str(original.image_peripheral)
+            )
+
+            # Crear una ruta para la empresa seleccionada.
+            s3Path = (
+                f"docs/{company.id}/"
+                f"computer-peripherals/image/{obj.id}/"
+            )
+
+            new_name = f"peripheral_{obj.id}{extension}"
+            s3Name = s3Path + new_name
+
+            # Copiar el archivo original dentro de S3.
+            s3_client = boto3.client("s3")
+
+            s3_client.copy_object(
+                Bucket=AWS_BUCKET_NAME,
+                CopySource={
+                    "Bucket": AWS_BUCKET_NAME,
+                    "Key": str(original.image_peripheral)
+                },
+                Key=s3Name
+            )
+
+            # Guardar la nueva ruta en el periférico duplicado.
+            obj.image_peripheral = s3Name
+
+            obj.save(update_fields=["image_peripheral"])
+
+
+        # Guardar la factura del nuevo periférico.
+        if document_factura:
+            s3Path = (
+                f"docs/{company.id}/"
+                f"computer-peripherals/facturas/{obj.id}/"
+            )
+
+            _, extension = os.path.splitext(document_factura.name)
+
+            new_name = f"factura_periferico{obj.id}{extension}"
+            s3Name = s3Path + new_name
+
+            upload_to_s3(
+                document_factura,
+                bucket_name,
+                s3Name
+            )
+
+            obj.factura_document = s3Name
+            obj.save(update_fields=["factura_document"])
+
+        response["success"] = True
+        response["message"] = "El periférico se duplicó correctamente."
+        response["id"] = obj.id
+        response["identifier"] = obj.identifier
+
+    except ComputerPeripheral.DoesNotExist:
+        response["message"] = (
+            "El periférico original no existe o está deshabilitado."
+        )
+
+    except Company.DoesNotExist:
+        response["message"] = "La empresa seleccionada no existe."
+
+    except Exception as e:
+        logger.exception("Error al duplicar periférico")
+        response["success"] = False
+        response["error"] = {
+            "message": str(e)
+        }
+
+    return JsonResponse(response)
+
+
+# submodulo de equipos y herramientas eliminadas
+@login_required
+def computers_peripheral_removed(request):
+    context = user_data(request)
+    module_id = 3
+    subModule_id = 42
+    request.session["last_module_id"] = module_id
+
+    sidebar = get_sidebar(context, [1, module_id])
+    access = get_module_user_permissions(context, subModule_id)
+    for module in sidebar["data"]:
+        for submodule in module.get("submodules", []):
+            submodule["title"] = submodule["title"].strip() 
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+    template = "computer-equipment/computer_peripheral_removed.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    return render(request, template, context)
+
+
+# Funcion para obtener los equipos y perifericos dadas de baja
+@csrf_exempt
+def get_computer_peripheral_removed(request):
+    print("estamos en la funcion para ver los equipos y perifericos eliminados")
+
+    response = {
+        "status": "error",
+        "message": "Sin procesar",
+        "data": []
+    }
+
+    context = user_data(request)
+
+    try:
+        company_id = context["company"]["id"]
+
+        # EQUIPOS DE CÓMPUTO DADOS DE BAJA
+        equipos_baja = list(
+            ComputerSystem.objects
+            .select_related(
+                "company",
+                "user_deactivation"
+            )
+            .filter(
+                company_id=company_id,
+                is_deactivated=True
+            )
+            .values(
+                "id",
+                "identifier",
+                "name",
+                "brand",
+                "model",
+                "deactivation_reason",
+                "deactivation_description",
+                "deactivated_at",
+                "evidence1_image",
+                "evidence2_image",
+                "user_deactivation__id",
+                "user_deactivation__first_name",
+                "user_deactivation__last_name",
+                "user_deactivation__username",
+                "serial_number",
+                "current_responsible__first_name",
+                "current_responsible__last_name",
+                "current_responsible__username",
+            )
+        )
+        print("estos son los equipos dados de baja:", equipos_baja)
+
+        # PERIFÉRICOS DADOS DE BAJA
+        perifericos_baja = list(
+            ComputerPeripheral.objects
+            .select_related(
+                "company",
+                "user_deactivation"
+            )
+            .filter(
+                company_id=company_id,
+                is_deactivated=True
+            )
+            .values(
+                "id",
+                "identifier",
+                "name",
+                "peripheral_type",
+                "brand",
+                "model",
+                "deactivation_reason",
+                "deactivation_description",
+                "deactivated_at",
+                "evidence1_image",
+                "evidence2_image",
+                "user_deactivation__id",
+                "user_deactivation__first_name",
+                "user_deactivation__last_name",
+                "user_deactivation__username",
+                "serial_number",
+                "responsible__first_name",
+                "responsible__last_name",
+                "responsible__username",
+            )
+        )
+        print("estos son los perifericos dados de baja:", perifericos_baja)
+
+        # UNIFICAR RESULTADOS
+
+        # Catálogo de motivos
+        motivos = dict(ComputerSystem.DEACTIVATION_REASONS)
+
+        # Procesar equipos
+    
+        for item in equipos_baja:
+            nombre = (
+                f"{item.get('user_deactivation__first_name') or ''} "
+                f"{item.get('user_deactivation__last_name') or ''}"
+            ).strip()
+
+            item["tipo"] = "Equipo de cómputo"
+            item["state"] = "BAJA"
+            item["user_modification"] = (
+                nombre or item.get("user_deactivation__username") or ""
+            )
+
+            responsable = (
+                f"{item.get('current_responsible__first_name') or ''} "
+                f"{item.get('current_responsible__last_name') or ''}"
+            ).strip()
+
+            item["last_responsible"] = (
+                responsable or item.get("current_responsible__username") or ""
+            )
+
+
+        for item in perifericos_baja:
+            nombre = (
+                f"{item.get('user_deactivation__first_name') or ''} "
+                f"{item.get('user_deactivation__last_name') or ''}"
+            ).strip()
+
+            item["tipo"] = "Periférico"
+            item["state"] = "BAJA"
+            item["user_modification"] = (
+                nombre or item.get("user_deactivation__username") or ""
+            )
+
+            responsable = (
+                f"{item.get('responsible__first_name') or ''} "
+                f"{item.get('responsible__last_name') or ''}"
+            ).strip()
+
+            item["last_responsible"] = (
+                responsable or item.get("responsible__username") or ""
+            )
+    
+        # UNIFICAR EN UNA SOLA LISTA
+        bajas = equipos_baja + perifericos_baja
+
+        # PROCESAR EVIDENCIAS, MOTIVOS Y FECHAS
+        for item in bajas:
+
+            # Motivo de baja
+            item["deactivation_reason"] = motivos.get(
+                item["deactivation_reason"],
+                item["deactivation_reason"] or ""
+            )
+
+            # Descripción
+            item["deactivation_description"] = (
+                item["deactivation_description"] or ""
+            )
+
+            # Evidencia 1
+            if item["evidence1_image"]:
+                try:
+                    item["evidence1_image"] = generate_presigned_url(
+                        AWS_BUCKET_NAME,
+                        str(item["evidence1_image"])
+                    )
+                except Exception:
+                    item["evidence1_image"] = ""
+            else:
+                item["evidence1_image"] = ""
+
+            # Evidencia 2
+            if item["evidence2_image"]:
+                try:
+                    item["evidence2_image"] = generate_presigned_url(
+                        AWS_BUCKET_NAME,
+                        str(item["evidence2_image"])
+                    )
+                except Exception:
+                    item["evidence2_image"] = ""
+            else:
+                item["evidence2_image"] = ""
+
+            # Fecha de baja
+            if item["deactivated_at"]:
+                item["deactivated_at_sort"] = (
+                    item["deactivated_at"].strftime("%Y-%m-%d %H:%M:%S")
+                )
+
+                item["deactivated_at"] = (
+                    item["deactivated_at"].strftime("%d/%m/%Y %H:%M")
+                )
+            else:
+                item["deactivated_at_sort"] = ""
+                item["deactivated_at"] = ""
+
+        # Ordenar por fecha de baja
+        bajas = equipos_baja + perifericos_baja
+
+        bajas.sort(
+            key=lambda x: x.get("deactivated_at") or datetime.min.replace(
+                tzinfo=timezone.utc
+            ),
+            reverse=True
+        )
+
+        response["data"] = bajas
+        response["status"] = "success"
+        response["message"] = (
+            "Equipos de cómputo y periféricos dados de baja "
+            "cargados correctamente"
+        )
+
+    except Exception as e:
+        response["status"] = "error"
+        response["message"] = str(e)
+
+    return JsonResponse(response)
 
 # END
