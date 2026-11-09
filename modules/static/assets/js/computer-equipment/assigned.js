@@ -1,7 +1,24 @@
 var user_id = 0;
 
+//Responsables de equipos de computo
 const responsables = new Users({
-    list: { id: ".modal select[name='responsible_id']" },
+    //list: { id: ".modal select[name='responsible_id']" },
+    list: {
+        id: "#mdl_crud_computerSystem select[name='current_responsible_id']",
+    },
+});
+
+// Responsables de periféricos
+const responsablesPerifericos = new Users({
+    list: {
+        id: "#mdl_crud_computerPeripheral select[name='responsible_id']",
+    },
+});
+
+const areas = new Areas({
+    list: {
+        id: "#mdl_crud_computerSystem select[name='area_id']",
+    },
 });
 
 const equipos = new ComputerEquipment({
@@ -50,3 +67,63 @@ function update_tables(responsible_id) {
     perifericos.data["responsible_id"] = responsible_id;
     perifericos.tbl_computerPeripheral.ajax.reload();
 }
+
+// Al seleccionar una empresa, cargar sus áreas y responsables para duplicar computadoras
+$(document)
+    .off("change", "#equipment_company")
+    .on("change", "#equipment_company", function () {
+        console.log("Esta es la funcion para cargar los usuarios y areas dentro del formulario");
+        const companyId = $(this).val();
+
+        if (!companyId) {
+            $("#double_area_id")
+                .empty()
+                .append('<option value="">Seleccione una empresa primero</option>')
+                .prop("disabled", true);
+
+            $("#double_current_responsible_id")
+                .empty()
+                .append('<option value="">Seleccione una empresa primero</option>')
+                .prop("disabled", true);
+
+            return;
+        }
+
+        loadCompanyAreas(companyId);
+
+        loadCompanyResponsibles(companyId);
+    });
+
+// Al seleccionar una empresa, cargar sus usuarios para duplicar computadoras
+$(document)
+    .off("change", "#equipment_company")
+    .on("change", "#equipment_company", function () {
+        const companyId = $(this).val();
+
+        if (!companyId) {
+            $("#double_current_responsible_id")
+                .empty()
+                .append("<option value  Seleccione una empresa primero</option>")
+                .prop("disabled", true);
+
+            return;
+        }
+
+        loadCompanyResponsiblesPeripheral(companyId);
+    });
+
+// Baja de equipos de cómputo
+$(document)
+    .off("submit", "#formdisableComputer")
+    .on("submit", "#formdisableComputer", function (e) {
+        e.preventDefault();
+        disable_computer_system(this, equipos.tbl_computerEquipment);
+    });
+
+// Baja de periféricos
+$(document)
+    .off("submit", "#formdisablePeripheral")
+    .on("submit", "#formdisablePeripheral", function (e) {
+        e.preventDefault();
+        disable_computer_peripheral(this, perifericos.tbl_computerPeripheral);
+    });

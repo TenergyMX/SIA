@@ -9,6 +9,7 @@ class ComputerEquipment {
             },
             infoCard: {
                 id: null,
+
                 ajax: {
                     url: function () {
                         return "/get-computer-equipment/";
@@ -29,11 +30,13 @@ class ComputerEquipment {
 
             table: {
                 id: "#computer_equipment_table",
+
                 ajax: {
                     url: "/get-computers-equipment/",
                     dataSrc: "data",
                     data: {},
                 },
+
                 columns: [
                     { title: "ID", data: "id", visible: false },
                     { title: "Identificador", data: "identifier" },
@@ -97,7 +100,56 @@ class ComputerEquipment {
                         className: "text-center",
                     },
 
+                    {
+                        title: "Imagen",
+                        data: "image_url",
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+                        render: function (data, type, row) {
+                            if (type !== "display") {
+                                return data || "";
+                            }
+
+                            if (!data) {
+                                return `
+                                    <div class="equipment-no-image">
+                                        <i class="fa-solid fa-image"></i>
+                                        <span>Sin fotografía</span>
+                                    </div>
+                                `;
+                            }
+
+                            const img = document.createElement("img");
+
+                            img.src = data;
+                            img.alt = `Fotografía de ${row.name || "Equipo"}`;
+                            img.className = "rounded border";
+                            img.style.cssText =
+                                "width:70px;height:70px;object-fit:cover;cursor:pointer;";
+                            img.loading = "lazy";
+                            img.title = "Ver fotografía";
+
+                            img.addEventListener("click", function () {
+                                verFotoEquipo(this);
+                            });
+
+                            return img.outerHTML;
+                        },
+                    },
+
                     { title: "Acciones", data: "btn_action", orderable: false },
+
+                    {
+                        data: "btn_duplicate",
+                        name: "duplicate",
+                        title: "Duplicar",
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+                        defaultContent: "",
+                        visible: false,
+                    },
                 ],
             },
         };
@@ -113,12 +165,25 @@ class ComputerEquipment {
         if (options.infoCard) {
             self.infoCard = { ...defaultOptions.infoCard, ...options.infoCard };
             self.infoCard.ajax.reload = function () {
+                Swal.fire({
+                    title: "Cargando información",
+                    text: "Por favor, espera mientras se carga la información.",
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
+
                 $.ajax({
                     type: "GET",
                     url: "/get-computer-equipment/",
                     data: self.data,
                     beforeSend: function () {},
                     success: function (response) {
+                        Swal.close();
+
                         var card = $(".card-info");
 
                         $.each(response["data"], function (index, value) {
@@ -245,175 +310,186 @@ class ComputerEquipment {
                         className: "btn-sm",
                     },
                 ],
-                initComplete: function (settings, json) {},
+                initComplete: function (settings, json) {
+                    const tabla = this.api();
+                    const esSuperusuario = json && json.is_superuser === true;
+                    tabla.column("duplicate:name").visible(esSuperusuario);
+                },
             });
 
-            self.loadCards();
+            self.tbl_computerEquipment.on("xhr.dt", function (e, settings, json) {
+                if (!json) return;
+
+                const esSuperusuario = json.is_superuser === true;
+
+                self.tbl_computerEquipment.column("duplicate:name").visible(esSuperusuario);
+            });
+
+            //self.loadCards();
             delete self.table;
         }
-
         self.setupEventHandlers();
     }
 
-    loadCards() {
-        const self = this;
+    // loadCards() {
+    //     const self = this;
 
-        $.ajax({
-            type: "GET",
-            url: self.table.ajax.url,
-            dataType: "json",
-            success: function (response) {
-                let html = "";
+    //     $.ajax({
+    //         type: "GET",
+    //         url: self.table.ajax.url,
+    //         dataType: "json",
+    //         success: function (response) {
+    //             let html = "";
 
-                $.each(response.data, function (i, item) {
-                    const responsable =
-                        (item.current_responsible__first_name || "") +
-                        " " +
-                        (item.current_responsible__last_name || "");
+    //             $.each(response.data, function (i, item) {
+    //                 const responsable =
+    //                     (item.current_responsible__first_name || "") +
+    //                     " " +
+    //                     (item.current_responsible__last_name || "");
 
-                    html += `
-                    <div class="col-xl-4 col-lg-6 col-md-6">
+    //                 html += `
+    //                 <div class="col-xl-4 col-lg-6 col-md-6">
 
-                        <div class="card shadow-sm h-100">
+    //                     <div class="card shadow-sm h-100">
 
-                            <div class="card-body">
+    //                         <div class="card-body">
 
-                                <div class="d-flex justify-content-between">
+    //                             <div class="d-flex justify-content-between">
 
-                                    <div class="d-flex">
+    //                                 <div class="d-flex">
 
-                                        <div class="bg-primary text-white rounded p-2 me-2">
-                                            <i class="fa-solid fa-laptop"></i>
-                                        </div>
+    //                                     <div class="bg-primary text-white rounded p-2 me-2">
+    //                                         <i class="fa-solid fa-laptop"></i>
+    //                                     </div>
 
-                                        <div>
-                                            <h5 class="fw-bold mb-0">
-                                                ${item.name || "-"}
-                                            </h5>
+    //                                     <div>
+    //                                         <h5 class="fw-bold mb-0">
+    //                                             ${item.name || "-"}
+    //                                         </h5>
 
-                                            <small class="text-muted">
-                                                ${item.identifier || "-"}
-                                            </small>
-                                        </div>
+    //                                         <small class="text-muted">
+    //                                             ${item.identifier || "-"}
+    //                                         </small>
+    //                                     </div>
 
-                                    </div>
+    //                                 </div>
 
-                                    <span class="badge bg-primary">
-                                        ${item.brand || "-"}
-                                    </span>
+    //                                 <span class="badge bg-primary">
+    //                                     ${item.brand || "-"}
+    //                                 </span>
 
-                                </div>
+    //                             </div>
 
-                            </div>
+    //                         </div>
 
-                            <div class="px-3 mb-3">
+    //                         <div class="px-3 mb-3">
 
-                                <span class="badge bg-info">
-                                    ${item.equipment_type || "-"}
-                                </span>
+    //                             <span class="badge bg-info">
+    //                                 ${item.equipment_type || "-"}
+    //                             </span>
 
-                                <span class="badge ${
-                                    item.equipment_status == "En uso" ? "bg-success" : "bg-warning"
-                                }">
-                                    ${item.equipment_status || "-"}
-                                </span>
+    //                             <span class="badge ${
+    //                                 item.equipment_status == "En uso" ? "bg-success" : "bg-warning"
+    //                             }">
+    //                                 ${item.equipment_status || "-"}
+    //                             </span>
 
-                                <span class="badge ${item.is_active ? "bg-success" : "bg-danger"}">
+    //                             <span class="badge ${item.is_active ? "bg-success" : "bg-danger"}">
 
-                                    ${item.is_active ? "Activo" : "Inactivo"}
+    //                                 ${item.is_active ? "Activo" : "Inactivo"}
 
-                                </span>
+    //                             </span>
 
-                            </div>
+    //                         </div>
 
-                            <div class="row px-3">
+    //                         <div class="row px-3">
 
-                                <div class="col-6">
-                                    <small class="text-muted">
-                                        Área
-                                    </small>
+    //                             <div class="col-6">
+    //                                 <small class="text-muted">
+    //                                     Área
+    //                                 </small>
 
-                                    <h6>
-                                        ${item.area__name || "-"}
-                                    </h6>
+    //                                 <h6>
+    //                                     ${item.area__name || "-"}
+    //                                 </h6>
 
-                                </div>
+    //                             </div>
 
-                                <div class="col-6">
-                                    <small class="text-muted">
-                                        Responsable
-                                    </small>
+    //                             <div class="col-6">
+    //                                 <small class="text-muted">
+    //                                     Responsable
+    //                                 </small>
 
-                                    <h6>
-                                        ${responsable}
-                                    </h6>
+    //                                 <h6>
+    //                                     ${responsable}
+    //                                 </h6>
 
-                                </div>
+    //                             </div>
 
-                            </div>
+    //                         </div>
 
-                            <div class="row px-3 mt-3">
+    //                         <div class="row px-3 mt-3">
 
-                                <div class="col-6">
-                                    <small class="text-muted">
-                                        Modelo
-                                    </small>
+    //                             <div class="col-6">
+    //                                 <small class="text-muted">
+    //                                     Modelo
+    //                                 </small>
 
-                                    <h6>
-                                        ${item.model || "-"}
-                                    </h6>
+    //                                 <h6>
+    //                                     ${item.model || "-"}
+    //                                 </h6>
 
-                                </div>
+    //                             </div>
 
-                                <div class="col-6">
-                                    <small class="text-muted">
-                                        Sistema Operativo
-                                    </small>
+    //                             <div class="col-6">
+    //                                 <small class="text-muted">
+    //                                     Sistema Operativo
+    //                                 </small>
 
-                                    <h6>
-                                        ${item.so || "-"}
-                                    </h6>
+    //                                 <h6>
+    //                                     ${item.so || "-"}
+    //                                 </h6>
 
-                                </div>
+    //                             </div>
 
-                            </div>
+    //                         </div>
 
-                            <div class="mx-3 mt-3 p-2 bg-light rounded">
+    //                         <div class="mx-3 mt-3 p-2 bg-light rounded">
 
-                                ${item.serial_number || "-"}
+    //                             ${item.serial_number || "-"}
 
-                            </div>
+    //                         </div>
 
-                            <div class="p-3">
+    //                         <div class="p-3">
 
-                                <strong>Comentarios:</strong><br>
+    //                             <strong>Comentarios:</strong><br>
 
-                                ${item.comments || "Sin comentarios"}
+    //                             ${item.comments || "Sin comentarios"}
 
-                            </div>
+    //                         </div>
 
-                            <div class="card-footer bg-white">
+    //                         <div class="card-footer bg-white">
 
-                                <div class="d-flex justify-content-center gap-2">
+    //                             <div class="d-flex justify-content-center gap-2">
 
-                                    ${item.btn_view_factura}
+    //                                 ${item.btn_view_factura}
 
-                                    ${item.btn_action}
+    //                                 ${item.btn_action}
 
-                                </div>
+    //                             </div>
 
-                            </div>
+    //                         </div>
 
-                        </div>
+    //                     </div>
 
-                    </div>
-                    `;
-                });
+    //                 </div>
+    //                 `;
+    //             });
 
-                $(self.cards.id).html(html);
-            },
-        });
-    }
+    //             $(self.cards.id).html(html);
+    //         },
+    //     });
+    // }
 
     setupEventHandlers() {
         const self = this;
@@ -426,67 +502,228 @@ class ComputerEquipment {
             switch (option) {
                 case "refresh-table":
                     self.tbl_computerEquipment.ajax.reload();
-                    self.loadCards();
                     break;
-                case "add-item":
-                    obj_modal.find("form")[0].reset();
-                    obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Registrar Equipo de computo");
+
+                case "add-item": {
+                    const form = obj_modal.find("form")[0];
+                    form.reset();
+                    obj_modal.find("input[type='file']").val("");
+                    obj_modal.find("#image_preview").attr("src", "").hide();
+                    bootstrap.Modal.getOrCreateInstance(obj_modal[0]).show();
+
+                    obj_modal.find(".modal-header").html("Registrar Equipo de cómputo");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='add']").show();
                     break;
-                case "update-item":
-                    obj_modal.find("form")[0].reset();
-                    obj_modal.modal("show");
-                    obj_modal.find(".modal-header").html("Registrar Equipo de computo");
+                }
+
+                case "update-item": {
+                    const form = obj_modal.find("form")[0];
+
+                    form.reset();
+                    obj_modal.find("input[type='file']").val("");
+                    obj_modal.find("#image_preview").attr("src", "").hide();
+
+                    const fila = $(this).closest("tr");
+                    const datos = self.tbl_computerEquipment.row(fila).data();
+
+                    if (!datos) {
+                        Swal.fire("Error", "No se encontró la información del equipo.", "error");
+                        break;
+                    }
+
+                    obj_modal.find(".modal-header").html("Actualizar Equipo de cómputo");
                     obj_modal.find("[type='submit']").hide();
                     obj_modal.find("[name='update']").show();
 
-                    var fila = $(this).closest("tr");
-                    var datos = self.tbl_computerEquipment.row(fila).data();
-
                     $.each(datos, function (index, value) {
-                        var isFileInput = obj_modal.find(`[name='${index}']`).is(":file");
+                        const campo = obj_modal.find(`[name='${index}']`);
 
-                        if (!isFileInput) {
-                            obj_modal.find(`[name='${index}']`).val(value || null);
+                        if (
+                            campo.length &&
+                            !campo.is(":file") &&
+                            index !== "area_id" &&
+                            index !== "current_responsible_id"
+                        ) {
+                            campo.val(value ?? "").trigger("change");
                         }
                     });
 
+                    // Seleccionar área
+                    const selectArea = obj_modal.find("[name='area_id']");
+
+                    if (datos.area_id) {
+                        if (selectArea.find(`option[value="${datos.area_id}"]`).length === 0) {
+                            selectArea.append(
+                                new Option(datos.area__name || "Área asignada", datos.area_id)
+                            );
+                        }
+
+                        selectArea.val(String(datos.area_id)).trigger("change");
+                    }
+
+                    // Seleccionar responsable actual
+                    const selectResponsable = obj_modal.find("[name='current_responsible_id']");
+
+                    if (datos.current_responsible_id) {
+                        const nombreResponsable =
+                            `${datos.current_responsible__first_name || ""} ${datos.current_responsible__last_name || ""}`.trim();
+
+                        if (
+                            selectResponsable.find(
+                                `option[value="${datos.current_responsible_id}"]`
+                            ).length === 0
+                        ) {
+                            selectResponsable.append(
+                                new Option(nombreResponsable, datos.current_responsible_id)
+                            );
+                        }
+
+                        selectResponsable
+                            .val(String(datos.current_responsible_id))
+                            .trigger("change");
+                    }
+
+                    // Estado del equipo
                     obj_modal
                         .find("[name='is_active']")
-                        .val(datos["is_active"] == true ? "1" : "0");
-                    break;
-                case "dalete-item":
-                    var url = "/delete-computer-system/";
-                    var fila = $(this).closest("tr");
-                    var datos = self.tbl_computerEquipment.row(fila).data();
-                    var data = new FormData();
+                        .val(datos.is_active ? "1" : "0")
+                        .trigger("change");
 
-                    data.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
-                    data.append("id", datos["id"]);
+                    // Imagen
+                    if (datos.image_url) {
+                        obj_modal.find("#image_preview").attr("src", datos.image_url).show();
+                    }
 
-                    deleteItem(url, data)
-                        .then((message) => {
-                            Swal.fire("Exito", message, "success");
-                            self.tbl_computerEquipment.ajax.reload();
-                            self.loadCards();
-                        })
-                        .catch((error) => {
-                            Swal.fire("Error", error, "error");
-                        });
+                    bootstrap.Modal.getOrCreateInstance(obj_modal[0]).show();
+
                     break;
-                default:
-                    console.log("Opción dezconocida: " + option);
+                }
+
+                // Dar de baja un equipo de cómputo.
+                case "deactivate-item": {
+                    const fila = $(this).closest("tr");
+                    const datos = self.tbl_computerEquipment.row(fila).data();
+
+                    if (!datos) {
+                        Swal.fire("Error", "No se encontró la información del equipo.", "error");
+                        break;
+                    }
+
+                    const modalElement = document.getElementById("mdl-crud-disable-computer");
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+                    const form = document.getElementById("formdisableComputer");
+                    const modalDisable = $("#mdl-crud-disable-computer");
+
+                    form.reset();
+
+                    modalDisable
+                        .find("#image_preview1_computer, #image_preview2_computer")
+                        .attr("src", "")
+                        .hide();
+
+                    modalDisable.find("#disable_computer_detail_id").val(datos.id);
+                    modalDisable.find("#disable_computer_identifier").val(datos.identifier || "");
+
+                    modal.show();
+
                     break;
+                }
+                case "duplicate-item": {
+                    const fila = $(this).closest("tr");
+                    const datos = self.tbl_computerEquipment.row(fila).data();
+
+                    console.log("Datos del equipo:", datos);
+
+                    if (!datos) {
+                        Swal.fire("Error", "No se encontró la información del equipo.", "error");
+                        break;
+                    }
+
+                    const modalElement = document.getElementById("mdl-crud-double-computer");
+
+                    const form = document.getElementById("formdoubleComputer");
+
+                    if (!modalElement) {
+                        console.error("No se encontró el modal de duplicación.");
+
+                        Swal.fire(
+                            "Error",
+                            "No se encontró el modal para duplicar el equipo.",
+                            "error"
+                        );
+                        break;
+                    }
+                    if (!form) {
+                        console.error(
+                            "No se encontró #formdoubleComputer. Verifica dónde está incluido el HTML del modal."
+                        );
+
+                        Swal.fire("Error", "No se encontró el formulario de duplicación.", "error");
+                        break;
+                    }
+
+                    form.reset();
+
+                    const inputId = form.querySelector("[name='detail_id']");
+                    // Reiniciar las listas dependientes
+                    $("#double_area_id")
+                        .empty()
+                        .append('<option value="">Primero seleccione una empresa</option>')
+                        .prop("disabled", true);
+
+                    $("#double_current_responsible_id")
+                        .empty()
+                        .append('<option value="">Primero seleccione una empresa</option>')
+                        .prop("disabled", true);
+
+                    loadCompanys(datos.company_id);
+
+                    if (inputId) {
+                        inputId.value = datos.id;
+                    }
+
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.show();
+
+                    break;
+                }
             }
         });
 
+        //agregar, actualizar el equipo
         obj_modal.find("form").on("submit", function (e) {
             e.preventDefault();
-            var submit = $("button[type='submit']:focus", this).attr("name");
-            var url = "/" + (submit == "add" ? "add" : "update") + "-computer-system/";
-            var datos = new FormData(this);
+
+            const form = this;
+
+            const boton = e.originalEvent?.submitter || document.activeElement;
+            const submit = $(boton).attr("name");
+
+            if (submit !== "add" && submit !== "update") {
+                Swal.fire(
+                    "Error",
+                    "No se pudo identificar la operación que deseas realizar.",
+                    "error"
+                );
+                return;
+            }
+
+            const url = "/" + submit + "-computer-system/";
+
+            const datos = new FormData(form);
+
+            Swal.fire({
+                title: "Guardando información",
+                text: "Por favor, espera mientras se guarda la información.",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
 
             $.ajax({
                 type: "POST",
@@ -494,31 +731,474 @@ class ComputerEquipment {
                 data: datos,
                 processData: false,
                 contentType: false,
+
                 success: function (response) {
-                    if (!response.success && response.error) {
-                        Swal.fire("Error", response.error["message"], "error");
-                        return;
-                    } else if (!response.success && response.warning) {
-                        Swal.fire("Advertencia", response.warning["message"], "warning");
-                        return;
-                    } else if (!response.success) {
-                        Swal.fire("Error", "Ocurrio un error inesperado", "error");
+                    if (response.success !== true) {
+                        Swal.fire(
+                            "Error",
+                            response.message ||
+                                response.error?.message ||
+                                "Ocurrió un error inesperado.",
+                            "error"
+                        );
                         return;
                     }
-                    Swal.fire("Exito", "Se han guardado los datos con exito", "success");
-                    self.tbl_computerEquipment.ajax.reload();
-                    self.loadCards();
-                    obj_modal.modal("hide");
+
+                    const message = response.message || "Se han guardado los datos con éxito.";
+
+                    bootstrap.Modal.getOrCreateInstance(obj_modal[0]).hide();
+
+                    form.reset();
+                    obj_modal.find("input[type='file']").val("");
+                    obj_modal.find("#image_preview").attr("src", "").hide();
+
+                    self.tbl_computerEquipment.ajax.reload(null, false);
+
+                    Swal.fire({
+                        title: "Éxito",
+                        text: message,
+                        icon: "success",
+                        confirmButtonText: "Aceptar",
+                    });
+
+                    //self.loadCards();
                 },
+
                 error: function (xhr, status, error) {
-                    var message =
+                    Swal.close();
+
+                    let message =
                         "Se ha producido un problema en el servidor. Por favor, inténtalo de nuevo más tarde.";
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        message = xhr.responseJSON.message;
+
+                    if (xhr.responseJSON) {
+                        message =
+                            xhr.responseJSON.message || xhr.responseJSON.error?.message || message;
                     }
+
                     Swal.fire("Error del servidor", message, "error");
                 },
             });
         });
+
+        // Enviar formulario de baja de Equipos de cómputo.
+        $(document)
+            .off("submit.computerSystem", "#formdisableComputer")
+            .on("submit.computerSystem", "#formdisableComputer", function (e) {
+                e.preventDefault();
+
+                disable_computer_system(this, self.tbl_computerEquipment);
+            });
     }
 }
+
+// DAR DE BAJA EQUIPO DE CÓMPUTO
+function disable_computer_system(form, tabla) {
+    const formData = new FormData(form);
+
+    // Obtener el ID directamente del campo del modal.
+    const modalDisable = $("#mdl-crud-disable-computer");
+
+    const detailId = modalDisable.find("#disable_computer_detail_id").val();
+
+    console.log("ID del detalle antes de enviar:", detailId);
+    console.log("Datos del formulario:", [...formData.entries()]);
+
+    if (!detailId) {
+        Swal.fire({
+            title: "Error",
+            text: "No se encontró el ID del equipo que deseas dar de baja.",
+            icon: "error",
+        });
+        return;
+    }
+
+    formData.set("detail_id", detailId);
+    formData.set("action", "disable");
+
+    Swal.fire({
+        title: "Procesando baja",
+        text: "Por favor, espera mientras se procesa la solicitud.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: function () {
+            Swal.showLoading();
+        },
+    });
+
+    $.ajax({
+        url: "/disable_computer_system/",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+
+        beforeSend: function (xhr) {
+            const csrfToken = $(form).find("[name='csrfmiddlewaretoken']").val();
+
+            if (csrfToken) {
+                xhr.setRequestHeader("X-CSRFToken", csrfToken);
+            }
+        },
+
+        success: function (response) {
+            if (response.success === true) {
+                const message = response.message || "El equipo se dio de baja correctamente.";
+
+                const modalElement = document.getElementById("mdl-crud-disable-computer");
+
+                form.reset();
+
+                modalDisable
+                    .find("#disable_computer_detail_id, #disable_computer_identifier")
+                    .val("");
+
+                modalDisable
+                    .find("#disable_computer_reason, #disable_computer_description")
+                    .val("");
+
+                modalDisable.find("#evidence1_computer, #evidence2_computer").val("");
+
+                modalDisable
+                    .find("#image_preview1_computer, #image_preview2_computer")
+                    .attr("src", "")
+                    .hide();
+
+                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+
+                tabla.ajax.reload(null, false);
+
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: message,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message || "No se pudo dar de baja el equipo.",
+                    icon: "error",
+                });
+            }
+        },
+
+        error: function (xhr) {
+            const message =
+                xhr.responseJSON?.message ||
+                "Hubo un error al dar de baja el equipo. Intenta nuevamente.";
+
+            Swal.fire({
+                title: "¡Error!",
+                text: message,
+                icon: "error",
+            });
+        },
+    });
+}
+
+// PREVISUALIZACIÓN IMAGEN
+document.getElementById("image").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// PREVISUALIZACIÓN EVIDENCIA 1
+document.getElementById("evidence1").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview1");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// PREVISUALIZACIÓN EVIDENCIA 2
+document.getElementById("evidence2").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById("image_preview2");
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+});
+
+// Cargar las empresas en el select
+function loadCompanys(companyId = null) {
+    $.ajax({
+        url: "/get_companys/",
+        type: "GET",
+        dataType: "json",
+        success: (response) => {
+            const select = $("#equipment_company");
+
+            //if (response.data) {
+            //let select = $('select[name="equipment_company"]');
+
+            select.empty();
+
+            select.append('<option value="">Seleccione una empresa</option>');
+
+            if (response.data) {
+                response.data.forEach((company) => {
+                    select.append(
+                        $("<option>", {
+                            value: company.id,
+                            text: company.name,
+                        })
+                    );
+                });
+            }
+
+            if (companyId) {
+                select.val(String(companyId)).trigger("change");
+            }
+        },
+        error: (error) => {
+            console.error("Error cargando empresas:", error);
+        },
+    });
+}
+
+$(document)
+    .off("submit", "#formdoubleComputer")
+    .on("submit", "#formdoubleComputer", function (e) {
+        e.preventDefault();
+
+        const form = this;
+        const formData = new FormData(form);
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        Swal.fire({
+            title: "Duplicando equipo",
+            text: "Por favor, espera.",
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading(),
+        });
+
+        $.ajax({
+            url: "/duplicate_computer_system/",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+
+            success: function (response) {
+                Swal.close();
+                if (!response.success) {
+                    Swal.fire(
+                        "Error",
+                        response.message || "No se pudo duplicar el equipo.",
+                        "error"
+                    );
+                    return;
+                }
+
+                const modalElement = document.getElementById("mdl-crud-double-computer");
+
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.hide();
+                }
+
+                form.reset();
+
+                if (
+                    self.tbl_computerEquipment &&
+                    $.fn.DataTable.isDataTable(self.tbl_computerEquipment.table().node())
+                ) {
+                    self.tbl_computerEquipment.ajax.reload(null, false);
+                } else {
+                    console.warn(
+                        "La tabla tbl_computerEquipment no está disponible para actualizarse."
+                    );
+                }
+
+                Swal.fire("Éxito", response.message, "success");
+            },
+
+            error: function (xhr) {
+                console.error("Error al duplicar:", xhr.responseText);
+
+                const mensaje =
+                    xhr.responseJSON?.message || "Ocurrió un error al duplicar el equipo.";
+
+                Swal.fire("Error", mensaje, "error");
+            },
+        });
+    });
+
+// Cargar las áreas correspondientes a la empresa seleccionada
+function loadCompanyAreas(companyId) {
+    const selectArea = $("#double_area_id");
+
+    selectArea.empty().append('<option value="">Cargando áreas...</option>').prop("disabled", true);
+
+    $.ajax({
+        url: "/get_company_areas/",
+        type: "GET",
+        data: { company_id: companyId },
+        dataType: "json",
+
+        success: function (response) {
+            selectArea.empty();
+
+            const areas = response.data || [];
+
+            selectArea.append('<option value="">Seleccione un área</option>');
+
+            areas.forEach(function (area) {
+                selectArea.append(
+                    $("<option>", {
+                        value: area.id,
+                        text: area.name,
+                    })
+                );
+            });
+
+            selectArea.prop("disabled", false);
+        },
+
+        error: function (xhr) {
+            console.error("Error al cargar áreas:", xhr.responseText);
+
+            selectArea
+                .empty()
+                .append('<option value="">Error al cargar las áreas</option>')
+                .prop("disabled", true);
+
+            Swal.fire("Error", "No fue posible cargar las áreas de la empresa.", "error");
+        },
+    });
+}
+
+// Cargar responsables de la empresa seleccionada
+function loadCompanyResponsibles(companyId) {
+    const selectResponsible = $("#double_current_responsible_id");
+
+    selectResponsible
+        .empty()
+        .append('<option value="">Cargando usuarios...</option>')
+        .prop("disabled", true);
+
+    $.ajax({
+        url: "/get_company_responsibles/",
+        type: "GET",
+        data: {
+            company_id: companyId,
+            isList: true,
+        },
+        dataType: "json",
+
+        success: function (response) {
+            selectResponsible.empty();
+
+            if (!response.success) {
+                selectResponsible.append('<option value="">No se encontraron usuarios</option>');
+                return;
+            }
+
+            const users = response.data || [];
+
+            selectResponsible.append('<option value="">Seleccione un responsable</option>');
+
+            users.forEach(function (user) {
+                const nombre = [user.user__first_name, user.user__last_name]
+                    .filter(Boolean)
+                    .join(" ");
+
+                selectResponsible.append(
+                    $("<option>", {
+                        value: user.user_id,
+                        text: nombre || user.user__username,
+                    })
+                );
+            });
+
+            selectResponsible.prop("disabled", false);
+
+            console.log("Select de responsables:", selectResponsible.length);
+            console.log("Opciones agregadas:", selectResponsible.find("option").length);
+            console.log("HTML del select:", selectResponsible.html());
+            console.log("Selector habilitado:", !selectResponsible.prop("disabled"));
+
+            console.log("Responsables cargados:", users);
+        },
+
+        error: function (xhr) {
+            console.error("Error al cargar usuarios:", xhr.responseText);
+
+            selectResponsible
+                .empty()
+                .append('<option value="">Error al cargar los usuarios</option>')
+                .prop("disabled", true);
+
+            Swal.fire("Error", "No fue posible cargar los responsables de la empresa.", "error");
+        },
+    });
+}
+
+// Al seleccionar una empresa, cargar sus áreas y responsables
+$(document)
+    .off("change", "#equipment_company")
+    .on("change", "#equipment_company", function () {
+        const companyId = $(this).val();
+
+        if (!companyId) {
+            $("#double_area_id")
+                .empty()
+                .append('<option value="">Seleccione una empresa primero</option>')
+                .prop("disabled", true);
+
+            $("#double_current_responsible_id")
+                .empty()
+                .append('<option value="">Seleccione una empresa primero</option>')
+                .prop("disabled", true);
+
+            return;
+        }
+
+        loadCompanyAreas(companyId);
+
+        loadCompanyResponsibles(companyId);
+    });

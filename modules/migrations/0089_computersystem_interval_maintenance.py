@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='computersystem',
-            name='intervaL_maintenance',
+            name='interval_maintenance',
             field=models.IntegerField(blank=True, null=True, verbose_name='Frecuencia de mantenimiento'),
         ),
     ]

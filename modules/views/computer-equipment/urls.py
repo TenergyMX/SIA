@@ -20,17 +20,20 @@ urlpatterns = [
     path("get-computer-equipment/", views.get_computer_equipment),
     path("get-computers-equipment/", views.get_computers_equipment),#
     path("update-computer-system/", views.update_computer_system),
-    path("delete-computer-system/", views.delete_computer_system),
+    # path("delete-computer-system/", views.delete_computer_system),
+    path("disable_computer_system/", views.disable_computer_system),
+
 
     path("add_computer_peripheral/", views.add_computer_peripherals),
     path("get_computer_peripherals/", views.get_computer_peripherals),
     path("update_computer_peripheral/", views.update_computer_peripheral),
-    path("delete_computer_peripheral/", views.delete_computer_peripheral),
+    #path("delete_computer_peripheral/", views.delete_computer_peripheral),
 
     path("add_software/", views.add_software),
     path("get_softwares/", views.get_softwares),
     path("update_software/", views.update_software),
     path("delete_computer_software/", views.delete_computer_equipment_softwares),
+
 
     path("add_software_installation/", views.add_software_installation),
     path("get_software_installations/", views.get_software_installations),
@@ -69,5 +72,20 @@ urlpatterns = [
 
     # lista de computadoras
     path("get-computers/", views.get_computers),
+    # lista de empresas 
+    path("get_companys/", views.get_companys),
+    # Duplicar equipos de computo
+    path("duplicate_computer_system/", views.duplicate_computer_system),
+    # Cargar areas 
+    path("get_company_areas/", views.get_company_areas),
+    # Cargar responsables
+    path("get_company_responsibles/", views.get_company_responsibles),
+    # Desactivar periféricos 
+    path("disable_computer_peripheral/", views.disable_computer_peripheral),
+   # Duplicar periférico
+    path("duplicate_computer_peripheral/", views.duplicate_computer_peripheral),
 
+    #Submodulo de equipos y herramientas eliminados
+    path("computers_peripheral_removed/", views.computers_peripheral_removed),
+    path("get_computer_peripheral_removed/", views.get_computer_peripheral_removed),
 ]

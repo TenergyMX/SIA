@@ -2867,15 +2867,11 @@ def save_equipment_tool_serial_number(request):
             "message": "Método no permitido."
         }, status=405)
 
-
     detalle_id = request.POST.get("detalle_id")
-    
     numero_serie = request.POST.get("serial_number", "").strip()
-
     detalle = Equipments_Tools_Detail.objects.get(
         id=detalle_id, company_id=company_id
     )
-
 
     # image
     if "photo" in request.FILES:

@@ -409,6 +409,8 @@ def create_notifications(id_module, user_id, company_id, area, rol, response, ac
         seven_days_ago = date.today() - timedelta(days=7)
         # Consulta
         qs_maintenances = ComputerEquipment_Maintenance.objects.filter(
+            computerSystem__company_id=company_id,
+            computerSystem__is_active=True,
             date__gte=seven_days_ago,  # Fecha mayor o igual a hace 7 días
             is_checked=False
         )
