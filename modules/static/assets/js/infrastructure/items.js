@@ -52,6 +52,11 @@ class InfrastructureItem {
                         title: "Tipo de activo",
                         data: "item_type",
                         className: "toggleable",
+                        render: function (data) {
+                            if (data === "donado") return "Donado";
+                            if (data === "comprado") return "Comprado";
+                            return "";
+                        },
                     },
                     {
                         title: "Marca",
@@ -102,12 +107,6 @@ class InfrastructureItem {
                         className: "toggleable",
                     },
                     {
-                        title: "Ubicación",
-                        data: "location__name",
-                        defaultContent: "Sin ubicación",
-                        className: "toggleable",
-                    },
-                    {
                         title: "Fecha de adquisición",
                         data: "start_date",
                         defaultContent: "",
@@ -145,22 +144,26 @@ class InfrastructureItem {
                                 </a>`;
                         },
                     },
+
                     {
                         title: "Factura",
-                        data: "invoice",
-                        orderable: false,
-                        className: "toggleable",
-                        render: function (data, type, row) {
-                            if (!data) return "Sin factura";
-
-                            return `<a href="${data}"
-                                class="btn btn-sm btn-outline-primary"
-                                target="_blank"
-                                rel="noopener noreferrer">
-                                    Ver factura
-                                </a>`;
+                        data: function (d) {
+                            if (d["invoice"]) {
+                                return `
+                                    <a href="${d["invoice"]}"
+                                    class="btn btn-sm btn-outline-primary"
+                                    target="_blank">
+                                        Ver factura
+                                    </a>
+                                `;
+                            } else {
+                                return "Sin factura";
+                            }
                         },
+                        orderable: false,
+                        className: "toggleable invoice-column",
                     },
+
                     {
                         title: "Fotografía",
                         data: "image",
@@ -232,9 +235,14 @@ class InfrastructureItem {
         if (options.table) {
             var mergedTableOptions = deepMerge(defaultOptions.table, options.table);
             self.table = { ...defaultOptions.table, ...mergedTableOptions };
+
+            self.table.ajax.reload = function () {
+                self.tbl_infraesstructure_items.ajax.reload(null, false);
+            };
         }
 
         self.init();
+        window.infrastructureItem = self;
     }
 
     init() {
@@ -272,7 +280,35 @@ class InfrastructureItem {
                         className: "btn-sm",
                     },
                 ],
-                initComplete: function (settings, json) {},
+                initComplete: function (settings, json) {
+                    const api = this.api();
+
+                    const invoiceColumn = api.column(".invoice-column");
+
+                    const select = $(`
+                        <select class="form-select form-select-sm mt-1">
+                            <option value="">Todas</option>
+                            <option value="con_factura">Con factura</option>
+                            <option value="sin_factura">Sin factura</option>
+                        </select>
+                    `);
+
+                    // Insertar el filtro debajo del título
+                    $(invoiceColumn.header()).append(select);
+
+                    // Evento de filtrado
+                    select.on("change", function () {
+                        const value = $(this).val();
+
+                        if (value === "con_factura") {
+                            invoiceColumn.search("Ver factura", true, false).draw();
+                        } else if (value === "sin_factura") {
+                            invoiceColumn.search("Sin factura", true, false).draw();
+                        } else {
+                            invoiceColumn.search("").draw();
+                        }
+                    });
+                },
             });
 
             delete self.table;
@@ -439,118 +475,21 @@ function get_items_locations(selectedLocationId) {
     });
 }
 
-//fucion para mostrar el modal de una nueva ubicacion
-document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("item_location").addEventListener("change", function () {
-        if (this.value === "add_new") {
-            var locationModal = new bootstrap.Modal(
-                document.getElementById("mdl-crud-item-location")
-            );
-            locationModal.show();
-            this.value = ""; // Resetear el select a vacío
-            get_company_items();
-        }
-    });
-});
-
-//funcion para mostrar las empresas en el select al momento de cargar el modal para agregar una nueva ubicacion
-function get_company_items(selectedCompanyId) {
-    $.ajax({
-        url: "/get_company_items/",
-        type: "GET",
-        success: function (response) {
-            var select = $("#company");
-            select.html(null); // Limpiar las opciones existentes
-            select.append(
-                "<option value='' disabled selected>Seleccione una de las empresas existentes</option>"
-            );
-            $.each(response.data, function (index, value) {
-                var selected = value.id == selectedCompanyId ? "selected" : "";
-                select.append(`<option value="${value.id}" ${selected}>${value.name}</option>`);
-            });
-        },
-        error: function (xhr, status, error) {
-            console.error("Error al cargar las empresas existentes:", error);
-            alert("Hubo un error al cargar las empresas existentes.");
-        },
-    });
-}
-
-// Función para agregar una nueva ubicación
-function add_item_location() {
-    var form = $("#form_item_location")[0];
-    var formData = new FormData(form);
-
-    $.ajax({
-        url: "/add_item_location/",
-        type: "POST",
-        data: formData,
-        contentType: false,
-        processData: false,
-
-        success: function (response) {
-            // Verifica la respuesta
-            if (response.success) {
-                $("#form_item_location")[0].reset();
-                $("#mdl-crud-item-location").modal("hide");
-
-                // Actualiza el select de ubicaciones
-                var select = $("#item_location");
-
-                var newOption = new Option(response.new_location.name, response.new_location.id);
-
-                select.append(newOption);
-
-                Swal.fire({
-                    title: "¡Éxito!",
-                    text: response.message,
-                    icon: "success",
-                    timer: 1500,
-                });
-            } else {
-                Swal.fire({
-                    title: "¡Error!",
-                    text: response.message,
-                    icon: "error",
-                });
-            }
-        },
-
-        error: function (xhr, status, error) {
-            console.error("Error al guardar la ubicación:", error);
-
-            console.error("Respuesta del servidor:", xhr.responseJSON);
-
-            var message = "Hubo un error al guardar la ubicación. Intenta nuevamente.";
-
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                message = xhr.responseJSON.message;
-            }
-
-            Swal.fire({
-                title: "¡Error!",
-                text: message,
-                icon: "error",
-            });
-        },
-
-        beforeSend: function (xhr) {
-            xhr.setRequestHeader("X-CSRFToken", $('input[name="csrfmiddlewaretoken"]').val());
-        },
-    });
-}
-
-//Tabla de desglose de cada activo registrado
-$(document).on("click", "button[data-infrastructure-item='view-identifiers']", function () {
-    const itemId = $(this).data("id");
-
+// Función para abrir el desglose
+function verDesgloseInfraestructura(itemId) {
     // Guardar el ID del activo
     $("#mdl-crud-detaill").data("item-id", itemId);
 
-    // Cargar información
     cargarDetallesInfraestructura(itemId);
 
     $("#mdl-crud-detaill").modal("show");
+}
+
+// Evento para abrir el desglose
+$(document).on("click", "button[data-infrastructure-item='view-identifiers']", function () {
+    const itemId = $(this).data("id");
+
+    verDesgloseInfraestructura(itemId);
 });
 
 //mostrar modal para asignar responsable
@@ -564,35 +503,130 @@ $(document).on("click", ".assign-responsible", function () {
     const modalTitle = responsableId ? "Editar responsable" : "Asignar responsable";
     $("#modalAsignarResponsableLabel").text(modalTitle);
 
-    // Cargar usuarios disponibles
-    $.get("/obtener_usuarios/", function (data) {
-        const select = $("#responsable").empty();
-        data.forEach((u) => {
-            const selected = u.id === responsableId ? "selected" : "";
-            select.append(`<option value="${u.id}" ${selected}>${u.name}</option>`);
-        });
-    });
+    // Limpiar selección anterior
+    $("#tipo_responsable").val("").trigger("change");
+
+    $("#responsable").html(`
+        <option value="" disabled selected>Seleccione un usuario</option>
+    `);
+
+    $("#area_responsable").html(`
+        <option value="" disabled selected>Seleccione un área</option>
+    `);
+
+    $("#activo_comunitario").html(`
+        <option value="" disabled selected>Seleccione un activo comunitario</option>
+    `);
+
     $("#mdl-crud-responsable").modal("show");
 });
 
-//Asignar responsable
+// Detectar el tipo de asignación
+$("#tipo_responsable").on("change", function () {
+    const tipo = $(this).val();
+
+    // Ocultar todos los contenedores
+    $("#container_usuario, #container_area, #container_activo_comunitario").addClass("d-none");
+
+    // Quitar required de los campos
+    $("#responsable, #area_responsable").prop("required", false);
+
+    // Limpiar valores anteriores
+    $("#responsable, #area_responsable").val("");
+
+    if (tipo === "usuario") {
+        $("#container_usuario").removeClass("d-none");
+        $("#responsable").prop("required", true);
+
+        cargarUsuarios();
+    } else if (tipo === "area") {
+        $("#container_area").removeClass("d-none");
+        $("#area_responsable").prop("required", true);
+
+        cargarAreas();
+    } else if (tipo === "activo_comunitario") {
+    }
+});
+
+// Cargar usuarios
+function cargarUsuarios() {
+    $.get("/obtener_usuarios/", function (data) {
+        const select = $("#responsable");
+
+        select.empty().append(`
+            <option value="" disabled selected>Seleccione un usuario</option>
+        `);
+
+        data.forEach(function (u) {
+            select.append(`<option value="${u.id}">${u.name}</option>`);
+        });
+    }).fail(function () {
+        console.error("Error al obtener los usuarios.");
+    });
+}
+
+// Cargar áreas
+function cargarAreas() {
+    $.get("/get_item_areas/", function (response) {
+        const select = $("#area_responsable");
+
+        select.empty().append(`
+            <option value="" disabled selected>Seleccione un área</option>
+        `);
+
+        response.data.forEach(function (area) {
+            select.append(`<option value="${area.id}">${area.name}</option>`);
+        });
+    }).fail(function () {
+        console.error("Error al obtener las areas.");
+    });
+}
+
+// Asignar responsable
 $("#formAsignarResponsable").submit(function (e) {
     e.preventDefault();
 
     const detalleId = $("#detalle_id").val();
-    const responsableId = $("#responsable").val();
+    const tipo = $("#tipo_responsable").val();
+
+    // Obtener el valor según el tipo de asignación
+    const responsableId = tipo === "usuario" ? $("#responsable").val() : null;
+
+    const areaId = tipo === "area" ? $("#area_responsable").val() : null;
+
+    // Validar selección
+    if (!tipo) {
+        Swal.fire("Atención", "Seleccione un tipo de asignación.", "warning");
+        return;
+    }
+
+    if (tipo === "usuario" && !responsableId) {
+        Swal.fire("Atención", "Seleccione un usuario.", "warning");
+        return;
+    }
+
+    if (tipo === "area" && !areaId) {
+        Swal.fire("Atención", "Seleccione un área.", "warning");
+        return;
+    }
 
     $.ajax({
         url: "/asignar_responsable/",
         method: "POST",
         data: {
             id: detalleId,
+            tipo_responsable: tipo,
             responsable: responsableId,
+            area_responsable: areaId,
             csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val(),
         },
         success: function (res) {
             if (res.success) {
                 $("#formAsignarResponsable")[0].reset();
+
+                // Ocultar los campos dinámicos
+                $("#container_usuario, #container_area").addClass("d-none");
+
                 $("#mdl-crud-responsable").modal("hide");
 
                 Swal.fire({
@@ -601,8 +635,9 @@ $("#formAsignarResponsable").submit(function (e) {
                     icon: "success",
                     timer: 1500,
                 });
-                // Volver a cargar la tabla de informacion
+
                 const itemId = $("#mdl-crud-detaill").data("item-id");
+
                 if (itemId) {
                     cargarDetallesInfraestructura(itemId);
                 }
@@ -616,6 +651,7 @@ $("#formAsignarResponsable").submit(function (e) {
         },
         error: function (xhr, status, error) {
             console.error("Error al asignar responsable:", error);
+
             Swal.fire({
                 title: "¡Error!",
                 text: "Hubo un error inesperado. Intenta nuevamente.",
@@ -785,7 +821,7 @@ function cargarDetallesInfraestructura(itemId) {
                     },
 
                     {
-                        title: "Responsable",
+                        title: "Ubicación",
                         data: null,
                         orderable: false,
                         searchable: false,
@@ -793,52 +829,104 @@ function cargarDetallesInfraestructura(itemId) {
 
                         render: function (data, type, row) {
                             if (!row.is_active) {
-                                if (row.tiene_responsable) {
+                                if (row.tiene_ubicacion) {
                                     return `
                                         <span>
-                                            ${row.responsable}
+                                            ${row.location_item}
                                         </span>
                                     `;
                                 }
 
                                 return `
                                     <span class="text-muted">
-                                        Sin responsable
+                                        Sin ubicación
                                     </span>
                                 `;
                             }
 
-                            if (row.tiene_responsable) {
+                            if (row.tiene_ubicacion) {
                                 return `
                                     <span>
-                                        ${row.responsable}
+                                        ${row.location_item}
                                     </span>
 
                                     <button
-                                        class="btn btn-sm btn-warning ms-2 assign-responsible"
+                                        class="btn btn-sm btn-warning edit-ubicacion"
                                         data-id="${row.id}"
-                                        data-responsable-id="${row.responsable_id}">
-
-                                        <i class="fas fa-user-edit me-1"></i>
-                                        Editar responsable
-
+                                        data-location-id="${row.location_item_id}">
+                                        <i class="fa-solid fa-location-dot me-1"></i>
+                                        Editar ubicación
                                     </button>
                                 `;
                             } else {
                                 return `
+
                                     <button
-                                        class="btn btn-sm btn-primary assign-responsible"
+                                        class="btn btn-sm btn-primary assign-ubicacion"
                                         data-id="${row.id}">
-
-                                        <i class="fas fa-user-plus me-1"></i>
-                                        Asignar responsable
-
+                                        <i class="fa-solid fa-location-dot me-1"></i>
+                                        Asignar ubicación
                                     </button>
                                 `;
                             }
                         },
                     },
 
+                    {
+                        title: "Responsable",
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+
+                        render: function (data, type, row) {
+                            // Determinar el icono según el tipo de asignación
+                            let icono = "";
+
+                            if (row.assignment_type === "comunitario") {
+                                icono = '<i class="fa-solid fa-users me-1"></i>';
+                            } else if (row.assignment_type === "area") {
+                                icono = '<i class="fa-solid fa-building-user me-1"></i>';
+                            } else {
+                                // Usuario específico
+                                icono = '<i class="fas fa-user-edit me-1"></i>';
+                            }
+
+                            if (!row.is_active) {
+                                return row.tiene_responsable
+                                    ? `<span>${row.responsable}</span>`
+                                    : `<span class="text-muted">Sin responsable</span>`;
+                            }
+
+                            if (row.tiene_responsable) {
+                                return `
+                                    <span>${row.responsable}</span>
+
+                                    <button
+                                        class="btn btn-sm btn-warning ms-2 assign-responsible"
+                                        
+                                        data-id="${row.id}"
+                                        data-assignment-type="${row.assignment_type || ""}"
+                                        data-responsable-id="${row.responsable_id || ""}"
+                                        data-area-id="${row.area_responsable_id || ""}">
+
+                                        ${icono}
+                                        Editar responsable
+                                    </button>
+                                `;
+                            }
+
+                            return `
+                                <button
+                                    class="btn btn-sm btn-primary assign-responsible"
+                                    data-id="${row.id}">
+
+                                    <i class="fas fa-user-plus me-1"></i>
+                                    Asignar responsable
+                                </button>
+                            `;
+                        },
+                    },
                     // FOTOGRAFÍA
                     {
                         title: "Fotografía",
@@ -1063,9 +1151,11 @@ $(document).on("submit", "#formdisableInfrastructure", function (e) {
                 });
 
                 const itemId = $("#mdl-crud-detaill").data("item-id");
-
                 if (itemId) {
                     cargarDetallesInfraestructura(itemId);
+                }
+                if (window.infrastructureItem) {
+                    window.infrastructureItem.tbl_infraesstructure_items.ajax.reload(null, false);
                 }
             } else {
                 Swal.fire({
@@ -1129,7 +1219,6 @@ document.getElementById("evidence2").addEventListener("change", function (event)
 });
 
 //Función para cargar las areas
-// Función para cargar las areas en el select
 function get_item_areas(selectedAreaId) {
     $.ajax({
         url: "/get_item_areas/",
@@ -1171,3 +1260,428 @@ function get_responsible_users_item(selectedUserId) {
         },
     });
 }
+
+//Exportar excel
+$(document).on("click", "#btn_download_items", function () {
+    $.ajax({
+        url: "/get-infrastructure-categorys/",
+        type: "GET",
+        dataType: "json",
+        beforeSend: function () {
+            Swal.fire({
+                title: "Cargando categorías",
+                text: "Preparando las opciones de descarga...",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: function () {
+                    Swal.showLoading();
+                },
+            });
+        },
+        success: function (response) {
+            if (response.status !== "success" || !Array.isArray(response.data)) {
+                Swal.fire("Error", "No fue posible obtener las categorías.", "error");
+                return;
+            }
+
+            const categorias = response.data || [];
+            const checks = categorias
+                .map(
+                    (c) =>
+                        `<label class="d-flex align-items-center gap-2 text-start border rounded p-2 mb-2"><input type="checkbox" class="form-check-input m-0 download-category-check" value="${c.id}"><span>${$(
+                            "<div>"
+                        )
+                            .text(c.name || "Sin nombre")
+                            .html()}</span></label>`
+                )
+                .join("");
+            Swal.fire({
+                title: "Descargar catálogo XLSX",
+                width: 500,
+                html: `<div class="text-start mb-3">Selecciona que activos deseas exportar.</div>
+                    <label class="form-label fw-semibold text-start d-block">Contenido del catálogo</label>
+                    <select id="download_type" class="form-select mb-3">
+                        <option value="all">Descargar todo el catálogo</option>
+                        <option value="category">Seleccionar categorías</option>
+                    </select>
+                    <label class="form-label fw-semibold text-start d-block">Estado de los equipos</label>
+                    <select id="download_status" class="form-select mb-3">
+                        <option value="all">Todos (habilitados y deshabilitados)</option>
+                        <option value="active">Solo habilitados</option>
+                        <option value="inactive">Solo deshabilitados</option>
+                    </select>
+                    <div id="download_categories_container" class="text-start" style="display:none;">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                            <span class="fw-semibold">Categorías</span>
+                            <button type="button" id="select_all_download_categories" class="btn btn-sm btn-outline-primary">Seleccionar todas</button>
+                        </div>
+                        <div style="max-height:250px;overflow-y:auto;overflow-x:hidden;padding-right:5px;">${checks || '<p class="text-muted">No hay categorías disponibles.</p>'}</div>
+                    </div>`,
+                showCancelButton: true,
+                confirmButtonText: "Descargar XLSX",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#198754",
+                didOpen: function () {
+                    const type = document.getElementById("download_type");
+                    const container = document.getElementById("download_categories_container");
+                    const selectAllButton = document.getElementById(
+                        "select_all_download_categories"
+                    );
+                    type.addEventListener("change", function () {
+                        container.style.display = this.value === "category" ? "block" : "none";
+                    });
+                    selectAllButton.addEventListener("click", function () {
+                        const categoryChecks = [
+                            ...document.querySelectorAll(".download-category-check"),
+                        ];
+                        const selectAll = categoryChecks.some((check) => !check.checked);
+                        categoryChecks.forEach((check) => (check.checked = selectAll));
+                        this.textContent = selectAll ? "Deseleccionar todas" : "Seleccionar todas";
+                    });
+                },
+                preConfirm: function () {
+                    const type = document.getElementById("download_type").value;
+                    const status = document.getElementById("download_status").value;
+                    const categoryIds = [
+                        ...document.querySelectorAll(".download-category-check:checked"),
+                    ].map((check) => check.value);
+                    if (type === "category" && !categoryIds.length) {
+                        Swal.showValidationMessage("Selecciona al menos una categoría.");
+                        return false;
+                    }
+                    return { type: type, status: status, category_ids: categoryIds };
+                },
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                Swal.fire({
+                    title: "Generando reporte",
+                    text: "Preparando los registros y sus identificadores...",
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: function () {
+                        Swal.showLoading();
+                    },
+                });
+                $.ajax({
+                    url: "/download_items_xlsx/",
+                    type: "GET",
+                    data: result.value,
+                    traditional: true,
+                    xhrFields: { responseType: "blob" },
+                    success: function (data, textStatus, xhr) {
+                        const contentType = xhr.getResponseHeader("Content-Type") || "";
+                        if (contentType.includes("application/json")) {
+                            const reader = new FileReader();
+                            reader.onload = function () {
+                                try {
+                                    const error = JSON.parse(reader.result);
+                                    Swal.fire(
+                                        "Error",
+                                        error.message || "No fue posible generar el reporte.",
+                                        "error"
+                                    );
+                                } catch (e) {
+                                    Swal.fire(
+                                        "Error",
+                                        "La respuesta del servidor no es válida.",
+                                        "error"
+                                    );
+                                }
+                            };
+                            reader.readAsText(data);
+                            return;
+                        }
+                        const blob = new Blob([data], {
+                            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        });
+                        const downloadUrl = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = downloadUrl;
+                        link.download = "reporte_infraestructura.xlsx";
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+                        Swal.fire({
+                            icon: "success",
+                            title: "Reporte generado",
+                            text: "La descarga del archivo XLSX ha comenzado.",
+                            confirmButtonColor: "#198754",
+                            timer: 2200,
+                            timerProgressBar: true,
+                        });
+                    },
+                    error: function (xhr) {
+                        if (xhr.response instanceof Blob) {
+                            const reader = new FileReader();
+                            reader.onload = function () {
+                                try {
+                                    const error = JSON.parse(reader.result);
+                                    Swal.fire(
+                                        "Error",
+                                        error.message || "No fue posible generar el reporte.",
+                                        "error"
+                                    );
+                                } catch (e) {
+                                    Swal.fire(
+                                        "Error",
+                                        "No fue posible generar el archivo XLSX.",
+                                        "error"
+                                    );
+                                }
+                            };
+                            reader.readAsText(xhr.response);
+                        } else {
+                            Swal.fire(
+                                "Error",
+                                "No fue posible generar el archivo XLSX. Intenta nuevamente.",
+                                "error"
+                            );
+                        }
+                    },
+                });
+            });
+        },
+        error: function () {
+            Swal.fire(
+                "Error",
+                "No fue posible cargar las categorías. Intenta nuevamente.",
+                "error"
+            );
+        },
+    });
+});
+
+// Función reutilizable para asignar o editar ubicación
+function abrirModalAsignarUbicacion(id, locationId = "") {
+    $("#detalle_id").val(id);
+    const modalTitle = locationId ? "Editar ubicación" : "Asignar ubicación";
+    $("#modalAsignarUbicacion").text(modalTitle);
+    get_locations(locationId);
+    $("#mdl-crud-location").modal("show");
+}
+
+// Evento único para abrir el modal
+$(document).on("click", ".assign-ubicacion, .edit-ubicacion", function () {
+    const id = $(this).data("id");
+    const locationId = $(this).data("location-id") || "";
+    const origen = $(this).data("origen") || "infraestructura";
+
+    abrirModalAsignarUbicacion(id, locationId, origen);
+});
+
+//funcion para mostrar las opciones en el select al momento de cargar el modal para agregar una nueva ubicacion
+function get_locations(selectedLocationId) {
+    $.ajax({
+        url: "/get_items_locations/",
+        type: "GET",
+        success: function (response) {
+            const select = $("#location");
+            select.html(
+                "<option value='' disabled selected>Seleccione una de las ubicaciones existentes</option>"
+            );
+            $.each(response.data, function (index, location) {
+                const selected = location.id == selectedLocationId ? "selected" : "";
+                select.append(
+                    `<option value="${location.id}" ${selected}>${location.name}</option>`
+                );
+            });
+            // opción para agregar una nueva ubicación
+            select.append(
+                '<option value="add_new_location">Agregar otra ubicación no existente</option>'
+            );
+        },
+        error: function (xhr, status, error) {
+            console.error("Error al cargar las ubicaciones:", error);
+            alert("Hubo un error al cargar las ubicaciones. Inténtelo de nuevo más tarde.");
+        },
+    });
+}
+
+//funcion para mostrar formulario de nueva ubicación
+function mostrarModalNuevaUbicacion() {
+    const newLocationModal = document.getElementById("mdl-crud-item-location");
+
+    const modal = new bootstrap.Modal(newLocationModal, {
+        backdrop: "static",
+        keyboard: false,
+    });
+    modal.show();
+}
+
+// Evento para detectar cuando se selecciona agregar ubicación
+$(document).on("change", "#location", function () {
+    if (this.value === "add_new_location") {
+        mostrarModalNuevaUbicacion();
+
+        this.value = "";
+    }
+});
+
+// Colocar el modal de nueva ubicación por encima del modal principal
+$(document).on("show.bs.modal", "#mdl-crud-item-location", function () {
+    const modal = $(this);
+
+    setTimeout(function () {
+        modal.css("z-index", 1060);
+
+        $(".modal-backdrop").last().css("z-index", 1055);
+    }, 0);
+});
+
+// Restaurar el orden cuando se cierre el modal secundario
+$(document).on("hidden.bs.modal", "#mdl-crud-item-location", function () {
+    $("#mdl-crud-location").css("z-index", "");
+});
+
+// Función para agregar una nueva ubicación
+function add_item_location() {
+    var form = $("#form_item_location")[0];
+    var formData = new FormData(form);
+
+    $.ajax({
+        url: "/add_item_location/",
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+
+        success: function (response) {
+            // Verifica la respuesta
+            if (response.success) {
+                $("#form_item_location")[0].reset();
+                $("#mdl-crud-item-location").modal("hide");
+
+                // Actualiza el select de ubicaciones
+                var select = $("#location");
+
+                var newOption = new Option(response.new_location.name, response.new_location.id);
+
+                select.append(newOption);
+
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1500,
+                });
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: response.message,
+                    icon: "error",
+                });
+            }
+        },
+
+        error: function (xhr, status, error) {
+            console.error("Error al guardar la ubicación:", error);
+
+            console.error("Respuesta del servidor:", xhr.responseJSON);
+
+            var message = "Hubo un error al guardar la ubicación. Intenta nuevamente.";
+
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+
+            Swal.fire({
+                title: "¡Error!",
+                text: message,
+                icon: "error",
+            });
+        },
+
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRFToken", $('input[name="csrfmiddlewaretoken"]').val());
+        },
+    });
+}
+
+// Asignar ubicación
+$(document).on("submit", "#formAsignarUbicacion", function (e) {
+    e.preventDefault();
+
+    const detalleId = $("#detalle_id").val();
+    const locationId = $("#location").val();
+
+    Swal.fire({
+        title: "Guardando información...",
+        text: "Espera un momento.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: function () {
+            Swal.showLoading();
+        },
+    });
+
+    $.ajax({
+        url: "/asignar_location/",
+        method: "POST",
+        data: {
+            id: detalleId,
+            location: locationId,
+            csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val(),
+        },
+
+        success: function (res) {
+            if (res.success) {
+                $("#formAsignarUbicacion")[0].reset();
+
+                //const verification = $("#mdl-crud-location").data("verification");
+                const verification = $("#mdl-crud-location").data("origen") === "verificacion";
+                const itemId = $("#mdl-crud-detaill").data("item-id");
+
+                $("#mdl-crud-location").one("hidden.bs.modal", function () {
+                    Swal.fire({
+                        title: "¡Éxito!",
+                        text: res.message,
+                        icon: "success",
+                        timer: 2500,
+                        showConfirmButton: false,
+                    });
+
+                    if (verification) {
+                        if (
+                            window.infrastructureVerification &&
+                            window.infrastructureVerification.tbl_infraesstructure_items
+                        ) {
+                            window.infrastructureVerification.tbl_infraesstructure_items.ajax.reload(
+                                null,
+                                false
+                            );
+                        }
+                    } else if (itemId) {
+                        setTimeout(function () {
+                            cargarDetallesInfraestructura(itemId);
+                        }, 2500);
+                    }
+
+                    //$("#mdl-crud-location").removeData("verification");
+                    $("#mdl-crud-location").removeData("origen");
+                });
+
+                $("#mdl-crud-location").modal("hide");
+            } else {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: res.message,
+                    icon: "error",
+                });
+            }
+        },
+
+        error: function (xhr, status, error) {
+            console.error("Error al asignar ubicación:", error);
+
+            Swal.fire({
+                title: "¡Error!",
+                text: "Hubo un error inesperado. Intenta nuevamente.",
+                icon: "error",
+            });
+        },
+    });
+});

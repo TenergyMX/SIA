@@ -1,0 +1,301 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de auditoría</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #263b5e;
+            font-size: 22px;
+        }
+
+        h2 {
+            color: #263b5e;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-top: 25px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+        }
+
+        .summary {
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .summary td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .summary strong {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .progress {
+            background: #e5e5e5;
+            height: 12px;
+            width: 100%;
+        }
+
+        .progress-bar {
+            background: #198754;
+            height: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #263b5e;
+            color: white;
+            padding: 8px;
+            text-align: left;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 7px;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
+        .difference {
+            font-weight: bold;
+        }
+
+        .session {
+            margin-bottom: 12px;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+
+        a {
+            color: #1565c0;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #777;
+            font-size: 9px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Reporte general de auditoría</h1>
+    <p class="subtitle">{{ audit.company.name }}</p>
+
+    <h2>1. Información general</h2>
+
+    <table>
+        <tr>
+            <th>Auditoría</th>
+            <td>{{ audit.name }}</td>
+            <th>Estado</th>
+            <td>{{ audit.get_status_display }}</td>
+        </tr>
+        <tr>
+            <th>Fecha de inicio</th>
+            <td>{{ audit.start_date|date:"d/m/Y" }}</td>
+            <th>Fecha de cierre</th>
+            <td>{{ audit.end_date|date:"d/m/Y" }}</td>
+        </tr>
+        <tr>
+            <th>Creada por</th>
+            <td colspan="3">
+                {{ audit.created_by.get_full_name|default:audit.created_by.username }}
+            </td>
+        </tr>
+        <tr>
+            <th>Descripción</th>
+            <td colspan="3">{{ audit.description|default:"Sin descripción" }}</td>
+        </tr>
+    </table>
+
+    <h2>2. Categorías evaluadas</h2>
+
+    <p>
+        {% for category in categories %}
+            {{ category.name }}{% if not forloop.last %}, {% endif %}
+        {% empty %}
+            Sin categorías registradas.
+        {% endfor %}
+    </p>
+
+    <h2>3. Resumen de resultados</h2>
+
+    <table class="summary">
+        <tr>
+            <td>
+                <strong>{{ total_items }}</strong>
+                Activos registrados
+            </td>
+            <td>
+                <strong>{{ verified_items }}</strong>
+                Activos verificados
+            </td>
+            <td>
+                <strong>{{ pending_items }}</strong>
+                Activos pendientes
+            </td>
+            <td>
+                <strong>{{ progress }}%</strong>
+                Avance
+            </td>
+        </tr>
+    </table>
+
+    <div class="progress">
+        <div class="progress-bar"
+             style="width: {{ progress }}%;">
+        </div>
+    </div>
+
+    <h2>4. Detalle de activos auditados</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Activo</th>
+                <th>Categoría</th>
+                <th>Cantidad registrada</th>
+                <th>Cantidad encontrada</th>
+                <th>Diferencia</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in report_items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.category }}</td>
+                <td>{{ item.registered_quantity }}</td>
+
+                <td>
+                    {% if item.is_completed %}
+                        {{ item.found_quantity }}
+                    {% else %}
+                        Pendiente
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if item.is_completed %}
+                        <strong>{{ item.difference }}</strong>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if item.is_completed %}
+                        Verificado
+                    {% else %}
+                        Pendiente
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>5. Observaciones y evidencias</h2>
+
+    {% for item in report_items %}
+        {% if item.is_completed %}
+            <div class="session">
+                <strong>{{ item.name }}</strong>
+
+                <p>
+                    <strong>Observaciones:</strong>
+                    {{ item.observations|default:"Sin observaciones" }}
+                </p>
+
+                <p>
+                    <strong>Verificado por:</strong>
+                    {{ item.verified_by }}
+                </p>
+
+                <p>
+                    <strong>Fecha de verificación:</strong>
+                    {{ item.verified_at|date:"d/m/Y H:i" }}
+                </p>
+
+                {% if item.evidence %}
+                    <p>
+                        <strong>Evidencia:</strong>
+                        <a href="{{ item.evidence }}">Ver evidencia</a>
+                    </p>
+                {% else %}
+                    <p>Sin evidencia adjunta.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    <h2>6. Sesiones de auditoría</h2>
+
+    {% for session in sessions %}
+        <div class="session">
+            <strong>{{ session.name }}</strong>
+
+            <p>
+                Responsable:
+                {% if session.responsible %}
+                    {{ session.responsible.get_full_name|default:session.responsible.username }}
+                {% else %}
+                    Sin responsable
+                {% endif %}
+            </p>
+
+            <p>Estado: {{ session.get_status_display }}</p>
+
+            <p>
+                Inicio:
+                {{ session.start_date|date:"d/m/Y H:i"|default:"Sin fecha" }}
+            </p>
+
+            <p>
+                Finalización:
+                {{ session.end_date|date:"d/m/Y H:i"|default:"Sin fecha" }}
+            </p>
+        </div>
+    {% empty %}
+        <p>No hay sesiones registradas.</p>
+    {% endfor %}
+
+    <div class="footer">
+        Reporte generado por Capital System Solutions
+    </div>
+
+</body>
+</html>

@@ -50,7 +50,6 @@ class Migration(migrations.Migration):
             field=models.FileField(blank=True, null=True, upload_to='docs/'),
         ),
 
-        
         migrations.AddField(
             model_name='infrastructureitemdetail',
             name='is_active',
