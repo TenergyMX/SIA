@@ -40,4 +40,34 @@ class Migration(migrations.Migration):
             name='item_type',
             field=models.CharField(blank=True, default='Regular', max_length=50, null=True, verbose_name='tipo de activo'),
         ),
+        migrations.AddField(
+            model_name='services',
+            name='is_active',
+            field=models.BooleanField(default=True, verbose_name='¿Está Activo?'),
+        ),
+        migrations.AddField(
+            model_name='vehicle',
+            name='it_has_no_auditoria',
+            field=models.BooleanField(default=False, verbose_name='No aplica auditoria'),
+        ),
+        migrations.AddField(
+            model_name='vehicle',
+            name='it_has_no_mantenimiento',
+            field=models.BooleanField(default=False, verbose_name='No aplica mantenimiento'),
+        ),
+                migrations.AddField(
+            model_name='vehicle',
+            name='it_has_no_refrendo',
+            field=models.BooleanField(default=False, verbose_name='No aplica refrendo'),
+        ),
+        migrations.AddField(
+            model_name='vehicle',
+            name='it_has_no_seguro',
+            field=models.BooleanField(default=False, verbose_name='No aplica seguro'),
+        ),
+        migrations.AddField(
+            model_name='vehicle',
+            name='it_has_no_verificacion',
+            field=models.BooleanField(default=False, verbose_name='No aplica verificacion'),
+        ),
     ]
