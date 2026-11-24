@@ -1,0 +1,88 @@
+<div class="modal fade effect-scale" id="mdl-crud-infrastructure-audit" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-lg-down modal-dialog-scrollable">
+        <form name="" class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Agregar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-none">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="0">
+                </div>
+                
+                <div class="row g-3">
+                   
+                    <div class="col-md-6">
+                        <label for="">Nombre de la auditoría</label>
+                        <input type="text" name="name" class="form-control" placeholder="Nombre de auditoria">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="responsible_audit">Responsable de la auditoría</label>
+                        <select name="responsible_audit" id="responsible_audit" class="form-select" required>
+                            <option value="" disabled selected>Seleccione un responsable </option>
+                        </select>
+                    </div>
+               
+                    <div class="col-md-6">
+                        <label for="">Fecha de inicio</label>
+                        <input type="date" name="start_date" class="form-control" placeholder="Fecha de inicio">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="">Descripción</label>
+                        <textarea name="description" class="form-control" rows="1" placeholder="Descripción"></textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="audit_categories">Categorías a auditar</label>
+                        <select name="audit_categories" id="audit_categories" class="form-select" multiple required>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label">Activos registrados en las categorías seleccionadas</label>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped w-100"
+                                id="audit_assets_table">
+
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Activo</th>
+                                        <th>Categoría</th>
+                                        <th>Cantidad registrada</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="audit_assets_body">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            Seleccione una o varias categorías para cargar los activos.
+                                        </td>
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                        </div>
+                    </div>
+
+                    
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add" class="btn btn-primary">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar
+                </button>
+                <button type="submit" name="update" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>

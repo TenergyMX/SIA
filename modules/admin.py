@@ -95,6 +95,11 @@ admin.site.register(Items_locations)
 admin.site.register(Infrastructure_maintenance)
 admin.site.register(MaintenanceAction)
 
+admin.site.register(InfrastructureAudit)
+admin.site.register(InfrastructureAuditSession)
+admin.site.register(InfrastructureAuditItem)
+admin.site.register(InfrastructureAuditSessionDetail)       
+                    
 @admin.register(Plans)
 class PlansAdmin(admin.ModelAdmin):
     list_display = (

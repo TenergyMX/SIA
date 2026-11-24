@@ -21,8 +21,11 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label for="type">Tipo de activo</label>
-                        <input type="text" id="type" name="type" class="form-control" placeholder="Tipo de equipo" maxlength="255" required>
+                        <label for="">Tipo de activo</label>
+                        <select name="type" class="form-control" placeholder="Tipo de activo">
+                            <option value="comprado">Comprado</option>
+                            <option value="donado">Donado</option>
+                        </select>
                     </div>
 
                     <div class="col-md-4">
@@ -72,12 +75,12 @@
                         <label for="formFileFactura" class="form-label">Factura</label>
                         <input class="form-control" type="file" id="formFileFactura" name="invoice">
                     </div>   
-                    <div class="col-md-4">
+                    <!-- <div class="col-md-4">
                         <label for="item_location">Ubicación</label>
                         <select name="item_location" id="item_location" class="form-select" required>
                             <option value="" disabled selected>Seleccione una de las ubicaciones</option>
                         </select>
-                    </div>
+                    </div> -->
                     <div class="col-md-4">
                         <label for="formFileImage" class="form-label">Imagen</label>
                         <input class="form-control" type="file" id="formFileImage" name="image">

@@ -34,8 +34,18 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from modules.templates.pdf.weasy import WeasyPDF
 
+from weasyprint import HTML
+
+from datetime import datetime, time
+from django.views.decorators.http import require_GET
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+from openpyxl.utils import get_column_letter
+from django.db import IntegrityError
 
 from django.http import JsonResponse, Http404
+from django.utils.dateparse import parse_date
+
 # dotenv_path = join(dirname(dirname(dirname(_file_))), 'awsCred.env')
 # load_dotenv(dotenv_path)
 AWS_BUCKET_NAME=str(os.environ.get('AWS_BUCKET_NAME'))
@@ -419,12 +429,25 @@ def update_infrastructure_item(request):
         with transaction.atomic():
             # Obtener el objeto principal
             obj = Infrastructure_Item.objects.get(id=item_id)
-            old_quantity = obj.quantity  # Cantidad anterior
+            old_quantity = obj.quantity
+            requested_quantity = int(dt.get("quantity")or 0)
+
+            # Validar que no se disminuya la cantidad
+            if requested_quantity < old_quantity:
+                response["status"] = "warning"
+                response["message"] = (
+                    f"No puedes disminuir la cantidad de {old_quantity} "
+                    f"a {requested_quantity}. "
+                    "Para reducir la cantidad debes desactivar los detalles correspondientes."
+                )
+                return JsonResponse(response)
 
             # Actualizar campos
             obj.category_id = category_id
             obj.name = dt.get("name")
-            obj.quantity = int(dt.get("quantity") or 0)
+            obj.quantity = requested_quantity
+
+
             obj.description = dt.get("description")
 
             obj.is_active = is_active
@@ -487,19 +510,14 @@ def update_infrastructure_item(request):
             new_quantity = obj.quantity
 
             # Manejo de detalles
-            current_details = InfrastructureItemDetail.objects.filter(item=obj)
-            current_count = current_details.count()
+            current_count = InfrastructureItemDetail.objects.filter(item=obj, is_active=True).count()
+
             company = Company.objects.get(id=company_id)
 
-            if new_quantity < current_count:
-                # Eliminar excedente
-                to_delete = current_details.order_by('-id')[:current_count - new_quantity]
-                to_delete.delete()
-
-            elif new_quantity > current_count:
+            if new_quantity > current_count:
                 # Agregar los que faltan
                 company_code = company.name.replace(' ', '').upper()[:3]
-                prefix = f"{company_code}-{new_name}-"
+                prefix = f"{company_code}-{obj.id}-"
 
                 existing_identifiers = (
                     InfrastructureItemDetail.objects
@@ -510,8 +528,7 @@ def update_infrastructure_item(request):
                 existing_numbers = []
                 for ident in existing_identifiers:
                     try:
-                        num = int(ident.split("-")[-1])
-                        existing_numbers.append(num)
+                        existing_numbers.append(int(ident.split("-")[-1]))
                     except ValueError:
                         pass
 
@@ -522,7 +539,7 @@ def update_infrastructure_item(request):
                     InfrastructureItemDetail.objects.create(
                         item=obj,
                         company_id=company_id,
-                        name=new_name,
+                        name=obj.id,
                         identifier=identifier
                     )
 
@@ -916,18 +933,47 @@ def get_infrastructure_item_details(request):
         registros = InfrastructureItemDetail.objects.filter(item_id=item_id).values(
             "id", 
             "identifier", 
+
+            "assignment_type",
+
             "responsible__id",  
             "responsible__first_name",  
             "responsible__last_name",  
+
+            "area_responsable__id",
+            "area_responsable__name",
+
+            "responsible_text",
+
+
             "assignment_date",
             "photo_infraestructure",
             "is_deactivated",
-            "is_active"
+            "is_active",
+            "location_item",
+            "location_item__name",
         )
         for r in registros:
-            tiene_responsable = r["responsible__first_name"] and r["responsible__last_name"]
-            responsable = f"{r['responsible__first_name']} {r['responsible__last_name']}".strip() if tiene_responsable else ""
 
+            nombre_usuario = (
+                f"{r['responsible__first_name'] or ''} "
+                f"{r['responsible__last_name'] or ''}"
+            ).strip()
+
+            # TIPO DE ASIGNACIÓN
+            tipo = r["assignment_type"]
+
+            if tipo == "usuario":
+                responsable = nombre_usuario or "Sin asignar"
+
+            elif tipo == "area":
+                responsable = r["area_responsable__name"] or "Sin asignar"
+
+            elif tipo == "comunitario":
+                responsable = "Activo comunitario"
+
+            else:
+                responsable = "Sin asignar"
             # FOTOGRAGIA
             fotografia = None
             if r["photo_infraestructure"]:
@@ -948,18 +994,43 @@ def get_infrastructure_item_details(request):
                         "
                     >
                 </a>
+
             """
+
+            
+            # UBICACIÓN
+            tiene_ubicacion = bool(r["location_item"])
+
+            location_id = r["location_item"]
+            location_name = r["location_item__name"] or "" if tiene_ubicacion else ""
+
             data.append({
                 "id": r["id"],
                 "identificador": r["identifier"],
-                "responsable": responsable if responsable else "Sin asignar",
+                # Información de asignación
+                "responsable": responsable,
+                "assignment_type": tipo,
+
+                "responsable_id": r["responsible__id"],
+                "area_responsable_id": r["area_responsable__id"],
+                "area_responsable": r["area_responsable__name"] or "",
+                "responsible_text": r["responsible_text"] or "",
+
+                "tiene_responsable": bool(
+                    r["responsible__id"]
+                    or r["area_responsable__id"]
+                    or tipo == "comunitario"
+                ),
+
                 "fecha_asignacion": r["assignment_date"].strftime('%Y-%m-%d') if r["assignment_date"] else "",
-                "responsable_id": r["responsible__id"] if tiene_responsable else None,
-                "tiene_responsable": bool(tiene_responsable), 
+              
                 "fotografia": fotografia,
                 "is_deactivated": r["is_deactivated"],
                 "is_active": r["is_active"],
 
+                "tiene_ubicacion": tiene_ubicacion,
+                "location_item_id": location_id,
+                "location_item": location_name,
             })
 
     return JsonResponse({"success": True, "data": data})
@@ -994,32 +1065,89 @@ def obtner_usuarios(request):
 
 
 
-@csrf_exempt  
+@csrf_exempt
 def asignar_responsable(request):
-    if request.method == "POST":
-        detalle_id = request.POST.get("id")
-        responsable_id = request.POST.get("responsable")
 
-        try:
-            detalle = InfrastructureItemDetail.objects.get(id=detalle_id)
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        })
+
+    detalle_id = request.POST.get("id")
+    tipo = request.POST.get("tipo_responsable")
+
+    responsable_id = request.POST.get("responsable")
+    area_id = request.POST.get("area_responsable")
+
+    try:
+        detalle = InfrastructureItemDetail.objects.get(id=detalle_id)
+
+        if tipo == "usuario":
+
+            if not responsable_id:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Seleccione un usuario."
+                })
+
             detalle.responsible_id = responsable_id
-            detalle.assignment_date = timezone.now().date()
-            detalle.save()
-            return JsonResponse({
-                "success": True,
-                "message": "Responsable asignado correctamente."
-            })
-        except InfrastructureItemDetail.DoesNotExist:
+            detalle.area_responsable = None
+            detalle.responsible_text = None
+
+            tipo_guardado = "usuario"
+
+
+        elif tipo == "area":
+
+            if not area_id:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Seleccione un área."
+                })
+
+            detalle.responsible = None
+            detalle.area_responsable_id = area_id
+            detalle.responsible_text = None
+
+            tipo_guardado = "area"
+
+
+        elif tipo == "activo_comunitario":
+
+            detalle.responsible = None
+            detalle.area_responsable = None
+            detalle.responsible_text = "Activo comunitario"
+            tipo_guardado = "comunitario"
+
+        else:
             return JsonResponse({
                 "success": False,
-                "message": "No se encontró el registro."
+                "message": "El tipo de asignación no es válido."
             })
-    return JsonResponse({
-        "success": False,
-        "message": "Método no permitido."
-    })
 
+        detalle.assignment_type = tipo_guardado
+        detalle.assignment_date = timezone.now().date()
 
+        detalle.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "Asignación realizada correctamente."
+        })
+
+    except InfrastructureItemDetail.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "message": "No se encontró el registro."
+        })
+
+    except (ValueError, TypeError, IntegrityError):
+        return JsonResponse({
+            "success": False,
+            "message": "El usuario o área seleccionados no son válidos."
+        })
+    
 # Vista para obtener los  registros de identificadores
 @login_required
 def get_identifier(request):
@@ -2297,6 +2425,19 @@ def disable_infrastructure_detail(request):
 
             detail.save()
 
+            # Actualizar cantidad del registro principal
+            cantidad_activa = InfrastructureItemDetail.objects.filter(
+                item_id=detail.item_id,
+                is_active=True
+            ).count()
+
+            Infrastructure_Item.objects.filter(
+                id=detail.item_id,
+                company_id=company_id
+            ).update(
+                quantity=cantidad_activa
+            )
+
             return JsonResponse({
                 "success": True,
                 "message": (
@@ -2325,6 +2466,19 @@ def disable_infrastructure_detail(request):
             detail.deactivated_at = None
 
             detail.save()
+
+            # Actualizar cantidad del registro principal
+            cantidad_activa = InfrastructureItemDetail.objects.filter(
+                item_id=detail.item_id,
+                is_active=True
+            ).count()
+
+            Infrastructure_Item.objects.filter(
+                id=detail.item_id,
+                company_id=company_id
+            ).update(
+                quantity=cantidad_activa
+            )
 
             return JsonResponse({ "success": True, "message": ("El equipo o herramienta " "ha sido habilitado correctamente.")})
 
@@ -2365,6 +2519,8 @@ def infrastructure_removed(request):
     context["sidebar"] = sidebar["data"]
     template = "infrastructure/infrastructure_removed.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
     return render(request, template, context)
+
+
 
 
 # Funcion para obtener los activos dados de baja
@@ -2564,13 +2720,1867 @@ def get_responsible_users_item(request):
     try:
         context = user_data(request)
         company_id = context["company"]["id"]
+
         if not company_id:
             return JsonResponse({'success': False, 'message': 'No se encontró la empresa asociada al usuario'}, status=400)
         
         users = User.objects.filter(
             id__in=User_Access.objects.filter(company_id=company_id).values('user_id')
         ).distinct().values('id', 'username')  
-        data = list(users)
+        data = []
+        for user in users: 
+            data.append({
+                'id': user['id'],
+                'username': user['username'],
+                'is_current_user': user['id'] == request.user.id
+            })
         return JsonResponse({'data': data}, safe=False)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+# funciones para descargar xlsx
+@require_GET
+def get_items_categories(request):
+    categorias = Infrastructure_Category.objects.filter(is_active=True).order_by("name").values("id", "name")
+    return JsonResponse({"success": True, "data": list(categorias)})
+
+
+def excel_safe_value(value):
+    if isinstance(value, (datetime, time)) and value.tzinfo is not None:
+        return value.replace(tzinfo=None)
+    return value
+
+
+def configurar_hoja_excel(sheet, encabezados, anchos):
+    sheet.sheet_view.showGridLines = False
+    sheet.freeze_panes = "A2"
+    sheet.append(encabezados)
+    for celda in sheet[1]:
+        celda.font = Font(bold=True, color="FFFFFF")
+        celda.fill = PatternFill("solid", fgColor="17365D")
+        celda.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    sheet.row_dimensions[1].height = 32
+    for columna, ancho in enumerate(anchos, 1):
+        sheet.column_dimensions[get_column_letter(columna)].width = ancho
+
+
+# Descargar excel
+@require_GET
+def download_items_xlsx(request):
+    tipo = request.GET.get("type", "all")
+    estado = request.GET.get("status", "all")
+    category_ids = request.GET.getlist("category_ids")
+
+    if tipo not in ("all", "category") or estado not in ("all", "active", "inactive"):
+        return JsonResponse({"success": False, "message": "Los filtros seleccionados no son válidos."}, status=400)
+    if tipo == "category" and (not category_ids or not all(value.isdigit() for value in category_ids)):
+        return JsonResponse({"success": False, "message": "Selecciona categorías válidas."}, status=400)
+
+    equipos = Infrastructure_Item.objects.select_related(
+        "company",
+        "category",
+        "location"
+    ).order_by(
+        "category__name",
+        "name",
+        "id"
+    )
+
+    if tipo == "category":
+        equipos = equipos.filter(category_id__in=category_ids)
+
+    if estado == "active":
+        equipos = equipos.filter(is_active=True)
+    elif estado == "inactive":
+        equipos = equipos.filter(is_active=False)
+
+    workbook = Workbook()
+    resumen = workbook.active
+    resumen.title = "Resumen del catálogo"
+    detalle_sheet = workbook.create_sheet("Inventario detallado")
+
+    encabezados_resumen = [
+        "ID Registro", "Empresa", "Categoría", "Activo",
+        "Tipo de activo", "Marca","Cantidad registrada", "Costo unitario", "Descripción", "Área", "Responsable general", "Comentarios", "Cuenta con ficha técnica", "Cuenta con factura","Fotografía"
+    ]
+    anchos_resumen = [13, 22, 25, 32, 20, 20, 40, 22, 28, 25, 18, 16, 20, 22, 35]
+    configurar_hoja_excel(resumen, encabezados_resumen, anchos_resumen)
+
+    encabezados_detalle = [
+        "ID catálogo", "Empresa", "Categoría", "Equipo / herramienta",
+        "Tipo", "Marca", "Descripción del equipo", "Área",
+        "Responsable general", "Cantidad registrada",
+        "Costo unitario", "Estado del catálogo", "ID detalle",
+        "Identificador", "Nombre del identificador", "Número de serie",
+        "Estado del registro", "Estado operativo", "Responsable asignado",
+        "Ubicación individual", "Fecha de asignación", "Fecha de activación",
+        "Usuario de activación", "Usuario de modificación", "Motivo de baja",
+        "Descripción de baja", "Fecha de baja"
+    ]
+    anchos_detalle = [
+        13, 22, 25, 32, 20, 20, 35, 22, 28, 25, 18, 16, 20,
+        13, 25, 28, 25, 20, 20, 28, 25, 20, 22, 28, 28, 20, 35, 22
+    ]
+    configurar_hoja_excel(detalle_sheet, encabezados_detalle, anchos_detalle)
+
+    for equipo in equipos.iterator():
+        categoria = equipo.category.name if equipo.category else ""
+        empresa = str(equipo.company or "")
+        ubicacion_general = (
+            equipo.location.name
+            if equipo.location else ""
+        )
+
+        costo = float(equipo.cost) if equipo.cost is not None else 0
+
+        responsable_general = (
+            equipo.item_responsible.get_full_name()
+            if equipo.item_responsible else ""
+        )
+
+        area_general = (
+            equipo.item_area.name
+            if equipo.item_area else ""
+        )
+
+        datos_generales = [
+            equipo.pk,
+            empresa,
+            categoria,
+            equipo.is_active,
+            equipo.item_type or "",
+            equipo.item_brand or "",
+            equipo.quantity if equipo.quantity is not None else 0,
+            costo,
+            equipo.description or "",
+            area_general,
+            responsable_general,
+            equipo.comments or "",
+            "Sí" if equipo.technical_sheet else "No",
+            "Sí" if equipo.invoice else "No",
+            "Sí" if equipo.image else "No",
+        ]
+
+
+        fila_resumen = datos_generales 
+
+        resumen.append([excel_safe_value(v) for v in fila_resumen])
+
+        detalles = Infrastructure_Item.objects.filter(
+            details=equipo.pk
+        ).select_related(
+            "responsible", "equipment_location", "user_activation", "user_modification"
+        ).order_by("id")
+
+        if estado == "active":
+            detalles = detalles.filter(is_active=True)
+        elif estado == "inactive":
+            detalles = detalles.filter(Q(is_active=False))
+
+        if not detalles.exists():
+            fila_detalle = datos_generales + [
+                None, "", "", "", "", "", "", "", None, None, "", "", "", "", None
+            ]
+            detalle_sheet.append([excel_safe_value(v) for v in fila_detalle])
+            continue
+
+        for detalle in detalles.iterator():
+            responsable = detalle.responsible.get_full_name() if detalle.responsible else ""
+            usuario_activacion = detalle.user_activation.get_full_name() if detalle.user_activation else ""
+            usuario_modificacion = detalle.user_modification.get_full_name() if detalle.user_modification else ""
+            ubicacion_individual = detalle.equipment_location.location_name if detalle.equipment_location else ""
+
+            fila_detalle = datos_generales + [
+                detalle.pk, detalle.identifier or "", detalle.name or "",
+                "Habilitado" if detalle.is_active and not detalle.is_deactivated else "Deshabilitado",
+                detalle.get_state_display() if detalle.state else "",
+                responsable, ubicacion_individual, detalle.assignment_date,
+                detalle.modification_date, usuario_activacion, usuario_modificacion,
+                detalle.deactivation_reason or "",
+                detalle.deactivation_description or "",
+                detalle.deactivated_at
+            ]
+            detalle_sheet.append([excel_safe_value(v) for v in fila_detalle])
+
+    borde = Border(bottom=Side(style="thin", color="D9E2F3"))
+    for sheet in (resumen, detalle_sheet):
+        for fila_celdas in sheet.iter_rows(min_row=2):
+            for celda in fila_celdas:
+                celda.alignment = Alignment(vertical="top", wrap_text=True)
+                celda.border = borde
+
+    for fila_celdas in detalle_sheet.iter_rows(min_row=2):
+        for columna in (22, 23, 28):
+            celda = fila_celdas[columna - 1]
+            if celda.value:
+                celda.number_format = "dd/mm/yyyy" if columna == 22 else "dd/mm/yyyy hh:mm"
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="reporte_infraestructura.xlsx"'
+    workbook.save(response)
+    return response
+
+
+@csrf_exempt
+def asignar_location(request):
+    if request.method == "POST":
+        detalle_id = request.POST.get("id")
+        location_id = request.POST.get("location")
+
+        try:
+            if not detalle_id or not location_id:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Faltan datos para asignar la ubicación."
+                })
+
+            detalle = InfrastructureItemDetail.objects.get(
+                id=detalle_id
+            )
+
+            detalle.location_item_id = location_id
+            detalle.save()
+
+            return JsonResponse({
+                "success": True,
+                "message": "Ubicación asignada correctamente."
+            })
+
+        except InfrastructureItemDetail.DoesNotExist:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró el registro."
+            })
+
+        except Exception as e:
+            print("Error al asignar ubicación:", str(e))
+
+            return JsonResponse({
+                "success": False,
+                "message": "No se pudo asignar la ubicación."
+            })
+
+    return JsonResponse({
+        "success": False,
+        "message": "Método no permitido."
+    })
+
+
+
+# submodulo para verificación de activos
+@login_required
+def infrastructure_asset_verification(request):
+    context = user_data(request)
+    module_id = 4
+    subModule_id = 43
+    request.session["last_module_id"] = module_id
+
+    sidebar = get_sidebar(context, [1, module_id])
+    access = get_module_user_permissions(context, subModule_id)
+    for module in sidebar["data"]:
+        for submodule in module.get("submodules", []):
+            submodule["title"] = submodule["title"].strip() 
+    context["access"] = access["data"]["access"]
+    context["sidebar"] = sidebar["data"]
+    template = "infrastructure/infrastructure_asset_verification.html" if context["access"]["read"] and check_user_access_to_module(request, module_id, subModule_id) else "error/access_denied.html"
+    return render(request, template, context)
+
+
+#Tabla activos 
+# def get_infrastructure_items_verification(request):
+#     response = {"success": False}
+#     context = user_data(request)
+#     dt = request.GET
+#     subModule_id = 24
+#     company_id = context["company"]["id"]
+#     isList = dt.get("isList", False)
+#     category_id = dt.get("category_id", 1)
+#     category_name = dt.get("category_name", "Infraestructura de Seguridad")
+#     responsible_id = dt.get("responsible_id")
+
+#     datos = Infrastructure_Item.objects.filter(company_id = company_id, is_active = True ).values(
+#         "id",
+#         "company_id", 
+#         "company__name",
+#         "category_id", 
+#         "category__name",
+
+#         "name", 
+#         "item_brand",
+#         "description", 
+#         "quantity",
+#         "cost",
+
+#         "is_active", 
+#         "created_at",
+#         "updated_at",
+#     )
+
+#     if isList:
+#         datos = datos.filter(is_active = True).values("id", "category_id", "category__name", "name")
+#         if category_id:
+#             datos = datos.filter(category_id = category_id)
+#     else:
+#         access = get_module_user_permissions(context, subModule_id)
+#         access = access["data"]["access"]
+#         for item in datos:
+#             item["row_id"] = item["id"] 
+
+#             item["cantidad_encontrada"] = None
+#             item["estado"] = "Pendiente"
+
+#             if item["image"]:
+#                 item["image"] = generate_presigned_url(
+#                     bucket_name,
+#                     item["image"]
+#                 )
+#             else:
+#                 item["image"] = None
+
+#             # Desglose
+#             item["btn_identifiers"] = (
+#                 f"<button type='button' "
+#                 f"class='btn btn-icon btn-sm btn-success-light' "
+#                 f"data-infrastructure-item='view-identifiers' "
+#                 f"data-id='{item['id']}' "
+#                 f"aria-label='Ver desglose'>"
+#                 f"<i class='fa-solid fa-list'></i>"
+#                 f"</button>"
+#             )
+
+#     response["data"] = list(datos)
+#     response["status"] = "success"
+#     return JsonResponse(response)
+
+#Función para obtener los activos de las categorias seleccionadas
+def get_infrastructure_audit_assets(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                "status": "error",
+                "message": "No se encontró la empresa asociada al usuario."
+            }, status=400)
+
+        # Obtener las categorías seleccionadas
+        categories_ids = request.GET.getlist("categories")
+
+        if not categories_ids:
+            return JsonResponse({
+                "status": "success",
+                "data": []
+            })
+
+        # Consultar los activos de las categorías seleccionadas
+        assets = Infrastructure_Item.objects.filter(
+            company_id=company_id,
+            category_id__in=categories_ids,
+            is_active=True
+        ).values(
+            "id",
+            "name",
+            "quantity",
+            "category__name"
+        ).order_by("name")
+
+        data = [
+            {
+                "id": asset["id"],
+                "name": asset["name"],
+                "quantity": asset["quantity"],
+                "category": asset["category__name"]
+            }
+            for asset in assets
+        ]
+
+        return JsonResponse({
+            "status": "success",
+            "data": data
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
+# Agregar auditoría
+def add_infrastructure_audit(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "status": "error",
+            "message": "Método no permitido"
+        }, status=405)
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                "status": "error",
+                "message": "No se encontró la empresa asociada al usuario."
+            }, status=400)
+
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+        start_date = request.POST.get("start_date") or None
+
+        categories_ids = request.POST.getlist("audit_categories")
+
+        if not name:
+            return JsonResponse({
+                "status": "warning",
+                "message": "Ingrese el nombre de la auditoría."
+            })
+
+        if not start_date:
+            return JsonResponse({
+                "status": "warning",
+                "message": "Seleccione la fecha de inicio."
+            })
+
+        start_date = parse_date(start_date)
+
+        if not start_date:
+            return JsonResponse({
+                "status": "warning",
+                "message": "La fecha de inicio no es válida."
+            })
+
+        if not categories_ids:
+            return JsonResponse({
+                "status": "warning",
+                "message": "Seleccione al menos una categoría para la auditoría."
+            })
+
+        if InfrastructureAudit.objects.filter(
+            name__iexact=name,
+            company_id=company_id
+        ).exists():
+            return JsonResponse({
+                "status": "warning",
+                "message": "Ya existe una auditoría con ese nombre."
+            })
+
+        categories = Infrastructure_Category.objects.filter(
+            id__in=categories_ids,
+            empresa_id=company_id,
+            is_active=True
+        )
+
+        if categories.count() != len(set(categories_ids)):
+            return JsonResponse({
+                "status": "warning",
+                "message": "Una o varias categorías seleccionadas no pertenecen a la empresa."
+            })
+
+        with transaction.atomic():
+
+            # Crear auditoría
+            obj = InfrastructureAudit.objects.create(
+                company_id=company_id,
+                name=name,
+                description=description,
+                start_date=start_date,
+                created_by=request.user
+            )
+
+            # Relacionar categorías seleccionadas
+            obj.categories.set(categories)
+
+            # Obtener activos de las categorías seleccionadas
+            infrastructure_items = Infrastructure_Item.objects.filter(
+                company_id=company_id,
+                is_active=True,
+                category_id__in=categories.values_list("id", flat=True)
+            )
+
+            # Crear los registros de activos correspondientes a la auditoría
+            audit_items = [
+                InfrastructureAuditItem(
+                    audit=obj,
+                    item=item,
+                    registered_quantity=item.quantity
+                )
+                for item in infrastructure_items
+            ]
+
+            InfrastructureAuditItem.objects.bulk_create(audit_items)
+
+        return JsonResponse({
+            "status": "success",
+            "id": obj.id,
+            "message": "Auditoría registrada exitosamente."
+        })
+
+    except Exception as e:
+        print("Error al guardar la auditoría:", str(e))
+
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
+
+
+# Funcion para obtener los nombres de las categorias de una empresa
+def get_categories_audit(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'No se encontró la empresa asociada al usuario'
+            }, status=400)
+
+        categories = Infrastructure_Category.objects.filter(
+            empresa_id=company_id, is_active=True
+        ).values('id', 'name')
+
+        return JsonResponse({
+            'success': True,
+            'data': list(categories)
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+
+
+def get_infrastructure_audit(request):
+    response = {"success": False}
+
+    try:
+        context = user_data(request)
+        subModule_id = 43
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la empresa asociada al usuario."
+            }, status=400)
+
+        # Consultar auditorías de la empresa
+        datos = InfrastructureAudit.objects.filter(
+            company_id=company_id,
+            is_active=True
+        ).select_related(
+            "company",
+            "created_by"
+        ).prefetch_related(
+            "categories"
+        ).order_by("-created_at")
+
+        access = get_module_user_permissions(context, subModule_id)
+        access = access["data"]["access"]
+
+        data = []
+
+        for item in datos:
+
+            active_categories = item.categories.filter(is_active=True)
+
+            categories_names = ", ".join(
+                active_categories.values_list("name", flat=True)
+            )
+
+            categories_ids = list(
+                active_categories.values_list("pk", flat=True)
+            )
+
+            categories_ids = [int(category_id) for category_id in categories_ids]
+
+            total_assets = Infrastructure_Item.objects.filter(
+                company_id=company_id,
+                category_id__in=categories_ids,
+                is_active=True
+            ).aggregate(
+                total=Sum("quantity")
+            )["total"] or 0
+
+            nombre_responsable = " ".join(
+                filter(
+                    None,
+                    [
+                        item.created_by.first_name if item.created_by else "",
+                        item.created_by.last_name if item.created_by else ""
+                    ]
+                )
+            )
+
+            responsable = (
+                nombre_responsable 
+                or (item.created_by.username if item.created_by else "")
+            )
+
+            # Obtener activos registrados en esta auditoría
+            audit_items = InfrastructureAuditItem.objects.filter(
+                audit_id=item.id
+            )
+
+            total_audit_items = audit_items.count()
+
+            # Obtener activos que ya fueron verificados
+            verified_items = audit_items.filter(
+                is_completed=True
+            ).count()
+
+            # Calcular porcentaje de avance
+            progress = (
+                round((verified_items / total_audit_items) * 100)
+                if total_audit_items > 0 else 0
+            )
+            
+
+            print("este es el responsable:", responsable)
+
+            row = {
+                "id": item.id,
+                "row_id": item.id,
+                "company_id": item.company_id,
+                "company__name": item.company.name,
+
+                "categories": categories_names,
+                "categories_ids": categories_ids,
+
+                "name": item.name,
+                "total_assets": total_assets,
+                "description": item.description or "",
+                "start_date": item.start_date.strftime("%Y-%m-%d") if item.start_date else "",
+                "end_date": item.end_date.strftime("%d-%m-%Y") if item.end_date else "Sin fecha",
+                "status": item.status,
+                "created_by": item.created_by_id,
+
+                "responsible_audit": item.created_by_id,
+                "responsible_audit": item.created_by_id,
+                "responsible_name": responsable,
+
+                "total_audit_items": total_audit_items,
+                "verified_items": verified_items,
+                "progress": progress,
+
+                "btn_action": ""
+            }
+            print("esto contiene row:", row)
+
+            # Botón actualizar
+            if access["update"]:
+                row["btn_action"] += (
+                    "<button type='button' name='update' "
+                    "class='btn btn-icon btn-sm btn-primary-light' "
+                    "data-infrastructure-audit='update-audit' "
+                    "data-id='{}' aria-label='Editar'>"
+                    "<i class='fa-solid fa-pen'></i>"
+                    "</button>\n"
+                ).format(item.id)
+
+            # Botón eliminar
+            # if access["delete"]:
+            #     row["btn_action"] += (
+            #         "<button type='button' name='delete' "
+            #         "class='btn btn-icon btn-sm btn-danger-light' "
+            #         "data-infrastructure-audit='delete-audit' "
+            #         "data-id='{}' aria-label='Eliminar'>"
+            #         "<i class='fa-solid fa-trash'></i>"
+            #         "</button>\n"
+            #     ).format(item.id)
+
+            data.append(row)
+
+        response["data"] = data
+        response["status"] = "success"
+        response["success"] = True
+
+        return JsonResponse(response)
+
+    except Exception as e:
+        print("Error al consultar las auditorías:", str(e))
+
+        return JsonResponse({
+            "success": False,
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
+# Editar auditoría
+def update_infrastructure_audit(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "status": "error",
+            "message": "Método no permitido"
+        }, status=405)
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                "status": "error",
+                "message": "No se encontró la empresa asociada al usuario."
+            }, status=400)
+
+        audit_id = request.POST.get("id")
+
+        if not audit_id:
+            return JsonResponse({
+                "status": "warning",
+                "message": "No se especificó la auditoría que desea actualizar."
+            })
+
+        obj = InfrastructureAudit.objects.filter(
+            id=audit_id,
+            company_id=company_id,
+            is_active=True
+        ).first()
+
+        if not obj:
+            return JsonResponse({
+                "status": "warning",
+                "message": "La auditoría no existe o no pertenece a su empresa."
+            })
+
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+        start_date = request.POST.get("start_date") or None
+        end_date = request.POST.get("end_date") or None
+
+        categories_ids = request.POST.getlist("audit_categories")
+
+        if not name:
+            return JsonResponse({
+                "status": "warning",
+                "message": "Ingrese el nombre de la auditoría."
+            })
+
+        if not start_date:
+            return JsonResponse({
+                "status": "warning",
+                "message": "Seleccione la fecha de inicio."
+            })
+
+        start_date = parse_date(start_date)
+
+        if not start_date:
+            return JsonResponse({
+                "status": "warning",
+                "message": "La fecha de inicio no es válida."
+            })
+
+        if end_date:
+            end_date = parse_date(end_date)
+
+            if not end_date:
+                return JsonResponse({
+                    "status": "warning",
+                    "message": "La fecha de finalización no es válida."
+                })
+
+            if end_date < start_date:
+                return JsonResponse({
+                    "status": "warning",
+                    "message": "La fecha de finalización no puede ser anterior a la fecha de inicio."
+                })
+
+        if not categories_ids:
+            return JsonResponse({
+                "status": "warning",
+                "message": "Seleccione al menos una categoría para la auditoría."
+            })
+
+        if InfrastructureAudit.objects.filter(
+            name__iexact=name,
+            company_id=company_id
+        ).exclude(id=obj.id).exists():
+            return JsonResponse({
+                "status": "warning",
+                "message": "Ya existe otra auditoría con ese nombre."
+            })
+
+        categories_ids = list(set(categories_ids))
+
+        categories = Infrastructure_Category.objects.filter(
+            id__in=categories_ids,
+            empresa_id=company_id,
+            is_active=True
+        )
+
+        if categories.count() != len(categories_ids):
+            return JsonResponse({
+                "status": "warning",
+                "message": "Una o varias categorías seleccionadas no pertenecen a la empresa."
+            })
+
+        # Comprobar si existen sesiones
+        tiene_sesiones = obj.sessions.exists()
+
+        # No permitir cambiar categorías cuando ya existen sesiones
+        if tiene_sesiones:
+            categorias_actuales = set(
+                obj.categories.values_list("id", flat=True)
+            )
+
+            categorias_nuevas = set(
+                categories.values_list("id", flat=True)
+            )
+
+            if categorias_actuales != categorias_nuevas:
+                return JsonResponse({
+                    "status": "warning",
+                    "message": (
+                        "No es posible modificar las categorías porque "
+                        "la auditoría ya tiene sesiones registradas."
+                    )
+                })
+
+        with transaction.atomic():
+
+            obj.name = name
+            obj.description = description
+            obj.start_date = start_date
+            obj.end_date = end_date
+
+            obj.save()
+
+            obj.categories.set(categories)
+
+            # Sincronizar activos solamente si no existen sesiones
+            if not tiene_sesiones:
+
+                assets = Infrastructure_Item.objects.filter(
+                    company_id=company_id,
+                    category_id__in=categories_ids,
+                    is_active=True
+                )
+
+                asset_ids = assets.values_list("id", flat=True)
+
+                # Eliminar activos que ya no corresponden a las categorías
+                InfrastructureAuditItem.objects.filter(
+                    audit=obj
+                ).exclude(
+                    item_id__in=asset_ids
+                ).delete()
+
+                # Identificar activos que ya están registrados
+                existing_ids = InfrastructureAuditItem.objects.filter(
+                    audit=obj
+                ).values_list("item_id", flat=True)
+
+                # Crear únicamente los activos nuevos
+                nuevos_activos = [
+                    InfrastructureAuditItem(
+                        audit=obj,
+                        item=item,
+                        registered_quantity=item.quantity or 0
+                    )
+                    for item in assets.exclude(id__in=existing_ids)
+                ]
+
+                if nuevos_activos:
+                    InfrastructureAuditItem.objects.bulk_create(
+                        nuevos_activos
+                    )
+
+        return JsonResponse({
+            "status": "success",
+            "id": obj.id,
+            "message": "Auditoría actualizada exitosamente."
+        })
+
+    except Exception as e:
+        print("Error al actualizar la auditoría:", str(e))
+
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
+def get_infrastructure_info_from_audit(request, audit_id):
+    try:
+        auditoria = InfrastructureAudit.objects.get(
+            id=audit_id
+        )
+
+        info_html = render_to_string(
+            "infrastructure/cards/audit_info.html",
+            context={
+                'audit': auditoria,
+            },
+            request=request
+        )
+
+        #tabla de activos
+        audit_html = ""
+
+
+        return JsonResponse({
+            'info_html': info_html,
+            'audit_html': audit_html,
+        })
+
+    except InfrastructureAudit.DoesNotExist:
+        return JsonResponse({
+            'error': 'Auditoría no encontrada'
+        }, status=404)
+
+
+# Crear sesión de auditoría
+def add_infrastructure_audit_session(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la empresa del usuario."
+            }, status=400)
+
+        audit_id = request.POST.get("audit_id")
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+        responsible_id = request.POST.get("responsible_id") or None
+
+        if not audit_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió la auditoría."
+            }, status=400)
+
+        if not name:
+            return JsonResponse({
+                "success": False,
+                "message": "Ingrese el nombre de la sesión."
+            }, status=400)
+
+        # Verificar que la auditoría pertenezca a la empresa
+        audit = InfrastructureAudit.objects.filter(
+            id=audit_id,
+            company_id=company_id,
+            is_active=True
+        ).first()
+
+        if not audit:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la auditoría."
+            }, status=404)
+
+        # No permitir crear sesiones en auditorías cerradas o canceladas
+        if audit.status in ["CERRADA", "CANCELADA"]:
+            return JsonResponse({
+                "success": False,
+                "message": "No se pueden crear sesiones en una auditoría cerrada o cancelada."
+            }, status=400)
+
+        # Validar responsable si fue seleccionado
+        responsible = None
+
+        if responsible_id:
+            responsible = User.objects.filter(
+                id=responsible_id
+            ).first()
+
+            if not responsible:
+                return JsonResponse({
+                    "success": False,
+                    "message": "El responsable seleccionado no existe."
+                }, status=400)
+
+        with transaction.atomic():
+
+            # Crear sesión
+            session = InfrastructureAuditSession.objects.create(
+                audit=audit,
+                name=name,
+                description=description,
+                responsible=responsible,
+                status="PENDIENTE"
+            )
+
+            # La auditoría pasa a estar en proceso
+            if audit.status == "BORRADOR":
+                audit.status = "EN_PROCESO"
+                audit.save(update_fields=["status", "updated_at"])
+
+        return JsonResponse({
+            "success": True,
+            "message": "Sesión creada correctamente.",
+            "data": {
+                "id": session.id,
+                "name": session.name,
+                "description": session.description or "",
+                "status": session.status,
+                "responsible": (
+                    str(session.responsible)
+                    if session.responsible else "Sin asignar"
+                ),
+                "created_at": session.created_at.strftime("%d/%m/%Y %H:%M")
+            }
+        })
+
+    except Exception as e:
+        print("Error al crear sesión de auditoría:", str(e))
+
+        return JsonResponse({
+            "success": False,
+            "message": str(e)
+        }, status=500)
+    
+# Consultar sesiones de una auditoría
+def get_infrastructure_audit_sessions(request):
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        audit_id = request.GET.get("audit_id")
+
+        if not audit_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el ID de la auditoría.",
+                "data": []
+            }, status=400)
+
+        audit = InfrastructureAudit.objects.filter(
+            id=audit_id,
+            company_id=company_id
+        ).first()
+
+        if not audit:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la auditoría.",
+                "data": []
+            }, status=404)
+
+        sessions = InfrastructureAuditSession.objects.filter(
+            audit=audit
+        ).select_related(
+            "responsible"
+        ).order_by("created_at")
+
+        data = []
+
+        for session in sessions:
+            data.append({
+                "id": session.id,
+                "name": session.name,
+                "description": session.description or "",
+                "status": session.status,
+                "responsible": (
+                    str(session.responsible)
+                    if session.responsible else "Sin asignar"
+                ),
+                "created_at": session.created_at.strftime(
+                    "%d/%m/%Y %H:%M"
+                )
+            })
+
+        return JsonResponse({
+            "success": True,
+            "data": data
+        })
+
+    except Exception as e:
+        print("Error al consultar sesiones:", str(e))
+
+        return JsonResponse({
+            "success": False,
+            "message": str(e),
+            "data": []
+        }, status=500)
+
+
+@csrf_exempt
+def add_infrastructure_audit_session(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la empresa del usuario."
+            }, status=400)
+
+        audit_id = request.POST.get("audit_id")
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+        responsible_id = request.POST.get("responsible_id") or None
+
+        # Validaciones
+        if not audit_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el ID de la auditoría."
+            }, status=400)
+
+        if not name:
+            return JsonResponse({
+                "success": False,
+                "message": "Ingrese el nombre de la sesión."
+            }, status=400)
+
+        # Verificar auditoría y empresa
+        audit = InfrastructureAudit.objects.filter(
+            id=audit_id,
+            company_id=company_id,
+            is_active=True
+        ).first()
+
+        if not audit:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la auditoría."
+            }, status=404)
+
+        if audit.status in ["CERRADA", "CANCELADA"]:
+            return JsonResponse({
+                "success": False,
+                "message": "No se pueden crear sesiones en una auditoría cerrada o cancelada."
+            }, status=400)
+
+        # Validar responsable
+        responsible = None
+
+        if responsible_id:
+            responsible = User.objects.filter(
+                id=responsible_id
+            ).first()
+
+            if not responsible:
+                return JsonResponse({
+                    "success": False,
+                    "message": "El responsable seleccionado no existe."
+                }, status=400)
+
+        with transaction.atomic():
+
+            session = InfrastructureAuditSession.objects.create(
+                audit=audit,
+                name=name,
+                description=description,
+                responsible=responsible,
+                status="PENDIENTE"
+            )
+
+            # Cambiar estado de la auditoría
+            if audit.status == "BORRADOR":
+                audit.status = "EN_PROCESO"
+                audit.save(update_fields=["status", "updated_at"])
+
+        return JsonResponse({
+            "success": True,
+            "message": "Sesión creada correctamente.",
+            "data": {
+                "id": session.id,
+                "name": session.name,
+                "description": session.description or "",
+                "status": session.status,
+                "responsible": (
+                    str(session.responsible)
+                    if session.responsible else "Sin asignar"
+                ),
+                "created_at": session.created_at.strftime("%d/%m/%Y %H:%M")
+            }
+        })
+
+    except Exception as e:
+        print("Error al crear sesión de auditoría:", str(e))
+
+        return JsonResponse({
+            "success": False,
+            "message": str(e)
+        }, status=500)
+
+
+
+# Tabla de activos correspondientes a una auditoría
+# def get_infrastructure_items_audit(request):
+#     try:
+#         context = user_data(request)
+#         company_id = context["company"]["id"]
+
+#         audit_id = request.GET.get("audit_id")
+
+#         if not audit_id:
+#             return JsonResponse({
+#                 "success": False,
+#                 "message": "No se recibió el ID de la auditoría.",
+#                 "data": []
+#             }, status=400)
+
+#         # Obtener la auditoría de la empresa
+#         audit = InfrastructureAudit.objects.get(
+#             id=audit_id,
+#             company_id=company_id
+#         )
+
+#         # Obtener las categorías seleccionadas en la auditoría
+#         category_ids = audit.categories.values_list("id", flat=True)
+
+#         # Obtener los activos de esas categorías
+#         datos = Infrastructure_Item.objects.filter(
+#             company_id=company_id,
+#             is_active=True,
+#             category_id__in=category_ids
+#         ).values(
+#             "id",
+#             "company_id",
+#             "company__name",
+#             "category_id",
+#             "category__name",
+#             "name",
+#             "image",
+#             "item_brand",
+#             "description",
+#             "quantity",
+#             "cost",
+#             "is_active",
+#             "created_at",
+#             "updated_at",
+#         )
+
+#         # Preparar información para DataTables
+#         data = list(datos)
+
+#         for item in data:
+
+#             item["row_id"] = item["id"]
+#             item["cantidad_encontrada"] = None
+#             item["estado"] = "Pendiente"
+
+#             if item["image"]:
+#                 item["image"] = generate_presigned_url(
+#                     bucket_name,
+#                     item["image"]
+#                 )
+
+#             # Botón de desglose
+#             item["btn_identifiers"] = (
+#                 f"<button type='button' "
+#                 f"class='btn btn-icon btn-sm btn-success-light' "
+#                 f"data-infrastructure-item='view-identifiers' "
+#                 f"data-id='{item['id']}' "
+#                 f"aria-label='Ver desglose'>"
+#                 f"<i class='fa-solid fa-list'></i>"
+#                 f"</button>"
+#             )
+
+#         return JsonResponse({
+#             "success": True,
+#             "status": "success",
+#             "data": data
+#         })
+
+#     except InfrastructureAudit.DoesNotExist:
+#         return JsonResponse({
+#             "success": False,
+#             "message": "No se encontró la auditoría.",
+#             "data": []
+#         }, status=404)
+
+#     except Exception as e:
+#         return JsonResponse({
+#             "success": False,
+#             "message": str(e),
+#             "data": []
+#         }, status=500)
+
+#obtner los activos de las categorias seleccionadas por auditorias para mostrar en sesion 
+def get_infrastructure_audit_session_items(request):
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        session_id = request.GET.get("session_id")
+
+        if not session_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el ID de la sesión.",
+                "data": []
+            }, status=400)
+
+        # Obtener sesión y validar que pertenezca a la empresa
+        session = InfrastructureAuditSession.objects.select_related(
+            "audit"
+        ).filter(
+            id=session_id,
+            audit__company_id=company_id,
+            audit__is_active=True
+        ).first()
+
+        if not session:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la sesión o no pertenece a su empresa.",
+                "data": []
+            }, status=404)
+
+        # Obtener los activos registrados en la auditoría
+        audit_items = InfrastructureAuditItem.objects.filter(
+            audit_id=session.audit_id
+        ).select_related(
+            "item",
+            "item__category"
+        ).order_by("item__name")
+
+        # Obtener los detalles de esta sesión
+        session_details = {
+            detail.audit_item_id: detail
+            for detail in InfrastructureAuditSessionDetail.objects.filter(
+                session=session
+            )
+        }
+
+      
+
+        data = []
+
+        for audit_item in audit_items:
+
+            item = audit_item.item
+            detail = session_details.get(audit_item.id)
+
+            # Obtener URL de evidencia guardada en S3
+            evidence_url = None
+    
+            if detail and detail.evidence:
+                evidence_url = generate_presigned_url(
+                    bucket_name,
+                    detail.evidence.name
+                )
+
+            cantidad_encontrada = (
+                detail.found_quantity if detail else None
+            )
+
+            diferencia = (
+                audit_item.registered_quantity - cantidad_encontrada
+                if detail else None
+            )
+
+            image_url = None
+
+            if item.image:
+                image_url = generate_presigned_url(
+                    bucket_name,
+                    item.image.name
+                )
+
+            # Botón de desglose
+            btn_identifiers = (
+                f"<button type='button' "
+                f"class='btn btn-icon btn-sm btn-success-light' "
+                f"data-infrastructure-item='view-identifiers' "
+                f"data-id='{item.id}' "
+                f"aria-label='Ver desglose'>"
+                f"<i class='fa-solid fa-list'></i>"
+                f"</button>"
+            )
+
+            data.append({
+                "id": audit_item.id,
+                "item_id": item.id,
+                "category": item.category.name if item.category else "",
+                "name": item.name,
+                "image": image_url,
+                "description": item.description or "",
+                "item_brand": item.item_brand or "",
+                "cost": item.cost or 0,
+                "btn_identifiers": btn_identifiers,
+                "registered_quantity": audit_item.registered_quantity,
+                "found_quantity": cantidad_encontrada,
+                "difference": diferencia,
+                "observations": detail.observations if detail else "",
+                "is_completed": audit_item.is_completed,
+                "evidence": evidence_url,
+            })
+
+        return JsonResponse({
+            "success": True,
+            "status": "success",
+            "session_id": session.id,
+            "audit_id": session.audit_id,
+            "data": data
+        })
+
+    except Exception as e:
+        print("Error al obtener activos de la sesión:", str(e))
+
+        return JsonResponse({
+            "success": False,
+            "message": str(e),
+            "data": []
+        }, status=500)
+
+
+# Guardar verificación de un activo en una sesión de auditoría
+@csrf_exempt
+def save_infrastructure_audit_session_detail(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        if not company_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la empresa del usuario."
+            }, status=400)
+
+        session_id = request.POST.get("session_id")
+        audit_item_id = request.POST.get("audit_item_id")
+        found_quantity = request.POST.get("found_quantity")
+        observations = request.POST.get("observations", "").strip()
+        evidence = request.FILES.get("evidence")
+
+        if not session_id or not audit_item_id:
+            return JsonResponse({
+                "success": False,
+                "message": "Falta el ID de la sesión o del activo."
+            }, status=400)
+
+        if found_quantity is None or found_quantity.strip() == "":
+            return JsonResponse({
+                "success": False,
+                "message": "Ingrese la cantidad encontrada."
+            }, status=400)
+
+        try:
+            found_quantity = int(found_quantity)
+
+            if found_quantity < 0:
+                raise ValueError
+
+        except (ValueError, TypeError):
+            return JsonResponse({
+                "success": False,
+                "message": "La cantidad encontrada debe ser un número entero mayor o igual a cero."
+            }, status=400)
+
+        # Validar sesión y empresa
+        session = InfrastructureAuditSession.objects.filter(
+            id=session_id,
+            audit__company_id=company_id,
+            audit__is_active=True
+        ).first()
+
+        if not session:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la sesión de auditoría."
+            }, status=404)
+
+        if session.status in ["COMPLETADA", "CANCELADA"]:
+            return JsonResponse({
+                "success": False,
+                "message": "No se pueden modificar los activos de una sesión completada o cancelada."
+            }, status=400)
+
+        # Validar que el activo pertenezca a la auditoría de la sesión
+        audit_item = InfrastructureAuditItem.objects.filter(
+            id=audit_item_id,
+            audit_id=session.audit_id
+        ).first()
+
+        if not audit_item:
+            return JsonResponse({
+                "success": False,
+                "message": "El activo no pertenece a esta auditoría."
+            }, status=404)
+
+        # Verificar si el activo ya fue auditado
+        if audit_item.is_completed:
+            return JsonResponse({
+                "success": False,
+                "message": "Este activo ya fue verificado y no puede auditarse nuevamente."
+            }, status=400)
+        
+        with transaction.atomic():
+
+            # Bloquear el activo mientras se realiza la verificación
+            audit_item = InfrastructureAuditItem.objects.select_for_update().filter(
+                id=audit_item_id,
+                audit_id=session.audit_id
+            ).first()
+
+            if not audit_item:
+                return JsonResponse({
+                    "success": False,
+                    "message": "El activo no pertenece a esta auditoría."
+                }, status=404)
+
+            # Verificar si el activo ya fue auditado
+            if audit_item.is_completed:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Este activo ya fue verificado y no puede auditarse nuevamente."
+                }, status=400)
+
+            detail, created = InfrastructureAuditSessionDetail.objects.get_or_create(
+                session=session,
+                audit_item=audit_item,
+                defaults={
+                    "found_quantity": found_quantity,
+                    "observations": observations,
+                    "verified_by": request.user
+                }
+
+            )
+
+            if not created:
+                detail.found_quantity = found_quantity
+                detail.observations = observations
+                detail.verified_by = request.user
+
+            # Guardar evidencia en S3 si existe
+            if evidence:
+                folder_path = (
+                    f"docs/{company_id}/infrastructure_audits/"
+                    f"{session.audit_id}/{session.id}/{audit_item.id}/"
+                )
+
+                file_name, extension = os.path.splitext(evidence.name)
+
+                new_name = f"evidence_{audit_item.id}{extension}"
+
+                s3_path = folder_path + new_name
+
+                upload_to_s3(evidence, bucket_name, s3_path)
+
+                detail.evidence = s3_path
+
+            detail.save()
+
+
+            # Marcar el activo como verificado
+            audit_item.is_completed = True
+            audit_item.completed_at = timezone.now()
+            audit_item.save(update_fields=["is_completed", "completed_at"])
+
+            # Marcar la sesión como iniciada
+            if session.status == "PENDIENTE":
+                session.status = "EN_PROCESO"
+                session.save(update_fields=["status"])
+
+
+        return JsonResponse({
+            "success": True,
+            "message": "La verificación del activo se guardó correctamente.",
+            "detail_id": detail.id,
+            "found_quantity": detail.found_quantity,
+            "observations": detail.observations,
+            "created": created
+        })
+
+    except Exception as e:
+        print("Error al guardar la verificación del activo:", str(e))
+
+        return JsonResponse({
+            "success": False,
+            "message": str(e)
+        }, status=500)
+
+
+# Finalizar auditoría y todas sus sesiones
+@csrf_exempt
+def finish_infrastructure_audit(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido."
+        }, status=405)
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        audit_id = request.POST.get("audit_id")
+
+        if not company_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se encontró la empresa del usuario."
+            }, status=400)
+
+        if not audit_id:
+            return JsonResponse({
+                "success": False,
+                "message": "No se recibió el ID de la auditoría."
+            }, status=400)
+
+        with transaction.atomic():
+
+            # Bloquear auditoría
+            audit = InfrastructureAudit.objects.select_for_update().filter(
+                id=audit_id,
+                company_id=company_id,
+                is_active=True
+            ).first()
+
+            if not audit:
+                return JsonResponse({
+                    "success": False,
+                    "message": "No se encontró la auditoría."
+                }, status=404)
+
+            if audit.status in ["CERRADA", "CANCELADA"]:
+                return JsonResponse({
+                    "success": False,
+                    "message": "La auditoría ya está cerrada o cancelada."
+                }, status=400)
+
+            # Obtener y bloquear las sesiones
+            sessions = list(
+                InfrastructureAuditSession.objects.select_for_update().filter(
+                    audit=audit
+                )
+            )
+
+            if not sessions:
+                return JsonResponse({
+                    "success": False,
+                    "message": "No puedes finalizar una auditoría sin sesiones."
+                }, status=400)
+
+            # Bloquear los activos de la auditoría
+            audit_items = list(
+                InfrastructureAuditItem.objects.select_for_update().filter(
+                    audit=audit
+                ).select_related("item")
+            )
+
+            if not audit_items:
+                return JsonResponse({
+                    "success": False,
+                    "message": "La auditoría no tiene activos registrados."
+                }, status=400)
+
+            # Identificar activos pendientes
+            pending_items = [
+                audit_item.item.name
+                for audit_item in audit_items
+                if not audit_item.is_completed
+            ]
+
+            if pending_items:
+                return JsonResponse({
+                    "success": False,
+                    "message": (
+                        f"No se puede finalizar la auditoría. "
+                        f"Hay {len(pending_items)} activos pendientes de verificar."
+                    ),
+                    "pending_items": pending_items
+                }, status=400)
+
+            # Fecha y hora de finalización
+            now = timezone.now()
+
+            # Finalizar todas las sesiones
+            InfrastructureAuditSession.objects.filter(
+                audit=audit
+            ).update(
+                status="COMPLETADA",
+                end_date=now
+            )
+
+            # Finalizar auditoría general
+            audit.status = "CERRADA"
+            audit.end_date = timezone.localdate()
+            audit.save(update_fields=["status", "end_date", "updated_at"])
+
+        return JsonResponse({
+            "success": True,
+            "message": "La auditoría y todas sus sesiones se finalizaron correctamente.",
+            "audit_id": audit.id,
+            "status": audit.status,
+            "sessions_completed": len(sessions),
+            "end_date": str(audit.end_date)
+        })
+
+    except Exception as e:
+        print("Error al finalizar auditoría:", str(e))
+
+        return JsonResponse({
+            "success": False,
+            "message": str(e)
+        }, status=500)
+
+
+#Generar reporte 
+def generate_infrastructure_audit_report(request, audit_id):
+
+    try:
+        context = user_data(request)
+        company_id = context["company"]["id"]
+
+        # Consultar únicamente auditorías de la empresa que estén cerradas
+        audit = get_object_or_404(
+            InfrastructureAudit.objects.select_related(
+                "company",
+                "created_by"
+            ).prefetch_related("categories"),
+            id=audit_id,
+            company_id=company_id,
+            is_active=True,
+            status="CERRADA"
+        )
+
+        # Consultar activos registrados en la auditoría
+        audit_items = InfrastructureAuditItem.objects.filter(
+            audit_id=audit.id
+        ).select_related(
+            "item",
+            "item__category"
+        ).order_by(
+            "item__category__name",
+            "item__name"
+        )
+
+        # Consultar todos los detalles de verificación
+        details = InfrastructureAuditSessionDetail.objects.filter(
+            audit_item__audit_id=audit.id
+        ).select_related(
+            "session",
+            "verified_by"
+        )
+
+        details_by_item = {
+            detail.audit_item_id: detail
+            for detail in details
+        }
+
+        # Preparar información de los activos
+        report_items = []
+
+        for audit_item in audit_items:
+
+            detail = details_by_item.get(audit_item.id)
+
+            found_quantity = (
+                detail.found_quantity if detail else 0
+            )
+
+            difference = (
+                audit_item.registered_quantity - found_quantity
+                if detail else None
+            )
+
+            evidence_url = None
+
+            if detail and detail.evidence:
+                evidence_url = generate_presigned_url(
+                    bucket_name,
+                    detail.evidence.name
+                )
+
+            report_items.append({
+                "name": audit_item.item.name,
+                "category": audit_item.item.category.name,
+                "registered_quantity": audit_item.registered_quantity,
+                "found_quantity": found_quantity if detail else None,
+                "difference": difference,
+                "observations": detail.observations if detail else "",
+                "verified_by": (
+                    detail.verified_by.get_full_name()
+                    or detail.verified_by.username
+                    if detail and detail.verified_by
+                    else "Sin información"
+                ),
+                "verified_at": detail.verified_at if detail else None,
+                "evidence": evidence_url,
+                "is_completed": audit_item.is_completed,
+            })
+
+        total_items = audit_items.count()
+        verified_items = audit_items.filter(is_completed=True).count()
+        pending_items = total_items - verified_items
+
+        progress = (
+            round((verified_items / total_items) * 100)
+            if total_items else 0
+        )
+
+        # Consultar sesiones
+        sessions = InfrastructureAuditSession.objects.filter(
+            audit_id=audit.id
+        ).select_related(
+            "responsible"
+        ).order_by("created_at")
+
+        report_context = {
+            "audit": audit,
+            "report_items": report_items,
+            "sessions": sessions,
+            "total_items": total_items,
+            "verified_items": verified_items,
+            "pending_items": pending_items,
+            "progress": progress,
+            "categories": audit.categories.all(),
+        }
+
+        # Generar HTML del reporte
+        html_string = render_to_string(
+            "infrastructure/infrastructure/audit_report.html",
+            report_context
+        )
+        
+        # Convertir HTML a PDF
+        pdf_file = HTML(
+            string=html_string,
+            base_url=request.build_absolute_uri("/")
+        ).write_pdf()
+
+        response = HttpResponse(
+            pdf_file,
+            content_type="application/pdf"
+        )
+
+        response["Content-Disposition"] = (
+            f'inline; filename="auditoria_{audit.id}.pdf"'
+        )
+
+        return response
+
+    except Exception as e:
+        print("Error al generar reporte de auditoría:", str(e))
+
+        return HttpResponse(
+            f"No fue posible generar el reporte: {str(e)}",
+            status=500
+        )

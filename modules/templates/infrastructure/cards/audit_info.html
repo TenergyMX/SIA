@@ -1,0 +1,67 @@
+<div class="card custom-card card-audit-info">
+    <div class="card-body">
+        <div class="row g-2">
+
+            <div class="col-md-5">
+                <span class="fw-bolder">ID de Auditoría:</span>
+            </div>
+            <div class="col-md-7">
+                <span>{{ audit.id }}</span>
+            </div>
+
+            <div class="col-md-5">
+                <span class="fw-bolder">Nombre:</span>
+            </div>
+            <div class="col-md-7">
+                <span>{{ audit.name }}</span>
+            </div>
+            
+            <div class="col-md-5">
+                <span class="fw-bolder">Descripción:</span>
+            </div>
+            <div class="col-md-7">
+                <span>{{ audit.description }}</span>
+            </div>
+
+            <div class="col-md-5">
+                <span class="fw-bolder">Fecha de inicio:</span>
+            </div>
+            <div class="col-md-7">
+                <span>{{ audit.start_date }}</span>
+            </div>
+
+            <div class="col-md-5">
+                <span class="fw-bolder">Fecha de fin:</span>
+            </div>
+            <div class="col-md-7">
+                <span>
+                    {{ audit.end_date|default:"Sin fecha" }}
+                </span>
+            </div>
+
+            <div class="col-md-5">
+                <span class="fw-bolder">Categorías a evaluar:</span>
+            </div>
+            <div class="col-md-7">
+                {% for category in audit.categories.all %}
+                    <div class="mb-1">
+                        <i class="fa-solid fa-circle text-warning me-1"></i>
+                        {{ category.name }}
+                    </div>
+                {% empty %}
+                    <span class="text-muted">Sin categorías registradas</span>
+                {% endfor %}
+            </div>
+
+            <div class="col-md-5">
+                <span class="fw-bolder">Responsable:</span>
+            </div>
+            <div class="col-md-7">
+                <span>
+                    {{ audit.created_by|default:"Sin responsable" }}
+                </span>
+            </div>
+
+        </div>
+    </div>
+</div>

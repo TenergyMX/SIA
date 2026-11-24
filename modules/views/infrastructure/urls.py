@@ -7,6 +7,7 @@ urlpatterns = [
     path("infrastructure/category/", views.infrastructure_category_view),
     path("infrastructure/maintenance/", views.infrastructure_maintenance_view),
     path("infrastructure/infrastructure_removed/", views.infrastructure_removed),
+    path("infrastructure/infrastructure_asset_verification/", views.infrastructure_asset_verification),
 
     # Peticiones
     path("get-infrastructure-categorys/", views.get_infrastructure_categorys),
@@ -73,5 +74,29 @@ urlpatterns = [
     path("get_item_areas/", views.get_item_areas),
     path("get_responsible_users_item/", views.get_responsible_users_item),
 
+    path("download_items_xlsx/", views.download_items_xlsx),
 
+    path("asignar_location/", views.asignar_location),
+
+
+    #auditorias
+    path("get_infrastructure_audit_assets/", views.get_infrastructure_audit_assets),
+    #agregar una auditoria
+    path("add-infrastructure-audit/", views.add_infrastructure_audit),
+    path('get_categories_audit/', views.get_categories_audit),
+    path("get-infrastructure-audit/", views.get_infrastructure_audit),
+    #Editar una auditoria
+    path("update-infrastructure-audit/", views.update_infrastructure_audit),
+    path('ajax/infra-info-by-audit/<int:audit_id>/', views.get_infrastructure_info_from_audit),
+
+    #obtener equipos a auditar 
+    #path("get-infrastructure-items-verification/", views.get_infrastructure_items_verification),
+    #path("get_infrastructure_items_audit/", views.get_infrastructure_items_audit),
+    path("add-infrastructure-audit-session/", views.add_infrastructure_audit_session),
+    path("get-infrastructure-audit-sessions/", views.get_infrastructure_audit_sessions),
+    path("add-infrastructure-audit-session/", views.add_infrastructure_audit_session,),
+    path("get-infrastructure-audit-session-items/", views.get_infrastructure_audit_session_items),
+    path("save-infrastructure-audit-session-detail/", views.save_infrastructure_audit_session_detail),
+    path("finish-infrastructure-audit/", views.finish_infrastructure_audit),
+    path("generate-infrastructure-audit-report/<int:audit_id>/",views.generate_infrastructure_audit_report),
 ]

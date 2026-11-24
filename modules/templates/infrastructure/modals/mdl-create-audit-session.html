@@ -1,0 +1,84 @@
+<!-- Modal crear sesión -->
+<div class="modal fade" id="mdl-create-audit-session" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva sesión de auditoría</h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+            </div>
+
+            <form id="form-create-audit-session">
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           name="audit_id"
+                           id="session_audit_id">
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Nombre de la sesión
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               name="name"
+                               placeholder="Ej. Primera jornada de verificación"
+                               required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Descripción
+                        </label>
+
+                        <textarea class="form-control"
+                                  name="description"
+                                  rows="3"
+                                  placeholder="Descripción de la sesión">
+                        </textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Responsable</label>
+
+                        <select class="form-select"
+                                name="responsible_id"
+                                id="responsible_id"
+                                required>
+
+                            <option value="">Seleccione el responsable</option>
+
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            name="add">
+                        Crear sesión
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

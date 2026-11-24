@@ -805,10 +805,12 @@ class InfrastructureItemDetail(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255) 
     identifier = models.CharField(max_length=255, unique=True)  
-    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal", blank=True, null=True,         related_name="infrastructure_details_responsible")
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Responsable temporal", blank=True, null=True,related_name="infrastructure_details_responsible")
     assignment_date = models.DateField(blank=True, null=True, verbose_name="Fecha de asignación")
     created_at = models.DateTimeField(auto_now_add=True)
-    photo_infraestructure = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Imagen del registro")     
+    photo_infraestructure = models.FileField(upload_to='docs/', blank=True, null=True, verbose_name="Imagen del registro")  
+    location_item = models.ForeignKey(Items_locations, on_delete=models.CASCADE, verbose_name="Ubicación" ,blank=True, null=True)
+   
     class Meta:
         verbose_name = "Detalle de Item de Infraestructura"
         verbose_name_plural = "Detalles de Items de Infraestructura"
@@ -831,7 +833,21 @@ class InfrastructureItemDetail(models.Model):
     is_deactivated = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     user_modification = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="Usuario que realizó la modificación", blank=True, null=True, related_name="infrastructure_details_modified")
-    
+
+
+    # Tipos de asignación
+    ASSIGNMENT_TYPES = [
+        ("usuario", "Usuario específico"),
+        ("area", "Área"),
+        ("comunitario", "Activo comunitario"),
+    ]
+
+    assignment_type = models.CharField(max_length=20, choices=ASSIGNMENT_TYPES, default="usuario", verbose_name="Tipo de asignación")
+    # Área responsable
+    area_responsable = models.ForeignKey(Area, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Área del responsable")
+    # Texto para activo comunitario
+    responsible_text = models.CharField(max_length=255, blank=True, null=True, verbose_name="Asignación general")
+
 #Mantenimiento de infraestructura
 class Infrastructure_maintenance(models.Model):
     identifier = models.ForeignKey(InfrastructureItemDetail, on_delete=models.CASCADE, verbose_name="Item")
@@ -845,7 +861,7 @@ class Infrastructure_maintenance(models.Model):
     comprobante = models.FileField(upload_to='docs/', blank=True, null=True, help_text="Comprobante de pago o de matenimiento")
     is_active = models.BooleanField(default=True)
 
-# Acciones dentri de mantenimiento 
+# Acciones dentro de mantenimiento 
 class MaintenanceAction(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=50, choices=[('preventivo', 'Preventivo'), ('correctivo', 'Correctivo')])
@@ -871,6 +887,92 @@ class Infraestructure_Responsiva(models.Model):
 
     def __str__(self):
         return f"Responsiva de {self.responsible_infraestructure}"
+
+#Auditoria General (identificar todo el proceso de la auditoría)
+class InfrastructureAudit(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    start_date = models.DateField()
+    end_date = models.DateField(blank=True, null=True)
+    categories = models.ManyToManyField(Infrastructure_Category, blank=True, related_name="categories_audits", verbose_name="categorias de auditoría")
+    is_active = models.BooleanField(default=True, verbose_name="¿Está Activo?")
+
+    STATUS_CHOICES = [
+        ("BORRADOR", "Borrador"),
+        ("EN_PROCESO", "En proceso"),
+        ("CERRADA", "Cerrada"),
+        ("CANCELADA", "Cancelada"),
+    ]
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default="BORRADOR")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="infrastructure_audits_created")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        verbose_name = "Auditoría de infraestructura"
+        verbose_name_plural = "Auditorías de infraestructura"
+
+#Sesiones de auditorias, se agrega para ir registrando cada sesión en caso que no sea un solo dia la revision de activos 
+class InfrastructureAuditSession(models.Model):
+    audit = models.ForeignKey(InfrastructureAudit, on_delete=models.PROTECT, related_name="sessions")
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    STATUS_CHOICES = [
+        ("PENDIENTE", "Pendiente"),
+        ("EN_PROCESO", "En proceso"),
+        ("COMPLETADA", "Completada"),
+        ("CANCELADA", "Cancelada"),
+    ]
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default="PENDIENTE")
+    responsible = models.ForeignKey(User,on_delete=models.SET_NULL,blank=True,null=True)
+    start_date = models.DateTimeField(blank=True, null=True)
+    end_date = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Sesión de auditoría"
+        verbose_name_plural = "Sesiones de auditoría"
+
+
+#guarda los activos de las categorias seleccionadas por cada auditoria 
+class InfrastructureAuditItem(models.Model):
+    audit = models.ForeignKey(InfrastructureAudit, on_delete=models.CASCADE, related_name="audit_items")
+    item = models.ForeignKey(Infrastructure_Item, on_delete=models.PROTECT, related_name="audit_records")
+    # Cantidad registrada al iniciar su revisión
+    registered_quantity = models.PositiveIntegerField()
+    # Indica si ya terminó el conteo de este activo
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        verbose_name = "Activo de auditoría"
+        verbose_name_plural = "Activos de auditoría"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["audit", "item"],
+                name="unique_item_per_infrastructure_audit"
+            )
+        ]
+#Cantidades encontradas en cada sesión 
+class InfrastructureAuditSessionDetail(models.Model):
+    session = models.ForeignKey(InfrastructureAuditSession,on_delete=models.PROTECT,related_name="details")
+    audit_item = models.ForeignKey(InfrastructureAuditItem, on_delete=models.PROTECT, related_name="session_details")
+    # Cantidad encontrada durante esta sesión
+    found_quantity = models.PositiveIntegerField(default=0)
+    observations = models.TextField(blank=True, null=True)
+    evidence = models.FileField(upload_to="docs/infrastructure_audits/",blank=True,null=True)
+    verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True,null=True)
+    verified_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Detalle de sesión de auditoría"
+        verbose_name_plural = "Detalles de sesiones de auditoría"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["session", "audit_item"],
+                name="unique_audit_item_per_session"
+            )
+        ]
 
 #tablas de datos para el modulo de servicios--modulo 5 
 #tabla categorias de servicios submodulo num.32
